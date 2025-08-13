@@ -363,7 +363,8 @@ export class ThumbnailService implements OnModuleInit {
     // Usar ImageMagick diretamente (biblioteca pdf-thumbnail removida devido a problemas de compatibilidade)
     this.logger.debug('Gerando thumbnail usando ImageMagick diretamente...');
     try {
-      const thumbnailBuffer = await this.generatePdfThumbnailWithImageMagick(pdfBuffer);
+      const thumbnailBuffer =
+        await this.generatePdfThumbnailWithImageMagick(pdfBuffer);
       const processingTime = Date.now() - startTime;
       this.logger.debug(
         `Thumbnail PDF fallback gerado com sucesso usando ImageMagick - Tamanho: ${thumbnailBuffer.length} bytes, Tempo: ${processingTime}ms`,
@@ -374,8 +375,10 @@ export class ThumbnailService implements OnModuleInit {
         `ImageMagick falhou na geração de thumbnail: ${imageMagickError.message}`,
         imageMagickError.stack,
       );
-      
-      this.logger.warn('Fallback para ImageMagick falhou, usando thumbnail padrão');
+
+      this.logger.warn(
+        'Fallback para ImageMagick falhou, usando thumbnail padrão',
+      );
       return this.getDefaultThumbnail('pdf');
     }
   }
@@ -724,35 +727,33 @@ export class ThumbnailService implements OnModuleInit {
       }
 
       // Determinar tipo MIME baseado na extensão
-       const mimeType = this.getMimeTypeFromExtension(type);
-       
-       if (!mimeType) {
-         throw new Error(`Tipo de arquivo não suportado: ${type}`);
-       }
+      const mimeType = this.getMimeTypeFromExtension(type);
 
-       // Tentar conversão para PDF usando OfficeConverterService
-       const conversionResult = await this.officeConverterService.convertToPdf(
-         buffer,
-         mimeType,
-       );
+      if (!mimeType) {
+        throw new Error(`Tipo de arquivo não suportado: ${type}`);
+      }
 
-       if (conversionResult.success && conversionResult.pdfBuffer) {
-         // Se a conversão foi bem-sucedida, gerar thumbnail do PDF
-         const pdfThumbnail = await this.generatePdfThumbnail(
-           conversionResult.pdfBuffer,
-         );
+      // Tentar conversão para PDF usando OfficeConverterService
+      const conversionResult = await this.officeConverterService.convertToPdf(
+        buffer,
+        mimeType,
+      );
 
-         const processingTime = Date.now() - startTime;
-         this.logger.debug(
-           `Thumbnail de documento ${type} gerado via PDF - Original: ${buffer.length} bytes, PDF: ${conversionResult.convertedSize} bytes, Thumbnail: ${pdfThumbnail.length} bytes, Tempo: ${processingTime}ms`,
-         );
+      if (conversionResult.success && conversionResult.pdfBuffer) {
+        // Se a conversão foi bem-sucedida, gerar thumbnail do PDF
+        const pdfThumbnail = await this.generatePdfThumbnail(
+          conversionResult.pdfBuffer,
+        );
 
-         return pdfThumbnail;
-       } else {
-         throw new Error(
-           conversionResult.error || 'Conversão para PDF falhou',
-         );
-       }
+        const processingTime = Date.now() - startTime;
+        this.logger.debug(
+          `Thumbnail de documento ${type} gerado via PDF - Original: ${buffer.length} bytes, PDF: ${conversionResult.convertedSize} bytes, Thumbnail: ${pdfThumbnail.length} bytes, Tempo: ${processingTime}ms`,
+        );
+
+        return pdfThumbnail;
+      } else {
+        throw new Error(conversionResult.error || 'Conversão para PDF falhou');
+      }
     } catch (error) {
       const processingTime = Date.now() - startTime;
       this.logger.warn(
@@ -1108,18 +1109,18 @@ export class ThumbnailService implements OnModuleInit {
    */
   private getMimeTypeFromExtension(extension: string): string | null {
     const extensionToMime: Record<string, string> = {
-      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      'doc': 'application/msword',
-      'xls': 'application/vnd.ms-excel',
-      'ppt': 'application/vnd.ms-powerpoint',
-      'odt': 'application/vnd.oasis.opendocument.text',
-      'ods': 'application/vnd.oasis.opendocument.spreadsheet',
-      'odp': 'application/vnd.oasis.opendocument.presentation',
-      'rtf': 'text/rtf',
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      doc: 'application/msword',
+      xls: 'application/vnd.ms-excel',
+      ppt: 'application/vnd.ms-powerpoint',
+      odt: 'application/vnd.oasis.opendocument.text',
+      ods: 'application/vnd.oasis.opendocument.spreadsheet',
+      odp: 'application/vnd.oasis.opendocument.presentation',
+      rtf: 'text/rtf',
     };
-    
+
     const normalizedExtension = extension.toLowerCase().replace('.', '');
     return extensionToMime[normalizedExtension] || null;
   }

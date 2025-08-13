@@ -22,6 +22,7 @@ import { RemoveEmptyParamsInterceptor } from './shared/interceptors/remove-empty
 import { ErrorHandlingInterceptor } from './shared/interceptors/error-handling.interceptor';
 import { CatalogAwareExceptionFilter } from './shared/exceptions/error-catalog';
 import { setupSwagger } from './shared/configs/swagger/index';
+import { setupAprovacaoSwagger, setupAprovacaoDevDocs } from './modules/aprovacao/docs/swagger-aprovacao';
 import { applySecurity } from './config/security.config';
 import { ConfigService } from '@nestjs/config';
 import compression from 'compression';
@@ -166,6 +167,9 @@ async function bootstrap(): Promise<INestApplication> {
     if (isDevelopment || configService.get<boolean>('SWAGGER_ENABLED', false)) {
       logger.log('📚 Configurando Swagger...');
       setupSwagger(app);
+      setupAprovacaoSwagger(app);
+      setupAprovacaoDevDocs(app);
+      
       logger.log('✅ Swagger configurado');
     } else {
       logger.log('📚 Swagger desabilitado em produção');

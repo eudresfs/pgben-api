@@ -2,11 +2,14 @@ import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { ScheduleAdapterService } from '../../../shared/schedule/schedule-adapter.service';
 import { NotificationScheduledEvent } from '../events/notification-scheduled.event';
-import { INotificationManagerService, NOTIFICATION_MANAGER_SERVICE } from '../interfaces/notification-manager.interface';
+import {
+  INotificationManagerService,
+  NOTIFICATION_MANAGER_SERVICE,
+} from '../interfaces/notification-manager.interface';
 
 /**
  * Listener responsável por processar eventos de agendamento de notificações
- * 
+ *
  * Este listener resolve a dependência circular entre NotificationManagerService
  * e ScheduleAdapterService através de uma arquitetura event-driven
  */
@@ -23,7 +26,7 @@ export class NotificationSchedulerListener {
 
   /**
    * Processa evento de agendamento de notificação
-   * 
+   *
    * @param event Evento contendo dados da notificação a ser agendada
    */
   @OnEvent('notification.scheduled')
@@ -45,11 +48,9 @@ export class NotificationSchedulerListener {
 
       // Criar job agendado usando o ScheduleAdapterService
       const jobId = `notification-${event.notificacao.id}-${event.tentativa}`;
-      
-      this.scheduleAdapter.scheduleOnce(
-        jobId,
-        event.dataAgendamento,
-        () => this.processarNotificacaoAgendada(event.notificacao.id),
+
+      this.scheduleAdapter.scheduleOnce(jobId, event.dataAgendamento, () =>
+        this.processarNotificacaoAgendada(event.notificacao.id),
       );
 
       this.logger.log(
@@ -60,7 +61,7 @@ export class NotificationSchedulerListener {
         `Erro ao agendar notificação ${event.notificacao.id}: ${error.message}`,
         error.stack,
       );
-      
+
       // Fallback: processar imediatamente em caso de erro no agendamento
       await this.processarNotificacaoImediata(event.notificacao.id);
     }
@@ -68,17 +69,21 @@ export class NotificationSchedulerListener {
 
   /**
    * Processa uma notificação agendada quando o job é executado
-   * 
+   *
    * @param notificacaoId ID da notificação a ser processada
    */
   private async processarNotificacaoAgendada(notificacaoId: string) {
-    this.logger.log(`Executando processamento agendado da notificação: ${notificacaoId}`);
-    
+    this.logger.log(
+      `Executando processamento agendado da notificação: ${notificacaoId}`,
+    );
+
     try {
       // Delegar o processamento para o NotificationManagerService
       await this.notificationManager.processarNotificacao(notificacaoId);
-      
-      this.logger.log(`Notificação agendada ${notificacaoId} processada com sucesso`);
+
+      this.logger.log(
+        `Notificação agendada ${notificacaoId} processada com sucesso`,
+      );
     } catch (error) {
       this.logger.error(
         `Erro ao processar notificação agendada ${notificacaoId}: ${error.message}`,
@@ -90,12 +95,12 @@ export class NotificationSchedulerListener {
 
   /**
    * Processa uma notificação imediatamente (fallback)
-   * 
+   *
    * @param notificacaoId ID da notificação a ser processada
    */
   private async processarNotificacaoImediata(notificacaoId: string) {
     this.logger.log(`Processando notificação imediatamente: ${notificacaoId}`);
-    
+
     try {
       await this.notificationManager.processarNotificacao(notificacaoId);
       this.logger.log(`Notificação ${notificacaoId} processada imediatamente`);
@@ -109,16 +114,18 @@ export class NotificationSchedulerListener {
 
   /**
    * Cancela um agendamento de notificação
-   * 
+   *
    * @param notificacaoId ID da notificação
    * @param tentativa Número da tentativa (opcional)
    */
   async cancelarAgendamento(notificacaoId: string, tentativa: number = 1) {
     const jobId = `notification-${notificacaoId}-${tentativa}`;
-    
+
     try {
       this.scheduleAdapter.cancelTimeout(jobId);
-      this.logger.log(`Agendamento cancelado para notificação: ${notificacaoId}`);
+      this.logger.log(
+        `Agendamento cancelado para notificação: ${notificacaoId}`,
+      );
     } catch (error) {
       this.logger.warn(
         `Erro ao cancelar agendamento da notificação ${notificacaoId}: ${error.message}`,

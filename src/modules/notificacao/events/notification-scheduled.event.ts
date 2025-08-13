@@ -2,7 +2,7 @@ import { NotificacaoSistema } from '../../../entities/notification.entity';
 
 /**
  * Evento emitido quando uma notificação precisa ser agendada
- * 
+ *
  * Este evento permite desacoplar o NotificationManagerService do ScheduleAdapterService,
  * resolvendo a dependência circular através de uma arquitetura event-driven
  */

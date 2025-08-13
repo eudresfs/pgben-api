@@ -6,14 +6,14 @@ import { ScopeType } from '../../../enums/scope-type.enum';
 
 /**
  * Helper para aplicar filtros padronizados do dashboard
- * 
+ *
  * Integra os filtros de query parameters com o sistema de escopo
  * de forma consistente em todos os endpoints de métricas
  */
 export class DashboardFiltrosHelper {
   /**
    * Aplica todos os filtros padronizados do dashboard em uma query
-   * 
+   *
    * @param qb QueryBuilder do TypeORM
    * @param filtros Filtros vindos dos query parameters
    * @param scopeContext Contexto de escopo do usuário
@@ -33,7 +33,13 @@ export class DashboardFiltrosHelper {
     this.aplicarFiltrosEscopo(qb, scopeContext, alias);
 
     // 2. Aplicar filtros de query parameters
-    this.aplicarFiltrosQueryParams(qb, filtros, alias, cidadaoAlias, beneficioAlias);
+    this.aplicarFiltrosQueryParams(
+      qb,
+      filtros,
+      alias,
+      cidadaoAlias,
+      beneficioAlias,
+    );
 
     return qb;
   }
@@ -106,7 +112,7 @@ export class DashboardFiltrosHelper {
 
   /**
    * Adiciona joins necessários para os filtros funcionarem
-   * 
+   *
    * @param qb QueryBuilder
    * @param filtros Filtros aplicados
    * @param alias Alias da tabela principal

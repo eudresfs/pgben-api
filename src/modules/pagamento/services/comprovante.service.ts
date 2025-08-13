@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as crypto from 'crypto';
@@ -66,11 +71,18 @@ export class ComprovanteService {
     // Fazer upload do arquivo
     const storageProvider = this.storageProviderFactory.getProvider();
     const caminhoArquivo = `comprovantes/${pagamentoId}/${Date.now()}-${arquivo.originalname}`;
-    
-    await storageProvider.salvarArquivo(arquivo.buffer, caminhoArquivo, arquivo.mimetype);
+
+    await storageProvider.salvarArquivo(
+      arquivo.buffer,
+      caminhoArquivo,
+      arquivo.mimetype,
+    );
 
     // Gerar hash do arquivo
-    const hashArquivo = crypto.createHash('sha256').update(arquivo.buffer).digest('hex');
+    const hashArquivo = crypto
+      .createHash('sha256')
+      .update(arquivo.buffer)
+      .digest('hex');
 
     // Criar documento
     const documento = new Documento();
@@ -84,25 +96,29 @@ export class ComprovanteService {
     documento.mimetype = arquivo.mimetype;
     documento.data_upload = new Date();
     documento.usuario_upload_id = usuarioId;
-    documento.descricao = uploadDto.observacoes || `Comprovante de pagamento - ${arquivo.originalname}`;
+    documento.descricao =
+      uploadDto.observacoes ||
+      `Comprovante de pagamento - ${arquivo.originalname}`;
     documento.hash_arquivo = hashArquivo;
     documento.metadados = {
       deteccao_mime: {
         mime_declarado: arquivo.mimetype,
         mime_detectado: arquivo.mimetype,
-        extensao_detectada: arquivo.originalname.split('.').pop() || ''
+        extensao_detectada: arquivo.originalname.split('.').pop() || '',
       },
       upload_info: {
         ip: 'sistema',
-        user_agent: 'comprovante-service'
-      }
+        user_agent: 'comprovante-service',
+      },
     };
 
     const documentoSalvo = await this.documentoRepository.save(documento);
 
     // Gerar URL pública após salvar o documento
-    const urlPublica = await this.documentoUrlService.generatePublicUrl(documentoSalvo.id);
-    
+    const urlPublica = await this.documentoUrlService.generatePublicUrl(
+      documentoSalvo.id,
+    );
+
     // Atualizar documento com URL pública
     documentoSalvo.url_publica = urlPublica;
     await this.documentoRepository.save(documentoSalvo);
@@ -127,7 +143,9 @@ export class ComprovanteService {
     const documento = await this.documentoRepository
       .createQueryBuilder('documento')
       .where('documento.id = :id', { id })
-      .andWhere('documento.tipo = :tipo', { tipo: TipoDocumentoEnum.COMPROVANTE_PAGAMENTO })
+      .andWhere('documento.tipo = :tipo', {
+        tipo: TipoDocumentoEnum.COMPROVANTE_PAGAMENTO,
+      })
       .andWhere('documento.removed_at IS NULL')
       .getOne();
 
@@ -147,7 +165,9 @@ export class ComprovanteService {
   /**
    * Lista comprovantes de um pagamento
    */
-  async findByPagamento(pagamentoId: string): Promise<ComprovanteResponseDto[]> {
+  async findByPagamento(
+    pagamentoId: string,
+  ): Promise<ComprovanteResponseDto[]> {
     const pagamento = await this.pagamentoRepository.findById(pagamentoId);
     if (!pagamento) {
       throw new NotFoundException('Pagamento não encontrado');
@@ -160,7 +180,9 @@ export class ComprovanteService {
     const documento = await this.documentoRepository
       .createQueryBuilder('documento')
       .where('documento.id = :id', { id: pagamento.comprovante_id })
-      .andWhere('documento.tipo = :tipo', { tipo: TipoDocumentoEnum.COMPROVANTE_PAGAMENTO })
+      .andWhere('documento.tipo = :tipo', {
+        tipo: TipoDocumentoEnum.COMPROVANTE_PAGAMENTO,
+      })
       .andWhere('documento.removed_at IS NULL')
       .getOne();
 
@@ -178,7 +200,9 @@ export class ComprovanteService {
     const documento = await this.documentoRepository
       .createQueryBuilder('documento')
       .where('documento.id = :id', { id })
-      .andWhere('documento.tipo = :tipo', { tipo: TipoDocumentoEnum.COMPROVANTE_PAGAMENTO })
+      .andWhere('documento.tipo = :tipo', {
+        tipo: TipoDocumentoEnum.COMPROVANTE_PAGAMENTO,
+      })
       .andWhere('documento.removed_at IS NULL')
       .getOne();
 
@@ -213,11 +237,15 @@ export class ComprovanteService {
   /**
    * Download de comprovante
    */
-  async download(id: string): Promise<{ buffer: Buffer; mimetype: string; nomeOriginal: string }> {
+  async download(
+    id: string,
+  ): Promise<{ buffer: Buffer; mimetype: string; nomeOriginal: string }> {
     const documento = await this.documentoRepository
       .createQueryBuilder('documento')
       .where('documento.id = :id', { id })
-      .andWhere('documento.tipo = :tipo', { tipo: TipoDocumentoEnum.COMPROVANTE_PAGAMENTO })
+      .andWhere('documento.tipo = :tipo', {
+        tipo: TipoDocumentoEnum.COMPROVANTE_PAGAMENTO,
+      })
       .andWhere('documento.removed_at IS NULL')
       .getOne();
 
@@ -254,11 +282,15 @@ export class ComprovanteService {
     }
 
     if (arquivo.size > this.MAX_FILE_SIZE) {
-      throw new BadRequestException('Arquivo muito grande. Máximo permitido: 5MB');
+      throw new BadRequestException(
+        'Arquivo muito grande. Máximo permitido: 5MB',
+      );
     }
 
     if (!this.ALLOWED_TYPES.includes(arquivo.mimetype)) {
-      throw new BadRequestException('Tipo de arquivo não permitido. Use PDF, JPG ou PNG');
+      throw new BadRequestException(
+        'Tipo de arquivo não permitido. Use PDF, JPG ou PNG',
+      );
     }
   }
 

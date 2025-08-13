@@ -70,12 +70,12 @@ export class ComprovanteResponseDto {
       deteccao_mime: {
         mime_declarado: 'application/pdf',
         mime_detectado: 'application/pdf',
-        extensao_detectada: 'pdf'
+        extensao_detectada: 'pdf',
       },
       upload_info: {
         ip: 'sistema',
-        user_agent: 'comprovante-service'
-      }
+        user_agent: 'comprovante-service',
+      },
     },
     required: false,
   })

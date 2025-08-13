@@ -175,11 +175,13 @@ export class AuthService {
       if (!senhaCorreta) {
         // Incrementar contador de tentativas de login
         await this.usuarioService.incrementLoginAttempts(usuario.id);
-        
+
         // Buscar usuário atualizado para obter o contador atual
-        const usuarioAtualizado = await this.usuarioService.findById(usuario.id);
+        const usuarioAtualizado = await this.usuarioService.findById(
+          usuario.id,
+        );
         const consecutiveFailures = usuarioAtualizado?.tentativas_login || 1;
-        
+
         // Auditoria de tentativa de login com senha incorreta
         await this.auditEmitter.emitSecurityEvent(
           AuditEventType.FAILED_LOGIN,
@@ -197,7 +199,7 @@ export class AuthService {
         );
         throw new UnauthorizedException('Nome de usuário ou senha inválidos');
       }
-      
+
       // Login bem-sucedido - resetar contador de tentativas
       await this.usuarioService.resetLoginAttempts(usuario.id);
 

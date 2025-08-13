@@ -25,7 +25,7 @@ export enum StatusAgendamento {
 
 /**
  * Entidade para agendamento de notificações
- * 
+ *
  * Permite agendar notificações para serem enviadas em momentos específicos,
  * como acompanhamentos pós-liberação, lembretes de prazos, etc.
  */
@@ -208,7 +208,7 @@ export class AgendamentoNotificacao {
   incrementarTentativas(): void {
     this.tentativas += 1;
     this.ultima_tentativa = new Date();
-    
+
     if (this.tentativas >= this.max_tentativas) {
       this.status = StatusAgendamento.EXPIRADA;
     }

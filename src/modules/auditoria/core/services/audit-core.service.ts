@@ -504,7 +504,7 @@ export class AuditCoreService implements OnModuleInit {
   private enrichCreateDto(dto: CreateAuditLogDto): CreateAuditLogDto {
     // Captura contexto de auditoria do interceptor
     const auditContext = AuditContextHolder.get();
-    
+
     // Enriquece contexto de requisição com dados capturados
     const enrichedContexto = {
       ...dto.contexto_requisicao,
@@ -580,7 +580,7 @@ export class AuditCoreService implements OnModuleInit {
       // Serializa os dados para compressão
       const originalData = JSON.stringify(dto);
       const originalSize = originalData.length;
-      
+
       // Só comprime se os dados forem grandes o suficiente (> 1KB)
       if (originalSize < 1024) {
         return {
@@ -598,7 +598,7 @@ export class AuditCoreService implements OnModuleInit {
       const { gzip } = await import('zlib');
       const { promisify } = await import('util');
       const gzipAsync = promisify(gzip);
-      
+
       // Comprime os dados sensíveis (contexto_requisicao e metadata)
       const dataToCompress = {
         contexto_requisicao: dto.contexto_requisicao,
@@ -606,18 +606,21 @@ export class AuditCoreService implements OnModuleInit {
         dados_anteriores: dto.dados_anteriores,
         dados_novos: dto.dados_novos,
       };
-      
+
       const compressedBuffer = await gzipAsync(JSON.stringify(dataToCompress));
       const compressedSize = compressedBuffer.length;
-      const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(2);
-      
+      const compressionRatio = (
+        ((originalSize - compressedSize) / originalSize) *
+        100
+      ).toFixed(2);
+
       // Converte para base64 para armazenamento
       const compressedData = compressedBuffer.toString('base64');
-      
+
       this.logger.debug(
         `Dados de auditoria comprimidos: ${originalSize}B -> ${compressedSize}B (${compressionRatio}% redução)`,
       );
-      
+
       return {
         ...dto,
         // Remove dados originais que foram comprimidos
@@ -639,7 +642,7 @@ export class AuditCoreService implements OnModuleInit {
         `Erro ao comprimir dados de auditoria: ${error.message}`,
         error.stack,
       );
-      
+
       // Fallback: retorna dados originais sem compressão
       return {
         ...dto,
@@ -674,7 +677,8 @@ export class AuditCoreService implements OnModuleInit {
       };
 
       // Usar o serviço de assinatura real
-      const signature = await this.auditoriaSignatureService.assinarLog(tempLogData);
+      const signature =
+        await this.auditoriaSignatureService.assinarLog(tempLogData);
 
       return {
         ...dto,

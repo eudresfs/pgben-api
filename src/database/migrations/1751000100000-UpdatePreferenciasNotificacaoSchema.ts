@@ -19,68 +19,106 @@ export class UpdatePreferenciasNotificacaoSchema1751000100000
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Verificar se a tabela existe
     const tableExists = await queryRunner.hasTable('preferencias_notificacao');
-    
+
     if (!tableExists) {
-      throw new Error('Tabela preferencias_notificacao não existe. Execute primeiro a migration de criação.');
+      throw new Error(
+        'Tabela preferencias_notificacao não existe. Execute primeiro a migration de criação.',
+      );
     }
 
     // Remover colunas antigas que não existem na nova estrutura
     await queryRunner.dropColumn('preferencias_notificacao', 'canais_ativos');
     await queryRunner.dropColumn('preferencias_notificacao', 'silenciar_todos');
-    await queryRunner.dropColumn('preferencias_notificacao', 'horario_inicio_silencio');
-    await queryRunner.dropColumn('preferencias_notificacao', 'horario_fim_silencio');
+    await queryRunner.dropColumn(
+      'preferencias_notificacao',
+      'horario_inicio_silencio',
+    );
+    await queryRunner.dropColumn(
+      'preferencias_notificacao',
+      'horario_fim_silencio',
+    );
     await queryRunner.dropColumn('preferencias_notificacao', 'dias_silencio');
-    await queryRunner.dropColumn('preferencias_notificacao', 'excecoes_silencio');
-    await queryRunner.dropColumn('preferencias_notificacao', 'configuracoes_especificas');
+    await queryRunner.dropColumn(
+      'preferencias_notificacao',
+      'excecoes_silencio',
+    );
+    await queryRunner.dropColumn(
+      'preferencias_notificacao',
+      'configuracoes_especificas',
+    );
 
     // Adicionar novas colunas
-    await queryRunner.addColumn('preferencias_notificacao', new TableColumn({
-      name: 'ativo',
-      type: 'boolean',
-      default: true,
-    }));
-    
-    await queryRunner.addColumn('preferencias_notificacao', new TableColumn({
-      name: 'configuracoes_globais',
-      type: 'jsonb',
-      default: "'{}'",
-    }));
-    
-    await queryRunner.addColumn('preferencias_notificacao', new TableColumn({
-      name: 'tipos',
-      type: 'jsonb',
-      default: "'[]'",
-    }));
-    
-    await queryRunner.addColumn('preferencias_notificacao', new TableColumn({
-      name: 'configuracoes_canais',
-      type: 'jsonb',
-      default: "'{}'",
-    }));
-    
-    await queryRunner.addColumn('preferencias_notificacao', new TableColumn({
-      name: 'estatisticas',
-      type: 'jsonb',
-      default: "'{}'",
-    }));
-    
-    await queryRunner.addColumn('preferencias_notificacao', new TableColumn({
-      name: 'configuracoes_privacidade',
-      type: 'jsonb',
-      default: "'{}'",
-    }));
-    
-    await queryRunner.addColumn('preferencias_notificacao', new TableColumn({
-      name: 'versao_schema',
-      type: 'integer',
-      default: 1,
-    }));
-    
-    await queryRunner.addColumn('preferencias_notificacao', new TableColumn({
-      name: 'metadata',
-      type: 'jsonb',
-      default: "'{}'",
-    }));
+    await queryRunner.addColumn(
+      'preferencias_notificacao',
+      new TableColumn({
+        name: 'ativo',
+        type: 'boolean',
+        default: true,
+      }),
+    );
+
+    await queryRunner.addColumn(
+      'preferencias_notificacao',
+      new TableColumn({
+        name: 'configuracoes_globais',
+        type: 'jsonb',
+        default: "'{}'",
+      }),
+    );
+
+    await queryRunner.addColumn(
+      'preferencias_notificacao',
+      new TableColumn({
+        name: 'tipos',
+        type: 'jsonb',
+        default: "'[]'",
+      }),
+    );
+
+    await queryRunner.addColumn(
+      'preferencias_notificacao',
+      new TableColumn({
+        name: 'configuracoes_canais',
+        type: 'jsonb',
+        default: "'{}'",
+      }),
+    );
+
+    await queryRunner.addColumn(
+      'preferencias_notificacao',
+      new TableColumn({
+        name: 'estatisticas',
+        type: 'jsonb',
+        default: "'{}'",
+      }),
+    );
+
+    await queryRunner.addColumn(
+      'preferencias_notificacao',
+      new TableColumn({
+        name: 'configuracoes_privacidade',
+        type: 'jsonb',
+        default: "'{}'",
+      }),
+    );
+
+    await queryRunner.addColumn(
+      'preferencias_notificacao',
+      new TableColumn({
+        name: 'versao_schema',
+        type: 'integer',
+        default: 1,
+      }),
+    );
+
+    await queryRunner.addColumn(
+      'preferencias_notificacao',
+      new TableColumn({
+        name: 'metadata',
+        type: 'jsonb',
+        default: "'{}'",
+      }),
+    );
 
     // Criar índice único para usuario_id
     await queryRunner.createIndex(
@@ -202,55 +240,85 @@ export class UpdatePreferenciasNotificacaoSchema1751000100000
 
     // Remover colunas adicionadas
     await queryRunner.dropColumn('preferencias_notificacao', 'ativo');
-    await queryRunner.dropColumn('preferencias_notificacao', 'configuracoes_globais');
+    await queryRunner.dropColumn(
+      'preferencias_notificacao',
+      'configuracoes_globais',
+    );
     await queryRunner.dropColumn('preferencias_notificacao', 'tipos');
-    await queryRunner.dropColumn('preferencias_notificacao', 'configuracoes_canais');
+    await queryRunner.dropColumn(
+      'preferencias_notificacao',
+      'configuracoes_canais',
+    );
     await queryRunner.dropColumn('preferencias_notificacao', 'estatisticas');
-    await queryRunner.dropColumn('preferencias_notificacao', 'configuracoes_privacidade');
+    await queryRunner.dropColumn(
+      'preferencias_notificacao',
+      'configuracoes_privacidade',
+    );
     await queryRunner.dropColumn('preferencias_notificacao', 'versao_schema');
     await queryRunner.dropColumn('preferencias_notificacao', 'metadata');
 
     // Restaurar colunas antigas
-    await queryRunner.addColumn('preferencias_notificacao', new TableColumn({
-      name: 'canais_ativos',
-      type: 'text[]',
-      default: "'{app}'",
-    }));
-    
-    await queryRunner.addColumn('preferencias_notificacao', new TableColumn({
-      name: 'silenciar_todos',
-      type: 'boolean',
-      default: false,
-    }));
-    
-    await queryRunner.addColumn('preferencias_notificacao', new TableColumn({
-      name: 'horario_inicio_silencio',
-      type: 'time',
-      isNullable: true,
-    }));
-    
-    await queryRunner.addColumn('preferencias_notificacao', new TableColumn({
-      name: 'horario_fim_silencio',
-      type: 'time',
-      isNullable: true,
-    }));
-    
-    await queryRunner.addColumn('preferencias_notificacao', new TableColumn({
-      name: 'dias_silencio',
-      type: 'integer[]',
-      isNullable: true,
-    }));
-    
-    await queryRunner.addColumn('preferencias_notificacao', new TableColumn({
-      name: 'excecoes_silencio',
-      type: 'text[]',
-      isNullable: true,
-    }));
-    
-    await queryRunner.addColumn('preferencias_notificacao', new TableColumn({
-      name: 'configuracoes_especificas',
-      type: 'jsonb',
-      isNullable: true,
-    }));
+    await queryRunner.addColumn(
+      'preferencias_notificacao',
+      new TableColumn({
+        name: 'canais_ativos',
+        type: 'text[]',
+        default: "'{app}'",
+      }),
+    );
+
+    await queryRunner.addColumn(
+      'preferencias_notificacao',
+      new TableColumn({
+        name: 'silenciar_todos',
+        type: 'boolean',
+        default: false,
+      }),
+    );
+
+    await queryRunner.addColumn(
+      'preferencias_notificacao',
+      new TableColumn({
+        name: 'horario_inicio_silencio',
+        type: 'time',
+        isNullable: true,
+      }),
+    );
+
+    await queryRunner.addColumn(
+      'preferencias_notificacao',
+      new TableColumn({
+        name: 'horario_fim_silencio',
+        type: 'time',
+        isNullable: true,
+      }),
+    );
+
+    await queryRunner.addColumn(
+      'preferencias_notificacao',
+      new TableColumn({
+        name: 'dias_silencio',
+        type: 'integer[]',
+        isNullable: true,
+      }),
+    );
+
+    await queryRunner.addColumn(
+      'preferencias_notificacao',
+      new TableColumn({
+        name: 'excecoes_silencio',
+        type: 'text[]',
+        isNullable: true,
+      }),
+    );
+
+    await queryRunner.addColumn(
+      'preferencias_notificacao',
+      new TableColumn({
+        name: 'configuracoes_especificas',
+        type: 'jsonb',
+        isNullable: true,
+      }),
+    );
   }
 }

@@ -32,7 +32,6 @@ import { DocumentoRateLimitMiddleware } from './middleware/documento-rate-limit.
 import { DocumentoPathService } from './services/documento-path.service';
 import { CacheModule } from '../../shared/cache/cache.module';
 
-
 // Novos serviços especializados de upload
 import {
   DocumentoUploadValidationService,
@@ -167,7 +166,6 @@ import { DocumentFilterService } from './services/batch-download/document-filter
       provide: APP_INTERCEPTOR,
       useClass: UrlSanitizerInterceptor,
     },
-
 
     // Middleware será registrado via configure()
     DocumentoRateLimitMiddleware,

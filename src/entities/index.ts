@@ -128,3 +128,6 @@ export {
 
 // Exportações de Auth/Permissões
 export { ScopeType } from './user-permission.entity';
+
+// Entidades de Aprovação
+export { DelegacaoAprovacao } from '../modules/aprovacao/entities/delegacao-aprovacao.entity';

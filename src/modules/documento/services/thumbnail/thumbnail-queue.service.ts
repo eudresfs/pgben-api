@@ -27,7 +27,7 @@ export class ThumbnailQueueService {
   private readonly processing: Set<string> = new Set();
   private readonly maxConcurrentJobs = 3;
   private processingInterval: NodeJS.Timeout | null = null;
-  
+
   // Contadores persistentes
   private totalProcessed = 0;
   private totalSuccessful = 0;
@@ -42,7 +42,7 @@ export class ThumbnailQueueService {
   ) {
     // Carregar contadores persistentes
     this.loadPersistedCounters();
-    
+
     this.startProcessing();
   }
 
@@ -256,15 +256,15 @@ export class ThumbnailQueueService {
         try {
           // Converter o buffer para base64 para armazenar no banco
           const thumbnailBase64 = result.thumbnailBuffer.toString('base64');
-          
+
           await this.documentoRepository.update(
             { id: job.documentoId },
-            { thumbnail: thumbnailBase64 }
+            { thumbnail: thumbnailBase64 },
           );
-          
+
           // Atualizar contadores de sucesso
           this.updateSuccessCounters(processingTime);
-          
+
           this.logger.info(
             `Thumbnail gerado e salvo com sucesso para documento ${job.documentoId} (${result.thumbnailBuffer.length} bytes)`,
             ThumbnailQueueService.name,
@@ -299,7 +299,7 @@ export class ThumbnailQueueService {
       if (job.retryCount >= job.maxRetries) {
         // Atualizar contadores de falha
         this.updateFailureCounters();
-        
+
         this.logger.error(
           `Máximo de tentativas atingido para documento ${job.documentoId}, removendo da fila`,
           ThumbnailQueueService.name,
@@ -478,12 +478,12 @@ export class ThumbnailQueueService {
     this.totalProcessed++;
     this.totalSuccessful++;
     this.processingTimes.push(processingTime);
-    
+
     // Manter apenas os últimos 100 tempos para cálculo da média
     if (this.processingTimes.length > 100) {
       this.processingTimes.shift();
     }
-    
+
     // Persistir contadores (implementação básica)
     this.persistCounters();
   }
@@ -494,7 +494,7 @@ export class ThumbnailQueueService {
   private updateFailureCounters(): void {
     this.totalProcessed++;
     this.totalFailed++;
-    
+
     // Persistir contadores (implementação básica)
     this.persistCounters();
   }
@@ -518,7 +518,7 @@ export class ThumbnailQueueService {
     if (this.processingTimes.length === 0) {
       return 0;
     }
-    
+
     const sum = this.processingTimes.reduce((acc, time) => acc + time, 0);
     return Math.round(sum / this.processingTimes.length / 1000); // Converter para segundos
   }
@@ -530,7 +530,7 @@ export class ThumbnailQueueService {
     if (this.totalProcessed === 0) {
       return 0;
     }
-    
+
     return this.totalSuccessful / this.totalProcessed;
   }
 

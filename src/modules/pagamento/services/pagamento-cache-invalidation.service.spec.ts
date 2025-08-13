@@ -9,7 +9,7 @@ import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
 
 /**
  * Testes unitários para PagamentoCacheInvalidationService
- * 
+ *
  * Verifica:
  * - Configuração correta de listeners de eventos
  * - Invalidação de cache por padrões
@@ -68,7 +68,9 @@ describe('PagamentoCacheInvalidationService', () => {
       ],
     }).compile();
 
-    service = module.get<PagamentoCacheInvalidationService>(PagamentoCacheInvalidationService);
+    service = module.get<PagamentoCacheInvalidationService>(
+      PagamentoCacheInvalidationService,
+    );
     cacheService = module.get(CacheService);
     pagamentoCacheService = module.get(PagamentoCacheService);
     eventEmitter = module.get(EventEmitter2);
@@ -96,8 +98,8 @@ describe('PagamentoCacheInvalidationService', () => {
         metadata: {
           status: StatusPagamentoEnum.PENDENTE,
           metodo: MetodoPagamentoEnum.PIX,
-          valor: 1000
-        }
+          valor: 1000,
+        },
       };
 
       service.emitCacheInvalidationEvent(event);
@@ -112,13 +114,16 @@ describe('PagamentoCacheInvalidationService', () => {
         oldStatus: StatusPagamentoEnum.PENDENTE,
         newStatus: StatusPagamentoEnum.LIBERADO,
         metadata: {
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       };
 
       service.emitCacheInvalidationEvent(event);
 
-      expect(eventEmitter.emit).toHaveBeenCalledWith('pagamento.status_change', event);
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        'pagamento.status_change',
+        event,
+      );
     });
   });
 
@@ -128,7 +133,7 @@ describe('PagamentoCacheInvalidationService', () => {
 
       // Verifica se tentou deletar chaves específicas do pagamento
       expect(cacheService.del).toHaveBeenCalledWith(
-        expect.stringContaining(mockPagamentoId)
+        expect.stringContaining(mockPagamentoId),
       );
     });
 
@@ -137,7 +142,7 @@ describe('PagamentoCacheInvalidationService', () => {
 
       // Verifica se tentou deletar chaves relacionadas à solicitação
       expect(cacheService.del).toHaveBeenCalledWith(
-        expect.stringContaining(mockSolicitacaoId)
+        expect.stringContaining(mockSolicitacaoId),
       );
     });
 
@@ -146,7 +151,7 @@ describe('PagamentoCacheInvalidationService', () => {
 
       // Verifica se tentou deletar chaves relacionadas à concessão
       expect(cacheService.del).toHaveBeenCalledWith(
-        expect.stringContaining(mockConcessaoId)
+        expect.stringContaining(mockConcessaoId),
       );
     });
 
@@ -183,7 +188,7 @@ describe('PagamentoCacheInvalidationService', () => {
       const pattern = 'pagamento:list:*';
       const keys = (service as any).generateSpecificKeysFromPattern(pattern);
 
-      Object.values(StatusPagamentoEnum).forEach(status => {
+      Object.values(StatusPagamentoEnum).forEach((status) => {
         expect(keys).toContain(`pagamento:list:status:${status}`);
       });
     });
@@ -195,7 +200,7 @@ describe('PagamentoCacheInvalidationService', () => {
 
       // Não deve lançar erro
       await expect(
-        (service as any).invalidateByPattern('test:pattern:*')
+        (service as any).invalidateByPattern('test:pattern:*'),
       ).resolves.not.toThrow();
     });
 
@@ -206,9 +211,9 @@ describe('PagamentoCacheInvalidationService', () => {
         .mockResolvedValueOnce(undefined);
 
       const patterns = ['pattern1:*', 'pattern2:*', 'pattern3:*'];
-      
+
       await expect(
-        (service as any).invalidatePatterns(patterns)
+        (service as any).invalidatePatterns(patterns),
       ).resolves.not.toThrow();
     });
   });
@@ -217,12 +222,12 @@ describe('PagamentoCacheInvalidationService', () => {
     it('deve executar invalidações em paralelo', async () => {
       const patterns = ['pattern1:*', 'pattern2:*', 'pattern3:*'];
       const startTime = Date.now();
-      
+
       await (service as any).invalidatePatterns(patterns);
-      
+
       const endTime = Date.now();
       const duration = endTime - startTime;
-      
+
       // Deve ser rápido (menos de 1000ms para operações mock)
       expect(duration).toBeLessThan(1000);
     });
@@ -230,7 +235,7 @@ describe('PagamentoCacheInvalidationService', () => {
     it('deve limitar o número de chaves geradas por padrão', () => {
       const pattern = 'pagamento:pagamentos:*';
       const keys = (service as any).generateSpecificKeysFromPattern(pattern);
-      
+
       // Não deve gerar um número excessivo de chaves
       expect(keys.length).toBeLessThan(200);
     });
@@ -242,7 +247,7 @@ describe('PagamentoCacheInvalidationService', () => {
         pagamentoId: mockPagamentoId,
         action: 'status_change' as const,
         oldStatus: StatusPagamentoEnum.PENDENTE,
-        newStatus: StatusPagamentoEnum.LIBERADO
+        newStatus: StatusPagamentoEnum.LIBERADO,
       };
 
       // Simular chamada do listener
@@ -257,13 +262,14 @@ describe('PagamentoCacheInvalidationService', () => {
         pagamentoId: mockPagamentoId,
         action: 'cancelled' as const,
         oldStatus: StatusPagamentoEnum.LIBERADO,
-        newStatus: StatusPagamentoEnum.CANCELADO
+        newStatus: StatusPagamentoEnum.CANCELADO,
       };
 
       await (service as any).handlePagamentoCancelled(event);
 
-      expect(pagamentoCacheService.invalidateValidationCache)
-        .toHaveBeenCalledWith(mockPagamentoId);
+      expect(
+        pagamentoCacheService.invalidateValidationCache,
+      ).toHaveBeenCalledWith(mockPagamentoId);
     });
   });
 

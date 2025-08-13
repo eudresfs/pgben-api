@@ -310,14 +310,17 @@ export class DocumentoAuditService {
   extractAuditContext(request: Request): DocumentoAuditContext {
     // Tentar usar o contexto do AuditContextHolder primeiro
     const auditContext = AuditContextHolder.get();
-    
+
     if (auditContext) {
       this.logger.debug(
-        `Usando contexto de auditoria do AuditContextHolder - userId: ${auditContext.userId}, ip: ${auditContext.ip}, userAgent: ${auditContext.userAgent}, roles: ${auditContext.userRoles?.join(', ')}`
+        `Usando contexto de auditoria do AuditContextHolder - userId: ${auditContext.userId}, ip: ${auditContext.ip}, userAgent: ${auditContext.userAgent}, roles: ${auditContext.userRoles?.join(', ')}`,
       );
-      
+
       return {
-        userId: auditContext.userId === 'anonymous' ? '00000000-0000-0000-0000-000000000000' : (auditContext.userId || '00000000-0000-0000-0000-000000000000'),
+        userId:
+          auditContext.userId === 'anonymous'
+            ? '00000000-0000-0000-0000-000000000000'
+            : auditContext.userId || '00000000-0000-0000-0000-000000000000',
         userRoles: auditContext.userRoles || [],
         ip: auditContext.ip,
         userAgent: auditContext.userAgent,
@@ -327,8 +330,10 @@ export class DocumentoAuditService {
     }
 
     // Fallback para extração manual da requisição
-    this.logger.debug('AuditContextHolder não disponível, extraindo contexto da requisição');
-    
+    this.logger.debug(
+      'AuditContextHolder não disponível, extraindo contexto da requisição',
+    );
+
     const user = (request as any).user;
     const requestContext = (request as any).requestContext;
     const ip = this.extractClientIp(request);
@@ -349,7 +354,8 @@ export class DocumentoAuditService {
   private extractClientIp(request: Request): string {
     const forwarded = request.headers['x-forwarded-for'];
     const realIp = request.headers['x-real-ip'];
-    const remoteAddress = request.connection?.remoteAddress || request.socket?.remoteAddress;
+    const remoteAddress =
+      request.connection?.remoteAddress || request.socket?.remoteAddress;
 
     if (forwarded) {
       // x-forwarded-for pode conter múltiplos IPs separados por vírgula

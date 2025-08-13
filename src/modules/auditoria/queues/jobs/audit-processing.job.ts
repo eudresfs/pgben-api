@@ -241,16 +241,16 @@ export class AuditProcessingJob {
       const gzipAsync = promisify(gzip);
       const originalData = JSON.stringify(data);
       const originalSize = originalData.length;
-      
+
       // Comprime os dados usando gzip
       const compressedBuffer = await gzipAsync(originalData);
       const compressedData = compressedBuffer.toString('base64');
       const compressedSize = compressedData.length;
-      
+
       this.logger.debug(
-        `Data compressed: ${originalSize} bytes -> ${compressedSize} bytes (${((1 - compressedSize / originalSize) * 100).toFixed(2)}% reduction)`
+        `Data compressed: ${originalSize} bytes -> ${compressedSize} bytes (${((1 - compressedSize / originalSize) * 100).toFixed(2)}% reduction)`,
       );
-      
+
       return {
         _compressed: true,
         _originalSize: originalSize,
@@ -272,7 +272,7 @@ export class AuditProcessingJob {
         `Failed to compress data: ${error.message}`,
         error.stack,
       );
-      
+
       // Fallback: retorna dados originais com flag de erro
       return {
         ...data,
@@ -294,22 +294,22 @@ export class AuditProcessingJob {
 
       const gunzipAsync = promisify(gunzip);
       const compressedBuffer = Buffer.from(compressedData._data, 'base64');
-      
+
       // Descomprime os dados usando gunzip
       const decompressedBuffer = await gunzipAsync(compressedBuffer);
       const originalData = JSON.parse(decompressedBuffer.toString());
-      
+
       this.logger.debug(
-        `Data decompressed: ${compressedData._compressedSize} bytes -> ${compressedData._originalSize} bytes`
+        `Data decompressed: ${compressedData._compressedSize} bytes -> ${compressedData._originalSize} bytes`,
       );
-      
+
       return originalData;
     } catch (error) {
       this.logger.error(
         `Failed to decompress data: ${error.message}`,
         error.stack,
       );
-      
+
       // Retorna dados comprimidos com flag de erro
       return {
         ...compressedData,
@@ -338,8 +338,9 @@ export class AuditProcessingJob {
 
       // Usar o serviço de assinatura real se disponível
       if (this.auditoriaSignatureService) {
-        const signature = await this.auditoriaSignatureService.assinarLog(tempLogData);
-        
+        const signature =
+          await this.auditoriaSignatureService.assinarLog(tempLogData);
+
         return {
           ...data,
           _signature: signature,
@@ -347,7 +348,7 @@ export class AuditProcessingJob {
           _tempId: tempLogData.id,
         };
       }
-      
+
       // Fallback para hash simples se o serviço não estiver disponível
       const dataString = JSON.stringify(data);
       const hash = this.generateHash(dataString);
@@ -359,11 +360,8 @@ export class AuditProcessingJob {
         _fallback: true,
       };
     } catch (error) {
-      this.logger.error(
-        `Erro ao assinar dados: ${error.message}`,
-        error.stack,
-      );
-      
+      this.logger.error(`Erro ao assinar dados: ${error.message}`, error.stack);
+
       // Fallback para hash simples em caso de erro
       const dataString = JSON.stringify(data);
       const hash = this.generateHash(dataString);
@@ -426,7 +424,6 @@ export class AuditProcessingJob {
 
       // Registro no sistema de alertas interno
       await this.registerInternalAlert(notification);
-
     } catch (error) {
       this.logger.error(
         `Failed to send critical event notification: ${error.message}`,
@@ -442,9 +439,11 @@ export class AuditProcessingJob {
     try {
       // Implementação de webhook para Slack/Teams/Discord
       const webhookUrl = process.env.SECURITY_WEBHOOK_URL;
-      
+
       if (!webhookUrl) {
-        this.logger.debug('Webhook URL not configured, skipping webhook notification');
+        this.logger.debug(
+          'Webhook URL not configured, skipping webhook notification',
+        );
         return;
       }
 
@@ -486,7 +485,6 @@ export class AuditProcessingJob {
       this.logger.debug(
         `Webhook notification sent: ${JSON.stringify(payload)}`,
       );
-
     } catch (error) {
       this.logger.error(
         `Failed to send webhook notification: ${error.message}`,
@@ -500,9 +498,11 @@ export class AuditProcessingJob {
   private async sendEmailNotification(notification: any): Promise<void> {
     try {
       const adminEmails = process.env.SECURITY_ADMIN_EMAILS?.split(',') || [];
-      
+
       if (adminEmails.length === 0) {
-        this.logger.debug('Admin emails not configured, skipping email notification');
+        this.logger.debug(
+          'Admin emails not configured, skipping email notification',
+        );
         return;
       }
 
@@ -526,11 +526,8 @@ export class AuditProcessingJob {
       this.logger.debug(
         `Email notification prepared for: ${adminEmails.join(', ')}`,
       );
-
     } catch (error) {
-      this.logger.error(
-        `Failed to send email notification: ${error.message}`,
-      );
+      this.logger.error(`Failed to send email notification: ${error.message}`);
     }
   }
 
@@ -558,14 +555,9 @@ export class AuditProcessingJob {
       };
 
       // Em produção, salvar em tabela de alertas ou cache Redis
-      this.logger.debug(
-        `Internal alert registered: ${JSON.stringify(alert)}`,
-      );
-
+      this.logger.debug(`Internal alert registered: ${JSON.stringify(alert)}`);
     } catch (error) {
-      this.logger.error(
-        `Failed to register internal alert: ${error.message}`,
-      );
+      this.logger.error(`Failed to register internal alert: ${error.message}`);
     }
   }
 
@@ -605,7 +597,6 @@ export class AuditProcessingJob {
 
       // Atualiza métricas de conformidade
       await this.updateLgpdMetrics(lgpdData);
-
     } catch (error) {
       this.logger.error(
         `Failed to process LGPD compliance: ${error.message}`,
@@ -620,19 +611,19 @@ export class AuditProcessingJob {
   private async determineLegalBasis(event: AuditEvent): Promise<string> {
     // Mapeia tipos de eventos para bases legais LGPD
     const legalBasisMap: Record<string, string> = {
-      'USER_LOGIN': 'execucao_contrato', // Art. 7º, V
-      'USER_LOGOUT': 'execucao_contrato',
-      'USER_REGISTRATION': 'consentimento', // Art. 7º, I
-      'USER_UPDATE': 'execucao_contrato',
-      'USER_DELETE': 'consentimento',
-      'PAYMENT_CREATED': 'execucao_contrato',
-      'PAYMENT_PROCESSED': 'execucao_contrato',
-      'DOCUMENT_UPLOAD': 'cumprimento_obrigacao_legal', // Art. 7º, II
-      'DOCUMENT_ACCESS': 'legitimo_interesse', // Art. 7º, IX
-      'AUDIT_LOG': 'cumprimento_obrigacao_legal',
-      'SECURITY_INCIDENT': 'legitimo_interesse',
-      'DATA_EXPORT': 'exercicio_direitos',
-      'DATA_DELETION': 'exercicio_direitos',
+      USER_LOGIN: 'execucao_contrato', // Art. 7º, V
+      USER_LOGOUT: 'execucao_contrato',
+      USER_REGISTRATION: 'consentimento', // Art. 7º, I
+      USER_UPDATE: 'execucao_contrato',
+      USER_DELETE: 'consentimento',
+      PAYMENT_CREATED: 'execucao_contrato',
+      PAYMENT_PROCESSED: 'execucao_contrato',
+      DOCUMENT_UPLOAD: 'cumprimento_obrigacao_legal', // Art. 7º, II
+      DOCUMENT_ACCESS: 'legitimo_interesse', // Art. 7º, IX
+      AUDIT_LOG: 'cumprimento_obrigacao_legal',
+      SECURITY_INCIDENT: 'legitimo_interesse',
+      DATA_EXPORT: 'exercicio_direitos',
+      DATA_DELETION: 'exercicio_direitos',
     };
 
     return legalBasisMap[event.eventType] || 'legitimo_interesse';
@@ -687,12 +678,12 @@ export class AuditProcessingJob {
     try {
       // Define períodos de retenção por tipo de dados
       const retentionPolicies: Record<string, number> = {
-        'audit_logs': 5 * 365, // 5 anos
-        'user_data': 2 * 365, // 2 anos após inatividade
-        'payment_data': 10 * 365, // 10 anos (obrigação legal)
-        'document_data': 7 * 365, // 7 anos
-        'session_data': 30, // 30 dias
-        'temporary_data': 1, // 1 dia
+        audit_logs: 5 * 365, // 5 anos
+        user_data: 2 * 365, // 2 anos após inatividade
+        payment_data: 10 * 365, // 10 anos (obrigação legal)
+        document_data: 7 * 365, // 7 anos
+        session_data: 30, // 30 dias
+        temporary_data: 1, // 1 dia
       };
 
       const dataType = this.mapEventToDataType(event.eventType);
@@ -723,19 +714,24 @@ export class AuditProcessingJob {
     try {
       const processedFields = event.metadata?.fields || [];
       const purpose = event.metadata?.purpose || 'system_operation';
-      
+
       // Define campos necessários por finalidade
       const necessaryFieldsByPurpose: Record<string, string[]> = {
-        'user_authentication': ['email', 'password_hash', 'last_login'],
-        'payment_processing': ['user_id', 'amount', 'payment_method', 'bank_info'],
-        'document_verification': ['document_type', 'document_number', 'user_id'],
-        'audit_logging': ['user_id', 'action', 'timestamp', 'ip_address'],
-        'system_operation': ['id', 'timestamp', 'status'],
+        user_authentication: ['email', 'password_hash', 'last_login'],
+        payment_processing: [
+          'user_id',
+          'amount',
+          'payment_method',
+          'bank_info',
+        ],
+        document_verification: ['document_type', 'document_number', 'user_id'],
+        audit_logging: ['user_id', 'action', 'timestamp', 'ip_address'],
+        system_operation: ['id', 'timestamp', 'status'],
       };
 
       const necessaryFields = necessaryFieldsByPurpose[purpose] || [];
       const unnecessaryFields = processedFields.filter(
-        (field: string) => !necessaryFields.includes(field)
+        (field: string) => !necessaryFields.includes(field),
       );
 
       return {
@@ -744,10 +740,13 @@ export class AuditProcessingJob {
         necessaryFields,
         unnecessaryFields,
         compliant: unnecessaryFields.length === 0,
-        minimizationScore: necessaryFields.length / (processedFields.length || 1),
+        minimizationScore:
+          necessaryFields.length / (processedFields.length || 1),
       };
     } catch (error) {
-      this.logger.error(`Failed to validate data minimization: ${error.message}`);
+      this.logger.error(
+        `Failed to validate data minimization: ${error.message}`,
+      );
       return {
         compliant: false,
         error: error.message,
@@ -784,7 +783,7 @@ export class AuditProcessingJob {
       };
 
       const overallCompliant = Object.values(securityChecks).every(
-        (check: any) => check.compliant
+        (check: any) => check.compliant,
       );
 
       return {
@@ -793,7 +792,9 @@ export class AuditProcessingJob {
         securityLevel: overallCompliant ? 'adequate' : 'needs_improvement',
       };
     } catch (error) {
-      this.logger.error(`Failed to validate security measures: ${error.message}`);
+      this.logger.error(
+        `Failed to validate security measures: ${error.message}`,
+      );
       return {
         overallCompliant: false,
         error: error.message,
@@ -837,7 +838,10 @@ export class AuditProcessingJob {
       const violations = [];
 
       // Verifica consentimento para eventos que requerem
-      if (lgpdData.consentStatus.required && lgpdData.consentStatus.status !== 'granted') {
+      if (
+        lgpdData.consentStatus.required &&
+        lgpdData.consentStatus.status !== 'granted'
+      ) {
         violations.push({
           type: 'consent_violation',
           severity: 'high',
@@ -894,9 +898,7 @@ export class AuditProcessingJob {
         timestamp: new Date(),
       };
 
-      this.logger.debug(
-        `LGPD metrics updated: ${JSON.stringify(metrics)}`,
-      );
+      this.logger.debug(`LGPD metrics updated: ${JSON.stringify(metrics)}`);
     } catch (error) {
       this.logger.error(`Failed to update LGPD metrics: ${error.message}`);
     }
@@ -907,16 +909,16 @@ export class AuditProcessingJob {
    */
   private mapEventToDataType(eventType: string): string {
     const eventToDataTypeMap: Record<string, string> = {
-      'USER_LOGIN': 'session_data',
-      'USER_LOGOUT': 'session_data',
-      'USER_REGISTRATION': 'user_data',
-      'USER_UPDATE': 'user_data',
-      'PAYMENT_CREATED': 'payment_data',
-      'PAYMENT_PROCESSED': 'payment_data',
-      'DOCUMENT_UPLOAD': 'document_data',
-      'DOCUMENT_ACCESS': 'document_data',
-      'AUDIT_LOG': 'audit_logs',
-      'TEMP_DATA': 'temporary_data',
+      USER_LOGIN: 'session_data',
+      USER_LOGOUT: 'session_data',
+      USER_REGISTRATION: 'user_data',
+      USER_UPDATE: 'user_data',
+      PAYMENT_CREATED: 'payment_data',
+      PAYMENT_PROCESSED: 'payment_data',
+      DOCUMENT_UPLOAD: 'document_data',
+      DOCUMENT_ACCESS: 'document_data',
+      AUDIT_LOG: 'audit_logs',
+      TEMP_DATA: 'temporary_data',
     };
 
     return eventToDataTypeMap[eventType] || 'user_data';
@@ -927,13 +929,15 @@ export class AuditProcessingJob {
    */
   private calculateOverallCompliance(lgpdData: any): boolean {
     const checks = [
-      lgpdData.consentStatus.required ? lgpdData.consentStatus.status === 'granted' : true,
+      lgpdData.consentStatus.required
+        ? lgpdData.consentStatus.status === 'granted'
+        : true,
       lgpdData.dataRetention.compliant,
       lgpdData.dataMinimization.compliant,
       lgpdData.securityMeasures.overallCompliant,
     ];
 
-    return checks.every(check => check === true);
+    return checks.every((check) => check === true);
   }
 
   /**
@@ -946,14 +950,14 @@ export class AuditProcessingJob {
         logId: lgpdData.logId,
         eventType: lgpdData.eventType,
         violations,
-        severity: violations.some(v => v.severity === 'high') ? 'high' : 'medium',
+        severity: violations.some((v) => v.severity === 'high')
+          ? 'high'
+          : 'medium',
         timestamp: new Date().toISOString(),
         requiresAction: true,
       };
 
-      this.logger.warn(
-        `DPO notification: ${JSON.stringify(notification)}`,
-      );
+      this.logger.warn(`DPO notification: ${JSON.stringify(notification)}`);
 
       // Em produção, enviar email/notificação para o DPO
     } catch (error) {
@@ -965,7 +969,9 @@ export class AuditProcessingJob {
    * Converte timestamp para número (milissegundos)
    * Trata tanto Date quanto string ISO
    */
-  private getTimestampAsNumber(timestamp: Date | string | undefined): number | undefined {
+  private getTimestampAsNumber(
+    timestamp: Date | string | undefined,
+  ): number | undefined {
     if (!timestamp) {
       return undefined;
     }
@@ -995,7 +1001,9 @@ export class AuditProcessingJob {
         entityName: event.entityName,
         userId: event.userId,
         timestamp: timestamp.toISOString(),
-        processingTime: Date.now() - (this.getTimestampAsNumber(event.timestamp) || Date.now()),
+        processingTime:
+          Date.now() -
+          (this.getTimestampAsNumber(event.timestamp) || Date.now()),
         success: true,
       };
 
@@ -1013,7 +1021,6 @@ export class AuditProcessingJob {
 
       // Atualiza métricas de conformidade
       await this.updateComplianceMetrics(event);
-
     } catch (error) {
       this.logger.error(
         `Failed to update metrics: ${error.message}`,
@@ -1037,13 +1044,10 @@ export class AuditProcessingJob {
       };
 
       // Em produção, usar Redis ou InfluxDB para métricas
-      this.logger.debug(
-        `Event counters updated: ${JSON.stringify(counters)}`,
-      );
+      this.logger.debug(`Event counters updated: ${JSON.stringify(counters)}`);
 
       // Simula incremento de contadores
       await this.incrementCounters(counters);
-
     } catch (error) {
       this.logger.error(`Failed to update event counters: ${error.message}`);
     }
@@ -1069,15 +1073,18 @@ export class AuditProcessingJob {
       );
 
       // Verifica se o tempo de processamento está dentro do esperado
-      const expectedProcessingTime = this.getExpectedProcessingTime(metrics.eventType);
+      const expectedProcessingTime = this.getExpectedProcessingTime(
+        metrics.eventType,
+      );
       if (performanceMetrics.processingTime > expectedProcessingTime) {
         this.logger.warn(
           `Slow processing detected for ${metrics.eventType}: ${performanceMetrics.processingTime}ms > ${expectedProcessingTime}ms`,
         );
       }
-
     } catch (error) {
-      this.logger.error(`Failed to update performance metrics: ${error.message}`);
+      this.logger.error(
+        `Failed to update performance metrics: ${error.message}`,
+      );
     }
   }
 
@@ -1093,7 +1100,7 @@ export class AuditProcessingJob {
         },
         errorRate: {
           warning: 0.05, // 5%
-          critical: 0.10, // 10%
+          critical: 0.1, // 10%
         },
         throughput: {
           warning: 100, // eventos por minuto
@@ -1150,7 +1157,6 @@ export class AuditProcessingJob {
       for (const alert of alerts) {
         await this.processAlert(alert);
       }
-
     } catch (error) {
       this.logger.error(`Failed to check metric thresholds: ${error.message}`);
     }
@@ -1187,7 +1193,6 @@ export class AuditProcessingJob {
         // Detecta padrões suspeitos
         await this.detectSuspiciousPatterns(securityMetrics);
       }
-
     } catch (error) {
       this.logger.error(`Failed to update security metrics: ${error.message}`);
     }
@@ -1213,22 +1218,26 @@ export class AuditProcessingJob {
 
       // Calcula score de conformidade
       const complianceScore = this.calculateComplianceScore(complianceMetrics);
-      
-      if (complianceScore < 0.8) { // 80% de conformidade mínima
+
+      if (complianceScore < 0.8) {
+        // 80% de conformidade mínima
         this.logger.warn(
           `Low compliance score detected: ${complianceScore} for event ${event.eventType}`,
         );
       }
-
     } catch (error) {
-      this.logger.error(`Failed to update compliance metrics: ${error.message}`);
+      this.logger.error(
+        `Failed to update compliance metrics: ${error.message}`,
+      );
     }
   }
 
   /**
    * Incrementa contadores de métricas
    */
-  private async incrementCounters(counters: Record<string, number>): Promise<void> {
+  private async incrementCounters(
+    counters: Record<string, number>,
+  ): Promise<void> {
     try {
       // Em produção, usar Redis INCR ou similar
       for (const [key, value] of Object.entries(counters)) {
@@ -1260,10 +1269,10 @@ export class AuditProcessingJob {
     try {
       // Em produção, calcular baseado em dados históricos
       const baseLatency = {
-        'USER_LOGIN': 200,
-        'PAYMENT_PROCESSED': 500,
-        'DOCUMENT_UPLOAD': 1000,
-        'AUDIT_LOG': 100,
+        USER_LOGIN: 200,
+        PAYMENT_PROCESSED: 500,
+        DOCUMENT_UPLOAD: 1000,
+        AUDIT_LOG: 100,
       };
 
       return baseLatency[eventType] || 300;
@@ -1292,10 +1301,10 @@ export class AuditProcessingJob {
    */
   private getExpectedProcessingTime(eventType: string): number {
     const expectedTimes = {
-      'USER_LOGIN': 1000, // 1 segundo
-      'PAYMENT_PROCESSED': 3000, // 3 segundos
-      'DOCUMENT_UPLOAD': 5000, // 5 segundos
-      'AUDIT_LOG': 500, // 0.5 segundos
+      USER_LOGIN: 1000, // 1 segundo
+      PAYMENT_PROCESSED: 3000, // 3 segundos
+      DOCUMENT_UPLOAD: 5000, // 5 segundos
+      AUDIT_LOG: 500, // 0.5 segundos
     };
 
     return expectedTimes[eventType] || 2000; // 2 segundos padrão
@@ -1319,10 +1328,7 @@ export class AuditProcessingJob {
       };
 
       // Simula envio de alerta
-      this.logger.debug(
-        `Alert sent: ${JSON.stringify(alertData)}`,
-      );
-
+      this.logger.debug(`Alert sent: ${JSON.stringify(alertData)}`);
     } catch (error) {
       this.logger.error(`Failed to process alert: ${error.message}`);
     }
@@ -1385,9 +1391,10 @@ export class AuditProcessingJob {
           `Suspicious patterns detected: ${JSON.stringify(suspiciousPatterns)}`,
         );
       }
-
     } catch (error) {
-      this.logger.error(`Failed to detect suspicious patterns: ${error.message}`);
+      this.logger.error(
+        `Failed to detect suspicious patterns: ${error.message}`,
+      );
     }
   }
 
@@ -1405,7 +1412,7 @@ export class AuditProcessingJob {
     ];
 
     const eventFields = event.metadata?.fields || [];
-    return personalDataFields.some(field => eventFields.includes(field));
+    return personalDataFields.some((field) => eventFields.includes(field));
   }
 
   /**
@@ -1418,7 +1425,7 @@ export class AuditProcessingJob {
       metrics.hasSecurityMeasures,
     ];
 
-    const passedChecks = checks.filter(check => check).length;
+    const passedChecks = checks.filter((check) => check).length;
     return passedChecks / checks.length;
   }
 
@@ -1429,7 +1436,7 @@ export class AuditProcessingJob {
     // Em produção, consultar listas de IPs maliciosos
     const suspiciousIPs = [
       '192.168.1.100', // Exemplo
-      '10.0.0.50',     // Exemplo
+      '10.0.0.50', // Exemplo
     ];
 
     return suspiciousIPs.includes(ipAddress);

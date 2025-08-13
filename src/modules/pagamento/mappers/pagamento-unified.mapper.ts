@@ -84,45 +84,45 @@ export class PagamentoUnifiedMapper {
       // Informações relacionadas
       solicitacao: pagamento.solicitacao
         ? {
-          id: pagamento.solicitacao.id,
-          beneficiario: pagamento.solicitacao.beneficiario?.nome || 'N/A',
-          tipo_beneficio: {
-            id: pagamento.solicitacao.tipo_beneficio?.id || '',
-            nome: pagamento.solicitacao.tipo_beneficio?.nome || 'EVENTUAL',
-          },
-          unidade: {
-            id: pagamento.solicitacao.unidade?.id || '',
-            nome: pagamento.solicitacao.unidade?.nome || 'N/A',
-          },
-          tecnico: {
-            id: pagamento.solicitacao.tecnico?.id || '',
-            nome: pagamento.solicitacao.tecnico?.nome || 'N/A',
-          },
-        }
+            id: pagamento.solicitacao.id,
+            beneficiario: pagamento.solicitacao.beneficiario?.nome || 'N/A',
+            tipo_beneficio: {
+              id: pagamento.solicitacao.tipo_beneficio?.id || '',
+              nome: pagamento.solicitacao.tipo_beneficio?.nome || 'EVENTUAL',
+            },
+            unidade: {
+              id: pagamento.solicitacao.unidade?.id || '',
+              nome: pagamento.solicitacao.unidade?.nome || 'N/A',
+            },
+            tecnico: {
+              id: pagamento.solicitacao.tecnico?.id || '',
+              nome: pagamento.solicitacao.tecnico?.nome || 'N/A',
+            },
+          }
         : undefined,
 
       info_bancaria: pagamento.info_bancaria
         ? {
-          tipo: pagamento.info_bancaria.tipo_conta || 'POUPANCA_SOCIAL',
-          chave_pix: incluirDadosSensiveis
-            ? pagamento.info_bancaria.chave_pix
-            : undefined,
-          pix_tipo: pagamento.info_bancaria.tipo_chave_pix?.toUpperCase() as
-            | 'CPF'
-            | 'CNPJ'
-            | 'EMAIL'
-            | 'TELEFONE'
-            | 'ALEATORIA',
-          banco: incluirDadosSensiveis
-            ? pagamento.info_bancaria.banco
-            : undefined,
-          agencia: incluirDadosSensiveis
-            ? pagamento.info_bancaria.agencia
-            : undefined,
-          conta: incluirDadosSensiveis
-            ? pagamento.info_bancaria.conta
-            : undefined,
-        }
+            tipo: pagamento.info_bancaria.tipo_conta || 'POUPANCA_SOCIAL',
+            chave_pix: incluirDadosSensiveis
+              ? pagamento.info_bancaria.chave_pix
+              : undefined,
+            pix_tipo: pagamento.info_bancaria.tipo_chave_pix?.toUpperCase() as
+              | 'CPF'
+              | 'CNPJ'
+              | 'EMAIL'
+              | 'TELEFONE'
+              | 'ALEATORIA',
+            banco: incluirDadosSensiveis
+              ? pagamento.info_bancaria.banco
+              : undefined,
+            agencia: incluirDadosSensiveis
+              ? pagamento.info_bancaria.agencia
+              : undefined,
+            conta: incluirDadosSensiveis
+              ? pagamento.info_bancaria.conta
+              : undefined,
+          }
         : undefined,
     };
 
@@ -243,10 +243,10 @@ export class PagamentoUnifiedMapper {
 
       destinatario: confirmacao.destinatario
         ? {
-          id: confirmacao.destinatario.id,
-          nome: confirmacao.destinatario.nome,
-          relacao: 'Beneficiário',
-        }
+            id: confirmacao.destinatario.id,
+            nome: confirmacao.destinatario.nome,
+            relacao: 'Beneficiário',
+          }
         : undefined,
     };
   }

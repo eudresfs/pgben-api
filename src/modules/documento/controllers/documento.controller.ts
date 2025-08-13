@@ -649,14 +649,15 @@ export class DocumentoController {
     try {
       if (thumbnailResult?.thumbnailBuffer) {
         // Converter buffer para base64
-        const thumbnailBase64 = thumbnailResult.thumbnailBuffer.toString('base64');
-        
+        const thumbnailBase64 =
+          thumbnailResult.thumbnailBuffer.toString('base64');
+
         // Atualizar a coluna thumbnail na entidade documento
         await this.documentoRepository.update(id, {
           thumbnail: thumbnailBase64,
           updated_at: new Date(),
         });
-        
+
         this.logger.info(
           `Thumbnail salvo na entidade documento: ${id}`,
           DocumentoController.name,

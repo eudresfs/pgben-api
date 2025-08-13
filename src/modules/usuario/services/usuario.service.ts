@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, Inject, Optional } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  Inject,
+  Optional,
+} from '@nestjs/common';
 import { LoggingService } from '../../../shared/logging/logging.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, DeepPartial, ILike, Not, In } from 'typeorm';
@@ -26,7 +31,10 @@ import {
 } from '../../../shared/exceptions/error-catalog/domains/usuario.errors';
 import { throwDuplicateCpf } from '../../../shared/exceptions/error-catalog/domains/cidadao.errors';
 import { EmailService } from '../../../common/services/email.service';
-import { INotificationManagerService, NOTIFICATION_MANAGER_SERVICE } from '../../notificacao/interfaces/notification-manager.interface';
+import {
+  INotificationManagerService,
+  NOTIFICATION_MANAGER_SERVICE,
+} from '../../notificacao/interfaces/notification-manager.interface';
 
 /**
  * Serviço de usuários
@@ -1192,7 +1200,9 @@ export class UsuarioService {
    * @param permissoes Lista de permissões para filtrar
    * @returns Lista de usuários com as permissões especificadas
    */
-  async buscarPorPermissao(permissoes: string[]): Promise<Array<{ id: string; nome: string; email: string }>> {
+  async buscarPorPermissao(
+    permissoes: string[],
+  ): Promise<Array<{ id: string; nome: string; email: string }>> {
     try {
       const usuarios = await this.dataSource
         .createQueryBuilder(Usuario, 'usuario')
@@ -1203,7 +1213,7 @@ export class UsuarioService {
         .select(['usuario.id', 'usuario.nome', 'usuario.email'])
         .getMany();
 
-      return usuarios.map(usuario => ({
+      return usuarios.map((usuario) => ({
         id: usuario.id,
         nome: usuario.nome,
         email: usuario.email,
@@ -1219,7 +1229,9 @@ export class UsuarioService {
    * @param setores Lista de setores para filtrar
    * @returns Lista de usuários dos setores especificados
    */
-  async buscarPorSetor(setores: string[]): Promise<Array<{ id: string; nome: string; email: string }>> {
+  async buscarPorSetor(
+    setores: string[],
+  ): Promise<Array<{ id: string; nome: string; email: string }>> {
     try {
       const usuarios = await this.dataSource
         .createQueryBuilder(Usuario, 'usuario')
@@ -1229,7 +1241,7 @@ export class UsuarioService {
         .select(['usuario.id', 'usuario.nome', 'usuario.email'])
         .getMany();
 
-      return usuarios.map(usuario => ({
+      return usuarios.map((usuario) => ({
         id: usuario.id,
         nome: usuario.nome,
         email: usuario.email,
@@ -1244,7 +1256,9 @@ export class UsuarioService {
    * Busca todos os usuários ativos do sistema
    * @returns Lista de todos os usuários ativos
    */
-  async buscarTodosAtivos(): Promise<Array<{ id: string; nome: string; email: string }>> {
+  async buscarTodosAtivos(): Promise<
+    Array<{ id: string; nome: string; email: string }>
+  > {
     try {
       const usuarios = await this.dataSource
         .createQueryBuilder(Usuario, 'usuario')
@@ -1252,7 +1266,7 @@ export class UsuarioService {
         .select(['usuario.id', 'usuario.nome', 'usuario.email'])
         .getMany();
 
-      return usuarios.map(usuario => ({
+      return usuarios.map((usuario) => ({
         id: usuario.id,
         nome: usuario.nome,
         email: usuario.email,

@@ -384,7 +384,6 @@ export class AuditProcessor
           priority: deadLetterRecord.priority,
         },
       );
-
     } catch (dlqError) {
       // Fallback: se falhar ao processar dead letter queue, apenas log crítico
       this.logger.error(
@@ -413,7 +412,9 @@ export class AuditProcessor
   /**
    * Calcula prioridade do dead letter baseado no evento
    */
-  private calculateDeadLetterPriority(event: any): 'critical' | 'high' | 'medium' | 'low' {
+  private calculateDeadLetterPriority(
+    event: any,
+  ): 'critical' | 'high' | 'medium' | 'low' {
     const criticalEvents = [
       'SECURITY_INCIDENT',
       'PAYMENT_FRAUD',
@@ -469,13 +470,16 @@ export class AuditProcessor
     ];
 
     // Verifica por nome do erro
-    if (nonRetryableErrors.some(errType => error.name.includes(errType))) {
+    if (nonRetryableErrors.some((errType) => error.name.includes(errType))) {
       return false;
     }
 
-    if (retryableErrors.some(errType => 
-      error.name.includes(errType) || error.message.includes(errType)
-    )) {
+    if (
+      retryableErrors.some(
+        (errType) =>
+          error.name.includes(errType) || error.message.includes(errType),
+      )
+    ) {
       return true;
     }
 
@@ -498,22 +502,20 @@ export class AuditProcessor
     try {
       // Em produção, salvar em tabela específica de dead letter queue
       // Por enquanto, simula persistência com log estruturado
-      this.logger.error(
-        `DEAD_LETTER_QUEUE_RECORD: ${JSON.stringify(record)}`,
-        {
-          type: 'dead_letter_queue',
-          action: 'persist',
-          deadLetterId: record.id,
-          priority: record.priority,
-          retryable: record.retryable,
-        },
-      );
+      this.logger.error(`DEAD_LETTER_QUEUE_RECORD: ${JSON.stringify(record)}`, {
+        type: 'dead_letter_queue',
+        action: 'persist',
+        deadLetterId: record.id,
+        priority: record.priority,
+        retryable: record.retryable,
+      });
 
       // Simula salvamento em Redis para recuperação rápida
       // await this.redisService.setex(`dlq:${record.id}`, 86400 * 7, JSON.stringify(record));
-
     } catch (error) {
-      this.logger.error(`Failed to persist dead letter record: ${error.message}`);
+      this.logger.error(
+        `Failed to persist dead letter record: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -536,7 +538,9 @@ export class AuditProcessor
           retryable: record.retryable,
           timestamp: record.lastFailedAt,
         },
-        actions: record.retryable ? ['retry', 'investigate', 'ignore'] : ['investigate', 'ignore'],
+        actions: record.retryable
+          ? ['retry', 'investigate', 'ignore']
+          : ['investigate', 'ignore'],
       };
 
       // Log estruturado para sistemas de monitoramento
@@ -551,9 +555,10 @@ export class AuditProcessor
 
       // Em produção, enviar via email, Slack, PagerDuty, etc.
       await this.sendDeadLetterAlert(notification);
-
     } catch (error) {
-      this.logger.error(`Failed to notify dead letter failure: ${error.message}`);
+      this.logger.error(
+        `Failed to notify dead letter failure: ${error.message}`,
+      );
     }
   }
 
@@ -568,10 +573,10 @@ export class AuditProcessor
 
       // Calcula delay exponencial baseado na prioridade
       const baseDelay = {
-        critical: 5 * 60 * 1000,    // 5 minutos
-        high: 15 * 60 * 1000,       // 15 minutos
-        medium: 60 * 60 * 1000,     // 1 hora
-        low: 4 * 60 * 60 * 1000,    // 4 horas
+        critical: 5 * 60 * 1000, // 5 minutos
+        high: 15 * 60 * 1000, // 15 minutos
+        medium: 60 * 60 * 1000, // 1 hora
+        low: 4 * 60 * 60 * 1000, // 4 horas
       };
 
       const delay = baseDelay[record.priority] || baseDelay.medium;
@@ -598,9 +603,10 @@ export class AuditProcessor
 
       // Em produção, usar scheduler (Bull, Agenda, etc.)
       // await this.schedulerService.schedule('dead-letter-retry', retryJob, { delay });
-
     } catch (error) {
-      this.logger.error(`Failed to schedule dead letter retry: ${error.message}`);
+      this.logger.error(
+        `Failed to schedule dead letter retry: ${error.message}`,
+      );
     }
   }
 
@@ -623,9 +629,10 @@ export class AuditProcessor
       );
 
       // Em produção, enviar para sistema de métricas (Prometheus, InfluxDB, etc.)
-
     } catch (error) {
-      this.logger.error(`Failed to update dead letter metrics: ${error.message}`);
+      this.logger.error(
+        `Failed to update dead letter metrics: ${error.message}`,
+      );
     }
   }
 
@@ -635,14 +642,11 @@ export class AuditProcessor
   private async sendDeadLetterAlert(notification: any): Promise<void> {
     try {
       // Simula envio de alerta
-      this.logger.warn(
-        `ALERT SENT: ${notification.title}`,
-        {
-          type: 'alert_sent',
-          severity: notification.severity,
-          channels: ['email', 'slack', 'pagerduty'],
-        },
-      );
+      this.logger.warn(`ALERT SENT: ${notification.title}`, {
+        type: 'alert_sent',
+        severity: notification.severity,
+        channels: ['email', 'slack', 'pagerduty'],
+      });
 
       // Em produção, implementar envio real
       // await this.emailService.sendAlert(notification);
@@ -650,7 +654,6 @@ export class AuditProcessor
       // if (notification.severity === 'critical') {
       //   await this.pagerDutyService.createIncident(notification);
       // }
-
     } catch (error) {
       this.logger.error(`Failed to send dead letter alert: ${error.message}`);
     }
@@ -668,7 +671,11 @@ export class AuditProcessor
       const fs = require('fs').promises;
       const path = require('path');
 
-      const deadLetterDir = path.join(process.cwd(), 'storage', 'dead-letter-queue');
+      const deadLetterDir = path.join(
+        process.cwd(),
+        'storage',
+        'dead-letter-queue',
+      );
       await fs.mkdir(deadLetterDir, { recursive: true });
 
       const filename = `dlq_${job.id}_${Date.now()}.json`;
@@ -694,15 +701,11 @@ export class AuditProcessor
 
       await fs.writeFile(filepath, JSON.stringify(record, null, 2));
 
-      this.logger.error(
-        `Dead letter record saved to local file: ${filepath}`,
-        {
-          type: 'local_dead_letter_backup',
-          filepath,
-          jobId: job.id,
-        },
-      );
-
+      this.logger.error(`Dead letter record saved to local file: ${filepath}`, {
+        type: 'local_dead_letter_backup',
+        filepath,
+        jobId: job.id,
+      });
     } catch (fileError) {
       this.logger.error(
         `CRITICAL: Failed to save dead letter to local file: ${fileError.message}`,
@@ -715,7 +718,6 @@ export class AuditProcessor
       );
     }
   }
-
 
   /**
    * Obtém métricas do processador

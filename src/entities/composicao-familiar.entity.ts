@@ -23,7 +23,7 @@ import { Cidadao } from './cidadao.entity';
 import { EscolaridadeEnum } from '../enums/escolaridade.enum';
 import { CPFValidator } from '../modules/cidadao/validators/cpf-validator';
 import { ParentescoEnum } from '../enums/parentesco.enum';
-import { IsNIS } from '@/shared/validators/br-validators';
+import { IsNIS } from '../shared/validators/br-validators';
 
 @Entity('composicao_familiar')
 @Index(['cidadao_id', 'nome'], { unique: true })

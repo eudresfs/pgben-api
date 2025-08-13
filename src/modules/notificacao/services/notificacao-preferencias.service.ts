@@ -141,7 +141,7 @@ export class NotificacaoPreferenciasService {
       } else {
         // Criar preferências padrão se não existir
         preferencias = this.criarPreferenciasDefault(usuarioId);
-        
+
         // Salvar no banco para próximas consultas
         await this.salvarPreferenciasIniciais(usuarioId, preferencias);
       }
@@ -155,7 +155,7 @@ export class NotificacaoPreferenciasService {
         `Erro ao buscar preferências do usuário ${usuarioId}: ${error.message}`,
         error.stack,
       );
-      
+
       // Fallback para preferências padrão
       const preferenciasDefault = this.criarPreferenciasDefault(usuarioId);
       this.cachePreferencias.set(usuarioId, preferenciasDefault);
@@ -270,7 +270,10 @@ export class NotificacaoPreferenciasService {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
     const notificacoesHoje = await this.contarNotificacoesDia(usuarioId, hoje);
-    if (notificacoesHoje >= (preferencias.configuracoes_globais?.limite_diario || 50)) {
+    if (
+      notificacoesHoje >=
+      (preferencias.configuracoes_globais?.limite_diario || 50)
+    ) {
       return false;
     }
 
@@ -568,41 +571,41 @@ export class NotificacaoPreferenciasService {
       // Calcular início e fim do dia
       const inicioDia = new Date(data);
       inicioDia.setHours(0, 0, 0, 0);
-      
+
       const fimDia = new Date(data);
       fimDia.setHours(23, 59, 59, 999);
-      
+
       // Buscar estatísticas das preferências do usuário
       const preferencias = await this.preferenciasRepository.findOne({
         where: { usuario_id: usuarioId },
         select: ['estatisticas'],
       });
-      
+
       if (!preferencias?.estatisticas) {
         return 0;
       }
-      
+
       // Por enquanto, usar uma estimativa baseada nas estatísticas
       // Em uma implementação completa, seria feita uma consulta na tabela de notificações
       const totalEnviadas = preferencias.estatisticas.total_enviadas || 0;
       const ultimaInteracao = preferencias.estatisticas.ultima_interacao;
-      
+
       if (!ultimaInteracao) {
         return 0;
       }
-      
+
       // Estimativa simples: se a última interação foi hoje, assumir uma distribuição
       const hoje = new Date();
       hoje.setHours(0, 0, 0, 0);
-      
+
       const ultimaInteracaoData = new Date(ultimaInteracao);
       ultimaInteracaoData.setHours(0, 0, 0, 0);
-      
+
       if (ultimaInteracaoData.getTime() === hoje.getTime()) {
         // Estimativa: 10% das notificações totais por dia (ajustável)
         return Math.min(Math.floor(totalEnviadas * 0.1), 10);
       }
-      
+
       return 0;
     } catch (error) {
       this.logger.error(
@@ -705,11 +708,13 @@ export class NotificacaoPreferenciasService {
   /**
    * Converte entidade do banco para interface
    */
-  private entityParaInterface(entity: PreferenciasNotificacao): PreferenciasUsuario {
+  private entityParaInterface(
+    entity: PreferenciasNotificacao,
+  ): PreferenciasUsuario {
     return {
       usuario_id: entity.usuario_id,
       ativo: entity.ativo,
-      tipos: (entity.tipos || []).map(tipo => ({
+      tipos: (entity.tipos || []).map((tipo) => ({
         ...tipo,
         tipo: tipo.tipo as TipoNotificacao,
         canais: tipo.canais as CanalNotificacao[],
@@ -731,7 +736,9 @@ export class NotificacaoPreferenciasService {
   /**
    * Converte interface para dados da entidade
    */
-  private interfaceParaEntity(preferencias: PreferenciasUsuario): Partial<PreferenciasNotificacao> {
+  private interfaceParaEntity(
+    preferencias: PreferenciasUsuario,
+  ): Partial<PreferenciasNotificacao> {
     return {
       usuario_id: preferencias.usuario_id,
       ativo: preferencias.ativo,
@@ -755,8 +762,10 @@ export class NotificacaoPreferenciasService {
         usuario_id: usuarioId,
         created_at: new Date(),
       });
-      
-      this.logger.log(`Preferências iniciais criadas para usuário ${usuarioId}`);
+
+      this.logger.log(
+        `Preferências iniciais criadas para usuário ${usuarioId}`,
+      );
     } catch (error) {
       this.logger.error(
         `Erro ao salvar preferências iniciais do usuário ${usuarioId}: ${error.message}`,

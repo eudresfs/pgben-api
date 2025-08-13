@@ -239,9 +239,7 @@ describe('DocumentFilterService', () => {
         pagamentoIds: ['pag-1', 'pag-2'],
       };
 
-      const mockDocumentos = [
-        { id: 'doc-1' },
-      ] as Documento[];
+      const mockDocumentos = [{ id: 'doc-1' }] as Documento[];
 
       mockQueryBuilder.getMany.mockResolvedValue(mockDocumentos);
 

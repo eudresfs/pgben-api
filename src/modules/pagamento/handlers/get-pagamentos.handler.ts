@@ -228,7 +228,7 @@ export class GetPagamentosHandler {
         // Invalidar cache específico do pagamento
         const pattern = `pagamento:${pagamentoId}:*`;
         await this.invalidateCacheByPattern(pattern);
-        
+
         // Invalidar cache específico por ID
         await this.cacheService.del(`pagamento:${pagamentoId}`);
       }
@@ -251,11 +251,11 @@ export class GetPagamentosHandler {
     try {
       // Converter padrão wildcard para regex
       const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-      
+
       // Lista de chaves comuns que podem existir
       const commonKeys = [
         pattern.replace('*', 'page:1'),
-        pattern.replace('*', 'page:2'), 
+        pattern.replace('*', 'page:2'),
         pattern.replace('*', 'page:3'),
         pattern.replace('*', 'all'),
         pattern.replace('*', 'count'),
@@ -274,7 +274,9 @@ export class GetPagamentosHandler {
 
       this.logger.debug(`Cache invalidado por padrão: ${pattern}`);
     } catch (error) {
-      this.logger.warn(`Erro ao invalidar cache por padrão ${pattern}: ${error.message}`);
+      this.logger.warn(
+        `Erro ao invalidar cache por padrão ${pattern}: ${error.message}`,
+      );
     }
   }
 }

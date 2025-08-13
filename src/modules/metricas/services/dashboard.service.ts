@@ -148,8 +148,17 @@ export class DashboardService {
     const context = RequestContextHolder.get();
 
     if (filtros) {
-      DashboardFiltrosHelper.adicionarJoinsNecessarios(queryBuilder, filtros, alias);
-      DashboardFiltrosHelper.aplicarFiltros(queryBuilder, filtros, context, alias);
+      DashboardFiltrosHelper.adicionarJoinsNecessarios(
+        queryBuilder,
+        filtros,
+        alias,
+      );
+      DashboardFiltrosHelper.aplicarFiltros(
+        queryBuilder,
+        filtros,
+        context,
+        alias,
+      );
     }
   }
 
@@ -691,7 +700,7 @@ export class DashboardService {
         percentual:
           total > 0
             ? Math.round((parseInt(item.quantidade, 10) / total) * 100 * 100) /
-            100
+              100
             : 0,
       }));
 
@@ -742,9 +751,7 @@ export class DashboardService {
       const dataInicio = filtros?.dataInicio
         ? new Date(filtros.dataInicio)
         : new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
-      const dataFim = filtros?.dataFim
-        ? new Date(filtros.dataFim)
-        : agora;
+      const dataFim = filtros?.dataFim ? new Date(filtros.dataFim) : agora;
 
       return {
         impactoSocial,
@@ -792,9 +799,7 @@ export class DashboardService {
     const dataInicio = filtros?.dataInicio
       ? new Date(filtros.dataInicio)
       : new Date(new Date().getFullYear(), 0, 1);
-    const dataFim = filtros?.dataFim
-      ? new Date(filtros.dataFim)
-      : new Date();
+    const dataFim = filtros?.dataFim ? new Date(filtros.dataFim) : new Date();
 
     const context = RequestContextHolder.get();
 
@@ -812,14 +817,23 @@ export class DashboardService {
       });
 
     const familiasBeneficiadasResult = await familiasBeneficiadasQb.getRawOne();
-    const familiasBeneficiadas = parseInt(familiasBeneficiadasResult?.count || '0');
+    const familiasBeneficiadas = parseInt(
+      familiasBeneficiadasResult?.count || '0',
+    );
 
     // Pessoas impactadas (beneficiários + membros da composição familiar)
     const pessoasImpactadasQb = this.concessaoRepository
       .createQueryBuilder('concessao')
-      .select('COUNT(DISTINCT solicitacao.beneficiario_id) + COUNT(DISTINCT cf.cidadao_id)', 'total')
+      .select(
+        'COUNT(DISTINCT solicitacao.beneficiario_id) + COUNT(DISTINCT cf.cidadao_id)',
+        'total',
+      )
       .innerJoin('concessao.solicitacao', 'solicitacao')
-      .leftJoin('composicao_familiar', 'cf', 'solicitacao.beneficiario_id = cf.cidadao_id')
+      .leftJoin(
+        'composicao_familiar',
+        'cf',
+        'solicitacao.beneficiario_id = cf.cidadao_id',
+      )
       .where('concessao.status NOT IN (:...status)', {
         status: ['apto', 'cancelado'],
       })
@@ -856,7 +870,11 @@ export class DashboardService {
       .addSelect('COUNT(DISTINCT solicitacao.beneficiario_id)', 'familias')
       .addSelect('COALESCE(SUM(pagamento.valor), 0)', 'investimento')
       .innerJoin('concessao.solicitacao', 'solicitacao')
-      .leftJoin('pagamento', 'pagamento', 'pagamento.concessao_id = concessao.id AND pagamento.status = :statusPago')
+      .leftJoin(
+        'pagamento',
+        'pagamento',
+        'pagamento.concessao_id = concessao.id AND pagamento.status = :statusPago',
+      )
       .where('concessao.status NOT IN (:...status)', {
         status: ['apto', 'cancelado'],
       })
@@ -900,8 +918,8 @@ export class DashboardService {
         percentual:
           totalBeneficios > 0
             ? Math.round(
-              (parseInt(item.quantidade) / totalBeneficios) * 100 * 100,
-            ) / 100
+                (parseInt(item.quantidade) / totalBeneficios) * 100 * 100,
+              ) / 100
             : 0,
       }),
     );
@@ -921,9 +939,10 @@ export class DashboardService {
       });
 
     const totalSolicitacoes = await totalSolicitacoesQb.getCount();
-    const taxaCoberturaSocial = totalSolicitacoes > 0 
-      ? (familiasBeneficiadas / totalSolicitacoes) * 100 
-      : 0;
+    const taxaCoberturaSocial =
+      totalSolicitacoes > 0
+        ? (familiasBeneficiadas / totalSolicitacoes) * 100
+        : 0;
 
     return {
       familiasBeneficiadas,
@@ -955,14 +974,10 @@ export class DashboardService {
     const dataInicio = filtros?.dataInicio
       ? new Date(filtros.dataInicio)
       : new Date(new Date().getFullYear(), 0, 1);
-    const dataFim = filtros?.dataFim
-      ? new Date(filtros.dataFim)
-      : new Date();
+    const dataFim = filtros?.dataFim ? new Date(filtros.dataFim) : new Date();
 
     // Tempo médio de processamento
-    const tempoMedioQb = this.createScopedSolicitacaoQueryBuilder(
-      'solicitacao',
-    )
+    const tempoMedioQb = this.createScopedSolicitacaoQueryBuilder('solicitacao')
       .select(
         'AVG(EXTRACT(EPOCH FROM (solicitacao.data_aprovacao - solicitacao.data_abertura)) / 86400)',
         'media',
@@ -1015,10 +1030,9 @@ export class DashboardService {
     // Pendências ativas
     const pendenciasAtivasQb = this.createScopedSolicitacaoQueryBuilder(
       'solicitacao',
-    )
-      .where('solicitacao.status IN (:...status)', {
-        status: [StatusSolicitacao.PENDENTE],
-      });
+    ).where('solicitacao.status IN (:...status)', {
+      status: [StatusSolicitacao.PENDENTE],
+    });
 
     this.aplicarFiltrosDashboard(pendenciasAtivasQb, filtros);
     const pendenciasAtivas = await pendenciasAtivasQb.getCount();
@@ -1026,7 +1040,10 @@ export class DashboardService {
     // Taxa de retrabalho (solicitações com pendências / total de solicitações)
     const taxaRetrabalhoQb = this.solicitacaoRepository
       .createQueryBuilder('s')
-      .select('COUNT(DISTINCT p.solicitacao_id) * 1.0 / COUNT(s.id)', 'taxa_retrabalho')
+      .select(
+        'COUNT(DISTINCT p.solicitacao_id) * 1.0 / COUNT(s.id)',
+        'taxa_retrabalho',
+      )
       .leftJoin('pendencias', 'p', 'p.solicitacao_id = s.id')
       .where('s.data_abertura BETWEEN :dataInicio AND :dataFim', {
         dataInicio,
@@ -1034,14 +1051,18 @@ export class DashboardService {
       });
 
     const taxaRetrabalhoResult = await taxaRetrabalhoQb.getRawOne();
-    const taxaRetrabalho = parseFloat(taxaRetrabalhoResult?.taxa_retrabalho || '0') * 100;
+    const taxaRetrabalho =
+      parseFloat(taxaRetrabalhoResult?.taxa_retrabalho || '0') * 100;
 
     // Produtividade por usuário por dia (solicitações por dia por técnico)
     const produtividadeQb = this.solicitacaoRepository
       .createQueryBuilder('s')
       .select('u.id', 'usuario_id')
       .addSelect('u.nome', 'nome')
-      .addSelect('COUNT(s.id) * 1.0 / GREATEST(DATE_PART(\'day\', MAX(CURRENT_TIMESTAMP) - MIN(s.created_at)) + 1, 1)', 'solicitacao_por_dia')
+      .addSelect(
+        "COUNT(s.id) * 1.0 / GREATEST(DATE_PART('day', MAX(CURRENT_TIMESTAMP) - MIN(s.created_at)) + 1, 1)",
+        'solicitacao_por_dia',
+      )
       .innerJoin('usuario', 'u', 'u.id = s.tecnico_id')
       .where('s.data_abertura BETWEEN :dataInicio AND :dataFim', {
         dataInicio,
@@ -1050,17 +1071,21 @@ export class DashboardService {
       .groupBy('u.id, u.nome');
 
     const produtividadeResult = await produtividadeQb.getRawMany();
-    const produtividadePorTecnico = produtividadeResult.length > 0 
-      ? produtividadeResult.reduce((acc, item) => acc + parseFloat(item.solicitacao_por_dia), 0) / produtividadeResult.length
-      : 0;
+    const produtividadePorTecnico =
+      produtividadeResult.length > 0
+        ? produtividadeResult.reduce(
+            (acc, item) => acc + parseFloat(item.solicitacao_por_dia),
+            0,
+          ) / produtividadeResult.length
+        : 0;
 
     // Backlog de solicitações
-    const backlogSolicitacoes: number = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
-      .where('solicitacao.status NOT IN (:...status)', {
-        status: [StatusSolicitacao.APROVADA, StatusSolicitacao.INDEFERIDA],
-      })
-      .getCount();
-
+    const backlogSolicitacoes: number =
+      await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+        .where('solicitacao.status NOT IN (:...status)', {
+          status: [StatusSolicitacao.APROVADA, StatusSolicitacao.INDEFERIDA],
+        })
+        .getCount();
 
     return {
       tempoMedioProcessamento,
@@ -1068,7 +1093,7 @@ export class DashboardService {
       pendenciasAtivas,
       produtividadePorTecnico,
       taxaRetrabalho,
-      backlogSolicitacoes
+      backlogSolicitacoes,
     };
   }
 
@@ -1087,9 +1112,7 @@ export class DashboardService {
     const dataInicio = filtros?.dataInicio
       ? new Date(filtros.dataInicio)
       : new Date(new Date().getFullYear(), 0, 1);
-    const dataFim = filtros?.dataFim
-      ? new Date(filtros.dataFim)
-      : new Date();
+    const dataFim = filtros?.dataFim ? new Date(filtros.dataFim) : new Date();
 
     // Valor total investido (baseado em pagamentos efetivos)
     const valorTotalQb = this.pagamentoRepository
@@ -1156,7 +1179,7 @@ export class DashboardService {
     const projecaoVsRealizado = [];
     const mesesNoAno = 12;
     const orcamentoMensal = orcamentoTotal / mesesNoAno;
-    
+
     // Buscar dados reais de pagamentos por mês
     const pagamentosMensaisQb = this.pagamentoRepository
       .createQueryBuilder('pagamento')
@@ -1173,13 +1196,15 @@ export class DashboardService {
       .orderBy('mes', 'ASC');
 
     const pagamentosMensais = await pagamentosMensaisQb.getRawMany();
-    const pagamentosPorMes = new Map(pagamentosMensais.map(p => [p.mes, parseFloat(p.valor || '0')]));
-    
+    const pagamentosPorMes = new Map(
+      pagamentosMensais.map((p) => [p.mes, parseFloat(p.valor || '0')]),
+    );
+
     for (let i = 0; i < mesesNoAno; i++) {
       const mes = new Date(dataInicio.getFullYear(), i, 1);
       const mesStr = mes.toISOString().substring(0, 7);
       const realizado = pagamentosPorMes.get(mesStr) || 0;
-      
+
       projecaoVsRealizado.push({
         mes: mesStr,
         projetado: orcamentoMensal,
@@ -1238,8 +1263,12 @@ export class DashboardService {
       });
 
     const totalFamilias = await totalFamiliasQb.getCount();
-    const custoMedioPorFamilia = totalFamilias > 0 ? valorTotalInvestido / totalFamilias : 0;
-    const eficienciaGasto = custoMedioPorFamilia > 0 ? Math.min((1000 / custoMedioPorFamilia) * 100, 100) : 0;
+    const custoMedioPorFamilia =
+      totalFamilias > 0 ? valorTotalInvestido / totalFamilias : 0;
+    const eficienciaGasto =
+      custoMedioPorFamilia > 0
+        ? Math.min((1000 / custoMedioPorFamilia) * 100, 100)
+        : 0;
 
     // Margem orçamentária disponível
     const margemOrcamentariaDisponivel = orcamentoTotal - valorTotalInvestido;
@@ -1300,11 +1329,15 @@ export class DashboardService {
   ): Promise<PerformanceUnidadesIndicadores> {
     // Validar e definir período
     DashboardFiltrosHelper.validarPeriodo(filtros);
-    const dataInicio = filtros?.dataInicio ? new Date(filtros.dataInicio) : new Date(new Date().getFullYear(), 0, 1);
+    const dataInicio = filtros?.dataInicio
+      ? new Date(filtros.dataInicio)
+      : new Date(new Date().getFullYear(), 0, 1);
     const dataFim = filtros?.dataFim ? new Date(filtros.dataFim) : new Date();
 
     // Solicitações por unidade
-    const solicitacoesUnidadeQb = this.createScopedSolicitacaoQueryBuilder('solicitacao')
+    const solicitacoesUnidadeQb = this.createScopedSolicitacaoQueryBuilder(
+      'solicitacao',
+    )
       .select('unidade.nome', 'unidade')
       .addSelect('COUNT(solicitacao.id)', 'quantidade')
       .leftJoin('solicitacao.unidade', 'unidade')
@@ -1319,7 +1352,9 @@ export class DashboardService {
     const solicitacoesPorUnidade = await solicitacoesUnidadeQb.getRawMany();
 
     // Tempo médio por unidade
-    const tempoMedioUnidadeQb = this.createScopedSolicitacaoQueryBuilder('solicitacao')
+    const tempoMedioUnidadeQb = this.createScopedSolicitacaoQueryBuilder(
+      'solicitacao',
+    )
       .select('unidade.nome', 'unidade')
       .addSelect(
         'AVG(EXTRACT(EPOCH FROM (solicitacao.data_aprovacao - solicitacao.data_abertura)) / 86400)',
@@ -1340,7 +1375,9 @@ export class DashboardService {
     const tempoMedioPorUnidade = await tempoMedioUnidadeQb.getRawMany();
 
     // Taxa de aprovação por unidade
-    const taxaAprovacaoUnidadeQb = this.createScopedSolicitacaoQueryBuilder('solicitacao')
+    const taxaAprovacaoUnidadeQb = this.createScopedSolicitacaoQueryBuilder(
+      'solicitacao',
+    )
       .select('unidade.nome', 'unidade')
       .addSelect(
         'COUNT(CASE WHEN solicitacao.status = :aprovada THEN 1 END)',
@@ -1357,10 +1394,7 @@ export class DashboardService {
       })
       .setParameters({
         aprovada: StatusSolicitacao.APROVADA,
-        analisadas: [
-          StatusSolicitacao.APROVADA,
-          StatusSolicitacao.INDEFERIDA,
-        ],
+        analisadas: [StatusSolicitacao.APROVADA, StatusSolicitacao.INDEFERIDA],
       })
       .groupBy('unidade.id');
 
@@ -1368,7 +1402,9 @@ export class DashboardService {
     const taxaAprovacaoPorUnidade = await taxaAprovacaoUnidadeQb.getRawMany();
 
     // Utilização orçamentária (simulada)
-    const utilizacaoOrcamentariaQb = this.createScopedSolicitacaoQueryBuilder('solicitacao')
+    const utilizacaoOrcamentariaQb = this.createScopedSolicitacaoQueryBuilder(
+      'solicitacao',
+    )
       .select('unidade.nome', 'unidade')
       .addSelect('SUM(pagamento.valor)', 'utilizado')
       .leftJoin('solicitacao.unidade', 'unidade')
@@ -1376,10 +1412,10 @@ export class DashboardService {
       .where('solicitacao.status = :status', {
         status: StatusSolicitacao.APROVADA,
       })
-      .andWhere(
-        'solicitacao.data_aprovacao BETWEEN :dataInicio AND :dataFim',
-        { dataInicio, dataFim },
-      )
+      .andWhere('solicitacao.data_aprovacao BETWEEN :dataInicio AND :dataFim', {
+        dataInicio,
+        dataFim,
+      })
       .groupBy('unidade.id');
 
     this.aplicarFiltrosDashboard(utilizacaoOrcamentariaQb, filtros);
@@ -1578,7 +1614,6 @@ export class DashboardService {
       perfilMoradia,
     };
   }
-
 
   /**
    * COMUNICAÇÃO E CAMPANHAS

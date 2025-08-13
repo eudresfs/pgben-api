@@ -64,7 +64,13 @@ export class PreferenciasNotificacao {
     };
     agrupamento: {
       ativo: boolean;
-      frequencia: 'imediato' | '15min' | '30min' | '1hora' | '2horas' | 'diario';
+      frequencia:
+        | 'imediato'
+        | '15min'
+        | '30min'
+        | '1hora'
+        | '2horas'
+        | 'diario';
       maximo_por_grupo: number;
     };
     template_personalizado?: string;
@@ -210,15 +216,24 @@ export class PreferenciasNotificacao {
    */
   validarConfiguracao(): boolean {
     // Validar limite diário
-    if (this.configuracoes_globais.limite_diario < 1 || this.configuracoes_globais.limite_diario > 1000) {
+    if (
+      this.configuracoes_globais.limite_diario < 1 ||
+      this.configuracoes_globais.limite_diario > 1000
+    ) {
       return false;
     }
 
     // Validar horários
     const horarioRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
     if (this.configuracoes_globais.horario_silencioso_global.ativo) {
-      if (!horarioRegex.test(this.configuracoes_globais.horario_silencioso_global.inicio) ||
-          !horarioRegex.test(this.configuracoes_globais.horario_silencioso_global.fim)) {
+      if (
+        !horarioRegex.test(
+          this.configuracoes_globais.horario_silencioso_global.inicio,
+        ) ||
+        !horarioRegex.test(
+          this.configuracoes_globais.horario_silencioso_global.fim,
+        )
+      ) {
         return false;
       }
     }
@@ -229,8 +244,10 @@ export class PreferenciasNotificacao {
         return false;
       }
       if (tipo.horario_silencioso.ativo) {
-        if (!horarioRegex.test(tipo.horario_silencioso.inicio) ||
-            !horarioRegex.test(tipo.horario_silencioso.fim)) {
+        if (
+          !horarioRegex.test(tipo.horario_silencioso.inicio) ||
+          !horarioRegex.test(tipo.horario_silencioso.fim)
+        ) {
           return false;
         }
       }

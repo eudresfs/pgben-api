@@ -9,7 +9,10 @@ import { NotificacaoService } from '../services/notificacao.service';
 import { UsuarioService } from '../../usuario/services/usuario.service';
 import { TipoNotificacao } from '../../../entities/notification.entity';
 import { Usuario } from '../../../entities/usuario.entity';
-import { AgendamentoNotificacao, StatusAgendamento } from '../../../entities/agendamento-notificacao.entity';
+import {
+  AgendamentoNotificacao,
+  StatusAgendamento,
+} from '../../../entities/agendamento-notificacao.entity';
 import { CanalNotificacao } from '../services/notificacao-preferencias.service';
 import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
 
@@ -354,11 +357,11 @@ export class WorkflowProativoListener {
   }) {
     try {
       const administradores = await this.buscarAdministradores();
-      
+
       this.logger.log(
         `Notificando ${administradores.length} administradores: ${dados.titulo}`,
       );
-      
+
       for (const admin of administradores) {
         await this.enviarNotificacaoComPreferencias({
           usuarioId: admin.id,
@@ -366,10 +369,7 @@ export class WorkflowProativoListener {
         });
       }
     } catch (error) {
-      this.logger.error(
-        'Erro ao notificar administradores',
-        error.stack,
-      );
+      this.logger.error('Erro ao notificar administradores', error.stack);
     }
   }
 
@@ -385,11 +385,11 @@ export class WorkflowProativoListener {
   }) {
     try {
       const usuariosFinanceiro = await this.buscarUsuariosSetorFinanceiro();
-      
+
       this.logger.log(
         `Notificando ${usuariosFinanceiro.length} usuários do setor financeiro: ${dados.titulo}`,
       );
-      
+
       for (const usuario of usuariosFinanceiro) {
         await this.enviarNotificacaoComPreferencias({
           usuarioId: usuario.id,
@@ -397,10 +397,7 @@ export class WorkflowProativoListener {
         });
       }
     } catch (error) {
-      this.logger.error(
-        'Erro ao notificar setor financeiro',
-        error.stack,
-      );
+      this.logger.error('Erro ao notificar setor financeiro', error.stack);
     }
   }
 
@@ -416,16 +413,16 @@ export class WorkflowProativoListener {
   }) {
     try {
       const usuarios = await this.buscarTodosUsuariosAtivos();
-      
+
       this.logger.log(
         `Iniciando notificação em massa para ${usuarios.length} usuários: ${dados.titulo}`,
       );
-      
+
       // Processar em lotes para evitar sobrecarga
       const loteSize = 50;
       for (let i = 0; i < usuarios.length; i += loteSize) {
         const lote = usuarios.slice(i, i + loteSize);
-        
+
         await Promise.all(
           lote.map(async (usuario) => {
             try {
@@ -440,21 +437,18 @@ export class WorkflowProativoListener {
             }
           }),
         );
-        
+
         // Pequeno delay entre lotes
         if (i + loteSize < usuarios.length) {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
       }
-      
+
       this.logger.log(
         `Notificação em massa concluída para ${usuarios.length} usuários`,
       );
     } catch (error) {
-      this.logger.error(
-        'Erro na notificação em massa',
-        error.stack,
-      );
+      this.logger.error('Erro na notificação em massa', error.stack);
     }
   }
 
@@ -472,7 +466,8 @@ export class WorkflowProativoListener {
         usuarioId: event.usuarioId,
         tipo: TipoNotificacao.ACOMPANHAMENTO,
         titulo: 'Acompanhamento do seu benefício',
-        mensagem: 'Como está sendo a utilização do seu benefício? Gostaríamos de saber sua experiência.',
+        mensagem:
+          'Como está sendo a utilização do seu benefício? Gostaríamos de saber sua experiência.',
         dataAgendamento: dataAcompanhamento,
         contexto: {
           solicitacaoId: event.solicitacaoId,
@@ -480,7 +475,7 @@ export class WorkflowProativoListener {
           valorLiberado: event.valorLiberado,
         },
       });
-      
+
       this.logger.log(
         `Acompanhamento pós-liberação agendado para usuário ${event.usuarioId} em ${dataAcompanhamento.toISOString()}`,
         {
@@ -608,7 +603,9 @@ export class WorkflowProativoListener {
   /**
    * Busca todos os administradores do sistema
    */
-  private async buscarAdministradores(): Promise<Array<{ id: string; nome: string }>> {
+  private async buscarAdministradores(): Promise<
+    Array<{ id: string; nome: string }>
+  > {
     try {
       // Implementação usando repository pattern
       const administradores = await this.usuarioService.buscarPorPermissao([
@@ -616,8 +613,8 @@ export class WorkflowProativoListener {
         'admin:sistema',
         'coordenador:geral',
       ]);
-      
-      return administradores.map(admin => ({
+
+      return administradores.map((admin) => ({
         id: admin.id,
         nome: admin.nome,
       }));
@@ -630,7 +627,9 @@ export class WorkflowProativoListener {
   /**
    * Busca usuários do setor financeiro
    */
-  private async buscarUsuariosSetorFinanceiro(): Promise<Array<{ id: string; nome: string }>> {
+  private async buscarUsuariosSetorFinanceiro(): Promise<
+    Array<{ id: string; nome: string }>
+  > {
     try {
       const usuariosFinanceiro = await this.usuarioService.buscarPorSetor([
         'financeiro',
@@ -638,13 +637,16 @@ export class WorkflowProativoListener {
         'tesouraria',
         'pagamentos',
       ]);
-      
-      return usuariosFinanceiro.map(usuario => ({
+
+      return usuariosFinanceiro.map((usuario) => ({
         id: usuario.id,
         nome: usuario.nome,
       }));
     } catch (error) {
-      this.logger.error('Erro ao buscar usuários do setor financeiro', error.stack);
+      this.logger.error(
+        'Erro ao buscar usuários do setor financeiro',
+        error.stack,
+      );
       return [];
     }
   }
@@ -652,11 +654,13 @@ export class WorkflowProativoListener {
   /**
    * Busca todos os usuários ativos do sistema
    */
-  private async buscarTodosUsuariosAtivos(): Promise<Array<{ id: string; nome: string }>> {
+  private async buscarTodosUsuariosAtivos(): Promise<
+    Array<{ id: string; nome: string }>
+  > {
     try {
       const usuarios = await this.usuarioService.buscarTodosAtivos();
-      
-      return usuarios.map(usuario => ({
+
+      return usuarios.map((usuario) => ({
         id: usuario.id,
         nome: usuario.nome,
       }));
@@ -693,7 +697,7 @@ export class WorkflowProativoListener {
 
       // Salvar no banco de dados (implementação simplificada)
       await this.salvarAgendamentoNotificacao(agendamento);
-      
+
       this.logger.log(
         `Agendamento de notificação criado para usuário ${dados.usuarioId} em ${dados.dataAgendamento.toISOString()}`,
       );
@@ -742,8 +746,9 @@ export class WorkflowProativoListener {
       });
 
       // Salvar no banco de dados
-      const agendamentoSalvo = await this.agendamentoRepository.save(agendamento);
-      
+      const agendamentoSalvo =
+        await this.agendamentoRepository.save(agendamento);
+
       this.logger.log(
         `Agendamento de notificação salvo com ID ${agendamentoSalvo.id} para usuário ${dadosAgendamento.usuario_id}`,
         {
@@ -754,7 +759,7 @@ export class WorkflowProativoListener {
           titulo: dadosAgendamento.titulo,
         },
       );
-      
+
       return agendamentoSalvo;
     } catch (error) {
       this.logger.error(

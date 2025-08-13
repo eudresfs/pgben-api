@@ -45,12 +45,27 @@ export class OfficeConverterService implements OnModuleInit {
 
   constructor(private readonly configService: ConfigService) {
     this.config = {
-      enabled: this.configService.get<boolean>('OFFICE_CONVERTER_ENABLED', true),
+      enabled: this.configService.get<boolean>(
+        'OFFICE_CONVERTER_ENABLED',
+        true,
+      ),
       libreOfficePath: this.getLibreOfficePath(),
-      timeout: this.configService.get<number>('OFFICE_CONVERTER_TIMEOUT', 30000),
-      tempDir: this.configService.get<string>('OFFICE_CONVERTER_TEMP_DIR', os.tmpdir()),
-      maxRetries: this.configService.get<number>('OFFICE_CONVERTER_MAX_RETRIES', 2),
-      retryDelay: this.configService.get<number>('OFFICE_CONVERTER_RETRY_DELAY', 1000),
+      timeout: this.configService.get<number>(
+        'OFFICE_CONVERTER_TIMEOUT',
+        30000,
+      ),
+      tempDir: this.configService.get<string>(
+        'OFFICE_CONVERTER_TEMP_DIR',
+        os.tmpdir(),
+      ),
+      maxRetries: this.configService.get<number>(
+        'OFFICE_CONVERTER_MAX_RETRIES',
+        2,
+      ),
+      retryDelay: this.configService.get<number>(
+        'OFFICE_CONVERTER_RETRY_DELAY',
+        1000,
+      ),
     };
   }
 
@@ -78,7 +93,7 @@ export class OfficeConverterService implements OnModuleInit {
     originalFileName?: string,
   ): Promise<ConversionResult> {
     const startTime = Date.now();
-    
+
     // Verificar se a conversão está habilitada e o LibreOffice está disponível
     if (!this.config.enabled || !this.isLibreOfficeAvailable) {
       return {
@@ -107,7 +122,7 @@ export class OfficeConverterService implements OnModuleInit {
       const extension = this.getFileExtensionFromMimeType(mimeType);
       const tempFileName = `${uuidv4()}.${extension}`;
       tempInputPath = path.join(this.config.tempDir, tempFileName);
-      
+
       // Criar diretório temporário para saída
       tempOutputDir = path.join(this.config.tempDir, `output_${uuidv4()}`);
       await fs.promises.mkdir(tempOutputDir, { recursive: true });
@@ -140,10 +155,7 @@ export class OfficeConverterService implements OnModuleInit {
       };
     } catch (error) {
       const conversionTime = Date.now() - startTime;
-      this.logger.error(
-        `Erro na conversão: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error(`Erro na conversão: ${error.message}`, error.stack);
 
       return {
         success: false,
@@ -164,20 +176,18 @@ export class OfficeConverterService implements OnModuleInit {
     try {
       const command = `"${this.config.libreOfficePath}" --version`;
       const { stdout } = await execAsync(command, { timeout: 5000 });
-      
+
       this.isLibreOfficeAvailable = stdout.includes('LibreOffice');
-      
+
       if (this.isLibreOfficeAvailable) {
         this.logger.log(`LibreOffice encontrado: ${stdout.trim()}`);
       } else {
         this.logger.warn('LibreOffice não encontrado ou versão inválida');
       }
-      
+
       return this.isLibreOfficeAvailable;
     } catch (error) {
-      this.logger.warn(
-        `Erro ao verificar LibreOffice: ${error.message}`,
-      );
+      this.logger.warn(`Erro ao verificar LibreOffice: ${error.message}`);
       this.isLibreOfficeAvailable = false;
       return false;
     }
@@ -191,7 +201,7 @@ export class OfficeConverterService implements OnModuleInit {
     outputDir: string,
   ): Promise<Buffer> {
     let lastError: Error;
-    
+
     for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
       try {
         return await this.executeConversion(inputPath, outputDir);
@@ -200,13 +210,13 @@ export class OfficeConverterService implements OnModuleInit {
         this.logger.warn(
           `Tentativa ${attempt}/${this.config.maxRetries} falhou: ${error.message}`,
         );
-        
+
         if (attempt < this.config.maxRetries) {
           await this.delay(this.config.retryDelay * attempt);
         }
       }
     }
-    
+
     throw lastError;
   }
 
@@ -218,32 +228,32 @@ export class OfficeConverterService implements OnModuleInit {
     outputDir: string,
   ): Promise<Buffer> {
     const command = `"${this.config.libreOfficePath}" --headless --convert-to pdf --outdir "${outputDir}" "${inputPath}"`;
-    
+
     this.logger.debug(`Executando comando: ${command}`);
-    
+
     const { stdout, stderr } = await execAsync(command, {
       timeout: this.config.timeout,
     });
-    
+
     if (stderr && !stderr.includes('Warning')) {
       throw new Error(`Erro do LibreOffice: ${stderr}`);
     }
-    
+
     // Encontrar o arquivo PDF gerado
     const inputFileName = path.basename(inputPath, path.extname(inputPath));
     const pdfPath = path.join(outputDir, `${inputFileName}.pdf`);
-    
+
     if (!fs.existsSync(pdfPath)) {
       throw new Error('Arquivo PDF não foi gerado');
     }
-    
+
     // Ler o PDF gerado
     const pdfBuffer = await fs.promises.readFile(pdfPath);
-    
+
     if (pdfBuffer.length === 0) {
       throw new Error('PDF gerado está vazio');
     }
-    
+
     return pdfBuffer;
   }
 
@@ -257,7 +267,7 @@ export class OfficeConverterService implements OnModuleInit {
     }
 
     const platform = os.platform();
-    
+
     switch (platform) {
       case 'win32':
         return 'C:\\Program Files\\LibreOffice\\program\\soffice.exe';
@@ -286,7 +296,7 @@ export class OfficeConverterService implements OnModuleInit {
       'application/vnd.oasis.opendocument.presentation', // .odp
       'text/rtf', // .rtf
     ];
-    
+
     return supportedTypes.includes(mimeType);
   }
 
@@ -295,9 +305,12 @@ export class OfficeConverterService implements OnModuleInit {
    */
   private getFileExtensionFromMimeType(mimeType: string): string {
     const mimeToExtension: Record<string, string> = {
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+        'docx',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+        'xlsx',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+        'pptx',
       'application/msword': 'doc',
       'application/vnd.ms-excel': 'xls',
       'application/vnd.ms-powerpoint': 'ppt',
@@ -306,7 +319,7 @@ export class OfficeConverterService implements OnModuleInit {
       'application/vnd.oasis.opendocument.presentation': 'odp',
       'text/rtf': 'rtf',
     };
-    
+
     return mimeToExtension[mimeType] || 'tmp';
   }
 
@@ -321,7 +334,7 @@ export class OfficeConverterService implements OnModuleInit {
       if (inputPath && fs.existsSync(inputPath)) {
         await fs.promises.unlink(inputPath);
       }
-      
+
       if (outputDir && fs.existsSync(outputDir)) {
         const files = await fs.promises.readdir(outputDir);
         for (const file of files) {
@@ -330,9 +343,7 @@ export class OfficeConverterService implements OnModuleInit {
         await fs.promises.rmdir(outputDir);
       }
     } catch (error) {
-      this.logger.warn(
-        `Erro ao limpar arquivos temporários: ${error.message}`,
-      );
+      this.logger.warn(`Erro ao limpar arquivos temporários: ${error.message}`);
     }
   }
 
@@ -340,7 +351,7 @@ export class OfficeConverterService implements OnModuleInit {
    * Utilitário para delay
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**

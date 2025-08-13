@@ -56,6 +56,19 @@ export class AuditoriaService {
   }
 
   /**
+   * Alias para o método create para compatibilidade
+   * @param data Dados para criação do log (objeto literal ou DTO)
+   * @returns Promise com o log criado
+   */
+  async registrar(data: Partial<CreateLogAuditoriaDto>): Promise<LogAuditoria> {
+    // Cria uma instância do DTO a partir dos dados fornecidos
+    const dto = new CreateLogAuditoriaDto();
+    Object.assign(dto, data);
+    
+    return this.create(dto);
+  }
+
+  /**
    * Alias para o método create (usado nos testes)
    * @param createLogAuditoriaDto Dados do log de auditoria
    * @returns Log de auditoria criado

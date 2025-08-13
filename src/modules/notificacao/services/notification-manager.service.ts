@@ -17,7 +17,10 @@ import { TemplateRendererService } from './template-renderer.service';
 import { CreateNotificationDto } from '../dto/create-notification.dto';
 import { CreateNotificationTemplateDto } from '../dto/create-notification-template.dto';
 import { EmailService } from '../../../common/services/email.service';
-import { NOTIFICATION_CREATED, NOTIFICATION_SCHEDULED } from '../events/notification.events';
+import {
+  NOTIFICATION_CREATED,
+  NOTIFICATION_SCHEDULED,
+} from '../events/notification.events';
 import { NotificationCreatedEvent } from '../events/notification-created.event';
 import { NotificationScheduledEvent } from '../events/notification-scheduled.event';
 import { INotificationManagerService } from '../interfaces/notification-manager.interface';
@@ -29,7 +32,9 @@ import { INotificationManagerService } from '../interfaces/notification-manager.
  * de notificações através dos diferentes canais disponíveis
  */
 @Injectable()
-export class NotificationManagerService implements OnModuleInit, INotificationManagerService {
+export class NotificationManagerService
+  implements OnModuleInit, INotificationManagerService
+{
   private readonly logger = new Logger(NotificationManagerService.name);
   private canaisNotificacao: Map<string, CanalNotificacao> = new Map();
 
@@ -470,7 +475,7 @@ export class NotificationManagerService implements OnModuleInit, INotificationMa
         `Erro ao agendar notificação ${notificacao.id}: ${error.message}`,
         error.stack,
       );
-      
+
       // Fallback: processar imediatamente
       this.processarNotificacao(notificacao.id).catch((err) => {
         this.logger.error(
@@ -742,8 +747,10 @@ export class NotificationManagerService implements OnModuleInit, INotificationMa
         5 * 60 * 1000, // A cada 5 minutos (em milissegundos)
         () => this.verificarNotificacoesPendentes(),
       );
-      
-      this.logger.log('Verificação periódica de notificações pendentes configurada (a cada 5 minutos)');
+
+      this.logger.log(
+        'Verificação periódica de notificações pendentes configurada (a cada 5 minutos)',
+      );
     } catch (error) {
       this.logger.error(
         `Erro ao iniciar processamento da fila de notificações: ${error.message}`,

@@ -104,17 +104,23 @@ export class AuditContextInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap({
         next: () => {
-          this.logger.debug('Requisição processada - contexto de auditoria mantido', {
-            userId: auditContext.userId,
-            hasContext: AuditContextHolder.hasContext(),
-          });
+          this.logger.debug(
+            'Requisição processada - contexto de auditoria mantido',
+            {
+              userId: auditContext.userId,
+              hasContext: AuditContextHolder.hasContext(),
+            },
+          );
         },
         error: (error) => {
-          this.logger.error('Erro durante processamento - contexto de auditoria mantido', {
-            error: error.message,
-            userId: auditContext.userId,
-            ip: auditContext.ip,
-          });
+          this.logger.error(
+            'Erro durante processamento - contexto de auditoria mantido',
+            {
+              error: error.message,
+              userId: auditContext.userId,
+              ip: auditContext.ip,
+            },
+          );
         },
         finalize: () => {
           // Limpar contexto após processamento
@@ -163,7 +169,8 @@ export class AuditContextInterceptor implements NestInterceptor {
   private extractClientIp(request: Request): string {
     const forwarded = request.headers['x-forwarded-for'];
     const realIp = request.headers['x-real-ip'];
-    const remoteAddress = request.connection?.remoteAddress || request.socket?.remoteAddress;
+    const remoteAddress =
+      request.connection?.remoteAddress || request.socket?.remoteAddress;
 
     if (forwarded) {
       // x-forwarded-for pode conter múltiplos IPs separados por vírgula

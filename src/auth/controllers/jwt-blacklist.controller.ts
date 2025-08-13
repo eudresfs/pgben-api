@@ -209,13 +209,14 @@ export class JwtBlacklistController {
     };
 
     // Buscar tokens ativos do usuário do RefreshTokenService
-    const refreshTokens = await this.refreshTokenService.findActiveTokensByUserId(userId);
-    
+    const refreshTokens =
+      await this.refreshTokenService.findActiveTokensByUserId(userId);
+
     const activeTokens: Array<{
       jti: string;
       token_type: 'access' | 'refresh';
       expires_at: Date;
-    }> = refreshTokens.map(token => ({
+    }> = refreshTokens.map((token) => ({
       jti: token.id, // Usando o ID do refresh token como JTI
       token_type: 'refresh' as const,
       expires_at: token.expires_at,

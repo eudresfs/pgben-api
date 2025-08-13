@@ -124,6 +124,13 @@ import {
   UploadToken,
 } from './entities';
 
+// Entidades do Sistema de Aprovação
+import { AcaoCritica } from './modules/aprovacao/entities/acao-critica.entity';
+import { ConfiguracaoAprovacao } from './modules/aprovacao/entities/configuracao-aprovacao.entity';
+import { Aprovador } from './modules/aprovacao/entities/aprovador.entity';
+import { SolicitacaoAprovacao } from './modules/aprovacao/entities/solicitacao-aprovacao.entity';
+import { HistoricoAprovacao } from './modules/aprovacao/entities/historico-aprovacao.entity';
+
 /**
  * Configuração do DataSource para carregamento faseado de entidades
  *
@@ -242,6 +249,13 @@ export const AppDataSource = new DataSource({
     // Entidades de upload
     UploadSession,
     UploadToken,
+
+    // Entidades do Sistema de Aprovação
+    AcaoCritica,
+    ConfiguracaoAprovacao,
+    Aprovador,
+    SolicitacaoAprovacao,
+    HistoricoAprovacao,
   ],
   migrations: [__dirname + '/database/migrations/**/*{.ts,.js}'],
   migrationsTableName: 'migrations',

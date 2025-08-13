@@ -247,17 +247,18 @@ export class IntegracaoService {
     if (!credenciais) {
       return '';
     }
-    
+
     try {
       this.logger.log('Criptografando credenciais sensíveis com AES-256-GCM');
-      
+
       // Converter credenciais para JSON e depois para Buffer
       const credenciaisJson = JSON.stringify(credenciais);
       const credenciaisBuffer = Buffer.from(credenciaisJson, 'utf8');
-      
+
       // Usar o serviço de criptografia para criptografar
-      const resultadoCriptografia = this.criptografiaService.criptografarParaTransporte(credenciaisBuffer);
-      
+      const resultadoCriptografia =
+        this.criptografiaService.criptografarParaTransporte(credenciaisBuffer);
+
       // Retornar em base64 para armazenamento
       return resultadoCriptografia.toString('base64');
     } catch (error) {
@@ -277,16 +278,20 @@ export class IntegracaoService {
     if (!credenciaisCriptografadas) {
       return {};
     }
-    
+
     try {
       this.logger.debug('Descriptografando credenciais sensíveis');
-      
+
       // Converter de base64 para Buffer
-      const credenciaisBuffer = Buffer.from(credenciaisCriptografadas, 'base64');
-      
+      const credenciaisBuffer = Buffer.from(
+        credenciaisCriptografadas,
+        'base64',
+      );
+
       // Usar o serviço de criptografia para descriptografar
-      const credenciaisDescriptografadas = this.criptografiaService.descriptografarDeTransporte(credenciaisBuffer);
-      
+      const credenciaisDescriptografadas =
+        this.criptografiaService.descriptografarDeTransporte(credenciaisBuffer);
+
       // Converter de Buffer para JSON e depois para objeto
       const credenciaisJson = credenciaisDescriptografadas.toString('utf8');
       return JSON.parse(credenciaisJson);
@@ -294,7 +299,9 @@ export class IntegracaoService {
       this.logger.error('Erro ao descriptografar credenciais', error);
       // Tentar fallback para o formato antigo (JSON simples)
       try {
-        this.logger.warn('Tentando fallback para formato de credenciais não criptografadas');
+        this.logger.warn(
+          'Tentando fallback para formato de credenciais não criptografadas',
+        );
         return JSON.parse(credenciaisCriptografadas);
       } catch (fallbackError) {
         this.logger.error('Falha no fallback para credenciais', fallbackError);

@@ -5,7 +5,7 @@ import {
   CampoEstrutura,
   MetadadosEstrutura,
 } from '../../../entities/tipo-beneficio-schema.entity';
-import { Status } from '@/enums';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * Seed para popular a tabela tipo_beneficio_schema com estruturas das entidades existentes

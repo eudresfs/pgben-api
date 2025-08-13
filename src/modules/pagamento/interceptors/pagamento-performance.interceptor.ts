@@ -272,7 +272,7 @@ export class PagamentoPerformanceInterceptor implements NestInterceptor {
       if (url.includes('/pagamentos')) {
         // Invalidar cache de pagamentos por padrão
         await this.invalidateCacheByPattern('pagamento:*');
-        
+
         // Invalidar cache específico se houver ID no body
         if (body?.id) {
           await this.invalidateCacheByPattern(`pagamento:${body.id}:*`);
@@ -303,28 +303,32 @@ export class PagamentoPerformanceInterceptor implements NestInterceptor {
       const commonSuffixes = [
         '',
         ':page:1',
-        ':page:2', 
+        ':page:2',
         ':page:3',
         ':all',
         ':list',
         ':count',
         ':stats',
         ':summary',
-        ':metadata'
+        ':metadata',
       ];
 
       // Gerar chaves baseadas no padrão
       const basePattern = pattern.replace('*', '');
-      const keysToDelete = commonSuffixes.map(suffix => `${basePattern}${suffix}`);
+      const keysToDelete = commonSuffixes.map(
+        (suffix) => `${basePattern}${suffix}`,
+      );
 
       // Deletar chaves em paralelo para melhor performance
       await Promise.allSettled(
-        keysToDelete.map(key => this.cacheService.del(key))
+        keysToDelete.map((key) => this.cacheService.del(key)),
       );
 
       this.logger.debug(`Cache invalidado por padrão: ${pattern}`);
     } catch (error) {
-      this.logger.warn(`Erro ao invalidar cache por padrão ${pattern}: ${error.message}`);
+      this.logger.warn(
+        `Erro ao invalidar cache por padrão ${pattern}: ${error.message}`,
+      );
     }
   }
 }

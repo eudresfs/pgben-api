@@ -445,38 +445,40 @@ export class AuditCoreRepository {
       // Calcula média, mediana e remove outliers
       const sortedTimes = processingTimes.sort((a, b) => a - b);
       const median = this.calculateMedian(sortedTimes);
-      const mean = sortedTimes.reduce((sum, time) => sum + time, 0) / sortedTimes.length;
-      
+      const mean =
+        sortedTimes.reduce((sum, time) => sum + time, 0) / sortedTimes.length;
+
       // Remove outliers (valores acima de 3 desvios padrão)
-      const standardDeviation = this.calculateStandardDeviation(sortedTimes, mean);
+      const standardDeviation = this.calculateStandardDeviation(
+        sortedTimes,
+        mean,
+      );
       const filteredTimes = sortedTimes.filter(
         (time) => Math.abs(time - mean) <= 3 * standardDeviation,
       );
 
-      const finalAverage = filteredTimes.length > 0
-        ? filteredTimes.reduce((sum, time) => sum + time, 0) / filteredTimes.length
-        : mean;
+      const finalAverage =
+        filteredTimes.length > 0
+          ? filteredTimes.reduce((sum, time) => sum + time, 0) /
+            filteredTimes.length
+          : mean;
 
       // Calcula métricas por tipo de operação
       const timesByOperation = this.groupProcessingTimesByOperation(logs);
-      
+
       // Log das métricas para monitoramento
-      this.logger.debug(
-        `Processing time statistics calculated`,
-        {
-          totalLogs: logs.length,
-          validTimes: processingTimes.length,
-          filteredTimes: filteredTimes.length,
-          mean: Math.round(mean * 100) / 100,
-          median: Math.round(median * 100) / 100,
-          finalAverage: Math.round(finalAverage * 100) / 100,
-          standardDeviation: Math.round(standardDeviation * 100) / 100,
-          timesByOperation,
-        },
-      );
+      this.logger.debug(`Processing time statistics calculated`, {
+        totalLogs: logs.length,
+        validTimes: processingTimes.length,
+        filteredTimes: filteredTimes.length,
+        mean: Math.round(mean * 100) / 100,
+        median: Math.round(median * 100) / 100,
+        finalAverage: Math.round(finalAverage * 100) / 100,
+        standardDeviation: Math.round(standardDeviation * 100) / 100,
+        timesByOperation,
+      });
 
       return Math.round(finalAverage * 100) / 100; // Arredonda para 2 casas decimais
-
     } catch (error) {
       this.logger.error(
         `Failed to calculate average processing time: ${error.message}`,
@@ -506,11 +508,7 @@ export class AuditCoreRepository {
 
       // Busca logs com timestamps válidos
       queryBuilder
-        .select([
-          'audit.data_hora',
-          'audit.created_at',
-          'audit.tipo_operacao',
-        ])
+        .select(['audit.data_hora', 'audit.created_at', 'audit.tipo_operacao'])
         .andWhere('audit.data_hora IS NOT NULL')
         .andWhere('audit.created_at IS NOT NULL')
         .orderBy('audit.data_hora', 'DESC')
@@ -528,7 +526,7 @@ export class AuditCoreRepository {
           const eventTime = new Date(log.data_hora).getTime();
           const createdTime = new Date(log.created_at).getTime();
           const diff = createdTime - eventTime;
-          
+
           // Considera apenas diferenças positivas e razoáveis (até 1 hora)
           return diff > 0 && diff <= 3600000 ? diff : null;
         })
@@ -539,8 +537,10 @@ export class AuditCoreRepository {
         return this.getDefaultProcessingTimeByOperationType(logs);
       }
 
-      const average = estimatedTimes.reduce((sum, time) => sum + time, 0) / estimatedTimes.length;
-      
+      const average =
+        estimatedTimes.reduce((sum, time) => sum + time, 0) /
+        estimatedTimes.length;
+
       this.logger.debug(
         `Estimated processing time calculated from timestamps`,
         {
@@ -551,7 +551,6 @@ export class AuditCoreRepository {
       );
 
       return Math.round(average * 100) / 100;
-
     } catch (error) {
       this.logger.error(
         `Failed to calculate estimated processing time: ${error.message}`,
@@ -566,7 +565,7 @@ export class AuditCoreRepository {
   private calculateMedian(sortedNumbers: number[]): number {
     const length = sortedNumbers.length;
     if (length === 0) return 0;
-    
+
     if (length % 2 === 0) {
       return (sortedNumbers[length / 2 - 1] + sortedNumbers[length / 2]) / 2;
     } else {
@@ -579,26 +578,29 @@ export class AuditCoreRepository {
    */
   private calculateStandardDeviation(numbers: number[], mean: number): number {
     if (numbers.length === 0) return 0;
-    
-    const variance = numbers.reduce((sum, num) => {
-      return sum + Math.pow(num - mean, 2);
-    }, 0) / numbers.length;
-    
+
+    const variance =
+      numbers.reduce((sum, num) => {
+        return sum + Math.pow(num - mean, 2);
+      }, 0) / numbers.length;
+
     return Math.sqrt(variance);
   }
 
   /**
    * Agrupa tempos de processamento por tipo de operação
    */
-  private groupProcessingTimesByOperation(logs: LogAuditoria[]): Record<string, { average: number; count: number }> {
+  private groupProcessingTimesByOperation(
+    logs: LogAuditoria[],
+  ): Record<string, { average: number; count: number }> {
     const groups: Record<string, number[]> = {};
-    
+
     logs.forEach((log) => {
       if (log.data_hora && log.created_at) {
         const eventTime = new Date(log.data_hora).getTime();
         const createdTime = new Date(log.created_at).getTime();
         const processingTime = createdTime - eventTime;
-        
+
         if (processingTime > 0 && processingTime <= 3600000) {
           const operation = log.tipo_operacao || 'unknown';
           if (!groups[operation]) {
@@ -610,7 +612,7 @@ export class AuditCoreRepository {
     });
 
     const result: Record<string, { average: number; count: number }> = {};
-    
+
     Object.entries(groups).forEach(([operation, times]) => {
       const average = times.reduce((sum, time) => sum + time, 0) / times.length;
       result[operation] = {
@@ -625,17 +627,19 @@ export class AuditCoreRepository {
   /**
    * Retorna tempo padrão baseado no tipo de operação
    */
-  private getDefaultProcessingTimeByOperationType(logs: LogAuditoria[]): number {
+  private getDefaultProcessingTimeByOperationType(
+    logs: LogAuditoria[],
+  ): number {
     const operationDefaults: Record<string, number> = {
-      'CREATE': 150,
-      'UPDATE': 120,
-      'DELETE': 100,
-      'READ': 50,
-      'LOGIN': 200,
-      'LOGOUT': 80,
-      'PAYMENT': 300,
-      'SECURITY': 250,
-      'SYSTEM': 100,
+      CREATE: 150,
+      UPDATE: 120,
+      DELETE: 100,
+      READ: 50,
+      LOGIN: 200,
+      LOGOUT: 80,
+      PAYMENT: 300,
+      SECURITY: 250,
+      SYSTEM: 100,
     };
 
     // Conta tipos de operação
@@ -655,7 +659,9 @@ export class AuditCoreRepository {
       totalCount += count;
     });
 
-    return totalCount > 0 ? Math.round((totalWeightedTime / totalCount) * 100) / 100 : 100;
+    return totalCount > 0
+      ? Math.round((totalWeightedTime / totalCount) * 100) / 100
+      : 100;
   }
 
   /**

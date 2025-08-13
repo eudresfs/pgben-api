@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { IsNotEmpty, IsBoolean, IsOptional } from 'class-validator';
 import { TipoBeneficio } from './tipo-beneficio.entity';
-import { Status } from '@/enums';
+import { Status } from '../enums/status.enum';
 
 /**
  * Interface para definir a estrutura de um campo da entidade

@@ -1,6 +1,6 @@
 /**
  * Interface para o NotificationManagerService
- * 
+ *
  * Esta interface permite desacoplar as dependências e resolver
  * a dependência circular entre módulos de notificação e usuário
  */
@@ -62,4 +62,6 @@ export interface INotificationManagerService {
 /**
  * Token de injeção para o NotificationManagerService
  */
-export const NOTIFICATION_MANAGER_SERVICE = Symbol('NOTIFICATION_MANAGER_SERVICE');
+export const NOTIFICATION_MANAGER_SERVICE = Symbol(
+  'NOTIFICATION_MANAGER_SERVICE',
+);

@@ -1,6 +1,9 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { INotificationManagerService, NOTIFICATION_MANAGER_SERVICE } from '../interfaces/notification-manager.interface';
+import {
+  INotificationManagerService,
+  NOTIFICATION_MANAGER_SERVICE,
+} from '../interfaces/notification-manager.interface';
 import { CanalNotificacao } from '../../../entities/notification-template.entity';
 
 /**

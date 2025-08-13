@@ -270,7 +270,11 @@ export class DocumentFilterService {
     const pagamentoIds = filtros.pagamentoIds || filtros.pagamento_ids;
     if (pagamentoIds?.length) {
       queryBuilder
-        .innerJoin('pagamento', 'pagamento', 'pagamento.comprovante_id = documento.id')
+        .innerJoin(
+          'pagamento',
+          'pagamento',
+          'pagamento.comprovante_id = documento.id',
+        )
         .andWhere('pagamento.id IN (:...pagamentoIds)', {
           pagamentoIds: pagamentoIds,
         });

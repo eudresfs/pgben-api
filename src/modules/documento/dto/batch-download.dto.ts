@@ -37,7 +37,8 @@ export class BatchDownloadDto {
   solicitacaoIds?: string[];
 
   @ApiPropertyOptional({
-    description: 'Lista de IDs de pagamentos - baixa documentos cujo ID corresponde ao comprovante_id do pagamento',
+    description:
+      'Lista de IDs de pagamentos - baixa documentos cujo ID corresponde ao comprovante_id do pagamento',
     type: [String],
     example: ['3fa85f64-5717-4562-b3fc-2c963f66afa6'],
   })

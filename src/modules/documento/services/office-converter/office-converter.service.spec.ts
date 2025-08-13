@@ -64,10 +64,12 @@ describe('OfficeConverterService', () => {
     });
 
     it('should skip initialization when disabled', async () => {
-      configService.get.mockImplementation((key: string, defaultValue?: any) => {
-        if (key === 'OFFICE_CONVERTER_ENABLED') return false;
-        return defaultValue;
-      });
+      configService.get.mockImplementation(
+        (key: string, defaultValue?: any) => {
+          if (key === 'OFFICE_CONVERTER_ENABLED') return false;
+          return defaultValue;
+        },
+      );
 
       // Recreate service with new config
       const module: TestingModule = await Test.createTestingModule({
@@ -80,8 +82,13 @@ describe('OfficeConverterService', () => {
         ],
       }).compile();
 
-      const disabledService = module.get<OfficeConverterService>(OfficeConverterService);
-      const checkSpy = jest.spyOn(disabledService, 'checkLibreOfficeAvailability');
+      const disabledService = module.get<OfficeConverterService>(
+        OfficeConverterService,
+      );
+      const checkSpy = jest.spyOn(
+        disabledService,
+        'checkLibreOfficeAvailability',
+      );
 
       await disabledService.onModuleInit();
 
@@ -128,17 +135,20 @@ describe('OfficeConverterService', () => {
 
   describe('convertToPdf', () => {
     const mockBuffer = Buffer.from('mock document content');
-    const mockMimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    const mockMimeType =
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
     beforeEach(() => {
       // Mock LibreOffice as available
-      jest.spyOn(service, 'checkLibreOfficeAvailability').mockResolvedValue(true);
+      jest
+        .spyOn(service, 'checkLibreOfficeAvailability')
+        .mockResolvedValue(true);
       (service as any).isLibreOfficeAvailable = true;
     });
 
     it('should successfully convert document to PDF', async () => {
       const mockPdfBuffer = Buffer.from('mock pdf content');
-      
+
       // Mock file system operations
       mockFsPromises.mkdir.mockResolvedValue(undefined);
       mockFsPromises.writeFile.mockResolvedValue(undefined);
@@ -176,17 +186,22 @@ describe('OfficeConverterService', () => {
     it('should return error for unsupported MIME type', async () => {
       const unsupportedMimeType = 'text/plain';
 
-      const result = await service.convertToPdf(mockBuffer, unsupportedMimeType);
+      const result = await service.convertToPdf(
+        mockBuffer,
+        unsupportedMimeType,
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Tipo MIME não suportado');
     });
 
     it('should return error when conversion is disabled', async () => {
-      configService.get.mockImplementation((key: string, defaultValue?: any) => {
-        if (key === 'OFFICE_CONVERTER_ENABLED') return false;
-        return defaultValue;
-      });
+      configService.get.mockImplementation(
+        (key: string, defaultValue?: any) => {
+          if (key === 'OFFICE_CONVERTER_ENABLED') return false;
+          return defaultValue;
+        },
+      );
 
       // Recreate service with disabled config
       const module: TestingModule = await Test.createTestingModule({
@@ -199,9 +214,14 @@ describe('OfficeConverterService', () => {
         ],
       }).compile();
 
-      const disabledService = module.get<OfficeConverterService>(OfficeConverterService);
+      const disabledService = module.get<OfficeConverterService>(
+        OfficeConverterService,
+      );
 
-      const result = await disabledService.convertToPdf(mockBuffer, mockMimeType);
+      const result = await disabledService.convertToPdf(
+        mockBuffer,
+        mockMimeType,
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('conversão desabilitada');
@@ -284,7 +304,7 @@ describe('OfficeConverterService', () => {
         'text/rtf',
       ];
 
-      supportedTypes.forEach(mimeType => {
+      supportedTypes.forEach((mimeType) => {
         expect((service as any).isSupportedMimeType(mimeType)).toBe(true);
       });
     });
@@ -297,7 +317,7 @@ describe('OfficeConverterService', () => {
         'application/pdf',
       ];
 
-      unsupportedTypes.forEach(mimeType => {
+      unsupportedTypes.forEach((mimeType) => {
         expect((service as any).isSupportedMimeType(mimeType)).toBe(false);
       });
     });
@@ -306,22 +326,31 @@ describe('OfficeConverterService', () => {
   describe('getFileExtensionFromMimeType', () => {
     it('should return correct extensions for MIME types', () => {
       const mimeToExtension = {
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+          'docx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+          'xlsx',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+          'pptx',
         'application/msword': 'doc',
         'application/vnd.ms-excel': 'xls',
         'application/vnd.ms-powerpoint': 'ppt',
         'text/rtf': 'rtf',
       };
 
-      Object.entries(mimeToExtension).forEach(([mimeType, expectedExtension]) => {
-        expect((service as any).getFileExtensionFromMimeType(mimeType)).toBe(expectedExtension);
-      });
+      Object.entries(mimeToExtension).forEach(
+        ([mimeType, expectedExtension]) => {
+          expect((service as any).getFileExtensionFromMimeType(mimeType)).toBe(
+            expectedExtension,
+          );
+        },
+      );
     });
 
     it('should return tmp for unknown MIME types', () => {
-      expect((service as any).getFileExtensionFromMimeType('unknown/type')).toBe('tmp');
+      expect(
+        (service as any).getFileExtensionFromMimeType('unknown/type'),
+      ).toBe('tmp');
     });
   });
 });

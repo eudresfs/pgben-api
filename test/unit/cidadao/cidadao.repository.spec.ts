@@ -254,7 +254,9 @@ describe('CidadaoRepository', () => {
     };
 
     beforeEach(() => {
-      jest.spyOn(repository, 'createScopedQueryBuilder').mockReturnValue(mockQueryBuilder as any);
+      jest
+        .spyOn(repository, 'createScopedQueryBuilder')
+        .mockReturnValue(mockQueryBuilder as any);
     });
 
     it('deve incluir flag encontrado_por_composicao_familiar quando buscar por CPF', async () => {
@@ -262,8 +264,11 @@ describe('CidadaoRepository', () => {
         ...mockCidadao,
         encontrado_por_composicao_familiar: true,
       };
-      
-      mockQueryBuilder.getManyAndCount.mockResolvedValue([[mockCidadaoComFlag], 1]);
+
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([
+        [mockCidadaoComFlag],
+        1,
+      ]);
 
       const result = await repository.findAllWithFilters({
         search: '98765432100', // CPF de membro familiar
@@ -276,15 +281,18 @@ describe('CidadaoRepository', () => {
         'composicao_familiar_search',
         'composicao_familiar_search',
         'composicao_familiar_search.cidadao_id = cidadao.id AND composicao_familiar_search.cpf = :searchCpf',
-        { searchCpf: '98765432100' }
-      );
-      
-      expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith(
-        'CASE WHEN :searchCpf != cidadao.cpf AND composicao_familiar_search.cpf IS NOT NULL THEN true ELSE false END',
-        'encontrado_por_composicao_familiar'
+        { searchCpf: '98765432100' },
       );
 
-      expect(result[0][0]).toHaveProperty('encontrado_por_composicao_familiar', true);
+      expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith(
+        'CASE WHEN :searchCpf != cidadao.cpf AND composicao_familiar_search.cpf IS NOT NULL THEN true ELSE false END',
+        'encontrado_por_composicao_familiar',
+      );
+
+      expect(result[0][0]).toHaveProperty(
+        'encontrado_por_composicao_familiar',
+        true,
+      );
       expect(result[1]).toBe(1);
     });
 
@@ -293,8 +301,11 @@ describe('CidadaoRepository', () => {
         ...mockCidadao,
         encontrado_por_composicao_familiar: false,
       };
-      
-      mockQueryBuilder.getManyAndCount.mockResolvedValue([[mockCidadaoSemFlag], 1]);
+
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([
+        [mockCidadaoSemFlag],
+        1,
+      ]);
 
       const result = await repository.findAllWithFilters({
         search: '12345678901', // CPF próprio do cidadão
@@ -302,7 +313,10 @@ describe('CidadaoRepository', () => {
         take: 10,
       });
 
-      expect(result[0][0]).toHaveProperty('encontrado_por_composicao_familiar', false);
+      expect(result[0][0]).toHaveProperty(
+        'encontrado_por_composicao_familiar',
+        false,
+      );
     });
 
     it('não deve incluir flag quando buscar por nome', async () => {
@@ -319,7 +333,7 @@ describe('CidadaoRepository', () => {
         expect.stringContaining('composicao_familiar_search'),
         expect.anything(),
         expect.anything(),
-        expect.anything()
+        expect.anything(),
       );
     });
   });

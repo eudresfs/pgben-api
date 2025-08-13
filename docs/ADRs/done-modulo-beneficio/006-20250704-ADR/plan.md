@@ -212,7 +212,7 @@ CREATE TABLE usuarios (
     ativo BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT NOW(),
     
-    CONSTRAINT chk_tipo_usuario CHECK (tipo_usuario IN ('tecnico_unidade', 'analista_semtas', 'admin_sistema'))
+    CONSTRAINT chk_tipo_usuario CHECK (tipo_usuario IN ('tecnico', 'analista', 'admin'))
 );
 
 -- Unidades (CRAS, CREAS, etc.)

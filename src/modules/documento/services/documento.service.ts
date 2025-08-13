@@ -103,15 +103,16 @@ export class DocumentoService {
    */
   private getAuditContext(userId: string): DocumentoAuditContext {
     const context = AuditContextHolder.get();
-    
+
     // Gera um UUID válido para usuários anônimos
-    const validUserId = userId === 'anonymous' ? '00000000-0000-0000-0000-000000000000' : userId;
-    
+    const validUserId =
+      userId === 'anonymous' ? '00000000-0000-0000-0000-000000000000' : userId;
+
     return {
       userId: validUserId,
       userRoles: context?.userRoles || [],
       ip: context?.ip || 'unknown',
-      userAgent: context?.userAgent || 'unknown'
+      userAgent: context?.userAgent || 'unknown',
     };
   }
 
@@ -228,7 +229,9 @@ export class DocumentoService {
 
       // Auditoria do download com contexto completo
       await this.auditService.auditAccess(
-        this.getAuditContext(usuarioId || '00000000-0000-0000-0000-000000000000'),
+        this.getAuditContext(
+          usuarioId || '00000000-0000-0000-0000-000000000000',
+        ),
         {
           documentoId: documento.id,
           filename: documento.nome_original,
@@ -255,7 +258,9 @@ export class DocumentoService {
     } catch (error) {
       // Auditoria de falha no download
       await this.auditService.auditAccess(
-        this.getAuditContext(usuarioId || '00000000-0000-0000-0000-000000000000'),
+        this.getAuditContext(
+          usuarioId || '00000000-0000-0000-0000-000000000000',
+        ),
         {
           documentoId: documento.id,
           filename: documento.nome_original,
@@ -390,19 +395,16 @@ export class DocumentoService {
         );
 
         // Auditar reutilização com contexto completo
-        await this.auditService.auditAccess(
-          this.getAuditContext(usuarioId),
-          {
-            documentoId: reuseCheck.existingDocument.id,
-            filename: reuseCheck.existingDocument.nome_original,
-            mimetype: reuseCheck.existingDocument.mimetype,
-            fileSize: reuseCheck.existingDocument.tamanho,
-            cidadaoId: reuseCheck.existingDocument.cidadao_id,
-            solicitacaoId: reuseCheck.existingDocument.solicitacao_id,
-            accessType: 'view',
-            success: true,
-          },
-        );
+        await this.auditService.auditAccess(this.getAuditContext(usuarioId), {
+          documentoId: reuseCheck.existingDocument.id,
+          filename: reuseCheck.existingDocument.nome_original,
+          mimetype: reuseCheck.existingDocument.mimetype,
+          fileSize: reuseCheck.existingDocument.tamanho,
+          cidadaoId: reuseCheck.existingDocument.cidadao_id,
+          solicitacaoId: reuseCheck.existingDocument.solicitacao_id,
+          accessType: 'view',
+          success: true,
+        });
 
         return reuseCheck.existingDocument;
       }
@@ -459,20 +461,17 @@ export class DocumentoService {
       );
 
       // 8. Auditoria do upload com contexto completo
-      await this.auditService.auditUpload(
-        this.getAuditContext(usuarioId),
-        {
-          documentoId: savedDocument.id,
-          operationType: 'upload',
-          operationDetails: {
-            fileName: arquivo.originalname,
-            fileSize: arquivo.size,
-            mimetype: arquivo.mimetype,
-            uploadId: validation.uploadId || 'unknown'
-          },
-          success: true,
+      await this.auditService.auditUpload(this.getAuditContext(usuarioId), {
+        documentoId: savedDocument.id,
+        operationType: 'upload',
+        operationDetails: {
+          fileName: arquivo.originalname,
+          fileSize: arquivo.size,
+          mimetype: arquivo.mimetype,
+          uploadId: validation.uploadId || 'unknown',
         },
-      );
+        success: true,
+      });
 
       const duration = Date.now() - startTime;
       this.logger.info(
@@ -483,22 +482,19 @@ export class DocumentoService {
       return savedDocument;
     } catch (error) {
       // Auditoria de falha no upload
-      await this.auditService.auditUpload(
-        this.getAuditContext(usuarioId),
-        {
-          documentoId: 'unknown',
-          operationType: 'upload',
-          operationDetails: {
-            fileName: arquivo.originalname,
-            fileSize: arquivo.size,
-            mimetype: arquivo.mimetype,
-            errorType: error.constructor.name,
-            errorMessage: error.message
-          },
-          errorDetails: error.message,
-          success: false,
+      await this.auditService.auditUpload(this.getAuditContext(usuarioId), {
+        documentoId: 'unknown',
+        operationType: 'upload',
+        operationDetails: {
+          fileName: arquivo.originalname,
+          fileSize: arquivo.size,
+          mimetype: arquivo.mimetype,
+          errorType: error.constructor.name,
+          errorMessage: error.message,
         },
-      );
+        errorDetails: error.message,
+        success: false,
+      });
 
       // Cleanup em caso de erro usando o serviço especializado
       if (caminhoArmazenamento) {
@@ -549,21 +545,18 @@ export class DocumentoService {
     const documentoAtualizado = await this.documentoRepository.save(documento);
 
     // Auditoria da verificação
-    await this.auditService.auditUpload(
-      this.getAuditContext(usuarioId),
-      {
-        documentoId: documento.id,
-        operationType: 'verify',
-        operationDetails: {
-          fileName: documento.nome_original,
-          fileSize: documento.tamanho,
-          mimetype: documento.mimetype,
-          observacoes: observacoes,
-          dataVerificacao: documento.data_verificacao,
-        },
-        success: true,
+    await this.auditService.auditUpload(this.getAuditContext(usuarioId), {
+      documentoId: documento.id,
+      operationType: 'verify',
+      operationDetails: {
+        fileName: documento.nome_original,
+        fileSize: documento.tamanho,
+        mimetype: documento.mimetype,
+        observacoes: observacoes,
+        dataVerificacao: documento.data_verificacao,
       },
-    );
+      success: true,
+    });
 
     return this.documentoRepository
       .createQueryBuilder('documento')
@@ -585,22 +578,19 @@ export class DocumentoService {
     const documentoRemovido = await this.documentoRepository.save(documento);
 
     // Auditoria da remoção
-    await this.auditService.auditUpload(
-      this.getAuditContext(usuarioId),
-      {
-        documentoId: documento.id,
-        operationType: 'delete',
-        operationDetails: {
-          fileName: documento.nome_original,
-          fileSize: documento.tamanho,
-          mimetype: documento.mimetype,
-          dataRemocao: documento.removed_at,
-          cidadaoId: documento.cidadao_id,
-          solicitacaoId: documento.solicitacao_id,
-        },
-        success: true,
+    await this.auditService.auditUpload(this.getAuditContext(usuarioId), {
+      documentoId: documento.id,
+      operationType: 'delete',
+      operationDetails: {
+        fileName: documento.nome_original,
+        fileSize: documento.tamanho,
+        mimetype: documento.mimetype,
+        dataRemocao: documento.removed_at,
+        cidadaoId: documento.cidadao_id,
+        solicitacaoId: documento.solicitacao_id,
       },
-    );
+      success: true,
+    });
 
     return documentoRemovido;
   }

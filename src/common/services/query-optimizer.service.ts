@@ -324,7 +324,7 @@ export class QueryOptimizerService {
     const previousStats = this.getCacheStats();
     this.cacheHits = 0;
     this.cacheMisses = 0;
-    
+
     this.logger.log(
       `Cache statistics reset. Previous: ${previousStats.hits} hits, ${previousStats.misses} misses, ${previousStats.hitRate}% hit rate`,
     );
@@ -335,11 +335,11 @@ export class QueryOptimizerService {
    */
   public logCacheStats(): void {
     const stats = this.getCacheStats();
-    
+
     this.logger.log(
       `Cache Statistics - Size: ${stats.size}, Hit Rate: ${stats.hitRate}%, ` +
-      `Total Requests: ${stats.totalRequests}, Hits: ${stats.hits}, Misses: ${stats.misses}, ` +
-      `Memory Usage: ${Math.round(stats.memoryUsage / 1024)} KB`,
+        `Total Requests: ${stats.totalRequests}, Hits: ${stats.hits}, Misses: ${stats.misses}, ` +
+        `Memory Usage: ${Math.round(stats.memoryUsage / 1024)} KB`,
     );
   }
 
@@ -357,7 +357,8 @@ export class QueryOptimizerService {
     const size = this.queryCache.size;
     const memoryUsage = JSON.stringify([...this.queryCache.entries()]).length;
     const totalRequests = this.cacheHits + this.cacheMisses;
-    const hitRate = totalRequests > 0 ? (this.cacheHits / totalRequests) * 100 : 0;
+    const hitRate =
+      totalRequests > 0 ? (this.cacheHits / totalRequests) * 100 : 0;
 
     return {
       size,

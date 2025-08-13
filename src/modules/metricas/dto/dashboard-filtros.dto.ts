@@ -4,7 +4,7 @@ import { Transform } from 'class-transformer';
 
 /**
  * DTO para filtros padronizados do dashboard
- * 
+ *
  * Todos os endpoints de métricas devem aceitar estes filtros
  * e aplicá-los de forma consistente com o sistema de escopo
  */
