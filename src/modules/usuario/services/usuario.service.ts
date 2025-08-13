@@ -217,6 +217,7 @@ export class UsuarioService {
 
       // Buscar usuários com condições OR
       const [usuarios, total] = await this.usuarioRepository.findAll({
+        relations,
         skip,
         take: limit,
         where: finalWhere,
