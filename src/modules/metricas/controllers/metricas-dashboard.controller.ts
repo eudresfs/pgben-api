@@ -101,7 +101,7 @@ export class MetricasDashboardController {
    */
   @Get('solicitacoes/status')
   @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
+    permissionName: 'metricas.dashboard.status',
   })
   @ApiOperation({
     summary: 'Obtém contagem de solicitações por status',
