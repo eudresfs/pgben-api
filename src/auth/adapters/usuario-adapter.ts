@@ -56,7 +56,7 @@ export class UsuarioAdapter {
     userOutput.updated_at =
       usuario.updated_at?.toISOString() || new Date().toISOString();
     // Obter o nome da role a partir da entidade Role
-    userOutput.roles = usuario.role ? [usuario.role.nome as RoleType] : [];
+    userOutput.roles = usuario.role ? [usuario.role.codigo as RoleType] : [];
     // Incluir unidade_id se disponível
     userOutput.unidade_id = usuario.unidade_id;
 
@@ -79,7 +79,7 @@ export class UsuarioAdapter {
     const claims: UserAccessTokenClaims = {
       id: usuario.id,
       username: usuario.email, // Usando email como username
-      roles: usuario.role ? [usuario.role.nome as RoleType] : [],
+      roles: usuario.role ? [usuario.role.codigo as RoleType] : [],
     };
 
     // Incluir unidade_id se disponível

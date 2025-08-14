@@ -19,6 +19,7 @@ import { PermissionService } from './permission.service';
 import { AuditEventEmitter } from '../../modules/auditoria/events/emitters/audit-event.emitter';
 import { AuditEventType } from '../../modules/auditoria/events/types/audit-event.types';
 import { SCOPE_CONSTANTS, ScopeType } from '../../common/types/scope.types';
+import { RoleType } from '@/shared/constants/roles.constants';
 
 @Injectable()
 export class AuthService {
@@ -242,7 +243,7 @@ export class AuthService {
         riskLevel: 'LOW',
         username: usuario.nome,
         email: usuario.email,
-        roles: usuario.role ? [usuario.role.nome] : [],
+        roles: usuario.role ? [usuario.role.codigo as RoleType] : [],
         permissions: permissions || [],
         clientIp,
         userAgent,

@@ -945,8 +945,8 @@ export class UsuarioService {
       const ROLES_IGNORADAS = ['SUPER_ADMIN', 'AUDITOR', 'CIDADAO'];
       // Buscar todas as roles ativas
       const todasRoles = await this.roleRepository.find({
-        where: { status: Status.ATIVO, nome: Not(In(ROLES_IGNORADAS)) },
-        order: { nome: 'ASC' },
+        where: { status: Status.ATIVO, codigo: Not(In(ROLES_IGNORADAS)) },
+        order: { codigo: 'ASC' },
       });
 
       // Determinar o nível de hierarquia do usuário atual
@@ -954,7 +954,7 @@ export class UsuarioService {
 
       // Filtrar roles baseado na hierarquia
       const rolesPermitidas = todasRoles.filter(role => {
-        const nivelRole = HIERARQUIA_ROLES[role.nome];
+        const nivelRole = HIERARQUIA_ROLES[role.codigo];
 
         // Se a role não está na hierarquia, todos podem vê-la
         if (!nivelRole) {
@@ -995,12 +995,12 @@ export class UsuarioService {
     // Buscar o usuário completo com a role
     const usuarioCompleto = await this.usuarioRepository.findByIdGlobal(usuarioAtualClaims.id);
 
-    if (!usuarioCompleto?.role?.nome) {
+    if (!usuarioCompleto?.role?.codigo) {
       this.logger.warn(`Usuário ${usuarioAtualClaims.id} não encontrado ou sem role`);
       return null;
     }
 
-    const roleUsuario = usuarioCompleto.role.nome;
+    const roleUsuario = usuarioCompleto.role.codigo;
     const nivelUsuario = hierarquiaRoles[roleUsuario];
 
     this.logger.info(`Usuário ${usuarioCompleto.nome} tem role: ${roleUsuario} (nível: ${nivelUsuario || 'não hierárquica'})`);
