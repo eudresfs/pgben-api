@@ -1,6 +1,16 @@
 # Exemplos de Implementação - Sistema de Aprovação de Ações Críticas
 
-## Casos de Uso Práticos
+## ⚠️ SISTEMA MIGRADO PARA V2
+
+> **IMPORTANTE**: Os exemplos abaixo são do sistema v1 (obsoleto).
+> 
+> **📋 Para exemplos atualizados do sistema v2, consulte:**
+> - [Documentação Técnica v2 - Seção Exemplos](../modules/aprovacao-v2/README.md#exemplos-práticos)
+> - [Guia de Migração - Exemplos de Código](../modules/aprovacao-v2/guia-migracao-aprovacao-v2.md#exemplos-de-migração)
+
+---
+
+## Casos de Uso Práticos (Sistema v1 - Obsoleto)
 
 ### Caso 1: Cancelamento de Solicitação
 

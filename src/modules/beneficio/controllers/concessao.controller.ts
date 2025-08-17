@@ -48,6 +48,8 @@ import { MotivosOperacaoResponseDto } from '../dto/motivos-operacao.dto';
 import { OperacaoConcessao } from '../../../enums/operacao-concessao.enum';
 import { ScopeType } from '@/entities';
 import { Roles } from '@/auth';
+import { RequerAprovacao } from '../../aprovacao-v2/decorators/requer-aprovacao.decorator';
+import { TipoAcaoCritica } from '../../aprovacao-v2/enums';
 
 @ApiTags('Benefícios')
 @Controller('concessoes')
@@ -295,6 +297,11 @@ export class ConcessaoController {
    */
   @Patch(':id/status')
   @RequiresPermission({ permissionName: 'concessao.atualizar' })
+  @RequerAprovacao({
+    tipo: TipoAcaoCritica.ALTERACAO_STATUS_CONCESSAO,
+    permitirAutoAprovacao: false,
+    descricao: 'Alteração de status de concessão'
+  })
   @ApiOperation({
     summary: 'Atualiza o status da concessão',
     description:
@@ -400,6 +407,11 @@ export class ConcessaoController {
    */
   @Patch(':id/suspender')
   @RequiresPermission({ permissionName: 'concessao.suspender' })
+  @RequerAprovacao({
+    tipo: TipoAcaoCritica.SUSPENSAO_BENEFICIO,
+    perfilAutoAprovacao: ['SUPER_ADMIN', 'ADMIN', 'GESTOR'],
+    descricao: 'Suspensão de benefício'
+  })
   @ApiOperation({
     summary: 'Suspende uma concessão',
     description:
@@ -451,6 +463,11 @@ export class ConcessaoController {
    */
   @Patch(':id/reativar')
   @RequiresPermission({ permissionName: 'concessao.reativar' })
+  @RequerAprovacao({
+    tipo: TipoAcaoCritica.ALTERACAO_DADOS_CRITICOS,
+    permitirAutoAprovacao: true,
+    descricao: 'Reativação de benefício'
+  })
   @ApiOperation({
     summary: 'Reativa uma concessão',
     description:
@@ -502,6 +519,11 @@ export class ConcessaoController {
    */
   @Patch(':id/bloquear')
   @RequiresPermission({ permissionName: 'concessao.bloquear' })
+  @RequerAprovacao({
+    tipo: TipoAcaoCritica.ALTERACAO_DADOS_CRITICOS,
+    permitirAutoAprovacao: false,
+    descricao: 'Bloqueio de benefício'
+  })
   @ApiOperation({
     summary: 'Bloqueia uma concessão',
     description:
@@ -553,6 +575,11 @@ export class ConcessaoController {
    */
   @Patch(':id/desbloquear')
   @RequiresPermission({ permissionName: 'concessao.desbloquear' })
+  @RequerAprovacao({
+    tipo: TipoAcaoCritica.ALTERACAO_DADOS_CRITICOS,
+    permitirAutoAprovacao: true,
+    descricao: 'Desbloqueio de benefício'
+  })
   @ApiOperation({
     summary: 'Desbloqueia uma concessão',
     description:

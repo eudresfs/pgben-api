@@ -386,14 +386,6 @@ export class DadosNatalidadeService extends AbstractDadosBeneficioService<
         }
       }
 
-      // Validação de chave PIX
-      if (data.chave_pix !== undefined && !data.chave_pix?.trim()) {
-        errorBuilder.add(
-          'chave_pix',
-          'Chave PIX não pode estar vazia quando fornecida. Validação de conteúdo falhou.',
-        );
-      }
-
       // Validação de observações adicionais (se fornecidas)
       if (
         data.observacoes !== undefined &&

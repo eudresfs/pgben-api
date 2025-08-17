@@ -1,7 +1,20 @@
 # Sistema Genérico de Aprovação de Ações Críticas - PGBen
 
 ## Status
-**Planejado** - Documento de Arquitetura e Design
+**⚠️ OBSOLETO - MIGRADO PARA V2** 
+
+> **IMPORTANTE**: Este documento descreve o sistema original de aprovação que foi **refatorado e simplificado**.
+> 
+> **Para a implementação atual, consulte:**
+> - 📋 [Documentação Técnica do Módulo v2](../../modules/aprovacao-v2/README.md)
+> - 🔄 [Guia de Migração](../../modules/aprovacao-v2/guia-migracao-aprovacao-v2.md)
+> 
+> **Data da Migração**: Janeiro 2025  
+> **Motivo**: Simplificação da arquitetura (6 → 3 entidades) e melhoria de performance
+
+---
+
+## Documento Original - Sistema v1 (Obsoleto)
 
 ## Visão Geral
 

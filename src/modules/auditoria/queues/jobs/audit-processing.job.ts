@@ -1218,11 +1218,16 @@ export class AuditProcessingJob {
 
       // Calcula score de conformidade
       const complianceScore = this.calculateComplianceScore(complianceMetrics);
+      const threshold = this.getComplianceThreshold(event.eventType);
+      const category = this.getEventCategory(event.eventType);
 
-      if (complianceScore < 0.8) {
-        // 80% de conformidade mínima
+      if (complianceScore < threshold) {
         this.logger.warn(
-          `Low compliance score detected: ${complianceScore} for event ${event.eventType}`,
+          `Low compliance score detected: ${complianceScore.toFixed(2)} (threshold: ${threshold}) for ${category} event ${event.eventType}`,
+        );
+      } else {
+        this.logger.debug(
+          `Compliance score: ${complianceScore.toFixed(2)} (threshold: ${threshold}) for ${category} event ${event.eventType}`,
         );
       }
     } catch (error) {
@@ -1416,17 +1421,100 @@ export class AuditProcessingJob {
   }
 
   /**
-   * Calcula score de conformidade
+   * Enum para categorias de eventos de auditoria
+   */
+  private readonly EVENT_CATEGORIES: Record<string, string[]> = {
+     AUTH: ['LOGIN_SUCCESS', 'LOGIN_FAILED', 'LOGOUT', 'PASSWORD_CHANGE'],
+     READ: ['VIEW', 'LIST', 'SEARCH', 'EXPORT'],
+     WRITE: ['CREATE', 'UPDATE', 'UPLOAD'],
+     DELETE: ['DELETE', 'REMOVE'],
+     ADMIN: ['PERMISSION_CHANGE', 'ROLE_CHANGE', 'CONFIG_CHANGE', 'USER_CREATION']
+   };
+
+  /**
+   * Thresholds de compliance por categoria
+   */
+  private readonly COMPLIANCE_THRESHOLDS = {
+      AUTH: 0.7,    // 70% - eventos de autenticação
+      READ: 0.6,    // 60% - eventos de leitura
+      WRITE: 0.8,   // 80% - eventos de escrita
+      DELETE: 0.9,  // 90% - eventos de exclusão
+      ADMIN: 0.9    // 90% - eventos administrativos
+    } as const;
+
+  /**
+   * Determina a categoria do evento
+   */
+  private getEventCategory(eventType: string): keyof typeof this.COMPLIANCE_THRESHOLDS {
+    for (const [category, events] of Object.entries(this.EVENT_CATEGORIES)) {
+      if (events.includes(eventType)) {
+        return category as keyof typeof this.COMPLIANCE_THRESHOLDS;
+      }
+    }
+    return 'WRITE'; // categoria padrão para eventos não mapeados
+  }
+
+  /**
+   * Calcula score de conformidade baseado na categoria do evento
    */
   private calculateComplianceScore(metrics: any): number {
-    const checks = [
-      !metrics.hasPersonalData || metrics.hasConsentValidation,
-      metrics.hasDataMinimization,
-      metrics.hasSecurityMeasures,
-    ];
+    const category = this.getEventCategory(metrics.eventType);
+    let score = 0;
 
-    const passedChecks = checks.filter((check) => check).length;
-    return passedChecks / checks.length;
+    switch (category) {
+      case 'AUTH':
+        // Para eventos de autenticação, foco apenas em segurança
+        score = metrics.hasSecurityMeasures ? 1.0 : 0.0;
+        break;
+
+      case 'READ':
+         // Para eventos de leitura, foco em segurança e minimização de dados
+         score = (metrics.hasSecurityMeasures ? 0.6 : 0) + 
+                 (metrics.hasDataMinimization ? 0.4 : 0);
+         break;
+
+      case 'WRITE':
+        // Para eventos de escrita, todos os critérios com pesos balanceados
+        const hasValidConsent = !metrics.hasPersonalData || metrics.hasConsentValidation;
+        score = (metrics.hasSecurityMeasures ? 0.4 : 0) + 
+                (hasValidConsent ? 0.4 : 0) + 
+                (metrics.hasDataMinimization ? 0.2 : 0);
+        break;
+
+      case 'DELETE':
+      case 'ADMIN':
+        // Para eventos críticos, todos os critérios são obrigatórios
+        const hasValidConsentCritical = !metrics.hasPersonalData || metrics.hasConsentValidation;
+        const allCriticalChecks = [
+          metrics.hasSecurityMeasures,
+          hasValidConsentCritical,
+          metrics.hasDataMinimization
+        ];
+        const passedCriticalChecks = allCriticalChecks.filter(check => check).length;
+        score = passedCriticalChecks / allCriticalChecks.length;
+        break;
+
+      default:
+        // Fallback para o cálculo original
+        const hasValidConsentDefault = !metrics.hasPersonalData || metrics.hasConsentValidation;
+        const defaultChecks = [
+          hasValidConsentDefault,
+          metrics.hasDataMinimization,
+          metrics.hasSecurityMeasures,
+        ];
+        const passedDefaultChecks = defaultChecks.filter(check => check).length;
+        score = passedDefaultChecks / defaultChecks.length;
+    }
+
+    return Math.min(1.0, Math.max(0.0, score)); // Garante que o score está entre 0 e 1
+  }
+
+  /**
+   * Obtém o threshold de compliance para um tipo de evento
+   */
+  private getComplianceThreshold(eventType: string): number {
+    const category = this.getEventCategory(eventType);
+    return this.COMPLIANCE_THRESHOLDS[category];
   }
 
   /**

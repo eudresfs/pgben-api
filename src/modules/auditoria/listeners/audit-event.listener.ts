@@ -8,6 +8,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { AuditCoreService } from '../core/services/audit-core.service';
+import { SystemContextService } from '../../../common/services/system-context.service';
 
 import {
   BaseAuditEvent,
@@ -20,12 +21,16 @@ import {
   AuditEvent,
 } from '../events/types/audit-event.types';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
+import { SYSTEM_USER_UUID } from '../../../shared/constants/system.constants';
 
 @Injectable()
 export class AuditEventListener {
   private readonly logger = new Logger(AuditEventListener.name);
 
-  constructor(private readonly auditCoreService: AuditCoreService) {}
+  constructor(
+    private readonly auditCoreService: AuditCoreService,
+    private readonly systemContextService: SystemContextService,
+  ) {}
 
   /**
    * Processa eventos genéricos de auditoria
@@ -313,23 +318,25 @@ export class AuditEventListener {
           ? RiskLevel.HIGH
           : RiskLevel.LOW;
 
-      await this.auditCoreService.createAuditLog({
-        tipo_operacao: this.mapEventTypeToTipoOperacao(event.eventType),
-        entidade_afetada: 'Sistema',
-        entidade_id: event.entityId,
-        usuario_id: event.userId || 'sistema',
-        descricao: `Evento de sistema: ${event.eventType}`,
-        nivel_risco: riskLevel,
-        lgpd_relevante: event.lgpdRelevant,
-        metadata: event.metadata,
-        data_hora: event.timestamp,
-        ip_origem: event.requestContext?.ip,
-        user_agent: event.requestContext?.userAgent,
-        endpoint: event.requestContext?.endpoint,
-        metodo_http: event.requestContext?.method,
-        dados_novos: {
+      await this.systemContextService.runWithSystemContext(async () => {
+        await this.auditCoreService.createAuditLog({
+          tipo_operacao: this.mapEventTypeToTipoOperacao(event.eventType),
+          entidade_afetada: 'Sistema',
+          entidade_id: event.entityId,
+          usuario_id: event.userId || SYSTEM_USER_UUID,
+          descricao: `Evento de sistema: ${event.eventType}`,
+          nivel_risco: riskLevel,
+          lgpd_relevante: event.lgpdRelevant,
           metadata: event.metadata,
-        },
+          data_hora: event.timestamp,
+          ip_origem: event.requestContext?.ip,
+          user_agent: event.requestContext?.userAgent,
+          endpoint: event.requestContext?.endpoint,
+          metodo_http: event.requestContext?.method,
+          dados_novos: {
+            metadata: event.metadata,
+          },
+        });
       });
 
       this.logger.debug(`Evento de sistema: ${event.eventType}`);

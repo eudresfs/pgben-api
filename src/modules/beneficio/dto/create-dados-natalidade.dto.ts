@@ -14,7 +14,6 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsCPF } from '@/shared/validators/br-validators';
 import { ValidateTipoBeneficio } from '@/shared/validators/tipo-beneficio.validator';
 import { TipoContextoNatalidade } from '../../../enums';
 
@@ -766,38 +765,6 @@ export class UpdateDadosNatalidadeDto {
     return value;
   })
   quantidade_filhos?: number;
-
-  @ApiPropertyOptional({
-    description: 'Chave PIX igual ao CPF (para critério de pecúnia)',
-    example: '123.456.789-00',
-  })
-  @IsOptional()
-  @IsString({
-    message: 'A chave PIX deve ser uma string válida',
-  })
-  @Matches(/^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/, {
-    message:
-      'A chave PIX deve ser um CPF válido no formato XXX.XXX.XXX-XX ou apenas números',
-  })
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      if (trimmed === '') {
-        return undefined;
-      }
-
-      // Remove caracteres especiais para validação
-      const numbersOnly = trimmed.replace(/\D/g, '');
-
-      if (numbersOnly.length !== 11) {
-        throw new Error('O CPF deve ter exatamente 11 dígitos');
-      }
-
-      return trimmed;
-    }
-    return value;
-  })
-  chave_pix?: string;
 
   @ApiPropertyOptional({
     description: 'Observações adicionais sobre o caso',

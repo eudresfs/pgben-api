@@ -132,10 +132,6 @@ export class DadosNatalidade {
   @Min(0, { message: 'Quantidade de filhos não pode ser negativa' })
   quantidade_filhos?: number;
 
-  @Column({ nullable: true })
-  @IsOptional()
-  chave_pix?: string;
-
   @Column('text', { nullable: true })
   @IsOptional()
   observacoes?: string;

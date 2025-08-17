@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
+import { IsNotEmpty, IsUUID } from 'class-validator';
 
 /**
  * Entidade para armazenar preferências de notificação dos usuários
@@ -22,6 +23,8 @@ export class PreferenciasNotificacao {
    */
   @Column({ type: 'uuid' })
   @Index()
+  @IsNotEmpty({ message: 'O ID do usuário é obrigatório' })
+  @IsUUID('4', { message: 'O ID do usuário deve ser um UUID válido' })
   usuario_id: string;
 
   /**

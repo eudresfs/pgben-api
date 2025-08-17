@@ -1,0 +1,1 @@
+export { AprovacaoService } from './aprovacao.service';

@@ -1,8 +1,21 @@
-# Implementação Completa de SSE e Sistema de Notificações
+# ⚠️ MIGRADO: Sistema de Notificações - SSE → Ably
 
-## Visão Geral
+## IMPORTANTE - SISTEMA DESCONTINUADO
 
-Este documento explica como implementar Server-Sent Events (SSE) no frontend e como funciona o sistema de eventos de notificação entre módulos no Sistema SEMTAS.
+> **Este documento é mantido apenas para referência histórica. O sistema SSE foi completamente substituído pelo Ably.**
+> 
+> **📋 Para a nova implementação, consulte:** `ably-frontend-integration.md`
+
+## ~~Visão Geral~~
+
+~~Este documento explica como implementar Server-Sent Events (SSE) no frontend e como funciona o sistema de eventos de notificação entre módulos no Sistema SEMTAS.~~
+
+**MIGRAÇÃO CONCLUÍDA**: O sistema de notificações em tempo real foi migrado de Server-Sent Events (SSE) para Ably, oferecendo:
+- ✅ Maior confiabilidade de entrega
+- ✅ Reconexão automática
+- ✅ Melhor escalabilidade
+- ✅ Suporte a múltiplos canais
+- ✅ Recursos avançados de presença e histórico
 
 ## Arquitetura do Sistema de Notificações
 

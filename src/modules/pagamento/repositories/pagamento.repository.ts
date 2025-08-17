@@ -38,6 +38,7 @@ export class PagamentoRepository {
       .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
       .leftJoinAndSelect('pagamento.concessao', 'concessao')
       .where('pagamento.id = :id', { id })
+      .orderBy('pagamento.created_at', 'ASC')
       .getOne();
   }
 
@@ -253,8 +254,10 @@ export class PagamentoRepository {
       concessao_id?: string;
       data_inicio?: string;
       data_fim?: string;
-      valorMinimo?: number;
-      valorMaximo?: number;
+      sort_by?: string;
+      sort_order?: 'ASC' | 'DESC';
+      valor_minimo?: number;
+      valor_maximo?: number;
       page?: number;
       limit?: number;
       usuarioId?: string;
@@ -368,15 +371,15 @@ export class PagamentoRepository {
       );
     }
 
-    if (filtros.valorMinimo) {
-      queryBuilder.andWhere('pagamento.valor >= :valorMinimo', {
-        valorMinimo: filtros.valorMinimo,
+    if (filtros.valor_minimo) {
+      queryBuilder.andWhere('pagamento.valor >= :valor_minimo', {
+        valor_minimo: filtros.valor_minimo,
       });
     }
 
-    if (filtros.valorMaximo) {
-      queryBuilder.andWhere('pagamento.valor <= :valorMaximo', {
-        valorMaximo: filtros.valorMaximo,
+    if (filtros.valor_maximo) {
+      queryBuilder.andWhere('pagamento.valor <= :valor_maximo', {
+        valor_maximo: filtros.valor_maximo,
       });
     }
 
@@ -388,7 +391,7 @@ export class PagamentoRepository {
     queryBuilder
       .skip(skip)
       .take(limit)
-      .orderBy('pagamento.created_at', 'DESC')
+      .orderBy( `pagamento.${filtros.sort_by}`, filtros.sort_order )
       .addOrderBy('pagamento.numero_parcela', 'ASC');
 
     const [items, total] = await queryBuilder.getManyAndCount();

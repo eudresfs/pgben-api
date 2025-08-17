@@ -20,6 +20,7 @@ import {
   MOTIVOS_POR_OPERACAO,
   MotivoOperacao,
 } from '../../../enums/operacao-concessao.enum';
+import { SYSTEM_USER_UUID } from '../../../shared/constants/system.constants';
 
 @Injectable()
 export class ConcessaoService {
@@ -406,7 +407,7 @@ export class ConcessaoService {
       }
 
       this.logger.info(
-        `Status da concessão ${id} atualizado de '${statusAnterior}' para '${status}' por ${usuarioId || 'SISTEMA'}`,
+        `Status da concessão ${id} atualizado de '${statusAnterior}' para '${status}' por ${usuarioId || SYSTEM_USER_UUID}`,
         ConcessaoService.name,
       );
 

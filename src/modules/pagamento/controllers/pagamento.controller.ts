@@ -69,6 +69,8 @@ export class PagamentoController {
     @Query('data_fim') data_fim?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('sort_by') sort_by?: string,
+    @Query('sort_order') sort_order?: 'ASC' | 'DESC',
   ) {
     const filtros = {
       search,
@@ -79,6 +81,8 @@ export class PagamentoController {
       concessao_id: concessao_id,
       data_inicio: data_inicio,
       data_fim: data_fim,
+      sort_by: sort_by || 'data_liberacao',
+      sort_order: sort_order || 'ASC',
       page: page || 1,
       limit: Math.min(limit || 10, 100), // Limita a 100 itens
     };

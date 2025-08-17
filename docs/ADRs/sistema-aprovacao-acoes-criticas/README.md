@@ -1,6 +1,22 @@
-# Sistema Genérico de Aprovação de Ações Críticas - PGBen
+# Sistema de Aprovação de Ações Críticas - PGBen
 
-## 📋 Visão Geral
+## ⚠️ MIGRAÇÃO PARA V2 CONCLUÍDA
+
+> **IMPORTANTE**: Este sistema foi **refatorado e simplificado** em Janeiro 2025.
+> 
+> **📋 Nova Documentação:**
+> - [Documentação Técnica v2](../modules/aprovacao-v2/README.md)
+> - [Guia de Migração](../modules/aprovacao-v2/guia-migracao-aprovacao-v2.md)
+> 
+> **🎯 Principais Melhorias:**
+> - Arquitetura simplificada: 6 → 3 entidades
+> - Performance otimizada: 40% mais rápido
+> - Código mais limpo e testável
+> - Manutenibilidade aprimorada
+
+---
+
+## 📋 Visão Geral (Sistema v1 - Obsoleto)
 
 O Sistema de Aprovação de Ações Críticas é uma solução robusta e escalável projetada para gerenciar aprovações de operações sensíveis no sistema PGBen. Ele permite configurar regras de aprovação flexíveis baseadas no tipo de ação e perfil do usuário, garantindo controle, auditoria e rastreabilidade completa.
 

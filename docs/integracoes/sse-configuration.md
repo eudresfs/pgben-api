@@ -1,8 +1,16 @@
-# Configuração SSE (Server-Sent Events)
+# Migração SSE para Ably - Configuração
+
+## ⚠️ IMPORTANTE - SISTEMA MIGRADO
+
+> **Este documento é mantido apenas para referência histórica. O sistema SSE foi completamente substituído pelo Ably.**
+> 
+> **Para a nova implementação, consulte:** `ably-frontend-integration.md`
 
 ## Visão Geral
 
-Este documento descreve as configurações necessárias para o funcionamento adequado do sistema SSE no PGBEN.
+~~Este documento descreve as configurações necessárias para o funcionamento adequado do sistema SSE no PGBEN.~~
+
+**MIGRADO PARA ABLY**: O sistema de notificações em tempo real agora utiliza Ably em vez de Server-Sent Events (SSE).
 
 ## Configurações do Servidor
 

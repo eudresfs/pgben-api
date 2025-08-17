@@ -27,7 +27,7 @@ import { MetricasModule } from './modules/metricas/metricas.module';
 import { RecursoModule } from './modules/recurso/recurso.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { PagamentoModule } from './modules/pagamento/pagamento.module';
-import { AprovacaoModule } from './modules/aprovacao/aprovacao.module';
+import { AprovacaoModule } from './modules/aprovacao-v2/aprovacao.module';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { CatalogAwareExceptionFilter } from './shared/exceptions/error-catalog';
 import { LoggingModule } from './shared/logging/logging.module';
@@ -42,6 +42,7 @@ import { DataSource } from 'typeorm';
 import { ScopeContextInterceptor } from './common/interceptors/scope-context.interceptor';
 import { AuditContextInterceptor } from './common/interceptors/audit-context.interceptor';
 import { RequestContextHolder } from './common/services/request-context-holder.service';
+import { AprovacaoInterceptor } from './modules/aprovacao-v2/interceptors/aprovacao.interceptor';
 
 @Module({
   imports: [
@@ -173,7 +174,7 @@ import { RequestContextHolder } from './common/services/request-context-holder.s
     // Módulo de notificações
     NotificacaoModule,
 
-    // Módulo de aprovação
+    // Módulo de aprovação v2
     AprovacaoModule,
 
     // Módulo de upload facilitado
@@ -198,6 +199,11 @@ import { RequestContextHolder } from './common/services/request-context-holder.s
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditContextInterceptor,
+    },
+    // Aplicar interceptor de aprovação globalmente
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AprovacaoInterceptor,
     },
   ],
 })

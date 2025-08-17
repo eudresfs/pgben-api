@@ -7,12 +7,12 @@ import { NotificacaoProativaService } from '../services/notificacao-proativa.ser
 import { NotificacaoPreferenciasService } from '../services/notificacao-preferencias.service';
 import { NotificacaoService } from '../services/notificacao.service';
 import { UsuarioService } from '../../usuario/services/usuario.service';
-import { TipoNotificacao } from '../../../entities/notification.entity';
 import { Usuario } from '../../../entities/usuario.entity';
 import {
   AgendamentoNotificacao,
   StatusAgendamento,
 } from '../../../entities/agendamento-notificacao.entity';
+import { TipoNotificacao } from '../../../entities/notification.entity';
 import { CanalNotificacao } from '../services/notificacao-preferencias.service';
 import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
 
@@ -311,12 +311,42 @@ export class WorkflowProativoListener {
     prioridade: 'low' | 'medium' | 'high';
     contexto?: Record<string, any>;
   }) {
+    // Validar se usuarioId é válido antes de prosseguir
+    if (!dados.usuarioId || dados.usuarioId.trim() === '') {
+      this.logger.error(
+        'Tentativa de enviar notificação com usuarioId inválido',
+        {
+          dados: {
+            tipo: dados.tipo,
+            titulo: dados.titulo,
+            usuarioId: dados.usuarioId,
+          },
+        },
+      );
+      return;
+    }
+
+    // Validar se usuarioId é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(dados.usuarioId)) {
+      this.logger.error(
+        `Tentativa de enviar notificação com UUID inválido: ${dados.usuarioId}`,
+        {
+          dados: {
+            tipo: dados.tipo,
+            titulo: dados.titulo,
+            usuarioId: dados.usuarioId,
+          },
+        },
+      );
+      return;
+    }
+
     // Verificar se deve enviar baseado nas preferências
-    const deveEnviar = await this.preferenciasService.deveEnviarNotificacao(
+    const deveEnviar = await this.preferenciasService.deveReceberNotificacao(
       dados.usuarioId,
       dados.tipo,
-      dados.prioridade,
-      CanalNotificacao.SSE,
+      CanalNotificacao.SISTEMA,
     );
 
     if (!deveEnviar) {
@@ -746,8 +776,7 @@ export class WorkflowProativoListener {
       });
 
       // Salvar no banco de dados
-      const agendamentoSalvo =
-        await this.agendamentoRepository.save(agendamento);
+      const agendamentoSalvo = await this.agendamentoRepository.save(agendamento);
 
       this.logger.log(
         `Agendamento de notificação salvo com ID ${agendamentoSalvo.id} para usuário ${dadosAgendamento.usuario_id}`,

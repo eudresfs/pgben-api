@@ -17,7 +17,7 @@ import { AppDataSource } from './seed-source';
 import { CoreSeedRunner } from './core/CoreSeedRunner';
 import { ReferenceSeedRunner } from './reference/ReferenceSeedRunner';
 import { SeedTipoBeneficioSchema1733158900000 } from './core/1733158900000-SeedTipoBeneficioSchema';
-import { SistemaAprovacaoSeed } from './core/SistemaAprovacaoSeed';
+// SistemaAprovacaoSeed removido - sistema antigo de aprovação
 
 /**
  * Função para verificar se as seeds foram executadas corretamente
@@ -81,13 +81,6 @@ async function verificarSeeds(): Promise<void> {
     );
     console.log(`✓ Ações críticas ativas: ${acoesCriticas[0].total}`);
 
-    // Verificar configurações de aprovação
-    const configAprovacao = await AppDataSource.query(
-      'SELECT COUNT(*) as total FROM configuracoes_aprovacao WHERE ativa = $1',
-      [true],
-    );
-    console.log(`✓ Configurações de aprovação ativas: ${configAprovacao[0].total}`);
-
     console.log('\n✅ Verificação concluída com sucesso!');
   } catch (error) {
     console.error('❌ Erro durante a verificação das seeds:');
@@ -123,15 +116,6 @@ async function runSeeds() {
       '✅ Seed de estruturas de tipos de benefício executado com sucesso!',
     );
 
-    console.log('\n===== EXECUTANDO SEEDS DO SISTEMA DE APROVAÇÃO =====');
-    console.log('📦 Incluindo: ações críticas, configurações e aprovadores');
-    console.log('Executando seed do sistema de aprovação...');
-    const sistemaAprovacaoSeed = new SistemaAprovacaoSeed(AppDataSource);
-    await sistemaAprovacaoSeed.run();
-    console.log(
-      '✅ Seed do sistema de aprovação executado com sucesso!',
-    );
-
     // Verificar se as seeds foram executadas corretamente
     await verificarSeeds();
 
@@ -147,7 +131,6 @@ async function runSeeds() {
       '✅ Seeds de referência: categorias, modelos e requisitos de documentos',
     );
     console.log('✅ Seeds de estrutura: schemas de tipos de benefício');
-    console.log('✅ Seeds de aprovação: ações críticas, configurações e aprovadores');
     console.log(`\n⏱️  Tempo total de execução: ${duration}s`);
     console.log('\n🚀 O sistema está pronto para uso!');
   } catch (error) {

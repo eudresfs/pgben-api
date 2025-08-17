@@ -84,11 +84,24 @@ export class EasyUploadService {
    */
   private async enviarNotificacaoCidadao(token: UploadToken): Promise<void> {
     try {
+      // Validar se o cidadao_id é válido antes de enviar notificação
+      if (!token.cidadao_id || token.cidadao_id.trim() === '') {
+        this.logger.error(
+          'Tentativa de enviar notificação sem cidadao_id válido',
+          {
+            token_id: token.id,
+            solicitacao_id: token.solicitacao_id,
+            cidadao_id: token.cidadao_id,
+          },
+        );
+        return;
+      }
+
       const uploadUrl = this.qrCodeService.getUploadUrl(token.token);
 
       await this.notificacaoService.enviarNotificacao({
         tipo: 'UPLOAD_DISPONIVEL',
-        destinatario_id: token.cidadao_id || '',
+        destinatario_id: token.cidadao_id,
         titulo: 'Solicitação de documentos',
         conteudo: 'Foi solicitado o envio de documentos para seu processo',
         link: uploadUrl,
@@ -147,11 +160,11 @@ export class EasyUploadService {
       tokenId,
       userId,
     );
-    if (token.cidadao_id) {
+    if (token.cidadao_id && token.cidadao_id.trim() !== '') {
       try {
         await this.notificacaoService.enviarNotificacao({
           tipo: 'UPLOAD_CANCELADO',
-          destinatario_id: token.cidadao_id || '',
+          destinatario_id: token.cidadao_id,
           titulo: 'Solicitação de documentos cancelada',
           conteudo: `A solicitação de envio de documentos foi cancelada. ${motivo ? `Motivo: ${motivo}` : ''}`,
           dados: {
@@ -165,8 +178,17 @@ export class EasyUploadService {
           `Erro ao enviar notificação de cancelamento: ${error.message}`,
         );
       }
+    } else {
+      this.logger.warn(
+        'Token sem cidadao_id válido - notificação de cancelamento não enviada',
+        {
+          token_id: tokenId,
+          cidadao_id: token.cidadao_id,
+        },
+      );
     }
   }
+
 
   /**
    * Valida um token de upload

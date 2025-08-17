@@ -126,7 +126,9 @@ export class PagamentoService {
       data_fim?: string;
       page?: number;
       limit?: number;
-      usuarioId?: string;
+      sort_by?: string;
+      sort_order?: 'ASC' | 'DESC';
+      usuario_id?: string;
     },
   ) {
     const { items, total } =

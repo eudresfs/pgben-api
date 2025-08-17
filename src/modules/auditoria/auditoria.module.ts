@@ -51,6 +51,9 @@ import { AuditoriaMiddleware } from './middlewares/auditoria.middleware';
 // Legacy Repository
 import { LogAuditoriaRepository } from './repositories/log-auditoria.repository';
 
+// Common Services
+import { SystemContextService } from '../../common/services/system-context.service';
+
 @Module({
   imports: [
     // TypeORM para entidades
@@ -122,6 +125,9 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
 
     // Legacy Repository
     LogAuditoriaRepository,
+
+    // Common Services
+    SystemContextService,
   ],
   exports: [
     // Core Components

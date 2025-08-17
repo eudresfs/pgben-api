@@ -30,6 +30,8 @@ import {
   ObservacaoTransicaoDto,
   AprovacaoSolicitacaoDto,
 } from '../dto/observacao-transicao.dto';
+import { RequerAprovacao } from '../../aprovacao-v2/decorators/requer-aprovacao.decorator';
+import { TipoAcaoCritica } from '../../aprovacao-v2/enums';
 
 /**
  * Controller de Workflow de Solicitação
@@ -172,8 +174,11 @@ export class WorkflowSolicitacaoController {
   @Post(':solicitacaoId/cancelar')
   @RequiresPermission({
     permissionName: 'solicitacao.cancelar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
+  })
+  @RequerAprovacao({
+    tipo: TipoAcaoCritica.CANCELAMENTO_SOLICITACAO,
+    permitirAutoAprovacao: true,
+    descricao: 'Cancelamento de solicitação',
   })
   @ApiOperation({
     summary: 'Cancela uma solicitação',
@@ -184,7 +189,7 @@ export class WorkflowSolicitacaoController {
     description: 'Solicitação cancelada com sucesso',
   })
   async cancelarSolicitacao(
-    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
+    @Param('solicitacao_id', ParseUUIDPipe) solicitacaoId: string,
     @Body() body: ObservacaoTransicaoDto,
     @Req() req: any,
   ): Promise<ResultadoTransicaoEstado> {
