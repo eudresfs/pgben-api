@@ -470,7 +470,7 @@ export class SolicitacaoRepository {
    * @returns Resultado da operação
    */
   async remover(id: string): Promise<void> {
-    await this.scopedRepository.deleteWithScope(id);
+    await this.scopedRepository.softDelete(id);
   }
 
   /**
