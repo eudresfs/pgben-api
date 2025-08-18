@@ -1457,4 +1457,65 @@ export class SolicitacaoService {
       }
     });
   }
+
+  /**
+   * Realiza o soft delete de uma solicitação
+   * @param solicitacaoId ID da solicitação a ser removida
+   * @param user Usuário que está realizando a exclusão
+   * @returns void
+   * @throws NotFoundException se a solicitação não for encontrada
+   * @throws BadRequestException se o status não permitir exclusão
+   */
+  async removerSolicitacao(
+    solicitacaoId: string,
+    user: any,
+  ): Promise<void> {
+    this.logger.log(`Iniciando remoção da solicitação: ${solicitacaoId}`);
+
+    try {
+      // Buscar a solicitação para validar
+      const solicitacao = await this.findById(solicitacaoId);
+
+      // Validar se o status permite exclusão (apenas RASCUNHO ou ABERTA)
+      const statusPermitidos = [
+        StatusSolicitacao.RASCUNHO,
+        StatusSolicitacao.ABERTA,
+      ];
+
+      if (!statusPermitidos.includes(solicitacao.status)) {
+        throwSolicitacaoCannotDelete(solicitacaoId, solicitacao.status, {
+          data: {
+            motivo: `Apenas solicitações com status 'RASCUNHO' ou 'ABERTA' podem ser excluídas. Status atual: '${solicitacao.status}'`,
+            statusPermitidos,
+          },
+        });
+      }
+
+      // Realizar o soft delete utilizando o método do repositório
+      await this.solicitacaoRepository.remover(solicitacaoId);
+
+      // Registrar a exclusão no histórico
+      await this.historicoRepository.save({
+        solicitacao_id: solicitacaoId,
+        status_anterior: solicitacao.status,
+        status_atual: solicitacao.status,
+        usuario_id: user.id,
+        observacao: `Solicitação removida (soft delete) pelo usuário`,
+        dados_alterados: {
+          acao: 'soft_delete',
+          status_anterior: solicitacao.status,
+          motivo: 'Exclusão lógica da solicitação',
+        },
+        ip_usuario: user.ip || '0.0.0.0',
+      });
+
+      this.logger.log(`Solicitação ${solicitacaoId} removida com sucesso`);
+    } catch (error) {
+      this.logger.error(
+        `Erro ao remover solicitação ${solicitacaoId}: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
 }

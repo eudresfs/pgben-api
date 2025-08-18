@@ -235,9 +235,7 @@ export class SolicitacaoController {
    */
   @Post()
   @RequiresPermission({
-    permissionName: 'solicitacao.criar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'body.unidadeId',
+    permissionName: 'solicitacao.criar'
   })
   @ApiOperation({
     summary: 'Criar nova solicitação de benefício',
@@ -699,5 +697,42 @@ export class SolicitacaoController {
   ) {
     const user = req.user;
     return this.solicitacaoService.desvincularDeterminacaoJudicial(id, user);
+  }
+
+  /**
+   * Remove uma solicitação (soft delete)
+   */
+  @Delete(':id')
+  @RequiresPermission({
+    permissionName: 'solicitacao.remover',
+  })
+  @ApiOperation({
+    summary: 'Remove uma solicitação (soft delete)',
+    description:
+      'Realiza a exclusão lógica de uma solicitação. Apenas solicitações com status "RASCUNHO" ou "ABERTA" podem ser removidas.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Solicitação removida com sucesso',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Solicitação não encontrada',
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Solicitação não pode ser removida devido ao status atual. Apenas solicitações com status "RASCUNHO" ou "ABERTA" podem ser excluídas.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Usuário não tem permissão para remover esta solicitação',
+  })
+  async removerSolicitacao(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: Request,
+  ): Promise<void> {
+    const user = req.user;
+    return this.solicitacaoService.removerSolicitacao(id, user);
   }
 }
