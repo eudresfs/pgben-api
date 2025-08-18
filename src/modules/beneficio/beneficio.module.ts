@@ -82,6 +82,9 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
     forwardRef(() =>
       import('../pagamento/pagamento.module').then((m) => m.PagamentoModule),
     ), // Para PagamentoService usado pelo ConcessaoService
+    forwardRef(() =>
+      import('../aprovacao/aprovacao.module').then((m) => m.AprovacaoModule),
+    ), // Para AprovacaoService usado pelo AprovacaoInterceptor
   ],
   controllers: [
     ConcessaoController,

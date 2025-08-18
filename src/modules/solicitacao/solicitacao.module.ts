@@ -85,6 +85,10 @@ import { PendenciaRepository } from './repositories/pendencia.repository';
     forwardRef(() => BeneficioModule),
     // Módulo de documentos para validação de requisitos documentais
     DocumentoModule,
+    // Módulo de aprovação para AprovacaoInterceptor
+    forwardRef(() =>
+      import('../aprovacao/aprovacao.module').then((m) => m.AprovacaoModule),
+    ),
   ],
   controllers: [
     SolicitacaoController,

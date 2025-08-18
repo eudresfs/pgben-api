@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable, throwError } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
 import { AprovacaoService } from '../services';
 import { APROVACAO_METADATA_KEY, ConfiguracaoAprovacao } from '../decorators';
 import { StatusSolicitacao, EstrategiaAprovacao } from '../enums';
@@ -24,7 +23,9 @@ export class AprovacaoInterceptor implements NestInterceptor {
   constructor(
     private readonly reflector: Reflector,
     private readonly aprovacaoService: AprovacaoService
-  ) {}
+  ) {
+    this.logger.log('AprovacaoInterceptor inicializado com dependências injetadas');
+  }
 
   /**
    * Métodos helper para logging seguro
@@ -37,59 +38,145 @@ export class AprovacaoInterceptor implements NestInterceptor {
     }
   }
 
-  private safeWarn(message: string, ...args: any[]): void {
-    if (this.logger && typeof this.logger.warn === 'function') {
-      this.logger.warn(message, ...args);
-    } else {
-      console.warn(`[AprovacaoInterceptor] ${message}`, ...args);
+  /**
+   * Método seguro para logging de warnings com fallback para console
+   * @param message Mensagem de warning
+   * @param context Contexto adicional para o log
+   */
+  private safeWarn(message: string, context?: any): void {
+    try {
+      this.logger.warn(`[AprovacaoInterceptor] ${message}`, context);
+    } catch (error) {
+      console.warn(`[AprovacaoInterceptor] ${message}`, context);
     }
   }
 
-  private safeError(message: string, ...args: any[]): void {
-    if (this.logger && typeof this.logger.error === 'function') {
-      this.logger.error(message, ...args);
-    } else {
-      console.error(`[AprovacaoInterceptor] ${message}`, ...args);
+  /**
+   * Método seguro para logging de erros com fallback para console
+   * @param message Mensagem de erro
+   * @param error Erro ou contexto adicional
+   */
+  private safeError(message: string, error?: any): void {
+    try {
+      this.logger.error(`[AprovacaoInterceptor] ${message}`, error);
+    } catch (logError) {
+      console.error(`[AprovacaoInterceptor] ${message}`, error);
     }
   }
 
-  private safeDebug(message: string, ...args: any[]): void {
-    if (this.logger && typeof this.logger.debug === 'function') {
-      this.logger.debug(message, ...args);
-    } else {
-      console.debug(`[AprovacaoInterceptor] ${message}`, ...args);
+  /**
+   * Método seguro para logging de debug com fallback para console
+   * @param message Mensagem de debug
+   * @param context Contexto adicional para o log
+   */
+  private safeDebug(message: string, context?: any): void {
+    try {
+      this.logger.debug(`[AprovacaoInterceptor] ${message}`, context);
+    } catch (error) {
+      console.debug(`[AprovacaoInterceptor] ${message}`, context);
     }
   }
 
+  /**
+   * Método seguro para logging de informações com fallback para console
+   * @param message Mensagem informativa
+   * @param context Contexto adicional para o log
+   */
+  private safeInfo(message: string, context?: any): void {
+    try {
+      this.logger.log(`[AprovacaoInterceptor] ${message}`, context);
+    } catch (error) {
+      console.log(`[AprovacaoInterceptor] ${message}`, context);
+    }
+  }
+
+  /**
+   * Verifica se todas as dependências críticas estão disponíveis
+   * @returns true se todas as dependências estão disponíveis, false caso contrário
+   */
+  private verificarDependenciasCriticas(): boolean {
+    this.safeDebug('Iniciando verificação de dependências críticas');
+    
+    if (!this.reflector) {
+      this.safeError('Dependência crítica não disponível: Reflector não está inicializado', {
+        timestamp: new Date().toISOString(),
+        interceptor: 'AprovacaoInterceptor',
+        dependency: 'Reflector'
+      });
+      return false;
+    }
+
+    if (!this.aprovacaoService) {
+      this.safeError('Dependência crítica não disponível: AprovacaoService não está inicializado', {
+        timestamp: new Date().toISOString(),
+        interceptor: 'AprovacaoInterceptor',
+        dependency: 'AprovacaoService'
+      });
+      return false;
+    }
+
+    this.safeDebug('Todas as dependências críticas estão disponíveis', {
+      reflector: !!this.reflector,
+      aprovacaoService: !!this.aprovacaoService,
+      timestamp: new Date().toISOString()
+    });
+    
+    return true;
+  }
+
+  /**
+   * Intercepta requisições para verificar se requerem aprovação
+   * @param context Contexto de execução da requisição
+   * @param next Handler para continuar o pipeline
+   * @returns Observable com a resposta da requisição
+   */
   async intercept(
     context: ExecutionContext,
     next: CallHandler
   ): Promise<Observable<any>> {
-    // Verificação de segurança para dependências críticas
-    if (!this.reflector || !this.aprovacaoService) {
-      this.safeWarn('Dependências críticas não disponíveis, executando sem verificação de aprovação');
-      return next.handle();
-    }
-
-    // Obtém a configuração de aprovação do decorator
-    const configuracao = this.reflector.get<ConfiguracaoAprovacao>(
-      APROVACAO_METADATA_KEY,
-      context.getHandler()
-    );
-
-    // Se não há configuração de aprovação, executa normalmente
-    if (!configuracao) {
-      return next.handle();
-    }
-
+    const startTime = Date.now();
     const request = context.switchToHttp().getRequest();
-    const usuario = request.user;
-
-    if (!usuario) {
-      throw new BadRequestException('Usuário não autenticado');
-    }
+    const { method, url, user } = request;
+    
+    this.safeInfo('Iniciando interceptação de aprovação', {
+      method,
+      url,
+      userId: user?.id,
+      timestamp: new Date().toISOString(),
+      requestId: request.id || 'unknown'
+    });
 
     try {
+      // Verificar se as dependências críticas estão disponíveis
+      this.safeDebug('Verificando dependências críticas antes da interceptação');
+      if (!this.verificarDependenciasCriticas()) {
+        this.safeError('Falha na verificação de dependências críticas - bloqueando execução', {
+          method,
+          url,
+          userId: user?.id,
+          timestamp: new Date().toISOString()
+        });
+        throw new BadRequestException(
+          'Sistema de aprovação não disponível. Tente novamente em alguns instantes.'
+        );
+      }
+
+      // Obtém a configuração de aprovação do decorator
+      const configuracao = this.reflector.get<ConfiguracaoAprovacao>(
+        APROVACAO_METADATA_KEY,
+        context.getHandler()
+      );
+
+      // Se não há configuração de aprovação, executa normalmente
+      if (!configuracao) {
+        return next.handle();
+      }
+
+      const usuario = request.user;
+
+      if (!usuario) {
+        throw new BadRequestException('Usuário não autenticado');
+      }
       // Verifica se a ação requer aprovação
       const requerAprovacao = await this.aprovacaoService.requerAprovacao(
         configuracao.tipo
@@ -150,10 +237,20 @@ export class AprovacaoInterceptor implements NestInterceptor {
 
     } catch (error) {
       this.safeError(
-        `Erro no interceptor de aprovação: ${error.message}`,
+        `Erro crítico no interceptor de aprovação: ${error.message}`,
         error.stack
       );
-      return throwError(() => error);
+      
+      // Se for uma BadRequestException, preserva a mensagem original
+      if (error instanceof BadRequestException) {
+        return throwError(() => error);
+      }
+      
+      // Para ações críticas, não permitir execução em caso de erro
+      // Isso garante que ações sensíveis não sejam executadas sem aprovação
+      return throwError(() => new BadRequestException(
+        'Erro no sistema de aprovação. A ação não pode ser executada no momento.'
+      ));
     }
   }
 

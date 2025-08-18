@@ -5,6 +5,7 @@ import {
   ParseUUIDPipe,
   Body,
   UseGuards,
+  UseInterceptors,
   Req,
   Get,
   HttpCode,
@@ -30,8 +31,9 @@ import {
   ObservacaoTransicaoDto,
   AprovacaoSolicitacaoDto,
 } from '../dto/observacao-transicao.dto';
-import { RequerAprovacao } from '../../aprovacao-v2/decorators/requer-aprovacao.decorator';
-import { TipoAcaoCritica } from '../../aprovacao-v2/enums';
+import { RequerAprovacao } from '../../aprovacao/decorators/requer-aprovacao.decorator';
+import { TipoAcaoCritica } from '../../aprovacao/enums';
+import { AprovacaoInterceptor } from '../../aprovacao/interceptors/aprovacao.interceptor';
 
 /**
  * Controller de Workflow de Solicitação
@@ -42,6 +44,7 @@ import { TipoAcaoCritica } from '../../aprovacao-v2/enums';
 @ApiTags('Solicitação')
 @Controller('solicitacao/workflow')
 @UseGuards(JwtAuthGuard, PermissionGuard)
+@UseInterceptors(AprovacaoInterceptor)
 @ApiBearerAuth()
 export class WorkflowSolicitacaoController {
   constructor(private readonly workflowService: WorkflowSolicitacaoService) {}

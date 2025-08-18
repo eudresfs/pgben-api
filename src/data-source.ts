@@ -29,6 +29,11 @@ import { AuditLog } from './entities/audit-log.entity';
 import { Recurso } from './entities/recurso.entity';
 import { RecursoHistorico } from './entities/recurso-historico.entity';
 
+// Entidades do módulo de aprovação
+import { AcaoAprovacao } from './modules/aprovacao/entities/acao-aprovacao.entity';
+import { SolicitacaoAprovacao } from './modules/aprovacao/entities/solicitacao-aprovacao.entity';
+import { Aprovador } from './modules/aprovacao/entities/aprovador.entity';
+
 // Importação centralizada de todas as entidades
 import {
   // Entidades de Alertas e Métricas
@@ -245,7 +250,10 @@ export const AppDataSource = new DataSource({
     UploadSession,
     UploadToken,
 
-    // Entidades do Sistema de Aprovação removidas - sistema antigo de aprovação
+    // Entidades do Sistema de Aprovação v2
+    AcaoAprovacao,
+    SolicitacaoAprovacao,
+    Aprovador,
   ],
   migrations: [__dirname + '/database/migrations/**/*{.ts,.js}'],
   migrationsTableName: 'migrations',

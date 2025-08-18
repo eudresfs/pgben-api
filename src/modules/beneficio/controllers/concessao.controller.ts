@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   UseGuards,
+  UseInterceptors,
   Query,
   BadRequestException,
 } from '@nestjs/common';
@@ -41,19 +42,19 @@ import {
   PaginationMetaDto,
 } from '../../../shared/dtos/pagination.dto';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
-import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
 import { ReqContext } from '../../../shared/request-context/req-context.decorator';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 import { MotivosOperacaoResponseDto } from '../dto/motivos-operacao.dto';
 import { OperacaoConcessao } from '../../../enums/operacao-concessao.enum';
 import { ScopeType } from '@/entities';
-import { Roles } from '@/auth';
-import { RequerAprovacao } from '../../aprovacao-v2/decorators/requer-aprovacao.decorator';
-import { TipoAcaoCritica } from '../../aprovacao-v2/enums';
+import { RequerAprovacao } from '../../aprovacao/decorators/requer-aprovacao.decorator';
+import { TipoAcaoCritica } from '../../aprovacao/enums';
+import { AprovacaoInterceptor } from '../../aprovacao/interceptors/aprovacao.interceptor';
 
 @ApiTags('Benefícios')
 @Controller('concessoes')
 @UseGuards(JwtAuthGuard, PermissionGuard)
+@UseInterceptors(AprovacaoInterceptor)
 @ApiBearerAuth()
 export class ConcessaoController {
   constructor(

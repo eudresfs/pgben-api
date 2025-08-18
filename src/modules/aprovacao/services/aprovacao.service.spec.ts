@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Logger } from '@nestjs/common';
 import { AprovacaoService } from './aprovacao.service';
 import {
   AcaoAprovacao,
@@ -152,6 +153,16 @@ describe('AprovacaoService', () => {
           provide: PermissionService,
           useValue: mockPermissionService,
         },
+        {
+          provide: Logger,
+          useValue: {
+            log: jest.fn(),
+            error: jest.fn(),
+            warn: jest.fn(),
+            debug: jest.fn(),
+            verbose: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -221,6 +232,10 @@ describe('AprovacaoService', () => {
         estrategia: EstrategiaAprovacao.MAIORIA,
         min_aprovadores: 2,
         ativo: true,
+        aprovadores: [
+          { id: 1, usuario_id: '1', perfil: 'admin' },
+          { id: 2, usuario_id: '2', perfil: 'supervisor' }
+        ],
       };
 
       mockAcaoAprovacaoRepository.findOne.mockResolvedValue(mockConfiguracao);

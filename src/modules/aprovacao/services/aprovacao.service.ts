@@ -20,6 +20,9 @@ import { SYSTEM_USER_UUID } from '../../../shared/constants/system.constants';
  */
 @Injectable()
 export class AprovacaoService {
+  /**
+   * Logger instanciado diretamente para evitar problemas de injeção
+   */
   private readonly logger = new Logger(AprovacaoService.name);
 
   constructor(
@@ -39,65 +42,196 @@ export class AprovacaoService {
     private readonly ablyService: AblyService,
     private readonly execucaoAcaoService: ExecucaoAcaoService,
     private readonly permissionService: PermissionService
-  ) {}
+  ) {
+    this.logger.log('AprovacaoService inicializado com sucesso');
+    
+    // Verificação de segurança das dependências críticas
+    this.verificarDependenciasCriticas();
+  }
+
+  /**
+   * Verificação de segurança das dependências críticas
+   * Garante que todas as dependências estão disponíveis
+   */
+  private verificarDependenciasCriticas(): void {
+    const dependenciasCriticas = [
+      { nome: 'acaoAprovacaoRepository', instancia: this.acaoAprovacaoRepository },
+      { nome: 'solicitacaoRepository', instancia: this.solicitacaoRepository },
+      { nome: 'aprovadorRepository', instancia: this.aprovadorRepository },
+      { nome: 'notificacaoService', instancia: this.notificacaoService },
+      { nome: 'usuarioService', instancia: this.usuarioService },
+      { nome: 'eventEmitter', instancia: this.eventEmitter },
+      { nome: 'auditEventEmitter', instancia: this.auditEventEmitter },
+      { nome: 'ablyService', instancia: this.ablyService },
+      { nome: 'execucaoAcaoService', instancia: this.execucaoAcaoService },
+      { nome: 'permissionService', instancia: this.permissionService }
+    ];
+
+    const dependenciasFaltando = dependenciasCriticas.filter(
+      dep => !dep.instancia
+    );
+
+    if (dependenciasFaltando.length > 0) {
+      const nomes = dependenciasFaltando.map(dep => dep.nome).join(', ');
+      this.logger.error(`Dependências críticas não inicializadas: ${nomes}`);
+      throw new Error(`AprovacaoService: Dependências críticas não inicializadas: ${nomes}`);
+    }
+
+    this.logger.log('Todas as dependências críticas verificadas com sucesso');
+  }
 
   /**
    * Verifica se uma ação requer aprovação
+   * Inclui verificações de segurança para garantir operação correta
    */
   async requerAprovacao(tipoAcao: TipoAcaoCritica): Promise<boolean> {
-    const configuracao = await this.acaoAprovacaoRepository.findOne({
-      where: { tipo_acao: tipoAcao, ativo: true }
-    });
-    
-    return !!configuracao;
+    try {
+      this.logger.debug(`Verificando se ação ${tipoAcao} requer aprovação`);
+      
+      // Verificação de segurança do repository
+      if (!this.acaoAprovacaoRepository) {
+        this.logger.error('acaoAprovacaoRepository não está disponível');
+        throw new Error('Dependência crítica não disponível: acaoAprovacaoRepository');
+      }
+
+      const configuracao = await this.acaoAprovacaoRepository.findOne({
+        where: { tipo_acao: tipoAcao, ativo: true }
+      });
+      
+      const requerAprovacao = !!configuracao;
+      this.logger.debug(`Ação ${tipoAcao} ${requerAprovacao ? 'requer' : 'não requer'} aprovação`);
+      
+      return requerAprovacao;
+    } catch (error) {
+      this.logger.error(`Erro ao verificar se ação ${tipoAcao} requer aprovação:`, error);
+      // Em caso de erro, assumir que requer aprovação por segurança
+      return true;
+    }
   }
 
   /**
    * Obtém a configuração de aprovação para um tipo de ação
+   * Inclui verificações de segurança e tratamento de erros robusto
    */
   async obterConfiguracaoAprovacao(tipoAcao: TipoAcaoCritica): Promise<AcaoAprovacao> {
-    const configuracao = await this.acaoAprovacaoRepository.findOne({
-      where: { tipo_acao: tipoAcao, ativo: true },
-      relations: ['aprovadores']
-    });
+    try {
+      this.logger.debug(`Obtendo configuração de aprovação para: ${tipoAcao}`);
+      
+      // Verificação de segurança do repository
+      if (!this.acaoAprovacaoRepository) {
+        this.logger.error('acaoAprovacaoRepository não está disponível');
+        throw new Error('Dependência crítica não disponível: acaoAprovacaoRepository');
+      }
 
-    if (!configuracao) {
-      throw new NotFoundException(`Configuração de aprovação não encontrada para: ${tipoAcao}`);
+      // Validação do parâmetro de entrada
+      if (!tipoAcao) {
+        this.logger.error('Tipo de ação não fornecido');
+        throw new BadRequestException('Tipo de ação é obrigatório');
+      }
+
+      const configuracao = await this.acaoAprovacaoRepository.findOne({
+        where: { tipo_acao: tipoAcao, ativo: true },
+        relations: ['aprovadores']
+      });
+
+      if (!configuracao) {
+        this.logger.warn(`Configuração de aprovação não encontrada para: ${tipoAcao}`);
+        throw new NotFoundException(`Configuração de aprovação não encontrada para: ${tipoAcao}`);
+      }
+
+      // Verificação adicional de integridade
+      if (!configuracao.aprovadores || configuracao.aprovadores.length === 0) {
+        this.logger.warn(`Configuração encontrada mas sem aprovadores para: ${tipoAcao}`);
+        throw new BadRequestException(`Configuração de aprovação sem aprovadores definidos para: ${tipoAcao}`);
+      }
+
+      this.logger.debug(`Configuração obtida com sucesso para ${tipoAcao}: ${configuracao.aprovadores.length} aprovadores`);
+      return configuracao;
+    } catch (error) {
+      this.logger.error(`Erro ao obter configuração de aprovação para ${tipoAcao}:`, error);
+      
+      // Re-lançar erros conhecidos
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      // Tratar erros inesperados
+      throw new Error(`Erro interno ao obter configuração de aprovação: ${error.message}`);
     }
-
-    return configuracao;
   }
 
   /**
    * Busca solicitação pendente para o mesmo item (independente da ação)
    * Implementa validação correta: apenas uma solicitação por item por vez
+   * Inclui verificações de segurança e tratamento de erros
    */
   async buscarSolicitacaoPendente(
     solicitanteId: string,
     tipoAcao: TipoAcaoCritica,
     dadosAcao?: Record<string, any>
   ): Promise<SolicitacaoAprovacao | null> {
-    const query = this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
-      .innerJoin('solicitacao.acao_aprovacao', 'acao')
-      .where('solicitacao.solicitante_id = :solicitanteId', { solicitanteId })
-      .andWhere('solicitacao.status IN (:...statusPendentes)', {
-        statusPendentes: [StatusSolicitacao.PENDENTE]
-      });
+    try {
+      this.logger.debug(`Buscando solicitação pendente para solicitante ${solicitanteId}, ação ${tipoAcao}`);
+      
+      // Verificação de segurança do repository
+      if (!this.solicitacaoRepository) {
+        this.logger.error('solicitacaoRepository não está disponível');
+        throw new Error('Dependência crítica não disponível: solicitacaoRepository');
+      }
 
-    // Validação principal: verifica se já existe solicitação pendente para o mesmo item
-    // O ID do item está sempre em dados_acao.params.id
-    if (dadosAcao?.params?.id) {
-      query.andWhere("solicitacao.dados_acao->'params'->>'id' = :itemId", {
-        itemId: dadosAcao.params.id
-      });
-    } else {
-      // Fallback: se não há ID específico do item, valida por tipo de ação
-      // (para ações que não afetam um item específico)
-      query.andWhere('acao.tipo_acao = :tipoAcao', { tipoAcao });
+      // Validação dos parâmetros de entrada
+      if (!solicitanteId) {
+        this.logger.error('ID do solicitante não fornecido');
+        throw new BadRequestException('ID do solicitante é obrigatório');
+      }
+
+      if (!tipoAcao) {
+        this.logger.error('Tipo de ação não fornecido');
+        throw new BadRequestException('Tipo de ação é obrigatório');
+      }
+
+      const query = this.solicitacaoRepository
+        .createQueryBuilder('solicitacao')
+        .innerJoin('solicitacao.acao_aprovacao', 'acao')
+        .where('solicitacao.solicitante_id = :solicitanteId', { solicitanteId })
+        .andWhere('solicitacao.status IN (:...statusPendentes)', {
+          statusPendentes: [StatusSolicitacao.PENDENTE]
+        });
+
+      // Validação principal: verifica se já existe solicitação pendente para o mesmo item
+      // O ID do item está sempre em dados_acao.params.id
+      if (dadosAcao?.params?.id) {
+        query.andWhere("solicitacao.dados_acao->'params'->>'id' = :itemId", {
+          itemId: dadosAcao.params.id
+        });
+        this.logger.debug(`Buscando por item específico: ${dadosAcao.params.id}`);
+      } else {
+        // Fallback: se não há ID específico do item, valida por tipo de ação
+        // (para ações que não afetam um item específico)
+        query.andWhere('acao.tipo_acao = :tipoAcao', { tipoAcao });
+        this.logger.debug(`Buscando por tipo de ação: ${tipoAcao}`);
+      }
+
+      const solicitacao = await query.getOne();
+      
+      if (solicitacao) {
+        this.logger.debug(`Solicitação pendente encontrada: ${solicitacao.id}`);
+      } else {
+        this.logger.debug('Nenhuma solicitação pendente encontrada');
+      }
+
+      return solicitacao;
+    } catch (error) {
+      this.logger.error(`Erro ao buscar solicitação pendente para ${solicitanteId}:`, error);
+      
+      // Re-lançar erros conhecidos
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      // Tratar erros inesperados
+      throw new Error(`Erro interno ao buscar solicitação pendente: ${error.message}`);
     }
-
-    return query.getOne();
   }
 
   /**
@@ -117,11 +251,12 @@ export class AprovacaoService {
 
     if (solicitacaoPendente) {
       const itemId = dto.dados_acao?.params?.id;
+      const tipoAcao = dto.tipo_acao;
       const mensagem = itemId 
-        ? `Já existe uma solicitação pendente para este item (ID: ${itemId}, Código: ${solicitacaoPendente.codigo}). ` +
-          `Aguarde a conclusão da aprovação ou cancele a solicitação anterior.`
-        : `Já existe uma solicitação pendente para esta ação (Código: ${solicitacaoPendente.codigo}). ` +
-          `Aguarde a conclusão da aprovação ou cancele a solicitação anterior.`;
+        ? `Já existe uma solicitação pendente para ${solicitacaoPendente.justificativa} (Protocolo: ${solicitacaoPendente.codigo}). ` +
+          `Aguarde a decisão do aprovador responsável.`
+        : `Já existe uma solicitação pendente para ${solicitacaoPendente.justificativa} (Protocolo: ${solicitacaoPendente.codigo}). ` +
+          `Aguarde a decisão do aprovador.`;
       
       throw new BadRequestException(mensagem);
     }
@@ -1507,6 +1642,72 @@ export class AprovacaoService {
       }
     } catch (error) {
       this.logger.error(`Erro ao notificar outros aprovadores: ${error.message}`, error.stack);
+    }
+  }
+
+  /**
+   * Verifica se o usuário pode auto-aprovar uma ação específica
+   */
+  async usuarioPodeAutoAprovar(usuarioId: string, tipoAcao: TipoAcaoCritica): Promise<boolean> {
+    try {
+      // Obter configuração da ação
+      const configuracao = await this.acaoAprovacaoRepository.findOne({
+        where: { tipo_acao: tipoAcao, ativo: true }
+      });
+
+      if (!configuracao) {
+        return false;
+      }
+
+      // Verificar se o usuário tem permissão específica
+      if (configuracao.permissao_aprovacao) {
+        return await this.permissionService.hasPermission({
+          userId: usuarioId,
+          permissionName: configuracao.permissao_aprovacao
+        });
+      }
+
+      // Verificar por perfil se configurado
+      if (configuracao.perfil_auto_aprovacao?.length) {
+        const usuario = await this.obterUsuarioComPerfis(usuarioId);
+        if (!usuario?.perfis?.length) {
+          return false;
+        }
+
+        const perfilUsuario = usuario.perfis.map(p => p.nome);
+        return configuracao.perfil_auto_aprovacao.some(perfil => 
+          perfilUsuario.includes(perfil)
+        );
+      }
+
+      return false;
+    } catch (error) {
+      this.logger.error(`Erro ao verificar auto-aprovação para usuário ${usuarioId}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Obtém usuário com seus perfis/roles
+   */
+  async obterUsuarioComPerfis(usuarioId: string): Promise<any> {
+    try {
+      const usuario = await this.usuarioService.findById(usuarioId);
+      
+      if (!usuario) {
+        return null;
+      }
+
+      return {
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        status: usuario.status,
+        perfis: usuario.role ? [{ nome: usuario.role.codigo }] : []
+      };
+    } catch (error) {
+      this.logger.error(`Erro ao obter usuário com perfis ${usuarioId}:`, error);
+      return null;
     }
   }
 }

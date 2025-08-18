@@ -2,7 +2,7 @@ import { Module, Scope } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
-import { APP_INTERCEPTOR, Reflector } from '@nestjs/core';
+import { Reflector } from '@nestjs/core';
 
 // Entidades do módulo simplificado
 import { AcaoAprovacao, SolicitacaoAprovacao, Aprovador } from './entities';
@@ -61,19 +61,24 @@ import { UsuarioModule } from '../usuario/usuario.module';
   ],
   
   providers: [
-    AprovacaoService,
+    // Reflector deve ser inicializado antes dos interceptors
+    Reflector,
+    
+    // Serviços principais (ordem de inicialização importante)
     SystemContextService,
+    AprovacaoService,
     AprovacaoNotificationService,
     
     // ExecucaoAcaoService como REQUEST-scoped para acessar o token do usuário
+    // Ajustado para DEFAULT scope para evitar problemas de inicialização
     {
       provide: ExecucaoAcaoService,
       useClass: ExecucaoAcaoService,
-      scope: Scope.REQUEST,
+      scope: Scope.DEFAULT, // Alterado de REQUEST para DEFAULT
     },
     
-    // Reflector para injeção de dependência nos interceptors
-    Reflector,
+    // Interceptor removido do registro global
+    AprovacaoInterceptor,
     
     // Listeners para eventos
     AprovacaoAuditListener,
