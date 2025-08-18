@@ -34,6 +34,7 @@ export enum AuditEventType {
   BACKUP_CREATED = 'system.backup.created',
   MAINTENANCE_START = 'system.maintenance.start',
   MAINTENANCE_END = 'system.maintenance.end',
+  BUSINESS_OPERATION = 'business.operation',
 
   // Eventos de Dados Sensíveis (LGPD)
   SENSITIVE_DATA_ACCESSED = 'lgpd.sensitive.accessed',

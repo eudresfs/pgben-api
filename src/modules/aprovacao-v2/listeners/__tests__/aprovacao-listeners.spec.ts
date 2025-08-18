@@ -5,6 +5,7 @@ import { AprovacaoAuditListener } from '../aprovacao-audit.listener';
 import { AprovacaoAblyListener } from '../aprovacao-ably.listener';
 import { AuditEventEmitter } from '../../../auditoria/events/emitters/audit-event.emitter';
 import { NotificationOrchestratorService } from '../../../notificacao/services/notification-orchestrator.service';
+import { AprovacaoNotificationService } from '../../services/aprovacao-notification.service';
 import { TipoOperacao } from '../../../../enums/tipo-operacao.enum';
 import { RiskLevel } from '../../../auditoria/events/types/audit-event.types';
 import { NotificationType, NotificationPriority } from '../../../notificacao/interfaces/ably.interface';
@@ -16,6 +17,7 @@ describe('Aprovacao Listeners', () => {
   let ablyListener: AprovacaoAblyListener;
   let mockAuditEventEmitter: jest.Mocked<AuditEventEmitter>;
   let mockNotificationOrchestrator: jest.Mocked<NotificationOrchestratorService>;
+  let mockAprovacaoNotificationService: jest.Mocked<AprovacaoNotificationService>;
   let module: TestingModule;
 
   const mockSolicitacao = {
@@ -36,6 +38,11 @@ describe('Aprovacao Listeners', () => {
   };
 
   beforeEach(async () => {
+    // Mock do Logger
+    jest.spyOn(Logger.prototype, 'error').mockImplementation();
+    jest.spyOn(Logger.prototype, 'log').mockImplementation();
+    jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+
     // Mock do AuditEventEmitter
     mockAuditEventEmitter = {
       emit: jest.fn().mockResolvedValue(undefined),
@@ -49,6 +56,18 @@ describe('Aprovacao Listeners', () => {
       publishNotification: jest.fn().mockResolvedValue(undefined),
       publishBroadcast: jest.fn().mockResolvedValue(undefined),
       broadcastNotification: jest.fn().mockResolvedValue(undefined)
+    } as any;
+
+    // Mock do AprovacaoNotificationService
+    mockAprovacaoNotificationService = {
+      notificarSolicitacaoCriada: jest.fn().mockResolvedValue([]),
+      notificarSolicitacaoAprovada: jest.fn().mockResolvedValue({}),
+      notificarSolicitacaoRejeitada: jest.fn().mockResolvedValue({}),
+      notificarSolicitacaoExecutada: jest.fn().mockResolvedValue({}),
+      notificarErroExecucao: jest.fn().mockResolvedValue({}),
+      criarNotificacaoAprovacao: jest.fn().mockResolvedValue({}),
+      buscarNotificacoesPorSolicitacao: jest.fn().mockResolvedValue([]),
+      buscarNotificacoesPorUsuarioETipo: jest.fn().mockResolvedValue([])
     } as any;
 
     const mockSystemContextService = {
@@ -78,6 +97,10 @@ describe('Aprovacao Listeners', () => {
         {
           provide: SystemContextService,
           useValue: mockSystemContextService
+        },
+        {
+          provide: AprovacaoNotificationService,
+          useValue: mockAprovacaoNotificationService
         }
       ]
     }).compile();

@@ -5,6 +5,8 @@ import { NotificationType, NotificationPriority } from '../../notificacao/interf
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { RiskLevel, AuditEventType } from '../../auditoria/events/types/audit-event.types';
+import { AprovacaoNotificationService } from '../services/aprovacao-notification.service';
+import { TipoNotificacao, PrioridadeNotificacao } from '../../../entities/notification.entity';
 
 /**
  * Listener para eventos Ably específicos do módulo de aprovação
@@ -18,6 +20,7 @@ export class AprovacaoAblyListener {
   constructor(
     private readonly notificationOrchestrator: NotificationOrchestratorService,
     private readonly auditEventEmitter: AuditEventEmitter,
+    private readonly aprovacaoNotificationService: AprovacaoNotificationService,
   ) {}
 
   /**
@@ -43,83 +46,120 @@ export class AprovacaoAblyListener {
         return;
       }
 
+      const solicitacao = payload.solicitacao;
+      const aprovadores = payload.aprovadores || [];
+      
+      // Preparar contexto de notificação
+      const context = {
+        solicitacao_id: solicitacao.id,
+        codigo_solicitacao: solicitacao.codigo,
+        tipo_acao: payload.configuracao?.tipo_acao || 'Ação não especificada',
+        solicitante_id: payload.solicitanteId,
+        justificativa: solicitacao.justificativa,
+        dados_acao: solicitacao.dados_acao,
+        timestamp: payload.timestamp,
+        metadados_adicionais: {
+          prazo_aprovacao: solicitacao.prazo_aprovacao,
+          acao_aprovacao_id: payload.configuracao?.id,
+          total_aprovadores: aprovadores.length,
+        },
+      };
+
+      // Criar notificações persistentes usando o novo serviço
+      await this.aprovacaoNotificationService.notificarSolicitacaoCriada(
+        payload.solicitanteId,
+        aprovadores,
+        context
+      );
+
+      // Emitir evento de auditoria detalhado
+      await this.auditEventEmitter.emitSystemEvent(
+        AuditEventType.SYSTEM_ERROR,
+        {
+          userId: payload.solicitanteId,
+          operation: TipoOperacao.CREATE,
+          entityName: 'SolicitacaoAprovacao',
+          entityId: solicitacao.id,
+          message: `Solicitação de aprovação criada: ${solicitacao.codigo}`,
+          riskLevel: RiskLevel.MEDIUM,
+          metadata: {
+            codigo_solicitacao: solicitacao.codigo,
+            tipo_acao: payload.configuracao?.tipo_acao,
+            total_aprovadores: aprovadores.length,
+            prazo_aprovacao: solicitacao.prazo_aprovacao,
+            justificativa_fornecida: !!solicitacao.justificativa,
+            dados_acao_incluidos: !!solicitacao.dados_acao,
+            notificacoes_enviadas: {
+              solicitante: true,
+              aprovadores: aprovadores.length,
+            },
+          }
+        }
+      );
+
       // Notificar solicitante sobre criação
       await this.notificationOrchestrator.publishNotification(payload.solicitanteId, {
         id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         type: NotificationType.INFO,
         priority: NotificationPriority.NORMAL,
         title: 'Solicitação Criada',
-        message: `Sua solicitação ${payload.solicitacao.codigo} foi criada e está aguardando aprovação.`,
+        message: `Sua solicitação ${solicitacao.codigo} foi criada e está aguardando aprovação.`,
         timestamp: new Date(),
         data: {
-          id: payload.solicitacao.id,
-          codigo: payload.solicitacao.codigo,
+          id: solicitacao.id,
+          codigo: solicitacao.codigo,
           tipo_acao: payload.configuracao?.tipo_acao,
           status: 'PENDENTE',
           timestamp: payload.timestamp
         }
       });
 
-      // Notificar administradores sobre nova solicitação
+      // Notificar aprovadores sobre nova solicitação
+      for (const aprovadorId of aprovadores) {
+        await this.notificationOrchestrator.publishNotification(aprovadorId, {
+          id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          type: NotificationType.INFO,
+          priority: NotificationPriority.HIGH,
+          title: 'Nova Solicitação para Aprovação',
+          message: `Nova solicitação ${solicitacao.codigo} aguarda sua aprovação.`,
+          timestamp: new Date(),
+          data: {
+            id: solicitacao.id,
+            codigo: solicitacao.codigo,
+            tipo_acao: payload.configuracao?.tipo_acao,
+            solicitante: payload.solicitanteId,
+            timestamp: payload.timestamp
+          }
+        });
+      }
+
+      // Enviar notificação broadcast para administradores
       await this.notificationOrchestrator.publishBroadcast({
         id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         type: NotificationType.INFO,
-        priority: NotificationPriority.NORMAL,
+        priority: NotificationPriority.HIGH,
         title: 'Nova Solicitação Criada',
-        message: `Nova solicitação ${payload.solicitacao.codigo} foi criada e aguarda aprovação.`,
+        message: `Nova solicitação ${solicitacao.codigo} foi criada e aguarda aprovação.`,
         timestamp: new Date(),
         data: {
-          id: payload.solicitacao.id,
-          codigo: payload.solicitacao.codigo,
+          id: solicitacao.id,
+          codigo: solicitacao.codigo,
           tipo_acao: payload.configuracao?.tipo_acao,
           status: 'PENDENTE',
-          timestamp: payload.timestamp
+          timestamp: payload.timestamp,
+          aprovadores: aprovadores.map((aprovadorId: string) => ({ id: aprovadorId })),
         }
       }, {
         type: 'role',
         value: 'ADMIN'
       });
 
-      // Notificar aprovadores sobre nova solicitação
-      if (payload.aprovadores && Array.isArray(payload.aprovadores)) {
-        for (const aprovadorId of payload.aprovadores) {
-          await this.notificationOrchestrator.publishNotification(aprovadorId, {
-            id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            type: NotificationType.INFO,
-            priority: NotificationPriority.HIGH,
-            title: 'Nova Solicitação para Aprovação',
-            message: `Nova solicitação ${payload.solicitacao.codigo} aguarda sua aprovação.`,
-            timestamp: new Date(),
-            data: {
-              id: payload.solicitacao.id,
-              codigo: payload.solicitacao.codigo,
-              tipo_acao: payload.configuracao?.tipo_acao,
-              solicitante: payload.solicitanteId,
-              timestamp: payload.timestamp
-            }
-          });
-        }
-      }
-
-      // Auditoria
-      await this.auditEventEmitter.emitSystemEvent(
-        AuditEventType.SYSTEM_INFO,
-        {
-          userId: payload.solicitanteId,
-          operation: TipoOperacao.CREATE,
-          entityName: 'Solicitação',
-          entityId: payload.solicitacao.id,
-          message: `Notificação Ably enviada para criação da solicitação ${payload.solicitacao.codigo}`,
-          riskLevel: RiskLevel.LOW
-        }
-      );
-
       this.logger.log(
-        `Notificações Ably enviadas sobre criação da solicitação ${payload.solicitacao.codigo}`
+        `Solicitação criada e notificações enviadas: ${solicitacao.codigo} (${aprovadores.length} aprovadores notificados)`
       );
     } catch (error) {
       this.logger.error(
-        `Erro ao enviar notificações Ably de criação: ${error.message}`,
+        `Erro ao processar criação da solicitação: ${error.message}`,
         error.stack
       );
     }
@@ -147,23 +187,35 @@ export class AprovacaoAblyListener {
         this.logger.error(`Solicitação ${payload.solicitacao.id || 'ID indefinido'} não possui código no evento aprovada`);
         return;
       }
-      // Notificar solicitante sobre aprovação
-      await this.notificationOrchestrator.publishNotification(payload.solicitanteId, {
-        id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: NotificationType.SUCCESS,
-        priority: NotificationPriority.HIGH,
-        title: 'Solicitação Aprovada',
-        message: `Sua solicitação ${payload.solicitacao.codigo} foi aprovada.`,
-        timestamp: new Date(),
-        data: {
-          id: payload.solicitacao.id,
-          codigo: payload.solicitacao.codigo,
-          tipo_acao: payload.solicitacao.acao_aprovacao.tipo_acao,
-          aprovador: payload.aprovadorId,
-          justificativa: payload.justificativa,
-          timestamp: payload.timestamp
-        }
-      });
+
+      const solicitacao = payload.solicitacao;
+      const aprovadorId = payload.aprovadorId;
+      
+      // Preparar contexto de notificação
+      const context = {
+        solicitacao_id: solicitacao.id,
+        codigo_solicitacao: solicitacao.codigo,
+        tipo_acao: solicitacao.acao_aprovacao?.tipo_acao || 'Ação não especificada',
+        status_anterior: 'PENDENTE',
+        novo_status: 'APROVADA',
+        aprovador_id: aprovadorId,
+        solicitante_id: payload.solicitanteId,
+        justificativa: payload.justificativa,
+        dados_acao: solicitacao.dados_acao,
+        timestamp: payload.timestamp,
+        metadados_adicionais: {
+          processado_em: solicitacao.processado_em,
+          processado_por: solicitacao.processado_por,
+          decisao: 'APROVADA',
+          notificar_financeiro: solicitacao.acao_aprovacao?.notificar_financeiro,
+        },
+      };
+
+      // Criar notificação persistente para o solicitante
+      await this.aprovacaoNotificationService.notificarSolicitacaoAprovada(
+        payload.solicitanteId,
+        context
+      );
 
       // Notificar setor financeiro se aplicável
       if (payload.solicitacao.acao_aprovacao.notificar_financeiro) {
@@ -188,25 +240,54 @@ export class AprovacaoAblyListener {
         });
       }
 
-      // Auditoria
+      // Emitir evento de auditoria detalhado
       await this.auditEventEmitter.emitSystemEvent(
-        AuditEventType.SYSTEM_INFO,
+        AuditEventType.SYSTEM_ERROR,
         {
-          userId: payload.solicitanteId,
+          userId: aprovadorId,
           operation: TipoOperacao.APPROVE,
-          entityName: 'Solicitação',
-          entityId: payload.solicitacao.id,
-          message: `Notificação Ably enviada para aprovação da solicitação ${payload.solicitacao.codigo}`,
-          riskLevel: RiskLevel.LOW
+          entityName: 'SolicitacaoAprovacao',
+          entityId: solicitacao.id,
+          message: `Solicitação aprovada: ${solicitacao.codigo}`,
+          riskLevel: RiskLevel.HIGH,
+          metadata: {
+            codigo_solicitacao: solicitacao.codigo,
+            aprovador_id: aprovadorId,
+            solicitante_id: payload.solicitanteId,
+            tipo_acao: solicitacao.acao_aprovacao?.tipo_acao,
+            observacoes_aprovador: payload.justificativa,
+            processado_em: solicitacao.processado_em,
+            dados_acao_aprovados: !!solicitacao.dados_acao,
+            notificacao_solicitante_enviada: true,
+            notificacao_financeiro_enviada: !!solicitacao.acao_aprovacao?.notificar_financeiro,
+          }
         }
       );
 
+      // Enviar notificação Ably para tempo real
+      await this.notificationOrchestrator.publishNotification(payload.solicitanteId, {
+        id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: NotificationType.SUCCESS,
+        priority: NotificationPriority.HIGH,
+        title: 'Solicitação Aprovada',
+        message: `Sua solicitação ${payload.solicitacao.codigo} foi aprovada.`,
+        timestamp: new Date(),
+        data: {
+          id: payload.solicitacao.id,
+          codigo: payload.solicitacao.codigo,
+          tipo_acao: payload.solicitacao.acao_aprovacao.tipo_acao,
+          aprovador: payload.aprovadorId,
+          justificativa: payload.justificativa,
+          timestamp: payload.timestamp
+        }
+      });
+
       this.logger.log(
-        `Notificações Ably enviadas sobre aprovação da solicitação ${payload.solicitacao.codigo}`
+        `Solicitação aprovada e notificações enviadas: ${solicitacao.codigo} (aprovador: ${aprovadorId})`
       );
     } catch (error) {
       this.logger.error(
-        `Erro ao enviar notificações Ably de aprovação: ${error.message}`,
+        `Erro ao processar aprovação da solicitação: ${error.message}`,
         error.stack
       );
     }
@@ -234,7 +315,60 @@ export class AprovacaoAblyListener {
         this.logger.error(`Solicitação ${payload.solicitacao.id || 'ID indefinido'} não possui código no evento rejeitada`);
         return;
       }
-      // Notificar solicitante sobre rejeição
+
+      const solicitacao = payload.solicitacao;
+      const aprovadorId = payload.aprovadorId;
+      
+      // Preparar contexto de notificação
+      const context = {
+        solicitacao_id: solicitacao.id,
+        codigo_solicitacao: solicitacao.codigo,
+        tipo_acao: solicitacao.acao_aprovacao?.tipo_acao || 'Ação não especificada',
+        status_anterior: 'PENDENTE',
+        novo_status: 'REJEITADA',
+        aprovador_id: aprovadorId,
+        solicitante_id: payload.solicitanteId,
+        justificativa: payload.justificativa,
+        dados_acao: solicitacao.dados_acao,
+        timestamp: payload.timestamp,
+        metadados_adicionais: {
+          processado_em: solicitacao.processado_em,
+          processado_por: solicitacao.processado_por,
+          decisao: 'REJEITADA',
+          motivo_rejeicao: payload.justificativa,
+        },
+      };
+
+      // Criar notificação persistente para o solicitante
+      await this.aprovacaoNotificationService.notificarSolicitacaoRejeitada(
+        payload.solicitanteId,
+        context
+      );
+
+      // Emitir evento de auditoria detalhado
+      await this.auditEventEmitter.emitSystemEvent(
+        AuditEventType.SYSTEM_INFO,
+        {
+          userId: aprovadorId,
+          operation: TipoOperacao.REJECT,
+          entityName: 'SolicitacaoAprovacao',
+          entityId: solicitacao.id,
+          message: `Solicitação rejeitada: ${solicitacao.codigo}`,
+          riskLevel: RiskLevel.HIGH,
+          metadata: {
+            codigo_solicitacao: solicitacao.codigo,
+            aprovador_id: aprovadorId,
+            solicitante_id: payload.solicitanteId,
+            tipo_acao: solicitacao.acao_aprovacao?.tipo_acao,
+            motivo_rejeicao: payload.justificativa,
+            processado_em: solicitacao.processado_em,
+            dados_acao_rejeitados: !!solicitacao.dados_acao,
+            notificacao_solicitante_enviada: true,
+          }
+        }
+      );
+
+      // Enviar notificação Ably para tempo real
       await this.notificationOrchestrator.publishNotification(payload.solicitanteId, {
         id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         type: NotificationType.ERROR,
@@ -252,25 +386,12 @@ export class AprovacaoAblyListener {
         }
       });
 
-      // Auditoria
-      await this.auditEventEmitter.emitSystemEvent(
-        AuditEventType.SYSTEM_INFO,
-        {
-          userId: payload.solicitanteId,
-          operation: TipoOperacao.REJECT,
-          entityName: 'Solicitação',
-          entityId: payload.solicitacao.id,
-          message: `Notificação Ably enviada para rejeição da solicitação ${payload.solicitacao.codigo}`,
-          riskLevel: RiskLevel.LOW
-        }
-      );
-
       this.logger.log(
-        `Notificação Ably enviada sobre rejeição da solicitação ${payload.solicitacao.codigo}`
+        `Solicitação rejeitada e notificações enviadas: ${solicitacao.codigo} (aprovador: ${aprovadorId})`
       );
     } catch (error) {
       this.logger.error(
-        `Erro ao enviar notificação Ably de rejeição: ${error.message}`,
+        `Erro ao processar rejeição da solicitação: ${error.message}`,
         error.stack
       );
     }
@@ -297,6 +418,57 @@ export class AprovacaoAblyListener {
         this.logger.error(`Solicitação ${payload.solicitacao.id || 'ID indefinido'} não possui código no evento executada`);
         return;
       }
+
+      const solicitacao = payload.solicitacao;
+      const resultado = payload.resultado;
+      
+      // Preparar contexto de notificação
+      const context = {
+        solicitacao_id: solicitacao.id,
+        codigo_solicitacao: solicitacao.codigo,
+        tipo_acao: solicitacao.acao_aprovacao?.tipo_acao || 'Ação não especificada',
+        status_anterior: 'APROVADA',
+        novo_status: 'EXECUTADA',
+        solicitante_id: payload.solicitanteId,
+        dados_acao: solicitacao.dados_acao,
+        timestamp: payload.timestamp,
+        metadados_adicionais: {
+          executado_em: solicitacao.executado_em,
+          processado_em: solicitacao.processado_em,
+          processado_por: solicitacao.processado_por,
+          resultado_execucao: resultado,
+        },
+      };
+
+      // Criar notificação persistente para o solicitante
+      await this.aprovacaoNotificationService.notificarSolicitacaoExecutada(
+        payload.solicitanteId,
+        context,
+        resultado
+      );
+
+      // Emitir evento de auditoria detalhado
+      await this.auditEventEmitter.emitSystemEvent(
+        AuditEventType.SYSTEM_INFO,
+        {
+          userId: payload.solicitanteId,
+          operation: TipoOperacao.EXECUTION,
+          entityName: 'SolicitacaoAprovacao',
+          entityId: solicitacao.id,
+          message: `Solicitação executada com sucesso: ${solicitacao.codigo}`,
+          riskLevel: RiskLevel.MEDIUM,
+          metadata: {
+            codigo_solicitacao: solicitacao.codigo,
+            tipo_acao: solicitacao.acao_aprovacao?.tipo_acao,
+            executado_em: solicitacao.executado_em,
+            processado_por: solicitacao.processado_por,
+            resultado_disponivel: !!resultado,
+            dados_acao_executados: !!solicitacao.dados_acao,
+            notificacao_solicitante_enviada: true,
+          }
+        }
+      );
+
       // Notificar solicitante sobre execução
       await this.notificationOrchestrator.publishNotification(payload.solicitanteId, {
         id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -314,25 +486,12 @@ export class AprovacaoAblyListener {
         }
       });
 
-      // Auditoria
-      await this.auditEventEmitter.emitSystemEvent(
-        AuditEventType.SYSTEM_INFO,
-        {
-          userId: payload.solicitanteId,
-          operation: TipoOperacao.EXECUTION,
-          entityName: 'Solicitação',
-          entityId: payload.solicitacao.id,
-          message: `Notificação Ably enviada sobre execução da solicitação ${payload.solicitacao.codigo}`,
-          riskLevel: RiskLevel.LOW
-        }
-      );
-
       this.logger.log(
-        `Notificação Ably enviada sobre execução da solicitação ${payload.solicitacao.codigo}`
+        `Solicitação executada e notificações enviadas: ${solicitacao.codigo} (resultado: ${!!resultado})`
       );
     } catch (error) {
       this.logger.error(
-        `Erro ao enviar notificação Ably de execução: ${error.message}`,
+        `Erro ao processar execução da solicitação: ${error.message}`,
         error.stack
       );
     }
@@ -359,6 +518,58 @@ export class AprovacaoAblyListener {
         this.logger.error(`Solicitação ${payload.solicitacao.id || 'ID indefinido'} não possui código no evento erro_execucao`);
         return;
       }
+
+      const solicitacao = payload.solicitacao;
+      const erro = payload.erro;
+      
+      // Preparar contexto de notificação
+      const context = {
+        solicitacao_id: solicitacao.id,
+        codigo_solicitacao: solicitacao.codigo,
+        tipo_acao: solicitacao.acao_aprovacao?.tipo_acao || 'Ação não especificada',
+        status_anterior: 'APROVADA',
+        novo_status: 'ERRO_EXECUCAO',
+        solicitante_id: payload.solicitanteId,
+        dados_acao: solicitacao.dados_acao,
+        timestamp: payload.timestamp,
+        metadados_adicionais: {
+          processado_em: solicitacao.processado_em,
+          processado_por: solicitacao.processado_por,
+          erro_execucao: solicitacao.erro_execucao,
+          erro_detalhes: erro,
+        },
+      };
+
+      // Criar notificação persistente para o solicitante
+      await this.aprovacaoNotificationService.notificarErroExecucao(
+        payload.solicitanteId,
+        context,
+        erro
+      );
+
+      // Emitir evento de auditoria detalhado
+      await this.auditEventEmitter.emitSystemEvent(
+        AuditEventType.SYSTEM_ERROR,
+        {
+          userId: payload.solicitanteId,
+          operation: TipoOperacao.EXECUTION,
+          entityName: 'SolicitacaoAprovacao',
+          entityId: solicitacao.id,
+          message: `Erro na execução da solicitação: ${solicitacao.codigo}`,
+          riskLevel: RiskLevel.HIGH,
+          metadata: {
+            codigo_solicitacao: solicitacao.codigo,
+            tipo_acao: solicitacao.acao_aprovacao?.tipo_acao,
+            erro_execucao: erro,
+            processado_em: solicitacao.processado_em,
+            processado_por: solicitacao.processado_por,
+            dados_acao_tentativa: !!solicitacao.dados_acao,
+            notificacao_solicitante_enviada: true,
+            requer_intervencao_manual: true,
+          },
+        }
+      );
+
       // Notificar solicitante sobre erro
       await this.notificationOrchestrator.publishNotification(payload.solicitanteId, {
         id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -397,12 +608,12 @@ export class AprovacaoAblyListener {
         value: 'ADMIN'
       });
 
-      this.logger.log(
-        `Notificações Ably enviadas sobre erro de execução da solicitação ${payload.solicitacao.codigo}`
+      this.logger.error(
+        `Erro na execução da solicitação: ${solicitacao.codigo} - ${erro}`
       );
     } catch (error) {
       this.logger.error(
-        `Erro ao enviar notificações Ably de erro de execução: ${error.message}`,
+        `Erro ao processar erro de execução da solicitação: ${error.message}`,
         error.stack
       );
     }

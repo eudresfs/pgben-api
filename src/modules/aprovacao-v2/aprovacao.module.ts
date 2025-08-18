@@ -22,6 +22,9 @@ import { AprovacaoInterceptor } from './interceptors';
 import { AprovacaoAuditListener } from './listeners/aprovacao-audit.listener';
 import { AprovacaoAblyListener } from './listeners/aprovacao-ably.listener';
 
+// Serviços especializados
+import { AprovacaoNotificationService } from './services/aprovacao-notification.service';
+
 // Módulos existentes para integração
 import { NotificacaoModule } from '../notificacao/notificacao.module';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
@@ -60,6 +63,7 @@ import { UsuarioModule } from '../usuario/usuario.module';
   providers: [
     AprovacaoService,
     SystemContextService,
+    AprovacaoNotificationService,
     
     // ExecucaoAcaoService como REQUEST-scoped para acessar o token do usuário
     {
