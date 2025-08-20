@@ -65,6 +65,8 @@ export class PagamentoMapper {
       quantidade_comprovantes: 0,
       created_at: pagamento.created_at,
       updated_at: pagamento.updated_at,
+      pode_liberar: false,
+      motivo_liberacao: 'Dados insuficientes para análise',
     };
 
     // Dados sensíveis apenas para usuários autorizados

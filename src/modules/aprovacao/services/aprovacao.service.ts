@@ -527,7 +527,7 @@ export class AprovacaoService {
     const queryBuilder = this.solicitacaoRepository
       .createQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.acao_aprovacao', 'acao')
-      .leftJoinAndSelect('solicitacao.aprovadores', 'aprovadores')
+      .leftJoinAndSelect('solicitacao.solicitacao_aprovadores', 'aprovadores')
       .orderBy('solicitacao.created_at', 'DESC');
 
     if (filtros.status) {
@@ -593,7 +593,7 @@ export class AprovacaoService {
     const queryBuilder = this.solicitacaoRepository
       .createQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.acao_aprovacao', 'acao')
-      .leftJoinAndSelect('solicitacao.aprovadores', 'aprovadores')
+      .leftJoinAndSelect('solicitacao.solicitacao_aprovadores', 'aprovadores')
       .where('solicitacao.status = :status', { status: StatusSolicitacao.PENDENTE })
       .andWhere('aprovadores.usuario_id = :aprovadorId', { aprovadorId })
       .andWhere('aprovadores.ativo = true')
@@ -624,7 +624,7 @@ export class AprovacaoService {
     const queryBuilder = this.solicitacaoRepository
        .createQueryBuilder('solicitacao')
        .leftJoinAndSelect('solicitacao.acao_aprovacao', 'acao')
-       .leftJoinAndSelect('solicitacao.aprovadores', 'aprovadores')
+       .leftJoinAndSelect('solicitacao.solicitacao_aprovadores', 'aprovadores')
        .where('solicitacao.status = :status', { status: StatusSolicitacao.PENDENTE })
        .andWhere("solicitacao.dados_acao->'params'->>'id' = :entidadeId", { entidadeId })
        .orderBy('solicitacao.created_at', 'DESC');
@@ -862,7 +862,7 @@ export class AprovacaoService {
   async listarAcoesAprovacao(filtros: any = {}): Promise<AcaoAprovacao[]> {
     const queryBuilder = this.acaoAprovacaoRepository
       .createQueryBuilder('acao')
-      .leftJoinAndSelect('acao.aprovadores', 'aprovadores')
+      .leftJoinAndSelect('acao.configuracao_aprovadores', 'aprovadores')
       .orderBy('acao.nome', 'ASC');
 
     if (filtros.ativo !== undefined) {

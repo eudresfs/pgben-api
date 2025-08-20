@@ -129,6 +129,8 @@ export class PagamentoService {
       sort_by?: string;
       sort_order?: 'ASC' | 'DESC';
       usuario_id?: string;
+      pagamento_ids?: string[]; // Novo filtro para múltiplos IDs
+      com_comprovante?: boolean; // Filtro para pagamentos com/sem comprovante
     },
   ) {
     const { items, total } =
@@ -137,8 +139,11 @@ export class PagamentoService {
     const page = filtros.page || 1;
     const limit = filtros.limit || 10;
 
+    // Aplicar mapper para converter entidades em DTOs de resposta com contexto de pagamentos anteriores
+    const mappedItems = PagamentoUnifiedMapper.toResponseDtoList(items, false);
+
     return {
-      data: items,
+      data: mappedItems,
       meta: {
         page,
         limit,

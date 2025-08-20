@@ -81,6 +81,119 @@ export class PagamentoUnifiedMapper {
       created_at: pagamento.created_at,
       updated_at: pagamento.updated_at,
 
+      // Campos de liberação - calculados dinamicamente baseados nos critérios de negócio
+      ...this.calcularCriteriosLiberacao(
+        pagamento,
+        null, // Será definido no contexto da lista
+        pagamento.solicitacao?.concessao || pagamento.concessao,
+      ),
+
+      // Informações relacionadas
+      solicitacao: pagamento.solicitacao
+        ? {
+          id: pagamento.solicitacao.id,
+          beneficiario: pagamento.solicitacao.beneficiario?.nome,
+          tipo_beneficio: {
+            id: pagamento.solicitacao.tipo_beneficio?.id || '',
+            nome: pagamento.solicitacao.tipo_beneficio?.nome || 'EVENTUAL',
+          },
+          unidade: {
+            id: pagamento.solicitacao.unidade?.id || '',
+            nome: pagamento.solicitacao.unidade?.nome || 'N/A',
+          },
+          tecnico: {
+            id: pagamento.solicitacao.tecnico?.id || '',
+            nome: pagamento.solicitacao.tecnico?.nome || 'N/A',
+          },
+        }
+        : undefined,
+
+      info_bancaria: pagamento.info_bancaria
+        ? {
+            tipo: pagamento.info_bancaria.tipo_conta || 'CORRENTE',
+            chave_pix: incluirDadosSensiveis
+              ? pagamento.info_bancaria.chave_pix
+              : this.aplicarMascara(pagamento.info_bancaria.chave_pix || ''),
+            pix_tipo: pagamento.info_bancaria.tipo_chave_pix?.toUpperCase() as 'CPF' | 'CNPJ' | 'EMAIL' | 'TELEFONE' | 'ALEATORIA' | undefined,
+            banco: pagamento.info_bancaria.banco,
+            agencia: incluirDadosSensiveis
+              ? pagamento.info_bancaria.agencia
+              : this.aplicarMascara(pagamento.info_bancaria.agencia || ''),
+            conta: incluirDadosSensiveis
+              ? pagamento.info_bancaria.conta
+              : this.aplicarMascara(pagamento.info_bancaria.conta || ''),
+          }
+        : undefined,
+    };
+
+    return dto;
+  }
+
+  /**
+   * Mapeia lista de entidades para lista de DTOs de resposta
+   * Calcula critérios de liberação considerando o contexto de todos os pagamentos
+   *
+   * @param pagamentos - Lista de entidades
+   * @param incluirDadosSensiveis - Se deve incluir dados sensíveis
+   * @returns Lista de DTOs de resposta
+   */
+  static toResponseDtoList(
+    pagamentos: Pagamento[],
+    incluirDadosSensiveis: boolean = false,
+  ): PagamentoResponseDto[] {
+    if (!Array.isArray(pagamentos)) {
+      return [];
+    }
+
+    return pagamentos.map((pagamento) => {
+      // Buscar pagamento anterior da mesma concessão/solicitação
+      const pagamentoAnterior = this.buscarPagamentoAnterior(pagamento, pagamentos);
+      
+      return this.toResponseDtoWithContext(pagamento, pagamentoAnterior, incluirDadosSensiveis);
+    });
+  }
+
+  /**
+   * Mapeia entidade Pagamento para DTO de resposta com contexto de pagamento anterior
+   *
+   * @param pagamento - Entidade do pagamento
+   * @param pagamentoAnterior - Pagamento da parcela anterior (se existir)
+   * @param incluirDadosSensiveis - Se deve incluir dados sensíveis na resposta
+   * @returns DTO de resposta formatado
+   */
+  static toResponseDtoWithContext(
+    pagamento: Pagamento,
+    pagamentoAnterior: Pagamento | null,
+    incluirDadosSensiveis: boolean = false,
+  ): PagamentoResponseDto {
+    const dto: PagamentoResponseDto = {
+      id: pagamento.id,
+      solicitacao_id: pagamento.solicitacao_id || '',
+      info_bancaria_id: pagamento.info_bancaria_id,
+      valor: pagamento.valor,
+      status: pagamento.status,
+      metodo_pagamento: pagamento.metodo_pagamento,
+      data_liberacao: pagamento.data_liberacao,
+      data_pagamento: pagamento.data_pagamento,
+      observacoes: pagamento.observacoes,
+      numero_parcela: pagamento.numero_parcela || 1,
+      total_parcelas: pagamento.total_parcelas || 1,
+      responsavel_liberacao: {
+        id: pagamento.liberado_por || 'sistema',
+        nome: 'Sistema',
+        role: 'Sistema',
+      },
+      quantidade_comprovantes: 0,
+      created_at: pagamento.created_at,
+      updated_at: pagamento.updated_at,
+
+      // Campos de liberação - calculados com contexto do pagamento anterior
+      ...this.calcularCriteriosLiberacao(
+        pagamento,
+        pagamentoAnterior,
+        pagamento.solicitacao?.concessao || pagamento.concessao,
+      ),
+
       // Informações relacionadas
       solicitacao: pagamento.solicitacao
         ? {
@@ -88,7 +201,7 @@ export class PagamentoUnifiedMapper {
             beneficiario: pagamento.solicitacao.beneficiario?.nome || 'N/A',
             tipo_beneficio: {
               id: pagamento.solicitacao.tipo_beneficio?.id || '',
-              nome: pagamento.solicitacao.tipo_beneficio?.nome || 'EVENTUAL',
+              nome: pagamento.solicitacao.tipo_beneficio?.nome || 'N/A',
             },
             unidade: {
               id: pagamento.solicitacao.unidade?.id || '',
@@ -103,25 +216,18 @@ export class PagamentoUnifiedMapper {
 
       info_bancaria: pagamento.info_bancaria
         ? {
-            tipo: pagamento.info_bancaria.tipo_conta || 'POUPANCA_SOCIAL',
+            tipo: pagamento.info_bancaria.tipo_conta || 'CORRENTE',
             chave_pix: incluirDadosSensiveis
               ? pagamento.info_bancaria.chave_pix
-              : undefined,
-            pix_tipo: pagamento.info_bancaria.tipo_chave_pix?.toUpperCase() as
-              | 'CPF'
-              | 'CNPJ'
-              | 'EMAIL'
-              | 'TELEFONE'
-              | 'ALEATORIA',
-            banco: incluirDadosSensiveis
-              ? pagamento.info_bancaria.banco
-              : undefined,
+              : this.aplicarMascara(pagamento.info_bancaria.chave_pix || ''),
+            pix_tipo: pagamento.info_bancaria.tipo_chave_pix?.toUpperCase() as 'CPF' | 'CNPJ' | 'EMAIL' | 'TELEFONE' | 'ALEATORIA' | undefined,
+            banco: pagamento.info_bancaria.banco,
             agencia: incluirDadosSensiveis
               ? pagamento.info_bancaria.agencia
-              : undefined,
+              : this.aplicarMascara(pagamento.info_bancaria.agencia || ''),
             conta: incluirDadosSensiveis
               ? pagamento.info_bancaria.conta
-              : undefined,
+              : this.aplicarMascara(pagamento.info_bancaria.conta || ''),
           }
         : undefined,
     };
@@ -130,23 +236,125 @@ export class PagamentoUnifiedMapper {
   }
 
   /**
-   * Mapeia lista de entidades para lista de DTOs de resposta
+   * Busca o pagamento da parcela anterior na lista de pagamentos
    *
-   * @param pagamentos - Lista de entidades
-   * @param incluirDadosSensiveis - Se deve incluir dados sensíveis
-   * @returns Lista de DTOs de resposta
+   * @param pagamento - Pagamento atual
+   * @param todosPagamentos - Lista completa de pagamentos
+   * @returns Pagamento anterior ou null se não encontrado
    */
-  static toResponseDtoList(
-    pagamentos: Pagamento[],
-    incluirDadosSensiveis: boolean = false,
-  ): PagamentoResponseDto[] {
-    if (!Array.isArray(pagamentos)) {
-      return [];
+  static buscarPagamentoAnterior(
+    pagamento: Pagamento,
+    todosPagamentos: Pagamento[],
+  ): Pagamento | null {
+    if (pagamento.numero_parcela <= 1) {
+      return null; // Primeira parcela não tem anterior
     }
 
-    return pagamentos.map((pagamento) =>
-      this.toResponseDto(pagamento, incluirDadosSensiveis),
+    const parcelaAnterior = pagamento.numero_parcela - 1;
+    
+    // Buscar na mesma concessão ou solicitação
+    const pagamentoAnterior = todosPagamentos.find(
+      (p) =>
+        p.id !== pagamento.id &&
+        p.numero_parcela === parcelaAnterior &&
+        (
+          (pagamento.concessao_id && p.concessao_id === pagamento.concessao_id) ||
+          (pagamento.solicitacao_id && p.solicitacao_id === pagamento.solicitacao_id)
+        ),
     );
+
+    return pagamentoAnterior || null;
+  }
+
+  /**
+   * Calcula os critérios de liberação para um pagamento com motivos específicos e detalhados
+   *
+   * @param pagamento - Entidade do pagamento atual
+   * @param pagamentoAnterior - Entidade do pagamento anterior (se existir)
+   * @param concessao - Entidade da concessão relacionada
+   * @returns Objeto com pode_liberar e motivo_liberacao detalhado
+   */
+  static calcularCriteriosLiberacao(
+    pagamento: Pagamento,
+    pagamentoAnterior?: Pagamento | null,
+    concessao?: any,
+  ): { pode_liberar: boolean; motivo_liberacao: string } {
+    // Verificar se é a primeira parcela
+    if (pagamento.numero_parcela === 1) {
+      // Para primeira parcela, verificar apenas status da concessão
+      if (!concessao) {
+        return {
+          pode_liberar: false,
+          motivo_liberacao: 'Primeira parcela bloqueada: concessão não encontrada para validação',
+        };
+      }
+
+      const statusConcessaoValido = ['ativo', 'apto'].includes(
+        concessao.status?.toLowerCase(),
+      );
+
+      if (!statusConcessaoValido) {
+        return {
+          pode_liberar: false,
+          motivo_liberacao: `Primeira parcela bloqueada: concessão com status '${concessao.status}' (requer ATIVO ou APTO)`,
+        };
+      }
+
+      return {
+        pode_liberar: true,
+        motivo_liberacao: 'Primeira parcela: concessão ativa/apta - liberado para pagamento',
+      };
+    }
+
+    // Para parcelas subsequentes, verificar múltiplos critérios
+    if (!concessao) {
+      return {
+        pode_liberar: false,
+        motivo_liberacao: `Parcela ${pagamento.numero_parcela} bloqueada: concessão não encontrada para validação`,
+      };
+    }
+
+    const statusConcessaoValido = ['ativo', 'apto'].includes(
+      concessao.status?.toLowerCase(),
+    );
+
+    // Verificar status da concessão primeiro
+    if (!statusConcessaoValido) {
+      return {
+        pode_liberar: false,
+        motivo_liberacao: `Parcela ${pagamento.numero_parcela} bloqueada: concessão com status '${concessao.status}' (requer ATIVO ou APTO)`,
+      };
+    }
+
+    // Verificar se existe pagamento anterior
+    if (!pagamentoAnterior) {
+      return {
+        pode_liberar: false,
+        motivo_liberacao: `Parcela ${pagamento.numero_parcela} bloqueada: pagamento da parcela ${pagamento.numero_parcela - 1} não encontrado`,
+      };
+    }
+
+    // Verificar se pagamento anterior está confirmado
+    if (pagamentoAnterior.status !== 'confirmado') {
+      return {
+        pode_liberar: false,
+        motivo_liberacao: `Parcela ${pagamento.numero_parcela} bloqueada: parcela ${pagamentoAnterior.numero_parcela} com status '${pagamentoAnterior.status}' (requer CONFIRMADO)`,
+      };
+    }
+
+    // Verificar se pagamento anterior tem comprovante
+    if (!pagamentoAnterior.comprovante_id) {
+      return {
+        pode_liberar: false,
+        motivo_liberacao: `Parcela ${pagamento.numero_parcela} bloqueada: parcela ${pagamentoAnterior.numero_parcela} sem comprovante de pagamento`,
+      };
+    }
+
+    // Todos os critérios atendidos
+    return {
+      pode_liberar: true,
+      motivo_liberacao: `Parcela ${pagamento.numero_parcela} liberada: concessão ativa, parcela ${pagamentoAnterior.numero_parcela} confirmada com comprovante`,
+    };
   }
 
   // ==========================================
@@ -243,10 +451,10 @@ export class PagamentoUnifiedMapper {
 
       destinatario: confirmacao.destinatario
         ? {
-            id: confirmacao.destinatario.id,
-            nome: confirmacao.destinatario.nome,
-            relacao: 'Beneficiário',
-          }
+          id: confirmacao.destinatario.id,
+          nome: confirmacao.destinatario.nome,
+          relacao: 'Beneficiário',
+        }
         : undefined,
     };
   }

@@ -130,6 +130,24 @@ export class PagamentoResponseDto extends PagamentoResponseBaseDto {
   quantidade_comprovantes: number;
 
   /**
+   * Indica se o pagamento pode ser liberado
+   */
+  @ApiProperty({
+    description: 'Indica se o pagamento pode ser liberado baseado nos critérios de negócio',
+    example: true,
+  })
+  pode_liberar: boolean;
+
+  /**
+   * Motivo pelo qual o pagamento pode ou não ser liberado
+   */
+  @ApiProperty({
+    description: 'Motivo detalhado sobre a possibilidade de liberação do pagamento',
+    example: 'Pagamento anterior confirmado com comprovante e concessão ativa',
+  })
+  motivo_liberacao: string;
+
+  /**
    * Informações sobre confirmação de recebimento (quando existente)
    */
   @ApiProperty({

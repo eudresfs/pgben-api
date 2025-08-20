@@ -130,10 +130,10 @@ export class InputValidationInterceptor implements NestInterceptor {
       if (typeof value !== 'string') continue;
 
       // Verificar tamanho - permitir tokens JWT longos
-      const sizeLimit = key === 'token' ? 2000 : this.sizeLimits.query; // JWT tokens podem ser longos
-      if (value.length > sizeLimit) {
-        throw new BadRequestException(`Query parameter '${key}' muito longo`);
-      }
+      // const sizeLimit = key === 'token' ? 2000 : this.sizeLimits.query; // JWT tokens podem ser longos
+      // if (value.length > sizeLimit) {
+      //   throw new BadRequestException(`Query parameter '${key}' muito longo`);
+      // }
 
       // Verificar padrões suspeitos
       this.checkSuspiciousPatterns(value, `query parameter '${key}'`);

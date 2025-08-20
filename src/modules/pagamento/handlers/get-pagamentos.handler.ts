@@ -152,6 +152,8 @@ export class GetPagamentosHandler {
         observacoes: pagamento.observacoes,
         solicitacao_id: pagamento.solicitacao_id || '',
         data_liberacao: pagamento.data_liberacao || new Date(),
+        pode_liberar: false,
+        motivo_liberacao: 'Dados insuficientes para análise',
         responsavel_liberacao: {
           id: pagamento.liberado_por || '',
           nome: 'Sistema',

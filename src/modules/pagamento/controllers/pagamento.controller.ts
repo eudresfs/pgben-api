@@ -57,6 +57,18 @@ export class PagamentoController {
   @ApiQuery({ name: 'data_fim', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ 
+    name: 'pagamento_ids', 
+    required: false, 
+    type: String, 
+    description: 'Lista de IDs de pagamento separados por vírgula (ex: id1,id2,id3). Máximo de 50 IDs por consulta.' 
+  })
+  @ApiQuery({ 
+    name: 'com_comprovante', 
+    required: false, 
+    type: Boolean, 
+    description: 'Filtrar pagamentos que possuem comprovante anexado (true) ou não possuem (false)' 
+  })
   @ApiResponse({ status: 200, description: 'Lista paginada de pagamentos' })
   async findAll(
     @Query('search') search?: string,
@@ -71,7 +83,26 @@ export class PagamentoController {
     @Query('limit') limit?: number,
     @Query('sort_by') sort_by?: string,
     @Query('sort_order') sort_order?: 'ASC' | 'DESC',
+    @Query('pagamento_ids') ids?: string,
+    @Query('com_comprovante') com_comprovante?: boolean,
   ) {
+    // Validar e processar lista de IDs se fornecida
+    let pagamento_ids: string[] | undefined;
+    if (ids) {
+      // Dividir a string por vírgulas e remover espaços em branco
+      const idsArray = ids.split(',').map(id => id.trim()).filter(id => id.length > 0);
+      
+      // Validar formato UUID de cada ID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const invalidIds = idsArray.filter(id => !uuidRegex.test(id));
+      
+      if (invalidIds.length > 0) {
+        throw new BadRequestException(`IDs inválidos encontrados: ${invalidIds.join(', ')}`);
+      }
+      
+      pagamento_ids = idsArray;
+    }
+
     const filtros = {
       search,
       usuario_id: usuario_id,
@@ -85,6 +116,8 @@ export class PagamentoController {
       sort_order: sort_order || 'ASC',
       page: page || 1,
       limit: Math.min(limit || 10, 100), // Limita a 100 itens
+      pagamento_ids,
+      com_comprovante,
     };
 
     return await this.pagamentoService.findAll(filtros);

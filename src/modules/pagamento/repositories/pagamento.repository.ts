@@ -268,11 +268,14 @@ export class PagamentoRepository {
       page?: number;
       limit?: number;
       usuarioId?: string;
+      pagamento_ids?: string[]; // Novo filtro para múltiplos IDs
+      com_comprovante?: boolean; // Filtro para pagamentos com/sem comprovante
     },
   ): Promise<{ items: Pagamento[]; total: number }> {
     const queryBuilder = this.scopedRepository
       .createScopedQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+      .leftJoinAndSelect('pagamento.concessao', 'concessao')
       .leftJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .leftJoin('solicitacao.beneficiario', 'beneficiario')
       .leftJoin('solicitacao.unidade', 'unidade')
@@ -366,6 +369,30 @@ export class PagamentoRepository {
       queryBuilder.andWhere('pagamento.concessao_id = :concessao_id', {
         concessao_id: filtros.concessao_id,
       });
+    }
+
+    // Filtro por múltiplos IDs de pagamento
+    if (filtros.pagamento_ids && filtros.pagamento_ids.length > 0) {
+      // Validar todos os UUIDs antes de usar na query
+      filtros.pagamento_ids.forEach((id, index) => {
+        UuidValidator.validateOrThrow(id, `pagamento_ids[${index}]`);
+      });
+      
+      // Usar IN clause para buscar múltiplos IDs de forma eficiente
+      queryBuilder.andWhere('pagamento.id IN (:...pagamento_ids)', {
+        pagamento_ids: filtros.pagamento_ids,
+      });
+    }
+
+    // Filtro por presença de comprovante
+    if (filtros.com_comprovante !== undefined) {
+      if (filtros.com_comprovante === true) {
+        // Buscar apenas pagamentos que possuem comprovante
+        queryBuilder.andWhere('pagamento.comprovante_id IS NOT NULL');
+      } else {
+        // Buscar apenas pagamentos que não possuem comprovante
+        queryBuilder.andWhere('pagamento.comprovante_id IS NULL');
+      }
     }
 
     if (filtros.data_inicio && filtros.data_fim) {
