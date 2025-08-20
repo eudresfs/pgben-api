@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.7](https://github.com/kemosoft-team/pgben-server/compare/v0.1.6...v0.1.7) (2025-08-20)
+
+
+### Features
+
+* **approval:** add notification service and enhance ably listener ([8d29c97](https://github.com/kemosoft-team/pgben-server/commit/8d29c978f959a25da69a0c1eb0e395c7403eadbe))
+* **aprovacao-v2:** migrate approval system to v2 with simplified architecture ([970a8fc](https://github.com/kemosoft-team/pgben-server/commit/970a8fc48a1982b1eaf736324b751b7a03b574a5))
+* **aprovacao:** implement approval module with entities, services and strategies ([237ff73](https://github.com/kemosoft-team/pgben-server/commit/237ff73e25955b6e61d2d2c158bcaf4c6ae3b26a))
+* **aprovacao:** migrate aprovacao-v2 module to aprovacao with expanded functionality ([f90a6d7](https://github.com/kemosoft-team/pgben-server/commit/f90a6d7f8fda39835bd5c4f720a029ea2eda652f))
+* **auth:** add scoped user lookup methods for authentication ([0a5fbac](https://github.com/kemosoft-team/pgben-server/commit/0a5fbac4ff1d1ff27d26f69a3e2674496bf9b53c))
+* **cidadao:** implement upsert functionality for citizen creation ([214c28a](https://github.com/kemosoft-team/pgben-server/commit/214c28a75e172b85918c15fe9c2bf0205df0ea06))
+* **minio:** improve configuration validation and error handling ([e694df6](https://github.com/kemosoft-team/pgben-server/commit/e694df6ec82c9d35e9427770b098aeaac2c53f05))
+* **nginx:** add CORS headers and preflight handling ([115325b](https://github.com/kemosoft-team/pgben-server/commit/115325b9471a01c88d92a27af05d20984ec58b67))
+* **pagamento:** add concessao status update for first installment ([ae750a6](https://github.com/kemosoft-team/pgben-server/commit/ae750a6bc19621b62a40ca0d512eb5b23877c37c))
+* **pagamento:** add PDF receipt generation for social benefits ([037ac37](https://github.com/kemosoft-team/pgben-server/commit/037ac3775c7f60a0e711a57d5bfb6908715a6122))
+* **payment:** add validation for previous installment confirmation ([d0692fa](https://github.com/kemosoft-team/pgben-server/commit/d0692fa0fec4b41b4d613dc3c424d9ed90007335))
+* **role:** add codigo field to role entity and update references ([0a3e0af](https://github.com/kemosoft-team/pgben-server/commit/0a3e0aff1446aeb6bbc4e4a557c36a055e3a7668))
+* **solicitacao:** add soft delete functionality for solicitacao ([5e21344](https://github.com/kemosoft-team/pgben-server/commit/5e21344c036b6b0ec35447acccce0b339dc30d42))
+* **solicitacao:** add valor field to solicitacao entity and dto ([e99d81d](https://github.com/kemosoft-team/pgben-server/commit/e99d81d65e3539a4205ec4f484139b9c3628ac1c))
+
+
+### Bug Fixes
+
+* **comprovante:** update permission names ([ab4e217](https://github.com/kemosoft-team/pgben-server/commit/ab4e217d1866ad7d634c139e5ac02ed504e4a313))
+* **concessao:** cancel linked payments when canceling concession ([a8dfaa3](https://github.com/kemosoft-team/pgben-server/commit/a8dfaa311eb908c9bece10058443d9d07e6df7b9))
+* **cors:** add required headers for file downloads and skip rate limiting for preflight ([278e30a](https://github.com/kemosoft-team/pgben-server/commit/278e30a5e228263c7c7ee1ef8bce5c509fc26e61))
+* **pagamento-validation:** update allowed status transitions for VENCIDO ([2d2afed](https://github.com/kemosoft-team/pgben-server/commit/2d2afede8a8a16e507dbe349c301f528a83ab78c))
+* **usuario:** Adiciona relações à busca do usuário ([795c40c](https://github.com/kemosoft-team/pgben-server/commit/795c40cd07623bf0bfe6d057f3aa748ab8e49c14))
+
 ### [0.1.6](https://github.com/kemosoft-team/pgben-server/compare/v0.1.5...v0.1.6) (2025-08-07)
 
 
