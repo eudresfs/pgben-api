@@ -2,7 +2,6 @@ import { Injectable, Logger, BadRequestException, Inject } from '@nestjs/common'
 import { REQUEST } from '@nestjs/core';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
-import { TipoAcaoCritica } from '../enums';
 import { SolicitacaoAprovacao } from '../entities';
 import { firstValueFrom } from 'rxjs';
 import { Request } from 'express';
@@ -18,7 +17,7 @@ export interface ResultadoExecucao {
 }
 
 /**
- * Interface para dados de execução HTTP
+ * Interface para dados de execução HTTP salvos no banco
  */
 interface DadosExecucaoHttp {
   url: string;
@@ -30,10 +29,10 @@ interface DadosExecucaoHttp {
 }
 
 /**
- * Serviço responsável pela execução real das ações aprovadas
+ * Serviço responsável pela execução das ações aprovadas
  * 
- * Este serviço implementa a lógica específica para cada tipo de ação crítica,
- * permitindo a execução automática após aprovação.
+ * Este serviço executa a requisição HTTP original salva em dados_acao,
+ * sem lógicas específicas por tipo de ação.
  */
 @Injectable()
 export class ExecucaoAcaoService {
@@ -55,341 +54,55 @@ export class ExecucaoAcaoService {
   }
 
   /**
-   * Executa uma ação aprovada baseada no tipo e dados da solicitação
+   * Executa uma ação aprovada baseada nos dados salvos na solicitação
    * 
    * @param solicitacao - Solicitação de aprovação aprovada
    * @returns Resultado da execução
    */
   async executarAcao(solicitacao: SolicitacaoAprovacao): Promise<ResultadoExecucao> {
     try {
-      this.logger.log(`Iniciando execução da ação: ${solicitacao.acao_aprovacao.tipo_acao}`);
+      this.logger.log(`Iniciando execução da ação: ${solicitacao.metodo_execucao}`);
       
-      // Valida dados da ação antes da execução
-      this.validarDadosAcao(solicitacao.dados_acao, solicitacao.acao_aprovacao.tipo_acao);
-      
-      // Executa baseado no tipo de ação
-      switch (solicitacao.acao_aprovacao.tipo_acao) {
-        case TipoAcaoCritica.CANCELAMENTO_SOLICITACAO:
-          return await this.executarCancelamentoSolicitacao(solicitacao);
-          
-        case TipoAcaoCritica.ALTERACAO_DADOS_CRITICOS:
-          return await this.executarAlteracaoDadosCriticos(solicitacao);
-          
-        case TipoAcaoCritica.EXCLUSAO_REGISTRO:
-          return await this.executarExclusaoRegistro(solicitacao);
-          
-        case TipoAcaoCritica.APROVACAO_PAGAMENTO:
-          return await this.executarAprovacaoPagamento(solicitacao);
-          
-        case TipoAcaoCritica.TRANSFERENCIA_BENEFICIO:
-          return await this.executarTransferenciaBeneficio(solicitacao);
-          
-        case TipoAcaoCritica.SUSPENSAO_BENEFICIO:
-          return await this.executarSuspensaoBeneficio(solicitacao);
-          
-        case TipoAcaoCritica.REATIVACAO_BENEFICIO:
-          return await this.executarReativacaoBeneficio(solicitacao);
-          
-        case TipoAcaoCritica.ALTERACAO_VALOR_BENEFICIO:
-          return await this.executarAlteracaoValorBeneficio(solicitacao);
-          
-        default:
-          throw new BadRequestException(`Tipo de ação não suportado: ${solicitacao.acao_aprovacao.tipo_acao}`);
+      // Valida se os dados da ação estão presentes
+      if (!solicitacao.dados_acao) {
+        throw new BadRequestException('Dados da ação não encontrados na solicitação');
       }
-    } catch (error) {
-      this.logger.error(`Erro na execução da ação ${solicitacao.acao_aprovacao.tipo_acao}:`, error);
-      return {
-        sucesso: false,
-        erro: error.message,
-        detalhes: error
-      };
-    }
-  }
-
-  /**
-   * Executa cancelamento de solicitação de benefício
-   */
-  private async executarCancelamentoSolicitacao(solicitacao: SolicitacaoAprovacao): Promise<ResultadoExecucao> {
-    try {
+      
       const dadosAcao = solicitacao.dados_acao as DadosExecucaoHttp;
       
-      // Extrai ID da solicitação dos dados
-      const solicitacaoId = dadosAcao.params?.id || dadosAcao.body?.solicitacao_id;
+      // Valida dados básicos da requisição
+      this.validarDadosRequisicao(dadosAcao);
       
-      if (!solicitacaoId) {
-        throw new BadRequestException('ID da solicitação não encontrado nos dados da ação');
-      }
-
-      // Executa a requisição HTTP para cancelar a solicitação
-      const response = await this.executarRequisicaoHttp({
-        url: `/api/v1/beneficio/solicitacoes/${solicitacaoId}/cancelar`,
-        method: 'PUT',
-        body: {
-          motivo_cancelamento: 'Cancelamento aprovado via sistema de aprovação',
-          justificativa: solicitacao.justificativa,
-          aprovado_por: 'SISTEMA_APROVACAO'
-        }
-      });
-
-      return {
-        sucesso: true,
-        dados: response.data,
-        detalhes: {
-          solicitacao_cancelada: solicitacaoId,
-          metodo_original: solicitacao.metodo_execucao
-        }
-      };
-    } catch (error) {
-      throw new Error(`Falha no cancelamento da solicitação: ${error.message}`);
-    }
-  }
-
-  /**
-   * Executa alteração de dados críticos
-   */
-  private async executarAlteracaoDadosCriticos(solicitacao: SolicitacaoAprovacao): Promise<ResultadoExecucao> {
-    try {
-      const dadosAcao = solicitacao.dados_acao as DadosExecucaoHttp;
+      // Executa a requisição HTTP original
+      const response = await this.executarRequisicaoHttp(dadosAcao, solicitacao);
       
-      // Reconstrói a requisição original com dados aprovados
-      const response = await this.executarRequisicaoHttp({
-        url: dadosAcao.url,
-        method: dadosAcao.method,
-        params: dadosAcao.params,
-        query: dadosAcao.query,
-        body: {
-          ...dadosAcao.body,
-          // Remove campos de aprovação do body original
-          justificativa_aprovacao: undefined,
-          // Adiciona metadados de aprovação
-          _aprovacao_metadata: {
-            solicitacao_id: solicitacao.id,
-            codigo_aprovacao: solicitacao.codigo,
-            aprovado_em: new Date(),
-            justificativa: solicitacao.justificativa
-          }
-        },
-        headers: {
-          ...dadosAcao.headers,
-          'X-Aprovacao-Executada': 'true',
-          'X-Solicitacao-Aprovacao': solicitacao.codigo
-        }
-      });
-
+      this.logger.log(`Ação executada com sucesso: ${solicitacao.metodo_execucao}`);
+      
       return {
         sucesso: true,
         dados: response.data,
         detalhes: {
           url_executada: dadosAcao.url,
           metodo: dadosAcao.method,
-          dados_alterados: dadosAcao.body
+          status_resposta: response.status,
+          solicitacao_codigo: solicitacao.codigo
         }
       };
     } catch (error) {
-      throw new Error(`Falha na alteração de dados críticos: ${error.message}`);
-    }
-  }
-
-  /**
-   * Executa exclusão de registro
-   */
-  private async executarExclusaoRegistro(solicitacao: SolicitacaoAprovacao): Promise<ResultadoExecucao> {
-    try {
-      const dadosAcao = solicitacao.dados_acao as DadosExecucaoHttp;
-      
-      // Executa a exclusão com metadados de aprovação
-      const response = await this.executarRequisicaoHttp({
-        url: dadosAcao.url,
-        method: 'DELETE',
-        params: dadosAcao.params,
-        query: {
-          ...dadosAcao.query,
-          aprovacao_codigo: solicitacao.codigo,
-          justificativa: solicitacao.justificativa
-        },
-        headers: {
-          ...dadosAcao.headers,
-          'X-Aprovacao-Executada': 'true',
-          'X-Solicitacao-Aprovacao': solicitacao.codigo
-        }
-      });
-
+      this.logger.error(`Erro na execução da ação ${solicitacao.metodo_execucao}:`, error);
       return {
-        sucesso: true,
-        dados: response.data,
+        sucesso: false,
+        erro: error.message,
         detalhes: {
-          registro_excluido: dadosAcao.url,
-          metodo_original: solicitacao.metodo_execucao
+          solicitacao_codigo: solicitacao.codigo,
+          metodo_execucao: solicitacao.metodo_execucao,
+          erro_original: error
         }
       };
-    } catch (error) {
-      throw new Error(`Falha na exclusão do registro: ${error.message}`);
     }
   }
 
-  /**
-   * Executa aprovação de pagamento
-   */
-  private async executarAprovacaoPagamento(solicitacao: SolicitacaoAprovacao): Promise<ResultadoExecucao> {
-    try {
-      const dadosAcao = solicitacao.dados_acao as any;
-      const pagamentoId = dadosAcao.params?.id || dadosAcao.body?.pagamento_id;
-      
-      if (!pagamentoId) {
-        throw new BadRequestException('ID do pagamento não encontrado nos dados da ação');
-      }
 
-      // Aprova o pagamento
-      const response = await this.executarRequisicaoHttp({
-        url: `/api/v1/pagamento/${pagamentoId}/aprovar`,
-        method: 'PUT',
-        body: {
-          aprovado: true,
-          justificativa_aprovacao: solicitacao.justificativa,
-          aprovado_por: 'SISTEMA_APROVACAO',
-          codigo_solicitacao: solicitacao.codigo
-        }
-      });
-
-      return {
-        sucesso: true,
-        dados: response.data,
-        detalhes: {
-          pagamento_aprovado: pagamentoId,
-          valor: dadosAcao.body?.valor
-        }
-      };
-    } catch (error) {
-      throw new Error(`Falha na aprovação do pagamento: ${error.message}`);
-    }
-  }
-
-  /**
-   * Executa transferência de benefício
-   */
-  private async executarTransferenciaBeneficio(solicitacao: SolicitacaoAprovacao): Promise<ResultadoExecucao> {
-    try {
-      const dadosAcao = solicitacao.dados_acao as any;
-      
-      const response = await this.executarRequisicaoHttp({
-        url: '/api/v1/beneficio/transferir',
-        method: 'POST',
-        body: {
-          ...dadosAcao.body,
-          aprovacao_codigo: solicitacao.codigo,
-          justificativa_aprovacao: solicitacao.justificativa,
-          processado_por: 'SISTEMA_APROVACAO'
-        }
-      });
-
-      return {
-        sucesso: true,
-        dados: response.data,
-        detalhes: {
-          beneficio_transferido: dadosAcao.body?.beneficio_id,
-          novo_titular: dadosAcao.body?.novo_titular_id
-        }
-      };
-    } catch (error) {
-      throw new Error(`Falha na transferência do benefício: ${error.message}`);
-    }
-  }
-
-  /**
-   * Executa suspensão de benefício
-   */
-  private async executarSuspensaoBeneficio(solicitacao: SolicitacaoAprovacao): Promise<ResultadoExecucao> {
-    try {
-      const dadosAcao = solicitacao.dados_acao as any;
-      const beneficioId = dadosAcao.params?.id || dadosAcao.body?.beneficio_id;
-      
-      const response = await this.executarRequisicaoHttp({
-        url: `/api/v1/beneficio/${beneficioId}/suspender`,
-        method: 'PUT',
-        body: {
-          motivo_suspensao: dadosAcao.body?.motivo || 'Suspensão aprovada via sistema',
-          justificativa: solicitacao.justificativa,
-          aprovacao_codigo: solicitacao.codigo,
-          data_suspensao: dadosAcao.body?.data_suspensao || new Date()
-        }
-      });
-
-      return {
-        sucesso: true,
-        dados: response.data,
-        detalhes: {
-          beneficio_suspenso: beneficioId,
-          motivo: dadosAcao.body?.motivo
-        }
-      };
-    } catch (error) {
-      throw new Error(`Falha na suspensão do benefício: ${error.message}`);
-    }
-  }
-
-  /**
-   * Executa reativação de benefício
-   */
-  private async executarReativacaoBeneficio(solicitacao: SolicitacaoAprovacao): Promise<ResultadoExecucao> {
-    try {
-      const dadosAcao = solicitacao.dados_acao as any;
-      const beneficioId = dadosAcao.params?.id || dadosAcao.body?.beneficio_id;
-      
-      const response = await this.executarRequisicaoHttp({
-        url: `/api/v1/beneficio/${beneficioId}/reativar`,
-        method: 'PUT',
-        body: {
-          justificativa_reativacao: solicitacao.justificativa,
-          aprovacao_codigo: solicitacao.codigo,
-          data_reativacao: dadosAcao.body?.data_reativacao || new Date()
-        }
-      });
-
-      return {
-        sucesso: true,
-        dados: response.data,
-        detalhes: {
-          beneficio_reativado: beneficioId
-        }
-      };
-    } catch (error) {
-      throw new Error(`Falha na reativação do benefício: ${error.message}`);
-    }
-  }
-
-  /**
-   * Executa alteração de valor de benefício
-   */
-  private async executarAlteracaoValorBeneficio(solicitacao: SolicitacaoAprovacao): Promise<ResultadoExecucao> {
-    try {
-      const dadosAcao = solicitacao.dados_acao as any;
-      const beneficioId = dadosAcao.params?.id || dadosAcao.body?.beneficio_id;
-      
-      const response = await this.executarRequisicaoHttp({
-        url: `/api/v1/beneficio/${beneficioId}/alterar-valor`,
-        method: 'PUT',
-        body: {
-          novo_valor: dadosAcao.body?.novo_valor,
-          valor_anterior: dadosAcao.body?.valor_anterior,
-          justificativa: solicitacao.justificativa,
-          aprovacao_codigo: solicitacao.codigo,
-          data_vigencia: dadosAcao.body?.data_vigencia || new Date()
-        }
-      });
-
-      return {
-        sucesso: true,
-        dados: response.data,
-        detalhes: {
-          beneficio_alterado: beneficioId,
-          valor_anterior: dadosAcao.body?.valor_anterior,
-          novo_valor: dadosAcao.body?.novo_valor
-        }
-      };
-    } catch (error) {
-      throw new Error(`Falha na alteração do valor do benefício: ${error.message}`);
-    }
-  }
 
   /**
    * Constrói URL absoluta a partir de uma URL relativa ou absoluta
@@ -410,9 +123,9 @@ export class ExecucaoAcaoService {
   }
 
   /**
-   * Executa uma requisição HTTP com tratamento de erros
+   * Executa uma requisição HTTP com base nos dados salvos na solicitação
    */
-  private async executarRequisicaoHttp(dados: DadosExecucaoHttp): Promise<any> {
+  private async executarRequisicaoHttp(dados: DadosExecucaoHttp, solicitacao: SolicitacaoAprovacao): Promise<any> {
     try {
       // Construir URL absoluta
       const urlAbsoluta = this.construirUrlAbsoluta(dados.url);
@@ -430,22 +143,25 @@ export class ExecucaoAcaoService {
         throw new Error('Token de autorização não encontrado na requisição atual');
       }
       
-      // Filtrar metadados de aprovação do body antes de enviar
-      const bodyFiltrado = this.filtrarMetadadosAprovacao(dados.body);
-      
+      // Configurar requisição HTTP com dados originais
       const config = {
         method: dados.method.toLowerCase(),
         url: urlAbsoluta,
         params: dados.params,
-        data: bodyFiltrado,
+        data: dados.body,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': authorizationHeader,
+          // Header para identificar que é uma execução de aprovação
+          'X-Solicitacao-Aprovacao': solicitacao.codigo,
+          'X-Aprovacao-Executada': 'true',
+          // Headers originais da requisição
           ...dados.headers
         }
       };
 
       this.logger.debug(`Executando requisição HTTP: ${dados.method} ${urlAbsoluta}`);
+      this.logger.debug(`Código da solicitação: ${solicitacao.codigo}`);
       
       const response = await firstValueFrom(
         this.httpService.request(config)
@@ -465,79 +181,24 @@ export class ExecucaoAcaoService {
     }
   }
 
-  /**
-   * Filtra metadados de aprovação do body antes de enviar requisições HTTP
-   * Remove propriedades específicas do sistema de aprovação que não devem
-   * ser enviadas para endpoints externos
-   */
-  private filtrarMetadadosAprovacao(body: any): any {
-    if (!body || typeof body !== 'object') {
-      return body;
-    }
 
-    // Criar cópia do objeto para não modificar o original
-    const bodyFiltrado = { ...body };
-
-    // Remover metadados de aprovação
-    delete bodyFiltrado._aprovacao_metadata;
-    delete bodyFiltrado.justificativa_aprovacao;
-    delete bodyFiltrado.codigo_aprovacao;
-    delete bodyFiltrado.solicitacao_aprovacao_id;
-
-    // Se o body é um array, filtrar cada item
-    if (Array.isArray(body)) {
-      return body.map(item => this.filtrarMetadadosAprovacao(item));
-    }
-
-    // Filtrar recursivamente objetos aninhados
-    Object.keys(bodyFiltrado).forEach(key => {
-      if (bodyFiltrado[key] && typeof bodyFiltrado[key] === 'object') {
-        bodyFiltrado[key] = this.filtrarMetadadosAprovacao(bodyFiltrado[key]);
-      }
-    });
-
-    return bodyFiltrado;
-  }
 
   /**
-   * Valida se os dados da ação são válidos para execução
+   * Valida se os dados da requisição são válidos para execução
    */
-  private validarDadosAcao(dadosAcao: any, tipoAcao: TipoAcaoCritica): void {
-    if (!dadosAcao) {
-      throw new BadRequestException('Dados da ação não fornecidos');
+  private validarDadosRequisicao(dadosAcao: DadosExecucaoHttp): void {
+    if (!dadosAcao.url) {
+      throw new BadRequestException('URL é obrigatória nos dados da ação');
     }
 
-    // Validações específicas por tipo de ação
-    switch (tipoAcao) {
-      case TipoAcaoCritica.CANCELAMENTO_SOLICITACAO:
-        if (!dadosAcao.params?.id && !dadosAcao.body?.solicitacao_id) {
-          throw new BadRequestException('ID da solicitação é obrigatório para cancelamento');
-        }
-        break;
-        
-      case TipoAcaoCritica.APROVACAO_PAGAMENTO:
-        if (!dadosAcao.params?.id && !dadosAcao.body?.pagamento_id) {
-          throw new BadRequestException('ID do pagamento é obrigatório');
-        }
-        break;
-        
-      case TipoAcaoCritica.ALTERACAO_VALOR_BENEFICIO:
-        if (!dadosAcao.body?.novo_valor) {
-          throw new BadRequestException('Novo valor é obrigatório para alteração');
-        }
-        break;
-        
-      case TipoAcaoCritica.ALTERACAO_DADOS_CRITICOS:
-        if (!dadosAcao.url || !dadosAcao.method) {
-          throw new BadRequestException('URL e método HTTP são obrigatórios para alteração de dados');
-        }
-        break;
-        
-      case TipoAcaoCritica.EXCLUSAO_REGISTRO:
-        if (!dadosAcao.url) {
-          throw new BadRequestException('URL é obrigatória para exclusão de registro');
-        }
-        break;
+    if (!dadosAcao.method) {
+      throw new BadRequestException('Método HTTP é obrigatório nos dados da ação');
+    }
+
+    // Validar se o método HTTP é válido
+    const metodosValidos = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+    if (!metodosValidos.includes(dadosAcao.method.toUpperCase())) {
+      throw new BadRequestException(`Método HTTP inválido: ${dadosAcao.method}`);
     }
   }
 }

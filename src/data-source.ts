@@ -32,7 +32,8 @@ import { RecursoHistorico } from './entities/recurso-historico.entity';
 // Entidades do módulo de aprovação
 import { AcaoAprovacao } from './modules/aprovacao/entities/acao-aprovacao.entity';
 import { SolicitacaoAprovacao } from './modules/aprovacao/entities/solicitacao-aprovacao.entity';
-import { Aprovador } from './modules/aprovacao/entities/aprovador.entity';
+import { ConfiguracaoAprovador } from './modules/aprovacao/entities/configuracao-aprovador.entity';
+import { SolicitacaoAprovador } from './modules/aprovacao/entities/solicitacao-aprovador.entity';
 
 // Importação centralizada de todas as entidades
 import {
@@ -61,7 +62,7 @@ import {
   // Entidades de Dados Específicos de Benefícios
   DadosAluguelSocial,
   DadosCestaBasica,
-  DadosFuneral,
+  DadosAtaude,
   DadosNatalidade,
 
   // Entidades de Cidadão e Família
@@ -186,7 +187,7 @@ export const AppDataSource = new DataSource({
     ConfiguracaoRenovacao,
     DadosAluguelSocial,
     DadosCestaBasica,
-    DadosFuneral,
+    DadosAtaude,
     DadosNatalidade,
     FluxoBeneficio,
     WorkflowBeneficio,
@@ -253,7 +254,8 @@ export const AppDataSource = new DataSource({
     // Entidades do Sistema de Aprovação v2
     AcaoAprovacao,
     SolicitacaoAprovacao,
-    Aprovador,
+    ConfiguracaoAprovador,
+    SolicitacaoAprovador,
   ],
   migrations: [__dirname + '/database/migrations/**/*{.ts,.js}'],
   migrationsTableName: 'migrations',

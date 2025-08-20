@@ -12,7 +12,7 @@ import {
 } from '../interfaces/dados-beneficio.interface';
 import { DadosAluguelSocialService } from './dados-aluguel-social.service';
 import { DadosCestaBasicaService } from './dados-cesta-basica.service';
-import { DadosFuneralService } from './dados-funeral.service';
+import { DadosAtaudeService } from './dados-ataude.service';
 import { DadosNatalidadeService } from './dados-natalidade.service';
 import { AbstractDadosBeneficioService } from './base/abstract-dados-beneficio.service';
 import { TipoBeneficioRepository } from '../repositories/tipo-beneficio.repository';
@@ -36,7 +36,7 @@ export class DadosBeneficioFactoryService {
   constructor(
     private readonly aluguelSocialService: DadosAluguelSocialService,
     private readonly cestaBasicaService: DadosCestaBasicaService,
-    private readonly funeralService: DadosFuneralService,
+    private readonly ataudeService: DadosAtaudeService,
     private readonly natalidadeService: DadosNatalidadeService,
     private readonly tipoBeneficioRepository: TipoBeneficioRepository,
 
@@ -53,14 +53,14 @@ export class DadosBeneficioFactoryService {
       TipoDadosBeneficio.CESTA_BASICA,
       this.cestaBasicaService,
     );
-    this.serviceMap.set(TipoDadosBeneficio.FUNERAL, this.funeralService);
+    this.serviceMap.set(TipoDadosBeneficio.ATAUDE, this.ataudeService);
     this.serviceMap.set(TipoDadosBeneficio.NATALIDADE, this.natalidadeService);
 
     // Mapear códigos para tipos de benefício
     this.codigoToTipoMap = new Map([
       ['aluguel-social', TipoDadosBeneficio.ALUGUEL_SOCIAL],
       ['cesta-basica', TipoDadosBeneficio.CESTA_BASICA],
-      ['funeral', TipoDadosBeneficio.FUNERAL],
+      ['ataude', TipoDadosBeneficio.ATAUDE],
       ['natalidade', TipoDadosBeneficio.NATALIDADE],
     ]);
   }
@@ -276,9 +276,9 @@ export class DadosBeneficioFactoryService {
         nome: 'Cesta Básica',
         descricao: 'Auxílio alimentação',
       },
-      [TipoDadosBeneficio.FUNERAL]: {
-        codigo: 'funeral',
-        nome: 'Auxílio Funeral',
+      [TipoDadosBeneficio.ATAUDE]: {
+        codigo: 'ataude',
+        nome: 'Benefício por Morte',
         descricao: 'Auxílio para despesas funerárias',
       },
       [TipoDadosBeneficio.NATALIDADE]: {

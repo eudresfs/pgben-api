@@ -147,6 +147,8 @@ export class AprovacaoAuditListener {
   @OnEvent('solicitacao.executada')
   async handleSolicitacaoExecutada(payload: {
     solicitacao: any;
+    solicitanteId: string;
+    aprovadorId: string;
     dadosExecucao?: any;
     timestamp: Date;
   }) {
@@ -156,7 +158,7 @@ export class AprovacaoAuditListener {
           eventType: AuditEventType.ENTITY_UPDATED,
           entityName: 'SolicitacaoAprovacao',
           entityId: payload.solicitacao.id,
-          userId: SYSTEM_USER_UUID,
+          userId: payload.aprovadorId || SYSTEM_USER_UUID,
           timestamp: payload.timestamp,
           riskLevel: RiskLevel.CRITICAL,
           lgpdRelevant: false,
@@ -166,7 +168,8 @@ export class AprovacaoAuditListener {
             operation: TipoOperacao.EXECUTION,
             description: `Ação executada com sucesso para solicitação ${payload.solicitacao.codigo}`,
             dados_execucao: payload.dadosExecucao,
-            executado_em: payload.solicitacao.executado_em
+            executado_em: payload.solicitacao.executado_em,
+            aprovador_responsavel: payload.aprovadorId
           }
         });
       });
@@ -188,6 +191,7 @@ export class AprovacaoAuditListener {
   @OnEvent('solicitacao.erro_execucao')
   async handleErroExecucao(payload: {
     solicitacao: any;
+    aprovadorId: string;
     erro: string;
     timestamp: Date;
   }) {
@@ -197,7 +201,7 @@ export class AprovacaoAuditListener {
           eventType: AuditEventType.SYSTEM_ERROR,
           entityName: 'SolicitacaoAprovacao',
           entityId: payload.solicitacao.id,
-          userId: SYSTEM_USER_UUID,
+          userId: payload.aprovadorId || SYSTEM_USER_UUID,
           timestamp: payload.timestamp,
           riskLevel: RiskLevel.CRITICAL,
           lgpdRelevant: false,
@@ -206,7 +210,8 @@ export class AprovacaoAuditListener {
             description: `Erro na execução da solicitação ${payload.solicitacao.codigo}: ${payload.erro}`,
             codigo: payload.solicitacao.codigo,
             tipo_acao: payload.solicitacao.acao_aprovacao.tipo_acao,
-            erro_execucao: payload.erro
+            erro_execucao: payload.erro,
+            aprovador_responsavel: payload.aprovadorId
           }
         });
       });

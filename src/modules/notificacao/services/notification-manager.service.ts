@@ -162,9 +162,16 @@ export class NotificationManagerService
       );
     }
 
+    // Mapear userId para destinatario_id (compatibilidade entre DTOs)
+    const destinatarioId = createNotificationDto.userId || createNotificationDto.destinatario_id;
+    
+    if (!destinatarioId) {
+      throw new Error('ID do destinatário é obrigatório (userId ou destinatario_id)');
+    }
+
     // Criar a notificação
     const notificacao = this.notificacaoRepository.create({
-      destinatario_id: createNotificationDto.destinatario_id,
+      destinatario_id: destinatarioId,
       template_id: template?.id,
       dados_contexto: createNotificationDto.dados_contexto,
       status: StatusNotificacaoProcessamento.PENDENTE,
@@ -520,7 +527,7 @@ export class NotificationManagerService
 
             // Buscar dados do usuário destinatário
             const usuarioService = await this.getUsuarioService();
-            const usuario = await usuarioService.findById(
+            const usuario = await usuarioService.findByIdForNotification(
               notificacao.destinatario_id,
             );
 
@@ -624,7 +631,7 @@ export class NotificationManagerService
 
                 // Buscar o email do usuário pelo ID
                 const usuarioService = await this.getUsuarioService();
-                const usuario = await usuarioService.findById(
+                const usuario = await usuarioService.findByIdForNotification(
                   notificacao.destinatario_id,
                 );
                 if (!usuario || !usuario.email) {

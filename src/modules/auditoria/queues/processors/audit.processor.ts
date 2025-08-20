@@ -26,6 +26,8 @@ import {
   AuditProcessingJob,
   AuditJobData,
   AuditProcessingResult,
+  BatchAuditJobData,
+  BatchAuditProcessingResult,
 } from '../jobs/audit-processing.job';
 import { AuditEvent } from '../../events/types/audit-event.types';
 
@@ -207,6 +209,51 @@ export class AuditProcessor
   }
 
   /**
+   * Processa lote de eventos de auditoria de forma otimizada
+   * Utiliza o novo método processBatch para melhor performance
+   */
+  @Process('process-optimized-batch')
+  async processOptimizedBatch(
+    job: Job<BatchAuditJobData>,
+  ): Promise<BatchAuditProcessingResult> {
+    const startTime = Date.now();
+    const { events, config } = job.data;
+
+    this.logger.log(
+      `Processing optimized batch job ${job.id} with ${events.length} events`,
+    );
+
+    try {
+      // Atualiza progresso inicial
+      await job.progress(5);
+
+      // Processa o lote usando o método otimizado
+      const result = await this.auditProcessingJob.processBatch(job.data);
+      await job.progress(90);
+
+      // Atualiza métricas de lote
+      this.updateBatchMetrics(result, Date.now() - startTime);
+      await job.progress(100);
+
+      this.logger.log(
+        `Optimized batch job ${job.id} completed: ${result.processedCount}/${result.totalCount} events processed`,
+      );
+
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `Failed to process optimized batch job ${job.id}: ${error.message}`,
+        error.stack,
+      );
+
+      // Atualiza métricas de falha
+      this.updateFailureMetrics();
+
+      throw error;
+    }
+  }
+
+  /**
    * Callback quando job está esperando na fila
    */
   @OnQueueWaiting()
@@ -310,6 +357,46 @@ export class AuditProcessor
     this.metrics.totalProcessingTime += processingTime;
     this.metrics.averageProcessingTime =
       this.metrics.totalProcessingTime / this.metrics.processed;
+  }
+
+  /**
+   * Atualiza métricas específicas de processamento em lote
+   */
+  private updateBatchMetrics(
+    result: BatchAuditProcessingResult,
+    totalProcessingTime: number,
+  ): void {
+    // Atualiza métricas gerais
+    this.metrics.processed += result.processedCount;
+    this.metrics.failed += result.failedCount;
+    this.metrics.totalProcessingTime += totalProcessingTime;
+    this.metrics.averageProcessingTime =
+      this.metrics.totalProcessingTime /
+      (this.metrics.processed + this.metrics.failed);
+
+    // Log de métricas de lote
+    this.logger.debug(
+      `Batch metrics - Processed: ${result.processedCount}, Failed: ${result.failedCount}, ` +
+        `Success Rate: ${((result.processedCount / result.totalCount) * 100).toFixed(2)}%, ` +
+        `Processing Time: ${totalProcessingTime}ms, ` +
+        `Events/sec: ${(result.totalCount / (totalProcessingTime / 1000)).toFixed(2)}`,
+    );
+
+    // Alerta para baixa performance
+    const eventsPerSecond = result.totalCount / (totalProcessingTime / 1000);
+    if (eventsPerSecond < 50) {
+      this.logger.warn(
+        `Low batch processing performance: ${eventsPerSecond.toFixed(2)} events/sec (expected: >50)`,
+      );
+    }
+
+    // Alerta para alta taxa de falha
+    const failureRate = result.failedCount / result.totalCount;
+    if (failureRate > 0.05) {
+      this.logger.warn(
+        `High batch failure rate: ${(failureRate * 100).toFixed(2)}% (expected: <5%)`,
+      );
+    }
   }
 
   /**

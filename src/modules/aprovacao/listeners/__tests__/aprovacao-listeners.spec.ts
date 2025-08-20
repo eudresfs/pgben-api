@@ -185,6 +185,8 @@ describe('Aprovacao Listeners', () => {
       it('deve registrar auditoria quando solicitação é executada', async () => {
         const payload = {
           solicitacao: mockSolicitacao,
+          solicitanteId: 'user-1',
+          aprovadorId: 'aprovador-1',
           dadosExecucao: { usuario_criado: 'novo-usuario' },
           timestamp: new Date()
         };
@@ -195,7 +197,7 @@ describe('Aprovacao Listeners', () => {
           eventType: 'entity.updated',
           entityName: 'SolicitacaoAprovacao',
           entityId: mockSolicitacao.id,
-          userId: SYSTEM_USER_UUID,
+          userId: 'aprovador-1',
           riskLevel: RiskLevel.CRITICAL,
           lgpdRelevant: false,
           metadata: expect.objectContaining({

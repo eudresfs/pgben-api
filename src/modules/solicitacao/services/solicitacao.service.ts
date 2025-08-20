@@ -519,7 +519,7 @@ export class SolicitacaoService {
       }
 
       // Validar se a unidade do beneficiário é igual à unidade do técnico
-      if (beneficiario.unidade_id !== unidadeTecnico) {
+      if (beneficiario.unidade_id !== unidadeTecnico && user.escopo !== 'GLOBAL') {
         throw new BadRequestException(
           'Solicitações só podem ser feitas pela unidade atual do beneficiário. ' +
             'Em caso de mudança de endereço, transfira o beneficiário de unidade antes.',
@@ -589,8 +589,19 @@ export class SolicitacaoService {
           // Criar uma nova instância de Solicitacao com repositório tipado
           const repo = manager.getRepository(Solicitacao);
 
+          // Buscar o código do tipo de benefício para gerar o protocolo
+          const tipoBeneficio = await manager.getRepository(TipoBeneficio).findOne({
+            where: { id: createSolicitacaoDto.tipo_beneficio_id },
+            select: ['codigo']
+          });
+
+          // Gerar um UUID único para usar no protocolo e como ID da solicitação
+          const { v4: uuidv4 } = await import('uuid');
+          const uniqueId = uuidv4();
+
           // Criar objeto de solicitação
           const solicitacao = repo.create({
+            id: uniqueId, // Definir o ID explicitamente
             beneficiario_id: createSolicitacaoDto.beneficiario_id,
             solicitante_id: createSolicitacaoDto.solicitante_id,
             tipo_beneficio_id: createSolicitacaoDto.tipo_beneficio_id,
@@ -602,7 +613,11 @@ export class SolicitacaoService {
             valor: valorSolicitacao,
           });
 
-          // Salvar a solicitação
+          // Gerar o protocolo com o código do benefício e o UUID único
+          const codigoBeneficio = tipoBeneficio?.codigo || 'SOL';
+          solicitacao.generateProtocol(codigoBeneficio, uniqueId);
+
+          // Salvar a solicitação com o protocolo já gerado
           const savedSolicitacao = await repo.save(solicitacao);
 
           // Registrar no histórico

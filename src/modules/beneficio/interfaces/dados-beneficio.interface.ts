@@ -46,7 +46,7 @@ export interface IDadosBeneficioService<
 export enum TipoDadosBeneficio {
   ALUGUEL_SOCIAL = 'aluguel-social',
   CESTA_BASICA = 'cesta-basica',
-  FUNERAL = 'funeral',
+  ATAUDE = 'ataude',
   NATALIDADE = 'natalidade',
 }
 
@@ -64,10 +64,10 @@ export interface TipoBeneficioMapping {
     createDto: 'CreateDadosCestaBasicaDto';
     updateDto: 'UpdateDadosCestaBasicaDto';
   };
-  [TipoDadosBeneficio.FUNERAL]: {
-    entity: 'DadosFuneral';
-    createDto: 'CreateDadosFuneralDto';
-    updateDto: 'UpdateDadosFuneralDto';
+  [TipoDadosBeneficio.ATAUDE]: {
+    entity: 'DadosAtaude';
+    createDto: 'CreateDadosAtaudeDto';
+    updateDto: 'UpdateDadosAtaudeDto';
   };
   [TipoDadosBeneficio.NATALIDADE]: {
     entity: 'DadosNatalidade';

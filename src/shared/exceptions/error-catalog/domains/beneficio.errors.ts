@@ -956,7 +956,7 @@ export const BENEFICIO_TECH_MESSAGES = {
     },
   },
 
-  FUNERAL: {
+  ATAUDE: {
     SOLICITACAO_ID_REQUIRED:
       'Campo solicitacao_id é obrigatório. Validação de campo obrigatório falhou.',
 

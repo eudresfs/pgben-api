@@ -167,36 +167,95 @@ export class NotificationOrchestratorService implements OnModuleInit {
     userId: string,
     notification: IAblyNotificationData,
   ): Promise<IAblyOperationResult> {
-    try {
-      if (!this.isAblyHealthy || this.circuitBreakerState === 'open') {
-        throw new Error('Ably não está disponível');
-      }
+    const maxRetries = 2;
+    let attempt = 0;
+    let lastError: Error | null = null;
 
-      const result = await this.ablyChannelService.publishToUserChannel(
-        userId,
-        notification,
-      );
+    while (attempt <= maxRetries) {
+      attempt++;
+      
+      try {
+        this.logger.debug(`Tentativa ${attempt}/${maxRetries + 1} de entrega via Ably para usuário ${userId}`);
 
-      if (result.success) {
-        this.logger.debug(
-          `Notificação entregue via Ably para usuário ${userId}`,
+        // Verificar se Ably está disponível
+        if (!this.isAblyHealthy || this.circuitBreakerState === 'open') {
+          throw new Error(`Ably não está disponível (healthy: ${this.isAblyHealthy}, circuit: ${this.circuitBreakerState})`);
+        }
+
+        // Verificar conexão antes de tentar publicar
+        const isConnected = await this.ablyService.isConnected();
+        if (!isConnected) {
+          this.logger.warn(`Ably não está conectado na tentativa ${attempt}, tentando reconectar...`);
+          
+          // Tentar reconectar apenas na primeira tentativa
+          if (attempt === 1) {
+            const reconnected = await this.ablyService.reconnect();
+            if (!reconnected) {
+              throw new Error('Falha na reconexão com Ably');
+            }
+            this.logger.log('Reconexão com Ably bem-sucedida');
+          } else {
+            throw new Error('Ably não está conectado e reconexão já foi tentada');
+          }
+        }
+
+        // Tentar publicar a mensagem
+        const result = await this.ablyChannelService.publishToUserChannel(
+          userId,
+          notification,
         );
+
+        if (result.success) {
+          this.logger.debug(
+            `Notificação entregue via Ably para usuário ${userId} na tentativa ${attempt}`,
+          );
+          
+          // Reset do circuit breaker em caso de sucesso
+          this.updateCircuitBreaker(true);
+          
+          return result;
+        } else {
+          // Se o resultado não foi sucesso, mas não houve exceção
+          lastError = new Error(result.error || 'Falha na publicação via Ably');
+          this.logger.warn(`Tentativa ${attempt} falhou: ${lastError.message}`);
+          
+          if (attempt <= maxRetries) {
+            // Aguardar antes da próxima tentativa
+            const delay = Math.min(1000 * attempt, 3000); // Max 3 segundos
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+
+      } catch (error) {
+        lastError = error;
+        this.logger.error(
+          `Erro na tentativa ${attempt} de entrega via Ably para usuário ${userId}:`,
+          error,
+        );
+
+        // Se não é a última tentativa, aguardar antes de tentar novamente
+        if (attempt <= maxRetries) {
+          const delay = Math.min(1000 * attempt, 3000);
+          this.logger.debug(`Aguardando ${delay}ms antes da próxima tentativa`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
       }
-
-      return result;
-    } catch (error) {
-      this.logger.error(
-        `Erro ao entregar via Ably para usuário ${userId}:`,
-        error,
-      );
-
-      return {
-        success: false,
-        error: error.message,
-        errorCode: 'ABLY_DELIVERY_FAILED',
-        timestamp: new Date(),
-      };
     }
+
+    // Todas as tentativas falharam
+    this.updateCircuitBreaker(false);
+    
+    const errorMessage = lastError?.message || 'Falha desconhecida na entrega via Ably';
+    this.logger.error(
+      `Falha em todas as ${maxRetries + 1} tentativas de entrega via Ably para usuário ${userId}: ${errorMessage}`,
+    );
+
+    return {
+      success: false,
+      error: errorMessage,
+      errorCode: 'ABLY_DELIVERY_FAILED',
+      timestamp: new Date(),
+    };
   }
 
   /**
@@ -385,22 +444,66 @@ export class NotificationOrchestratorService implements OnModuleInit {
   }
 
   /**
-   * Verifica saúde dos sistemas
+   * Verifica a saúde dos sistemas de notificação
    */
   private async checkSystemsHealth(): Promise<void> {
     try {
-      // Verifica Ably
-      this.isAblyHealthy = this.ablyService.isHealthy();
+      this.logger.debug('Verificando saúde dos sistemas de notificação');
+      
+      // Verificar saúde do Ably
+      const previousAblyHealth = this.isAblyHealthy;
+      
+      try {
+        // Verificação mais robusta do Ably
+        const ablyHealthy = await this.ablyService.isHealthy();
+        const ablyConnected = await this.ablyService.isConnected();
+        
+        this.isAblyHealthy = ablyHealthy && ablyConnected;
+        
+        if (this.isAblyHealthy !== previousAblyHealth) {
+          this.logger.log(
+            `Status do Ably alterado: ${previousAblyHealth ? 'saudável' : 'não saudável'} → ${this.isAblyHealthy ? 'saudável' : 'não saudável'}`
+          );
+          
+          if (!this.isAblyHealthy) {
+            const lastError = this.ablyService.getLastError();
+            this.logger.warn(`Ably não está saudável. Último erro: ${lastError || 'Nenhum erro registrado'}`);
+          }
+        }
+        
+        this.logger.debug(`Ably - Healthy: ${ablyHealthy}, Connected: ${ablyConnected}, Final: ${this.isAblyHealthy}`);
+        
+      } catch (error) {
+        this.isAblyHealthy = false;
+        this.logger.error('Erro ao verificar saúde do Ably:', error);
+      }
 
-      // Verifica SSE (assume saudável por padrão)
-      // Aqui você pode implementar verificação real do SSE
+      // SSE é assumido como sempre saudável por enquanto
+      // TODO: Implementar verificação real do SSE quando necessário
       this.isSseHealthy = true;
 
+      // Atualizar circuit breaker baseado na saúde
+      if (!this.isAblyHealthy && this.circuitBreakerState === 'closed') {
+        this.logger.warn('Ably não está saudável, considerando abrir circuit breaker');
+      }
+
+      // Verificar se o circuit breaker deve mudar de estado
+      this.checkCircuitBreaker();
+
+      // Log do status geral
       this.logger.debug(
-        `Status dos sistemas - Ably: ${this.isAblyHealthy}, SSE: ${this.isSseHealthy}`,
+        `Status dos sistemas - Ably: ${this.isAblyHealthy ? 'OK' : 'FALHA'}, ` +
+        `SSE: ${this.isSseHealthy ? 'OK' : 'FALHA'}, ` +
+        `Circuit Breaker: ${this.circuitBreakerState.toUpperCase()}, ` +
+        `Falhas: ${this.failureCount}`
       );
+
     } catch (error) {
-      this.logger.error('Erro ao verificar saúde dos sistemas:', error);
+      this.logger.error('Erro durante verificação de saúde dos sistemas:', error);
+      
+      // Em caso de erro na verificação, assumir que os sistemas não estão saudáveis
+      this.isAblyHealthy = false;
+      this.isSseHealthy = true; // Manter SSE como saudável
     }
   }
 

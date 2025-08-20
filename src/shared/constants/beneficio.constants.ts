@@ -72,7 +72,7 @@ export const BENEFICIO_CONSTANTS = {
       MIN_JUSTIFICATIVA: 10,
       MAX_PESSOAS_FAMILIA: 50,
     },
-    FUNERAL: {
+    ATAUDE: {
       PRAZO_SOLICITACAO_DIAS: 30,
       DIAS_URGENCIA: 3,
       TIPOS_URNA_ESPECIAL: ['infantil', 'especial', 'obeso', 'padrao'],

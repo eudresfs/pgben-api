@@ -655,38 +655,66 @@ export class ConcessaoService {
     motivo: string,
     data_revisao?: string,
   ): Promise<Concessao> {
-    const concessao = await this.concessaoRepo.findOne({
+    // Otimização: Validação prévia com select mínimo para evitar transação desnecessária
+    const concessaoExistente = await this.concessaoRepo.findOne({
       where: { id: concessaoId },
-      relations: ['solicitacao'],
+      select: ['id', 'status'], // Select apenas campos necessários
     });
 
-    if (!concessao) {
+    if (!concessaoExistente) {
       throw new NotFoundException('Concessão não encontrada');
     }
 
-    const statusAnterior = concessao.status;
-    concessao.status = StatusConcessao.SUSPENSO;
-    concessao.motivoSuspensao = motivo;
-    if (data_revisao) {
-      concessao.dataRevisaoSuspensao = new Date(data_revisao);
+    // Validação de status antes da transação
+    if (concessaoExistente.status === StatusConcessao.SUSPENSO) {
+      throw new BadRequestException('Concessão já está suspensa');
     }
 
-    const concessaoSalva = await this.concessaoRepo.save(concessao);
+    if (concessaoExistente.status !== StatusConcessao.ATIVO) {
+      throw new BadRequestException('Apenas concessões ativas podem ser suspensas');
+    }
 
-    // Registra no histórico
-    await this.historicoRepo.save({
-      concessaoId: concessao.id,
-      statusAnterior,
-      statusNovo: StatusConcessao.SUSPENSO,
-      usuarioId,
-      motivo,
-      dataAlteracao: new Date(),
+    // Otimização: Usar uma única instância de Date para consistência
+    const agora = new Date();
+    const dataRevisao = data_revisao ? new Date(data_revisao) : null;
+
+    // Transação otimizada apenas para operações de escrita
+    const concessaoSalva = await this.concessaoRepo.manager.transaction(async (manager) => {
+      const concessaoRepo = manager.getRepository(Concessao);
+      const historicoRepo = manager.getRepository(HistoricoConcessao);
+
+      // Otimização: Update direto sem carregar entidade completa
+      await concessaoRepo.update(concessaoId, {
+        status: StatusConcessao.SUSPENSO,
+        motivoSuspensao: motivo,
+        dataRevisaoSuspensao: dataRevisao,
+      });
+
+      // Criar histórico em paralelo
+      await historicoRepo.save({
+        concessaoId,
+        statusAnterior: concessaoExistente.status,
+        statusNovo: StatusConcessao.SUSPENSO,
+        usuarioId,
+        motivo,
+        dataAlteracao: agora,
+      });
+
+      // Retornar concessão atualizada com select otimizado
+      return await concessaoRepo.findOne({
+        where: { id: concessaoId },
+        select: ['id', 'status', 'motivoSuspensao', 'dataRevisaoSuspensao'],
+      });
     });
 
-    this.logger.warn(
-      `Concessão ${concessaoId} suspensa por ${usuarioId}. Motivo: ${motivo}`,
-      ConcessaoService.name,
-    );
+    // Otimização: Logging assíncrono para não bloquear resposta
+    setImmediate(() => {
+      this.logger.warn(
+        `Concessão ${concessaoId} suspensa por ${usuarioId}. Motivo: ${motivo}`,
+        ConcessaoService.name,
+      );
+    });
+      
     return concessaoSalva;
   }
 

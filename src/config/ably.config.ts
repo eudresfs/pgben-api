@@ -279,7 +279,7 @@ export class AblyConfig {
  */
 export const ablyConfigFactory = registerAs('ably', () => ({
   apiKey: process.env.ABLY_API_KEY,
-  environment: process.env.ABLY_ENVIRONMENT || 'sandbox',
+  environment: process.env.ABLY_ENVIRONMENT, // Não definir padrão para usar endpoint padrão do Ably
   clientId: process.env.ABLY_CLIENT_ID || 'pgben-server',
   jwtExpiresIn: parseInt(process.env.ABLY_JWT_EXPIRES_IN || '3600'),
   jwtCapabilityAdmin: process.env.ABLY_JWT_CAPABILITY_ADMIN || '*',

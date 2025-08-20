@@ -8,7 +8,8 @@ import {
 } from 'typeorm';
 import { TipoAcaoCritica, EstrategiaAprovacao } from '../enums';
 import { SolicitacaoAprovacao } from './solicitacao-aprovacao.entity';
-import { Aprovador } from './aprovador.entity';
+
+import { ConfiguracaoAprovador } from './configuracao-aprovador.entity';
 
 /**
  * Entidade que combina configuração de ação crítica e suas regras de aprovação
@@ -90,18 +91,18 @@ export class AcaoAprovacao {
     type: 'timestamp',
     comment: 'Data de criação do registro'
   })
-  criado_em: Date;
+  created_at: Date;
 
   @UpdateDateColumn({
     type: 'timestamp',
     comment: 'Data da última atualização'
   })
-  atualizado_em: Date;
+  updated_at: Date;
 
   // Relacionamentos
   @OneToMany(() => SolicitacaoAprovacao, solicitacao => solicitacao.acao_aprovacao)
   solicitacoes: SolicitacaoAprovacao[];
 
-  @OneToMany(() => Aprovador, aprovador => aprovador.acao_aprovacao)
-  aprovadores: Aprovador[];
+  @OneToMany(() => ConfiguracaoAprovador, configuracao => configuracao.acao_aprovacao)
+  configuracao_aprovadores: ConfiguracaoAprovador[];
 }

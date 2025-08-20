@@ -29,6 +29,7 @@ import { MinioService } from './services/minio.service';
 import { ChaveMonitorService } from './services/chave-monitor.service';
 import { HealthCheckService } from './services/health-check.service';
 import { FeriadoService } from './services/feriado.service';
+import { CacheService } from './services/cache.service';
 
 // Validators
 import {
@@ -72,6 +73,7 @@ import { IsCPF } from './validators/cpf.validator';
     ChaveMonitorService,
     HealthCheckService,
     FeriadoService,
+    CacheService,
     // Validators
     IsCPF,
     IsEnumValueConstraint,
@@ -85,6 +87,7 @@ import { IsCPF } from './validators/cpf.validator';
     MinioService,
     HealthCheckService,
     FeriadoService,
+    CacheService,
 
     // Validators
     IsCPF,

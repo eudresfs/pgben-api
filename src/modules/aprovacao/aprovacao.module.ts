@@ -5,7 +5,13 @@ import { ConfigModule } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 
 // Entidades do módulo simplificado
-import { AcaoAprovacao, SolicitacaoAprovacao, Aprovador } from './entities';
+import { AcaoAprovacao, SolicitacaoAprovacao } from './entities';
+import { ConfiguracaoAprovador } from './entities/configuracao-aprovador.entity';
+import { SolicitacaoAprovador } from './entities/solicitacao-aprovador.entity';
+
+// Repositórios
+import { ConfiguracaoAprovadorRepository } from './repositories/configuracao-aprovador.repository';
+import { SolicitacaoAprovadorRepository } from './repositories/solicitacao-aprovador.repository';
 
 // Serviços
 import { AprovacaoService } from './services';
@@ -24,6 +30,7 @@ import { AprovacaoAblyListener } from './listeners/aprovacao-ably.listener';
 
 // Serviços especializados
 import { AprovacaoNotificationService } from './services/aprovacao-notification.service';
+import { AprovacaoTemplateMappingService } from './services/aprovacao-template-mapping.service';
 
 // Módulos existentes para integração
 import { NotificacaoModule } from '../notificacao/notificacao.module';
@@ -31,6 +38,7 @@ import { AuditoriaModule } from '../auditoria/auditoria.module';
 import { SharedBullModule } from '../../shared/bull/bull.module';
 import { AuthModule } from '../../auth/auth.module';
 import { UsuarioModule } from '../usuario/usuario.module';
+import { SharedModule } from '../../shared/shared.module';
 
 /**
  * Módulo simplificado de aprovação
@@ -42,7 +50,8 @@ import { UsuarioModule } from '../usuario/usuario.module';
     TypeOrmModule.forFeature([
       AcaoAprovacao,
       SolicitacaoAprovacao,
-      Aprovador
+      ConfiguracaoAprovador,
+      SolicitacaoAprovador
     ]),
     
     // Integração com módulos existentes
@@ -52,7 +61,8 @@ import { UsuarioModule } from '../usuario/usuario.module';
     AuditoriaModule,
     SharedBullModule,
     AuthModule,
-    UsuarioModule
+    UsuarioModule,
+    SharedModule
   ],
   
   controllers: [
@@ -64,10 +74,15 @@ import { UsuarioModule } from '../usuario/usuario.module';
     // Reflector deve ser inicializado antes dos interceptors
     Reflector,
     
+    // Repositórios customizados
+    ConfiguracaoAprovadorRepository,
+    SolicitacaoAprovadorRepository,
+    
     // Serviços principais (ordem de inicialização importante)
     SystemContextService,
     AprovacaoService,
     AprovacaoNotificationService,
+    AprovacaoTemplateMappingService,
     
     // ExecucaoAcaoService como REQUEST-scoped para acessar o token do usuário
     // Ajustado para DEFAULT scope para evitar problemas de inicialização
@@ -87,6 +102,7 @@ import { UsuarioModule } from '../usuario/usuario.module';
   
   exports: [
     AprovacaoService,
+    AprovacaoNotificationService,
     TypeOrmModule
   ]
 })

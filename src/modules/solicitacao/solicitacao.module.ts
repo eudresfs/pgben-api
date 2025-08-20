@@ -46,6 +46,7 @@ import { TemplateMappingService } from './services/template-mapping.service';
 import { SolicitacaoRepository } from './repositories/solicitacao.repository';
 import { HistoricoSolicitacaoRepository } from './repositories/historico-solicitacao.repository';
 import { PendenciaRepository } from './repositories/pendencia.repository';
+import { SharedModule } from '../../shared/shared.module';
 
 /**
  * Módulo de Solicitações
@@ -89,6 +90,8 @@ import { PendenciaRepository } from './repositories/pendencia.repository';
     forwardRef(() =>
       import('../aprovacao/aprovacao.module').then((m) => m.AprovacaoModule),
     ),
+    // Módulo compartilhado para CacheService
+    SharedModule,
   ],
   controllers: [
     SolicitacaoController,

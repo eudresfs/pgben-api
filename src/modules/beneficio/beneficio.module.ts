@@ -13,7 +13,7 @@ import {
   CampoDinamicoBeneficio,
   DadosNatalidade,
   DadosAluguelSocial,
-  DadosFuneral,
+  DadosAtaude,
   DadosCestaBasica,
   ConfiguracaoRenovacao,
   Solicitacao,
@@ -28,7 +28,7 @@ import { BeneficioService } from './services/beneficio.service';
 
 import { DadosNatalidadeService } from './services/dados-natalidade.service';
 import { DadosAluguelSocialService } from './services/dados-aluguel-social.service';
-import { DadosFuneralService } from './services/dados-funeral.service';
+import { DadosAtaudeService } from './services/dados-ataude.service';
 import { DadosCestaBasicaService } from './services/dados-cesta-basica.service';
 import { DadosBeneficioFactoryService } from './services/dados-beneficio-factory.service';
 import { Concessao, HistoricoConcessao } from '../../entities';
@@ -44,7 +44,7 @@ import { TipoBeneficioRepository } from './repositories/tipo-beneficio.repositor
 import { TipoBeneficioSchemaRepository } from './repositories/tipo-beneficio-schema.repository';
 import { DadosNatalidadeRepository } from './repositories/dados-natalidade.repository';
 import { DadosAluguelSocialRepository } from './repositories/dados-aluguel-social.repository';
-import { DadosFuneralRepository } from './repositories/dados-funeral.repository';
+import { DadosAtaudeRepository } from './repositories/dados-ataude.repository';
 import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.repository';
 
 /**
@@ -63,7 +63,7 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
       CampoDinamicoBeneficio,
       DadosNatalidade,
       DadosAluguelSocial,
-      DadosFuneral,
+      DadosAtaude,
       DadosCestaBasica,
       ConfiguracaoRenovacao,
       Solicitacao,
@@ -97,7 +97,7 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
     ValidacaoBeneficioService,
     DadosNatalidadeService,
     DadosAluguelSocialService,
-    DadosFuneralService,
+    DadosAtaudeService,
     DadosCestaBasicaService,
     DadosBeneficioFactoryService,
     WorkflowInterceptor,
@@ -105,7 +105,7 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
     TipoBeneficioSchemaRepository,
     DadosNatalidadeRepository,
     DadosAluguelSocialRepository,
-    DadosFuneralRepository,
+    DadosAtaudeRepository,
     DadosCestaBasicaRepository,
   ],
   exports: [
@@ -114,13 +114,13 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
     ValidacaoBeneficioService,
     DadosNatalidadeService,
     DadosAluguelSocialService,
-    DadosFuneralService,
+    DadosAtaudeService,
     DadosCestaBasicaService,
     DadosBeneficioFactoryService,
     // Repositórios exportados
     DadosNatalidadeRepository,
     DadosAluguelSocialRepository,
-    DadosFuneralRepository,
+    DadosAtaudeRepository,
     DadosCestaBasicaRepository,
   ],
 })

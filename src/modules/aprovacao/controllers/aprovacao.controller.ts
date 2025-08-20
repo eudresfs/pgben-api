@@ -38,7 +38,7 @@ import { AuditEventType, RiskLevel } from '../../../modules/auditoria/events/typ
  * Consolida funcionalidades que antes estavam espalhadas em múltiplos controllers
  */
 @ApiTags('Aprovação - Solicitações')
-@Controller('v1/aprovacao/solicitacoes')
+@Controller('aprovacao/solicitacoes')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 @AutoAudit({
@@ -333,6 +333,36 @@ export class AprovacaoController {
 
     return {
       message: 'Solicitação cancelada com sucesso',
+      data: resultado
+    };
+  }
+
+  /**
+   * Remove aprovadores duplicados da configuração
+   */
+  @Post('limpar-duplicados')
+  @RequiresPermission({permissionName: 'aprovacao:admin'})
+  @ApiOperation({ 
+    summary: 'Remove aprovadores duplicados',
+    description: 'Remove aprovadores duplicados das configurações de ação, mantendo apenas o primeiro registro de cada usuário por ação'
+  })
+  @ApiQuery({
+    name: 'acaoId',
+    required: false,
+    description: 'ID da ação específica para limpeza (opcional - se não informado, limpa todas as ações)'
+  })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Aprovadores duplicados removidos com sucesso'
+  })
+  @SecurityAudit('limpeza-aprovadores-duplicados', RiskLevel.HIGH)
+  async limparAprovadoresDuplicados(
+    @Query('acaoId') acaoId?: string
+  ) {
+    const resultado = await this.aprovacaoService.removerAprovadoresDuplicados(acaoId);
+
+    return {
+      message: `Limpeza concluída: ${resultado.removidos} aprovadores duplicados removidos`,
       data: resultado
     };
   }

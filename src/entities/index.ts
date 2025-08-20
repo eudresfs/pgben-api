@@ -32,7 +32,7 @@ export { WorkflowBeneficio } from './workflow-beneficio.entity';
 // Entidades de Dados Específicos de Benefícios (dados do cidadão)
 export { DadosNatalidade } from './dados-natalidade.entity';
 export { DadosAluguelSocial } from './dados-aluguel-social.entity';
-export { DadosFuneral } from './dados-funeral.entity';
+export { DadosAtaude } from './dados-ataude.entity';
 export { DadosCestaBasica } from './dados-cesta-basica.entity';
 
 // Entidades de Cidadão e Família

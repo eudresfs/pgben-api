@@ -5,6 +5,7 @@ import { Transporter } from 'nodemailer';
 import * as handlebars from 'handlebars';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 
 export interface EmailOptions {
   to: string | string[];
@@ -82,6 +83,12 @@ export class EmailService implements OnModuleDestroy {
   private emailQueue = new Map<string, Date>();
 
   /**
+   * Cache de deduplicação para evitar emails duplicados
+   * Armazena hash do conteúdo + destinatário com timestamp
+   */
+  private deduplicationCache = new Map<string, number>();
+
+  /**
    * Métricas de negócio
    */
   private metrics = {
@@ -152,12 +159,19 @@ export class EmailService implements OnModuleDestroy {
     );
     this.templateTtlMs = ttlSeconds * 1000;
 
-    // Configurações avançadas
+    // Configurações avançadas - Rate limiting mais flexível para notificações
     this.rateLimit = this.configService.get<number>(
       'EMAIL_RATE_LIMIT_MS',
-      1000,
+      500, // Reduzido de 1000ms para 500ms para melhor performance
     );
     this.maxRetries = this.configService.get<number>('EMAIL_MAX_RETRIES', 3);
+    
+    this.logger.log(
+      `EmailService configurado - Rate limit: ${this.rateLimit}ms, ` +
+      `Max retries: ${this.maxRetries}, ` +
+      `Enabled: ${this.isEnabled}, ` +
+      `Development: ${this.isDevelopment}`
+    );
 
     // Configurações de timeout otimizadas para performance
     this.timeoutConfig = {
@@ -532,29 +546,90 @@ export class EmailService implements OnModuleDestroy {
    * Verifica rate limiting
    */
   private async checkRateLimit(recipient: string): Promise<boolean> {
-    if (this.isDevelopment) return true; // Sem rate limit em desenvolvimento
+    if (this.isDevelopment) {
+      this.logger.debug(`Rate limit desabilitado em desenvolvimento para ${recipient}`);
+      return true; // Sem rate limit em desenvolvimento
+    }
 
     const lastSent = this.emailQueue.get(recipient);
     const now = new Date();
 
     if (lastSent && now.getTime() - lastSent.getTime() < this.rateLimit) {
-      this.logger.warn(`Rate limit aplicado para ${recipient}`);
+      const timeRemaining = this.rateLimit - (now.getTime() - lastSent.getTime());
+      this.logger.warn(
+        `Rate limit aplicado para ${recipient}. ` +
+        `Tempo restante: ${timeRemaining}ms. ` +
+        `Rate limit configurado: ${this.rateLimit}ms`
+      );
       return false;
     }
 
     this.emailQueue.set(recipient, now);
+    this.logger.debug(`Rate limit OK para ${recipient}. Último envio: ${lastSent || 'nunca'}`);
 
     // Limpeza periódica do cache de rate limiting
     if (this.emailQueue.size > 10000) {
       const cutoff = now.getTime() - this.rateLimit * 10;
+      let cleaned = 0;
       for (const [email, time] of this.emailQueue.entries()) {
         if (time.getTime() < cutoff) {
           this.emailQueue.delete(email);
+          cleaned++;
         }
       }
+      this.logger.debug(`Cache de rate limiting limpo: ${cleaned} entradas removidas`);
     }
 
     return true;
+  }
+
+  /**
+   * Verifica se o email é duplicado baseado em hash de conteúdo
+   * Evita envio de emails idênticos em um período de 5 minutos
+   */
+  private checkEmailDeduplication(
+    recipient: string,
+    subject: string,
+    content: string,
+  ): boolean {
+    const now = Date.now();
+    const deduplicationWindowMs = 1 * 60 * 1000; // 1 minutos
+
+    // Gerar hash único baseado no destinatário, assunto e conteúdo
+    const contentHash = crypto
+      .createHash('sha256')
+      .update(`${recipient}:${subject}:${content}`)
+      .digest('hex');
+
+    // Verificar se já foi enviado recentemente
+    const lastSent = this.deduplicationCache.get(contentHash);
+    if (lastSent && now - lastSent < deduplicationWindowMs) {
+      this.logger.warn(
+        `Email duplicado detectado e bloqueado para ${recipient}. Hash: ${contentHash.substring(0, 8)}...`,
+      );
+      return false; // Email duplicado
+    }
+
+    // Registrar o envio
+    this.deduplicationCache.set(contentHash, now);
+
+    // Limpar entradas antigas do cache (mais de 5 minutos)
+    const cleanupThreshold = now - 5 * 60 * 1000;
+    let cleaned = 0;
+    for (const [hash, timestamp] of this.deduplicationCache.entries()) {
+      if (timestamp < cleanupThreshold) {
+        this.deduplicationCache.delete(hash);
+        cleaned++;
+      }
+    }
+
+    if (cleaned > 0) {
+      this.logger.debug(
+        `Cache de deduplicação limpo: ${cleaned} entradas removidas`,
+      );
+    }
+
+    return true; // Email não é duplicado
   }
 
   /**
@@ -584,6 +659,16 @@ export class EmailService implements OnModuleDestroy {
 
       // Processar template
       let { html, text, subject } = await this.processTemplate(options);
+
+      // Verificar deduplicação
+      const recipientString = Array.isArray(options.to) ? options.to.join(',') : options.to;
+      if (this.checkEmailDeduplication(recipientString, subject, html || text || '')) {
+        this.logger.warn('E-mail duplicado detectado e bloqueado', {
+          to: recipientString,
+          subject,
+        });
+        return false;
+      }
 
       // Configurar email
       const mailOptions = {

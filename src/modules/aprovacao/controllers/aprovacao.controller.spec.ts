@@ -41,8 +41,8 @@ const mockSolicitacao = {
   dados_acao: { teste: 'dados' },
   metodo_execucao: 'POST /api/test',
   prazo_aprovacao: null,
-  criado_em: new Date(),
-  atualizado_em: new Date(),
+  created_at: new Date(),
+  updated_at: new Date(),
   acao_aprovacao_id: 'acao-123',
   acao_aprovacao: {
       id: 'acao-123',
@@ -52,12 +52,12 @@ const mockSolicitacao = {
       estrategia: EstrategiaAprovacao.SIMPLES,
       min_aprovadores: 1,
       ativo: true,
-      criado_em: new Date(),
-      atualizado_em: new Date(),
+      created_at: new Date(),
+      updated_at: new Date(),
       solicitacoes: [],
-      aprovadores: []
+      configuracao_aprovadores: []
     },
-  aprovadores: [],
+  solicitacao_aprovadores: [],
   calcularAprovacoesNecessarias: jest.fn().mockReturnValue(1),
   podeSerAprovada: jest.fn().mockReturnValue(false),
   foiRejeitada: jest.fn().mockReturnValue(false)

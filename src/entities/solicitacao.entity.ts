@@ -47,13 +47,31 @@ export class Solicitacao {
   @IsNotEmpty({ message: 'Protocolo é obrigatório' })
   protocolo: string;
 
-  @BeforeInsert()
-  generateProtocol() {
+  /**
+   * Gera o protocolo da solicitação no novo formato: Benefício-Ano-Código
+   * Este método deve ser chamado pelo serviço antes da criação da solicitação
+   * @param codigoBeneficio Código do tipo de benefício (3 caracteres)
+   * @param uniqueId ID único gerado previamente para usar como código
+   */
+  generateProtocol(codigoBeneficio?: string, uniqueId?: string) {
     const date = new Date();
-    const random = Math.floor(Math.random() * 10000)
-      .toString()
-      .padStart(4, '0');
-    this.protocolo = `SOL${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${random}`;
+    const ano = date.getFullYear();
+    
+    if (codigoBeneficio && codigoBeneficio.length >= 3 && uniqueId) {
+      // Usar os 3 primeiros caracteres do código do benefício
+      const prefixoBeneficio = codigoBeneficio.substring(0, 3).toUpperCase();
+      
+      // Usar os primeiros 8 caracteres do ID único como código
+      const codigo = uniqueId.substring(0, 8).toUpperCase();
+      
+      this.protocolo = `${prefixoBeneficio}-${ano}-${codigo}`;
+    } else {
+      // Fallback para formato padrão se não houver código do benefício ou ID
+      const random = Math.floor(Math.random() * 10000)
+        .toString()
+        .padStart(4, '0');
+      this.protocolo = `SOL-${ano}${(date.getMonth() + 1).toString().padStart(2, '0')}-${random}`;
+    }
   }
 
   @Column({ 

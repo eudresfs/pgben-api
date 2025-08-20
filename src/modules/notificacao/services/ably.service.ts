@@ -556,8 +556,21 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
    * Verifica se o serviço está saudável
    */
   isHealthy(): boolean {
-    // true se conectado
-    return this.connectionStatus === 'connected' && this.ablyClient !== null;
+    try {
+      // Verificações mais robustas para determinar se o serviço está saudável
+      const hasClient = this.ablyClient !== null;
+      const isConnected = this.connectionStatus === 'connected';
+      const hasValidConnection = hasClient && this.ablyClient?.connection?.state === 'connected';
+      
+      const healthy = hasClient && isConnected && hasValidConnection;
+      
+      this.logger.debug(`Verificação de saúde Ably: hasClient=${hasClient}, isConnected=${isConnected}, hasValidConnection=${hasValidConnection}, healthy=${healthy}`);
+      
+      return healthy;
+    } catch (error) {
+      this.logger.error('Erro ao verificar saúde do Ably:', error);
+      return false;
+    }
   }
 
   /**
@@ -614,18 +627,96 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Força reconexão
+   * Força uma reconexão com o Ably
    */
-  async reconnect(): Promise<void> {
-    try {
-      if (this.ablyClient) {
-        this.ablyClient.connect();
-        this.logger.log('Reconexão forçada iniciada');
+  async reconnect(): Promise<boolean> {
+    const maxRetries = 3;
+    let attempt = 0;
+
+    while (attempt < maxRetries) {
+      attempt++;
+      
+      try {
+        this.logger.log(`Tentativa de reconexão ${attempt}/${maxRetries} com Ably`);
+        
+        if (this.ablyClient) {
+          // Fechar conexão atual se existir
+          if (this.ablyClient.connection.state !== 'closed') {
+            this.logger.debug('Fechando conexão atual antes de reconectar');
+            this.ablyClient.connection.close();
+            
+            // Aguardar fechamento
+            await new Promise((resolve) => {
+              const timeout = setTimeout(resolve, 2000);
+              this.ablyClient.connection.once('closed', () => {
+                clearTimeout(timeout);
+                resolve(void 0);
+              });
+            });
+          }
+
+          // Tentar conectar novamente
+          this.logger.debug('Iniciando nova conexão');
+          this.ablyClient.connection.connect();
+
+          // Aguardar conexão com timeout
+          const connected = await new Promise<boolean>((resolve) => {
+            const timeout = setTimeout(() => {
+              this.logger.warn(`Timeout na tentativa ${attempt} de reconexão`);
+              resolve(false);
+            }, 10000); // 10 segundos de timeout
+
+            const onConnected = () => {
+              clearTimeout(timeout);
+              this.ablyClient.connection.off('connected', onConnected);
+              this.ablyClient.connection.off('failed', onFailed);
+              this.ablyClient.connection.off('suspended', onFailed);
+              resolve(true);
+            };
+
+            const onFailed = (stateChange: any) => {
+              clearTimeout(timeout);
+              this.ablyClient.connection.off('connected', onConnected);
+              this.ablyClient.connection.off('failed', onFailed);
+              this.ablyClient.connection.off('suspended', onFailed);
+              this.logger.warn(`Falha na reconexão (tentativa ${attempt}):`, stateChange?.reason);
+              resolve(false);
+            };
+
+            this.ablyClient.connection.on('connected', onConnected);
+            this.ablyClient.connection.on('failed', onFailed);
+            this.ablyClient.connection.on('suspended', onFailed);
+          });
+
+          if (connected) {
+            this.connectionStatus = 'connected';
+            this.lastError = null;
+            this.logger.log(`Reconexão bem-sucedida na tentativa ${attempt}`);
+            return true;
+          }
+        }
+
+        // Se chegou aqui, a tentativa falhou
+        if (attempt < maxRetries) {
+          const delay = Math.pow(2, attempt) * 1000; // Backoff exponencial
+          this.logger.warn(`Tentativa ${attempt} falhou, aguardando ${delay}ms antes da próxima tentativa`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+
+      } catch (error) {
+        this.logger.error(`Erro na tentativa ${attempt} de reconexão:`, error);
+        this.lastError = error.message;
+        
+        if (attempt < maxRetries) {
+          const delay = Math.pow(2, attempt) * 1000;
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
       }
-    } catch (error) {
-      this.logger.error('Erro ao forçar reconexão:', error);
-      throw error;
     }
+
+    this.connectionStatus = 'failed';
+    this.logger.error(`Falha em todas as ${maxRetries} tentativas de reconexão`);
+    return false;
   }
 
   /**
@@ -648,18 +739,31 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Verifica se o cliente está conectado ao Ably
+   * Verifica se o cliente está conectado ao Ably com timeout
    */
   async isConnected(): Promise<boolean> {
     try {
       if (!this.ablyClient) {
+        this.logger.debug('Cliente Ably não inicializado');
         return false;
       }
 
-      return (
-        this.connectionStatus === 'connected' &&
-        this.ablyClient.connection.state === 'connected'
-      );
+      // Verificação com timeout para evitar travamento
+      const connectionPromise = new Promise<boolean>((resolve) => {
+        const isConnected = this.connectionStatus === 'connected' && 
+                           this.ablyClient.connection.state === 'connected';
+        resolve(isConnected);
+      });
+
+      const timeoutPromise = new Promise<boolean>((resolve) => {
+        setTimeout(() => resolve(false), 2000); // 2 segundos de timeout
+      });
+
+      const result = await Promise.race([connectionPromise, timeoutPromise]);
+      
+      this.logger.debug(`Verificação de conexão Ably: ${result} (status: ${this.connectionStatus}, state: ${this.ablyClient?.connection?.state})`);
+      
+      return result;
     } catch (error) {
       this.logger.error('Erro ao verificar status de conexão:', error);
       return false;
@@ -675,54 +779,87 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
     eventName: string,
     data: any,
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    const startTime = Date.now();
+    
     try {
+      this.logger.debug(`Iniciando publicação de mensagem - Canal: ${channelName}, Evento: ${eventName}`);
+      
       // Verificar se está conectado
-      if (!(await this.isConnected())) {
+      const isConnected = await this.isConnected();
+      if (!isConnected) {
+        const errorMsg = `Cliente Ably não está conectado (status: ${this.connectionStatus}, state: ${this.ablyClient?.connection?.state})`;
+        this.logger.warn(errorMsg);
         return {
           success: false,
-          error: 'Cliente Ably não está conectado',
+          error: errorMsg,
         };
       }
 
       // Validar parâmetros
       if (!channelName || !eventName) {
+        const errorMsg = 'Nome do canal e evento são obrigatórios';
+        this.logger.error(errorMsg);
         return {
           success: false,
-          error: 'Nome do canal e evento são obrigatórios',
+          error: errorMsg,
         };
       }
 
       // Verificar se o canal está permitido
       if (!this.ablyConfig.isChannelAllowed(channelName)) {
+        const errorMsg = `Canal ${channelName} não permitido pela configuração`;
+        this.logger.error(errorMsg);
         return {
           success: false,
-          error: `Canal ${channelName} não permitido pela configuração`,
+          error: errorMsg,
         };
       }
 
       // Obter canal
       const fullChannelName = this.ablyConfig.getChannelName(channelName);
+      this.logger.debug(`Nome completo do canal: ${fullChannelName}`);
+      
       const channel = this.getChannel(fullChannelName);
+      
+      if (!channel) {
+        const errorMsg = `Não foi possível obter o canal ${fullChannelName}`;
+        this.logger.error(errorMsg);
+        return {
+          success: false,
+          error: errorMsg,
+        };
+      }
 
       // Validar tamanho da mensagem
       const payloadSize = Buffer.byteLength(JSON.stringify(data), 'utf8');
       if (payloadSize > this.ablyConfig.maxMessageSize) {
+        const errorMsg = `Tamanho da mensagem (${payloadSize} bytes) excede o limite configurado (${this.ablyConfig.maxMessageSize} bytes)`;
+        this.logger.error(errorMsg);
         return {
           success: false,
-          error: `Tamanho da mensagem (${payloadSize} bytes) excede o limite configurado`,
+          error: errorMsg,
         };
       }
 
-      // Publicar mensagem
-      await channel.publish(eventName, data);
+      this.logger.debug(`Publicando mensagem no canal ${fullChannelName} - Tamanho: ${payloadSize} bytes`);
+
+      // Publicar mensagem com timeout
+      const publishPromise = channel.publish(eventName, data);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout ao publicar mensagem')), 5000);
+      });
+
+      await Promise.race([publishPromise, timeoutPromise]);
 
       // Atualizar métricas
       this.metrics.totalMessages++;
       this.metrics.messagesPublished++;
 
       const messageId = `${fullChannelName}-${Date.now()}`;
-      this.logger.debug(
-        `Mensagem publicada no canal ${fullChannelName} com evento ${eventName}, ID: ${messageId}`,
+      const executionTime = Date.now() - startTime;
+      
+      this.logger.log(
+        `Mensagem publicada com sucesso no canal ${fullChannelName} com evento ${eventName}, ID: ${messageId}, Tempo: ${executionTime}ms`,
       );
 
       return {
@@ -730,14 +867,20 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
         messageId,
       };
     } catch (error) {
+      const executionTime = Date.now() - startTime;
+      const errorMsg = error.message || 'Erro desconhecido ao publicar mensagem';
+      
       this.logger.error(
-        `Erro ao publicar mensagem no canal ${channelName}:`,
+        `Erro ao publicar mensagem no canal ${channelName} (tempo: ${executionTime}ms):`,
         error,
       );
 
+      // Atualizar último erro
+      this.lastError = errorMsg;
+
       return {
         success: false,
-        error: error.message || 'Erro desconhecido ao publicar mensagem',
+        error: errorMsg,
       };
     }
   }

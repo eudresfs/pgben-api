@@ -439,8 +439,8 @@ export class ConcessaoController {
       dto.motivo,
     );
 
-    // Auditoria: Suspensão de concessão
-    await this.auditEventEmitter.emitEntityUpdated(
+    // Otimização: Auditoria assíncrona para não bloquear resposta
+    this.auditEventEmitter.emitEntityUpdated(
       'Concessao',
       id,
       {},
@@ -450,7 +450,10 @@ export class ConcessaoController {
         status: 'SUSPENSA',
       },
       usuario.id,
-    );
+    ).catch(error => {
+      // Log do erro sem interromper o fluxo principal
+      console.error('Erro na auditoria assíncrona:', error);
+    });
 
     return result;
   }

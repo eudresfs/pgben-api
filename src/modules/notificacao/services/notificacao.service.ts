@@ -326,6 +326,7 @@ export class NotificacaoService {
     link?: string;
     dados_contexto?: Record<string, any>;
     template_id?: string;
+    metadados_adicionais?: Record<string, any>;
   }): Promise<NotificacaoSistema> {
     // Validar se destinatario_id é válido antes de criar a notificação
     if (!dados.destinatario_id || dados.destinatario_id.trim() === '') {
@@ -360,6 +361,7 @@ export class NotificacaoService {
       status: StatusNotificacaoProcessamento.NAO_LIDA,
       dados_contexto: dados.dados_contexto || {},
       template_id: dados.template_id || undefined,
+      metadados_adicionais: dados.metadados_adicionais || {},
     });
 
     const notificacao = this.notificacaoRepository.create(dadosNormalizados);
@@ -443,6 +445,7 @@ export class NotificacaoService {
     conteudo: string;
     solicitacao_id: string;
     link?: string;
+    metadados_adicionais?: Record<string, any>;
   }) {
     return this.criar({
       destinatario_id: dados.destinatario_id,
@@ -452,6 +455,7 @@ export class NotificacaoService {
       entidade_relacionada_id: dados.solicitacao_id,
       entidade_tipo: 'solicitacao',
       link: dados.link,
+      metadados_adicionais: dados.metadados_adicionais,
     });
   }
 

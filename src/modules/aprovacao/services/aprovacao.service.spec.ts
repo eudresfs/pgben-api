@@ -7,8 +7,9 @@ import { AprovacaoService } from './aprovacao.service';
 import {
   AcaoAprovacao,
   SolicitacaoAprovacao,
-  Aprovador,
 } from '../entities';
+import { ConfiguracaoAprovador } from '../entities/configuracao-aprovador.entity';
+import { SolicitacaoAprovador } from '../entities/solicitacao-aprovador.entity';
 import {
   CriarSolicitacaoDto,
   ProcessarAprovacaoDto,
@@ -21,6 +22,8 @@ import {
 } from '../enums';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { NotificacaoService } from '../../notificacao/services/notificacao.service';
+import { AprovacaoNotificationService } from './aprovacao-notification.service';
+import { NotificationManagerService } from '../../notificacao/services/notification-manager.service';
 import { UsuarioService } from '../../usuario/services/usuario.service';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { AblyService } from '../../notificacao/services/ably.service';
@@ -35,7 +38,8 @@ describe('AprovacaoService', () => {
   let service: AprovacaoService;
   let acaoAprovacaoRepository: Repository<AcaoAprovacao>;
   let solicitacaoAprovacaoRepository: Repository<SolicitacaoAprovacao>;
-  let aprovadorRepository: Repository<Aprovador>;
+  let configuracaoAprovadorRepository: Repository<ConfiguracaoAprovador>;
+  let solicitacaoAprovadorRepository: Repository<SolicitacaoAprovador>;
 
   // Mocks dos repositórios
   const mockAcaoAprovacaoRepository = {
@@ -67,7 +71,24 @@ describe('AprovacaoService', () => {
     })),
   };
 
-  const mockAprovadorRepository = {
+  const mockConfiguracaoAprovadorRepository = {
+    findOne: jest.fn(),
+    find: jest.fn(),
+    save: jest.fn(),
+    remove: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    createQueryBuilder: jest.fn(() => ({
+      select: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([]),
+      delete: jest.fn().mockReturnThis(),
+      execute: jest.fn().mockResolvedValue({ affected: 0 })
+    }))
+  };
+
+  const mockSolicitacaoAprovadorRepository = {
     findOne: jest.fn(),
     find: jest.fn(),
     save: jest.fn(),
@@ -81,6 +102,16 @@ describe('AprovacaoService', () => {
     enviarNotificacao: jest.fn(),
     criarNotificacaoAprovacao: jest.fn(),
     criarNotificacaoSolicitacao: jest.fn(),
+  };
+
+  const mockAprovacaoNotificationService = {
+    enviarNotificacaoAprovacao: jest.fn(),
+    criarNotificacaoContexto: jest.fn(),
+  };
+
+  const mockNotificationManagerService = {
+    createNotification: jest.fn(),
+    processNotification: jest.fn(),
   };
 
   const mockUsuarioService = {
@@ -122,12 +153,24 @@ describe('AprovacaoService', () => {
           useValue: mockSolicitacaoAprovacaoRepository,
         },
         {
-          provide: getRepositoryToken(Aprovador),
-          useValue: mockAprovadorRepository,
+          provide: getRepositoryToken(ConfiguracaoAprovador),
+          useValue: mockConfiguracaoAprovadorRepository,
+        },
+        {
+          provide: getRepositoryToken(SolicitacaoAprovador),
+          useValue: mockSolicitacaoAprovadorRepository,
         },
         {
           provide: NotificacaoService,
           useValue: mockNotificacaoService,
+        },
+        {
+          provide: AprovacaoNotificationService,
+          useValue: mockAprovacaoNotificationService,
+        },
+        {
+          provide: NotificationManagerService,
+          useValue: mockNotificationManagerService,
         },
         {
           provide: UsuarioService,
@@ -173,8 +216,11 @@ describe('AprovacaoService', () => {
     solicitacaoAprovacaoRepository = module.get<Repository<SolicitacaoAprovacao>>(
       getRepositoryToken(SolicitacaoAprovacao),
     );
-    aprovadorRepository = module.get<Repository<Aprovador>>(
-      getRepositoryToken(Aprovador),
+    configuracaoAprovadorRepository = module.get<Repository<ConfiguracaoAprovador>>(
+      getRepositoryToken(ConfiguracaoAprovador),
+    );
+    solicitacaoAprovadorRepository = module.get<Repository<SolicitacaoAprovador>>(
+      getRepositoryToken(SolicitacaoAprovador),
     );
   });
 
@@ -232,7 +278,7 @@ describe('AprovacaoService', () => {
         estrategia: EstrategiaAprovacao.MAIORIA,
         min_aprovadores: 2,
         ativo: true,
-        aprovadores: [
+        configuracao_aprovadores: [
           { id: 1, usuario_id: '1', perfil: 'admin' },
           { id: 2, usuario_id: '2', perfil: 'supervisor' }
         ],
@@ -275,7 +321,7 @@ describe('AprovacaoService', () => {
         tipo_acao: dto.tipo_acao,
         estrategia: EstrategiaAprovacao.MAIORIA,
         min_aprovadores: 2,
-        aprovadores: [{ usuario_id: 2 }, { usuario_id: 3 }],
+        configuracao_aprovadores: [{ usuario_id: 2 }, { usuario_id: 3 }],
       };
 
       const mockSolicitacao = {
@@ -284,7 +330,7 @@ describe('AprovacaoService', () => {
         ...dto,
         solicitante_id: solicitanteId,
         status: StatusSolicitacao.PENDENTE,
-        aprovadores: [],
+        solicitacao_aprovadores: [],
       };
 
       mockAcaoAprovacaoRepository.findOne.mockResolvedValueOnce(mockConfiguracao);
@@ -292,8 +338,8 @@ describe('AprovacaoService', () => {
       mockSolicitacaoAprovacaoRepository.save.mockResolvedValue(mockSolicitacao);
       // Mock para o findOne usado no obterSolicitacao
       mockSolicitacaoAprovacaoRepository.findOne.mockResolvedValue(mockSolicitacao);
-      mockAprovadorRepository.create.mockImplementation((data) => data);
-      mockAprovadorRepository.save.mockImplementation((data) => Promise.resolve(data));
+      mockSolicitacaoAprovadorRepository.create.mockImplementation((data) => data);
+      mockSolicitacaoAprovadorRepository.save.mockImplementation((data) => Promise.resolve(data));
 
       // Mock do método privado gerarCodigoSolicitacao
       jest.spyOn(service as any, 'gerarCodigoSolicitacao').mockResolvedValue('SOL-001');
@@ -341,7 +387,7 @@ describe('AprovacaoService', () => {
           estrategia: EstrategiaAprovacao.MAIORIA,
           min_aprovadores: 2,
         },
-        aprovadores: [
+        solicitacao_aprovadores: [
           { id: 1, usuario_id: aprovadorId, aprovado: null },
           { id: 2, usuario_id: 3, aprovado: null },
         ],
@@ -351,15 +397,15 @@ describe('AprovacaoService', () => {
       };
 
       const mockAprovador = {
-        ...mockSolicitacao.aprovadores[0],
+        ...mockSolicitacao.solicitacao_aprovadores[0],
         jaDecidiu: jest.fn().mockReturnValue(false),
         aprovar: jest.fn(),
         rejeitar: jest.fn()
       };
 
       mockSolicitacaoAprovacaoRepository.findOne.mockResolvedValue(mockSolicitacao);
-      mockAprovadorRepository.findOne.mockResolvedValue(mockAprovador);
-      mockAprovadorRepository.save.mockResolvedValue({
+      mockSolicitacaoAprovadorRepository.findOne.mockResolvedValue(mockAprovador);
+      mockSolicitacaoAprovadorRepository.save.mockResolvedValue({
         ...mockAprovador,
         aprovado: true,
         justificativa_decisao: justificativa,
@@ -372,7 +418,7 @@ describe('AprovacaoService', () => {
 
       // Assert
       expect(resultado).toBeDefined();
-      expect(mockAprovadorRepository.save).toHaveBeenCalled();
+      expect(mockSolicitacaoAprovadorRepository.save).toHaveBeenCalled();
     });
 
     it('deve lançar erro quando solicitação não encontrada', async () => {
@@ -496,16 +542,16 @@ describe('AprovacaoService', () => {
       };
 
       mockAcaoAprovacaoRepository.findOne.mockResolvedValue(mockAcao);
-      mockAprovadorRepository.findOne.mockResolvedValue(null);
-      mockAprovadorRepository.create.mockReturnValue(mockAprovador);
-      mockAprovadorRepository.save.mockResolvedValue(mockAprovador);
+      mockConfiguracaoAprovadorRepository.findOne.mockResolvedValue(null);
+      mockConfiguracaoAprovadorRepository.create.mockReturnValue(mockAprovador);
+      mockConfiguracaoAprovadorRepository.save.mockResolvedValue(mockAprovador);
 
       // Act
       const resultado = await service.adicionarAprovador(acaoId, usuarioId);
 
       // Assert
       expect(resultado).toEqual(mockAprovador);
-      expect(mockAprovadorRepository.save).toHaveBeenCalled();
+      expect(mockConfiguracaoAprovadorRepository.save).toHaveBeenCalled();
     });
 
     it('deve lançar erro quando ação não encontrada', async () => {
@@ -530,10 +576,11 @@ describe('AprovacaoService', () => {
         id: 1,
         acao_aprovacao_id: acaoId,
         usuario_id: usuarioId,
+        ativo: true,
       };
 
       mockAcaoAprovacaoRepository.findOne.mockResolvedValue(mockAcao);
-      mockAprovadorRepository.findOne.mockResolvedValue(mockAprovadorExistente);
+      mockConfiguracaoAprovadorRepository.findOne.mockResolvedValue(mockAprovadorExistente);
 
       // Act & Assert
       await expect(service.adicionarAprovador(acaoId, usuarioId))

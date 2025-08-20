@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { StatusSolicitacao } from '../enums';
 import { AcaoAprovacao } from './acao-aprovacao.entity';
-import { Aprovador } from './aprovador.entity';
+import { SolicitacaoAprovador } from './solicitacao-aprovador.entity';
 
 /**
  * Entidade simplificada para solicitações de aprovação
@@ -122,14 +122,14 @@ export class SolicitacaoAprovacao {
     comment: 'Data de criação da solicitação',
     name: 'created_at'
   })
-  criado_em: Date;
+  created_at: Date;
 
   @UpdateDateColumn({
     type: 'timestamp',
     comment: 'Data da última atualização',
     name: 'updated_at'
   })
-  atualizado_em: Date;
+  updated_at: Date;
 
   // Relacionamentos
   @ManyToOne(() => AcaoAprovacao, acao => acao.solicitacoes)
@@ -142,14 +142,15 @@ export class SolicitacaoAprovacao {
   })
   acao_aprovacao_id: string;
 
-  @OneToMany(() => Aprovador, aprovador => aprovador.solicitacao_aprovacao)
-  aprovadores: Aprovador[];
+
+  @OneToMany(() => SolicitacaoAprovador, (solicitacaoAprovador) => solicitacaoAprovador.solicitacao_aprovacao)
+  solicitacao_aprovadores: SolicitacaoAprovador[];
 
   /**
    * Calcula o número de aprovações necessárias baseado na estratégia
    */
   calcularAprovacoesNecessarias(): number {
-    const totalAprovadores = this.aprovadores?.length || 0;
+    const totalAprovadores = this.solicitacao_aprovadores?.length || 0;
     
     if (this.acao_aprovacao.estrategia === 'simples') {
       return 1;
@@ -166,7 +167,7 @@ export class SolicitacaoAprovacao {
    * Verifica se a solicitação pode ser aprovada
    */
   podeSerAprovada(): boolean {
-    const aprovacoes = this.aprovadores?.filter(a => a.aprovado === true).length || 0;
+    const aprovacoes = this.solicitacao_aprovadores?.filter(a => a.aprovado === true).length || 0;
     return aprovacoes >= this.calcularAprovacoesNecessarias();
   }
 
@@ -174,6 +175,6 @@ export class SolicitacaoAprovacao {
    * Verifica se a solicitação foi rejeitada
    */
   foiRejeitada(): boolean {
-    return this.aprovadores?.some(a => a.aprovado === false) || false;
+    return this.solicitacao_aprovadores?.some(a => a.aprovado === false) || false;
   }
 }

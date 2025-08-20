@@ -72,30 +72,7 @@ export class AprovacaoAblyListener {
         context
       );
 
-      // Emitir evento de auditoria detalhado
-      await this.auditEventEmitter.emitSystemEvent(
-        AuditEventType.SYSTEM_ERROR,
-        {
-          userId: payload.solicitanteId,
-          operation: TipoOperacao.CREATE,
-          entityName: 'SolicitacaoAprovacao',
-          entityId: solicitacao.id,
-          message: `Solicitação de aprovação criada: ${solicitacao.codigo}`,
-          riskLevel: RiskLevel.MEDIUM,
-          metadata: {
-            codigo_solicitacao: solicitacao.codigo,
-            tipo_acao: payload.configuracao?.tipo_acao,
-            total_aprovadores: aprovadores.length,
-            prazo_aprovacao: solicitacao.prazo_aprovacao,
-            justificativa_fornecida: !!solicitacao.justificativa,
-            dados_acao_incluidos: !!solicitacao.dados_acao,
-            notificacoes_enviadas: {
-              solicitante: true,
-              aprovadores: aprovadores.length,
-            },
-          }
-        }
-      );
+      // Auditoria será processada pelo AprovacaoAuditListener
 
       // Notificar solicitante sobre criação
       await this.notificationOrchestrator.publishNotification(payload.solicitanteId, {
@@ -240,29 +217,7 @@ export class AprovacaoAblyListener {
         });
       }
 
-      // Emitir evento de auditoria detalhado
-      await this.auditEventEmitter.emitSystemEvent(
-        AuditEventType.SYSTEM_ERROR,
-        {
-          userId: aprovadorId,
-          operation: TipoOperacao.APPROVE,
-          entityName: 'SolicitacaoAprovacao',
-          entityId: solicitacao.id,
-          message: `Solicitação aprovada: ${solicitacao.codigo}`,
-          riskLevel: RiskLevel.HIGH,
-          metadata: {
-            codigo_solicitacao: solicitacao.codigo,
-            aprovador_id: aprovadorId,
-            solicitante_id: payload.solicitanteId,
-            tipo_acao: solicitacao.acao_aprovacao?.tipo_acao,
-            observacoes_aprovador: payload.justificativa,
-            processado_em: solicitacao.processado_em,
-            dados_acao_aprovados: !!solicitacao.dados_acao,
-            notificacao_solicitante_enviada: true,
-            notificacao_financeiro_enviada: !!solicitacao.acao_aprovacao?.notificar_financeiro,
-          }
-        }
-      );
+      // Auditoria será processada pelo AprovacaoAuditListener
 
       // Enviar notificação Ably para tempo real
       await this.notificationOrchestrator.publishNotification(payload.solicitanteId, {
@@ -345,28 +300,7 @@ export class AprovacaoAblyListener {
         context
       );
 
-      // Emitir evento de auditoria detalhado
-      await this.auditEventEmitter.emitSystemEvent(
-        AuditEventType.SYSTEM_INFO,
-        {
-          userId: aprovadorId,
-          operation: TipoOperacao.REJECT,
-          entityName: 'SolicitacaoAprovacao',
-          entityId: solicitacao.id,
-          message: `Solicitação rejeitada: ${solicitacao.codigo}`,
-          riskLevel: RiskLevel.HIGH,
-          metadata: {
-            codigo_solicitacao: solicitacao.codigo,
-            aprovador_id: aprovadorId,
-            solicitante_id: payload.solicitanteId,
-            tipo_acao: solicitacao.acao_aprovacao?.tipo_acao,
-            motivo_rejeicao: payload.justificativa,
-            processado_em: solicitacao.processado_em,
-            dados_acao_rejeitados: !!solicitacao.dados_acao,
-            notificacao_solicitante_enviada: true,
-          }
-        }
-      );
+      // Auditoria será processada pelo AprovacaoAuditListener
 
       // Enviar notificação Ably para tempo real
       await this.notificationOrchestrator.publishNotification(payload.solicitanteId, {
@@ -447,27 +381,7 @@ export class AprovacaoAblyListener {
         resultado
       );
 
-      // Emitir evento de auditoria detalhado
-      await this.auditEventEmitter.emitSystemEvent(
-        AuditEventType.SYSTEM_INFO,
-        {
-          userId: payload.solicitanteId,
-          operation: TipoOperacao.EXECUTION,
-          entityName: 'SolicitacaoAprovacao',
-          entityId: solicitacao.id,
-          message: `Solicitação executada com sucesso: ${solicitacao.codigo}`,
-          riskLevel: RiskLevel.MEDIUM,
-          metadata: {
-            codigo_solicitacao: solicitacao.codigo,
-            tipo_acao: solicitacao.acao_aprovacao?.tipo_acao,
-            executado_em: solicitacao.executado_em,
-            processado_por: solicitacao.processado_por,
-            resultado_disponivel: !!resultado,
-            dados_acao_executados: !!solicitacao.dados_acao,
-            notificacao_solicitante_enviada: true,
-          }
-        }
-      );
+      // Auditoria será processada pelo AprovacaoAuditListener
 
       // Notificar solicitante sobre execução
       await this.notificationOrchestrator.publishNotification(payload.solicitanteId, {
@@ -547,28 +461,7 @@ export class AprovacaoAblyListener {
         erro
       );
 
-      // Emitir evento de auditoria detalhado
-      await this.auditEventEmitter.emitSystemEvent(
-        AuditEventType.SYSTEM_ERROR,
-        {
-          userId: payload.solicitanteId,
-          operation: TipoOperacao.EXECUTION,
-          entityName: 'SolicitacaoAprovacao',
-          entityId: solicitacao.id,
-          message: `Erro na execução da solicitação: ${solicitacao.codigo}`,
-          riskLevel: RiskLevel.HIGH,
-          metadata: {
-            codigo_solicitacao: solicitacao.codigo,
-            tipo_acao: solicitacao.acao_aprovacao?.tipo_acao,
-            erro_execucao: erro,
-            processado_em: solicitacao.processado_em,
-            processado_por: solicitacao.processado_por,
-            dados_acao_tentativa: !!solicitacao.dados_acao,
-            notificacao_solicitante_enviada: true,
-            requer_intervencao_manual: true,
-          },
-        }
-      );
+      // Auditoria será processada pelo AprovacaoAuditListener
 
       // Notificar solicitante sobre erro
       await this.notificationOrchestrator.publishNotification(payload.solicitanteId, {

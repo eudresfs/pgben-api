@@ -36,6 +36,7 @@ interface SolicitacaoEvent extends WorkflowEvent {
 
 interface AprovacaoEvent extends WorkflowEvent {
   aprovadorId: string;
+  solicitanteId?: string; // Para compatibilidade com eventos do AprovacaoService
   observacoes?: string;
   documentosAnexados?: string[];
 }
@@ -173,9 +174,20 @@ export class WorkflowProativoListener {
     this.logger.log(`Processando solicitação aprovada: ${event.solicitacaoId}`);
 
     try {
+      // Determinar o ID do usuário solicitante (compatibilidade com diferentes formatos de evento)
+      const usuarioSolicitanteId = event.usuarioId || event.solicitanteId;
+      
+      if (!usuarioSolicitanteId) {
+        this.logger.error(
+          `Evento de aprovação sem usuarioId ou solicitanteId: ${event.solicitacaoId}`,
+          { event }
+        );
+        return;
+      }
+
       // Notificar usuário sobre aprovação
       await this.enviarNotificacaoComPreferencias({
-        usuarioId: event.usuarioId,
+        usuarioId: usuarioSolicitanteId,
         tipo: TipoNotificacao.APROVACAO,
         titulo: 'Solicitação Aprovada',
         mensagem:
@@ -198,7 +210,7 @@ export class WorkflowProativoListener {
         contexto: {
           solicitacaoId: event.solicitacaoId,
           aprovadorId: event.aprovadorId,
-          usuarioSolicitante: event.usuarioId,
+          usuarioSolicitante: usuarioSolicitanteId,
         },
       });
     } catch (error) {
@@ -216,9 +228,20 @@ export class WorkflowProativoListener {
     );
 
     try {
+      // Determinar o ID do usuário solicitante (compatibilidade com diferentes formatos de evento)
+      const usuarioSolicitanteId = event.usuarioId || event.solicitanteId;
+      
+      if (!usuarioSolicitanteId) {
+        this.logger.error(
+          `Evento de indeferimento sem usuarioId ou solicitanteId: ${event.solicitacaoId}`,
+          { event }
+        );
+        return;
+      }
+
       // Notificar usuário sobre indeferimento
       await this.enviarNotificacaoComPreferencias({
-        usuarioId: event.usuarioId,
+        usuarioId: usuarioSolicitanteId,
         tipo: TipoNotificacao.APROVACAO,
         titulo: 'Solicitação Indeferida',
         mensagem:

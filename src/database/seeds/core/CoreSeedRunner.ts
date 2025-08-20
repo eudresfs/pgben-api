@@ -7,6 +7,8 @@ import { PermissionSeeder } from './permission.seed';
 import { PermissionRoleMappingSeed } from './permission-role-mapping.seed';
 import { NotificationTemplateSeed } from './NotificationTemplateSeed';
 import { SolicitacaoNotificationTemplateSeed } from './SolicitacaoNotificationTemplateSeed';
+import { AprovacaoNotificationTemplateSeed } from './AprovacaoNotificationTemplateSeed';
+import { SistemaNotificationTemplateSeed } from './SistemaNotificationTemplateSeed';
 
 /**
  * Executa todos os seeds essenciais (core) do sistema
@@ -118,6 +120,16 @@ export class CoreSeedRunner {
     console.log('Iniciando seed de templates de notificação de solicitação...');
     await executarSeedComTratamento('SolicitacaoNotificationTemplateSeed', () =>
       SolicitacaoNotificationTemplateSeed.run(dataSource),
+    );
+
+    console.log('Iniciando seed de templates de notificação de aprovação...');
+    await executarSeedComTratamento('AprovacaoNotificationTemplateSeed', () =>
+      AprovacaoNotificationTemplateSeed.run(dataSource),
+    );
+
+    console.log('Iniciando seed de templates de notificação do sistema...');
+    await executarSeedComTratamento('SistemaNotificationTemplateSeed', () =>
+      SistemaNotificationTemplateSeed.run(dataSource),
     );
 
     console.log('======================================================');

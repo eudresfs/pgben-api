@@ -1,18 +1,18 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { AcaoAprovacao, SolicitacaoAprovacao, Aprovador } from '../entities';
-import { CriarSolicitacaoDto, ProcessarAprovacaoDto, CriarAcaoAprovacaoDto } from '../dtos';
+import { AcaoAprovacao, SolicitacaoAprovacao } from '../entities';
+import { ConfiguracaoAprovador } from '../entities/configuracao-aprovador.entity';
+import { SolicitacaoAprovador } from '../entities/solicitacao-aprovador.entity';
+import { CriarSolicitacaoDto, CriarAcaoAprovacaoDto } from '../dtos';
 import { StatusSolicitacao, TipoAcaoCritica, EstrategiaAprovacao } from '../enums';
 import { ConfiguracaoAprovacao } from '../decorators';
-import { NotificacaoService } from '../../notificacao/services/notificacao.service';
 import { UsuarioService } from '../../usuario/services/usuario.service';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
-import { AblyService } from '../../notificacao/services/ably.service';
 import { ExecucaoAcaoService } from './execucao-acao.service';
 import { PermissionService } from '../../../auth/services/permission.service';
 import { SYSTEM_USER_UUID } from '../../../shared/constants/system.constants';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 /**
  * Serviço principal consolidado para gerenciamento de aprovações
@@ -32,53 +32,18 @@ export class AprovacaoService {
     @InjectRepository(SolicitacaoAprovacao)
     private readonly solicitacaoRepository: Repository<SolicitacaoAprovacao>,
     
-    @InjectRepository(Aprovador)
-    private readonly aprovadorRepository: Repository<Aprovador>,
+    @InjectRepository(ConfiguracaoAprovador)
+    private readonly configuracaoAprovadorRepository: Repository<ConfiguracaoAprovador>,
     
-    private readonly notificacaoService: NotificacaoService,
+    @InjectRepository(SolicitacaoAprovador)
+    private readonly solicitacaoAprovadorRepository: Repository<SolicitacaoAprovador>,
+    
     private readonly usuarioService: UsuarioService,
     private readonly eventEmitter: EventEmitter2,
     private readonly auditEventEmitter: AuditEventEmitter,
-    private readonly ablyService: AblyService,
     private readonly execucaoAcaoService: ExecucaoAcaoService,
     private readonly permissionService: PermissionService
-  ) {
-    this.logger.log('AprovacaoService inicializado com sucesso');
-    
-    // Verificação de segurança das dependências críticas
-    this.verificarDependenciasCriticas();
-  }
-
-  /**
-   * Verificação de segurança das dependências críticas
-   * Garante que todas as dependências estão disponíveis
-   */
-  private verificarDependenciasCriticas(): void {
-    const dependenciasCriticas = [
-      { nome: 'acaoAprovacaoRepository', instancia: this.acaoAprovacaoRepository },
-      { nome: 'solicitacaoRepository', instancia: this.solicitacaoRepository },
-      { nome: 'aprovadorRepository', instancia: this.aprovadorRepository },
-      { nome: 'notificacaoService', instancia: this.notificacaoService },
-      { nome: 'usuarioService', instancia: this.usuarioService },
-      { nome: 'eventEmitter', instancia: this.eventEmitter },
-      { nome: 'auditEventEmitter', instancia: this.auditEventEmitter },
-      { nome: 'ablyService', instancia: this.ablyService },
-      { nome: 'execucaoAcaoService', instancia: this.execucaoAcaoService },
-      { nome: 'permissionService', instancia: this.permissionService }
-    ];
-
-    const dependenciasFaltando = dependenciasCriticas.filter(
-      dep => !dep.instancia
-    );
-
-    if (dependenciasFaltando.length > 0) {
-      const nomes = dependenciasFaltando.map(dep => dep.nome).join(', ');
-      this.logger.error(`Dependências críticas não inicializadas: ${nomes}`);
-      throw new Error(`AprovacaoService: Dependências críticas não inicializadas: ${nomes}`);
-    }
-
-    this.logger.log('Todas as dependências críticas verificadas com sucesso');
-  }
+  ) {}
 
   /**
    * Verifica se uma ação requer aprovação
@@ -131,7 +96,7 @@ export class AprovacaoService {
 
       const configuracao = await this.acaoAprovacaoRepository.findOne({
         where: { tipo_acao: tipoAcao, ativo: true },
-        relations: ['aprovadores']
+        relations: ['configuracao_aprovadores']
       });
 
       if (!configuracao) {
@@ -140,12 +105,12 @@ export class AprovacaoService {
       }
 
       // Verificação adicional de integridade
-      if (!configuracao.aprovadores || configuracao.aprovadores.length === 0) {
+      if (!configuracao.configuracao_aprovadores || configuracao.configuracao_aprovadores.length === 0) {
         this.logger.warn(`Configuração encontrada mas sem aprovadores para: ${tipoAcao}`);
         throw new BadRequestException(`Configuração de aprovação sem aprovadores definidos para: ${tipoAcao}`);
       }
 
-      this.logger.debug(`Configuração obtida com sucesso para ${tipoAcao}: ${configuracao.aprovadores.length} aprovadores`);
+      this.logger.debug(`Configuração obtida com sucesso para ${tipoAcao}: ${configuracao.configuracao_aprovadores.length} aprovadores`);
       return configuracao;
     } catch (error) {
       this.logger.error(`Erro ao obter configuração de aprovação para ${tipoAcao}:`, error);
@@ -171,7 +136,7 @@ export class AprovacaoService {
     dadosAcao?: Record<string, any>
   ): Promise<SolicitacaoAprovacao | null> {
     try {
-      this.logger.debug(`Buscando solicitação pendente para solicitante ${solicitanteId}, ação ${tipoAcao}`);
+      this.logger.debug(`Buscando solicitação pendente ou em execução para solicitante ${solicitanteId}, ação ${tipoAcao}`);
       
       // Verificação de segurança do repository
       if (!this.solicitacaoRepository) {
@@ -195,7 +160,7 @@ export class AprovacaoService {
         .innerJoin('solicitacao.acao_aprovacao', 'acao')
         .where('solicitacao.solicitante_id = :solicitanteId', { solicitanteId })
         .andWhere('solicitacao.status IN (:...statusPendentes)', {
-          statusPendentes: [StatusSolicitacao.PENDENTE]
+          statusPendentes: [StatusSolicitacao.PENDENTE, StatusSolicitacao.APROVADA]
         });
 
       // Validação principal: verifica se já existe solicitação pendente para o mesmo item
@@ -215,9 +180,9 @@ export class AprovacaoService {
       const solicitacao = await query.getOne();
       
       if (solicitacao) {
-        this.logger.debug(`Solicitação pendente encontrada: ${solicitacao.id}`);
+        this.logger.debug(`Solicitação ${solicitacao.status} encontrada: ${solicitacao.id}`);
       } else {
-        this.logger.debug('Nenhuma solicitação pendente encontrada');
+        this.logger.debug('Nenhuma solicitação pendente ou em execução encontrada');
       }
 
       return solicitacao;
@@ -236,7 +201,7 @@ export class AprovacaoService {
 
   /**
    * Valida se pode criar uma nova solicitação
-   * Implementa regra: apenas uma solicitação pendente por item por vez
+   * Implementa regra: apenas uma solicitação pendente ou em execução por item por vez
    */
   async validarCriacaoSolicitacao(
     dto: CriarSolicitacaoDto,
@@ -251,12 +216,15 @@ export class AprovacaoService {
 
     if (solicitacaoPendente) {
       const itemId = dto.dados_acao?.params?.id;
-      const tipoAcao = dto.tipo_acao;
+      const statusTexto = solicitacaoPendente.status === StatusSolicitacao.PENDENTE 
+        ? 'pendente' 
+        : 'sendo executada';
+      
       const mensagem = itemId 
-        ? `Já existe uma solicitação pendente para ${solicitacaoPendente.justificativa} (Protocolo: ${solicitacaoPendente.codigo}). ` +
-          `Aguarde a decisão do aprovador responsável.`
-        : `Já existe uma solicitação pendente para ${solicitacaoPendente.justificativa} (Protocolo: ${solicitacaoPendente.codigo}). ` +
-          `Aguarde a decisão do aprovador.`;
+        ? `Já existe uma solicitação ${statusTexto} para ${solicitacaoPendente.justificativa} (Protocolo: ${solicitacaoPendente.codigo}). ` +
+          `${solicitacaoPendente.status === StatusSolicitacao.PENDENTE ? 'Aguarde a decisão do aprovador responsável.' : 'Aguarde a conclusão da execução.'}`
+        : `Já existe uma solicitação ${statusTexto} para ${solicitacaoPendente.justificativa} (Protocolo: ${solicitacaoPendente.codigo}). ` +
+          `${solicitacaoPendente.status === StatusSolicitacao.PENDENTE ? 'Aguarde a decisão do aprovador.' : 'Aguarde a conclusão da execução.'}`;
       
       throw new BadRequestException(mensagem);
     }
@@ -309,28 +277,16 @@ export class AprovacaoService {
     );
 
     // Cria registros de aprovadores para esta solicitação
-    await this.criarAprovadoresParaSolicitacao(solicitacaoSalva.id, configuracao.aprovadores);
+    await this.criarAprovadoresParaSolicitacao(solicitacaoSalva.id, configuracao.configuracao_aprovadores);
 
-    // Emitir evento de criação via Ably
-    await this.ablyService.publishMessage('aprovacao', 'solicitacao.criada', {
-      solicitacao: solicitacaoSalva,
-      solicitanteId,
-      configuracao,
-      aprovadores: configuracao.aprovadores.map(a => a.usuario_id),
-      timestamp: new Date()
-    });
-
-    // Manter EventEmitter para compatibilidade com listeners internos
+    // Emite evento único consolidado (listeners processarão notificações)
     this.eventEmitter.emit('solicitacao.criada', {
       solicitacao: solicitacaoSalva,
       solicitanteId,
       configuracao,
-      aprovadores: configuracao.aprovadores.map(a => a.usuario_id),
+      aprovadores: configuracao.configuracao_aprovadores.map(a => a.usuario_id),
       timestamp: new Date()
     });
-
-    // Notifica os aprovadores sobre a nova solicitação
-    await this.notificarAprovadores(solicitacaoSalva.id, 'NOVA_SOLICITACAO');
 
     this.logger.log(`Solicitação criada: ${codigo} para ação: ${dto.tipo_acao}`);
     
@@ -377,8 +333,7 @@ export class AprovacaoService {
       solicitanteId
     );
 
-    // Notifica os aprovadores sobre a nova solicitação
-    await this.notificarAprovadores(solicitacaoSalva.id, 'NOVA_SOLICITACAO');
+    // Notificação será processada pelo AprovacaoAblyListener
 
     this.logger.log(`Solicitação criada: ${codigo} para ação: ${dto.tipo_acao} com estratégia: ${configuracao.estrategia}`);
     
@@ -415,7 +370,7 @@ export class AprovacaoService {
     }
 
     // Busca o aprovador
-    const aprovador = await this.aprovadorRepository.findOne({
+    const aprovador = await this.solicitacaoAprovadorRepository.findOne({
       where: {
         solicitacao_aprovacao_id: solicitacaoId,
         usuario_id: aprovadorId,
@@ -433,19 +388,19 @@ export class AprovacaoService {
 
     // Registra auditoria da decisão antes de processar
     await this.auditEventEmitter.emitEntityUpdated(
-      'Aprovador',
+      'SolicitacaoAprovador',
       aprovador.id,
       {
-          aprovado: aprovador.aprovado
-        },
-        {
-          solicitacao_id: solicitacaoId,
-          aprovador_id: aprovadorId,
-          decisao: aprovado ? 'APROVADA' : 'REJEITADA',
-          justificativa,
-          anexos_count: anexos?.length || 0
-        },
-        aprovadorId
+        aprovado: aprovador.aprovado
+      },
+      {
+        solicitacao_id: solicitacaoId,
+        aprovador_id: aprovadorId,
+        decisao: aprovado ? 'APROVADA' : 'REJEITADA',
+        justificativa,
+        anexos_count: anexos?.length || 0
+      },
+      aprovadorId
     );
 
     // Registra a decisão
@@ -455,26 +410,13 @@ export class AprovacaoService {
       aprovador.rejeitar(justificativa || 'Rejeitado', anexos);
     }
 
-    await this.aprovadorRepository.save(aprovador);
+    await this.solicitacaoAprovadorRepository.save(aprovador);
 
     // Atualiza o status da solicitação
     const solicitacaoAtualizada = await this.atualizarStatusSolicitacao(solicitacao);
 
-    // Emite evento de mudança de status da solicitação via Ably
-    await this.ablyService.publishMessage('aprovacao', 'solicitacao.status.alterado', {
-      solicitacaoId,
-      codigo: solicitacao.codigo,
-      statusAnterior: solicitacao.status,
-      novoStatus: solicitacaoAtualizada.status,
-      aprovadorId,
-      solicitanteId: solicitacao.solicitante_id,
-      decisao: aprovado ? 'APROVADA' : 'REJEITADA',
-      justificativa,
-      timestamp: new Date()
-    });
-
-    // Manter EventEmitter para compatibilidade com listeners internos
-    this.eventEmitter.emit('solicitacao.status.alterado', {
+    // Emite evento único consolidado de mudança de status
+    const eventoStatus = {
       solicitacao: solicitacaoAtualizada,
       solicitacaoId,
       codigo: solicitacao.codigo,
@@ -482,26 +424,23 @@ export class AprovacaoService {
       novoStatus: solicitacaoAtualizada.status,
       aprovadorId,
       solicitanteId: solicitacao.solicitante_id,
-      aprovadores: solicitacao.aprovadores.map(a => a.usuario_id),
+      aprovadores: solicitacao.solicitacao_aprovadores.map(a => a.usuario_id),
       decisao: aprovado ? 'APROVADA' : 'REJEITADA',
       justificativa,
       timestamp: new Date()
-    });
+    };
 
-    // Se a solicitação foi aprovada, executa a ação automaticamente
+    // Emite apenas via EventEmitter - listeners processarão notificações
+    this.eventEmitter.emit('solicitacao.status.alterado', eventoStatus);
+
+    // Processa ações específicas baseadas no status final
     if (solicitacaoAtualizada.status === StatusSolicitacao.APROVADA) {
-      await this.executarAcaoAprovada(solicitacaoAtualizada);
-      
-      // Emite evento específico de aprovação final via Ably
-      await this.ablyService.publishMessage('aprovacao', 'solicitacao.aprovada', {
-        solicitacao: solicitacaoAtualizada,
-        aprovadorId,
-        solicitanteId: solicitacaoAtualizada.solicitante_id,
-        justificativa,
-        timestamp: new Date()
+      // Executa a ação aprovada de forma assíncrona
+      this.executarAcaoAprovada(solicitacaoAtualizada).catch(error => {
+        this.logger.error(`Erro na execução assíncrona da ação aprovada: ${error.message}`, error.stack);
       });
       
-      // Manter EventEmitter para compatibilidade com listeners internos
+      // Evento específico de aprovação final
       this.eventEmitter.emit('solicitacao.aprovada', {
         solicitacao: solicitacaoAtualizada,
         aprovadorId,
@@ -509,17 +448,9 @@ export class AprovacaoService {
         justificativa,
         timestamp: new Date()
       });
-    } else if (solicitacaoAtualizada.status === StatusSolicitacao.REJEITADA) {
-      // Emite evento específico de rejeição via Ably
-      await this.ablyService.publishMessage('aprovacao', 'solicitacao.rejeitada', {
-        solicitacao: solicitacaoAtualizada,
-        aprovadorId,
-        solicitanteId: solicitacaoAtualizada.solicitante_id,
-        justificativa,
-        timestamp: new Date()
-      });
       
-      // Manter EventEmitter para compatibilidade com listeners internos
+    } else if (solicitacaoAtualizada.status === StatusSolicitacao.REJEITADA) {
+      // Evento específico de rejeição
       this.eventEmitter.emit('solicitacao.rejeitada', {
         solicitacao: solicitacaoAtualizada,
         aprovadorId,
@@ -528,27 +459,6 @@ export class AprovacaoService {
         timestamp: new Date()
       });
     }
-
-    // Notifica o solicitante sobre a decisão
-    await this.notificarSolicitante(solicitacaoId, aprovado ? 'APROVADA' : 'REJEITADA');
-
-    // Notifica outros aprovadores sobre a decisão (se houver)
-    await this.notificarOutrosAprovadores(solicitacaoId, aprovadorId, aprovado ? 'APROVADA' : 'REJEITADA');
-
-    // Emitir evento para notificações SSE aos outros aprovadores
-    const outrosAprovadores = solicitacao.aprovadores
-      .filter(a => a.usuario_id !== aprovadorId && !a.decidido_em)
-      .map(a => a.usuario_id);
-
-    this.eventEmitter.emit('aprovador.decisao_tomada', {
-      solicitacaoId: solicitacao.id,
-      codigo: solicitacao.codigo,
-      aprovadorId,
-      decisao: aprovado ? 'APROVADA' : 'REJEITADA',
-      justificativa,
-      outrosAprovadores,
-      timestamp: new Date()
-    });
 
     this.logger.log(
       `Solicitação ${solicitacao.codigo} ${aprovado ? 'aprovada' : 'rejeitada'} por ${aprovadorId}`
@@ -563,7 +473,7 @@ export class AprovacaoService {
   async obterSolicitacao(id: string): Promise<SolicitacaoAprovacao> {
     const solicitacao = await this.solicitacaoRepository.findOne({
       where: { id },
-      relations: ['acao_aprovacao', 'aprovadores']
+      relations: ['acao_aprovacao', 'solicitacao_aprovadores']
     });
 
     if (!solicitacao) {
@@ -571,6 +481,38 @@ export class AprovacaoService {
     }
 
     return solicitacao;
+  }
+
+  /**
+   * Busca uma solicitação por código
+   */
+  async buscarPorCodigo(codigo: string): Promise<SolicitacaoAprovacao | null> {
+    try {
+      this.logger.debug(`Buscando solicitação por código: ${codigo}`);
+      
+      // Validação do código
+      if (!codigo || typeof codigo !== 'string') {
+        this.logger.warn(`Código inválido fornecido: ${codigo}`);
+        return null;
+      }
+
+      // Busca a solicitação pelo código
+      const solicitacao = await this.solicitacaoRepository.findOne({
+        where: { codigo },
+        relations: ['acao_aprovacao', 'solicitacao_aprovadores']
+      });
+
+      if (!solicitacao) {
+        this.logger.debug(`Solicitação com código ${codigo} não encontrada`);
+        return null;
+      }
+
+      this.logger.debug(`Solicitação encontrada: ID ${solicitacao.id}, Status: ${solicitacao.status}`);
+      return solicitacao;
+    } catch (error) {
+      this.logger.error(`Erro ao buscar solicitação por código ${codigo}:`, error);
+      return null;
+    }
   }
 
   /**
@@ -586,7 +528,7 @@ export class AprovacaoService {
       .createQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.acao_aprovacao', 'acao')
       .leftJoinAndSelect('solicitacao.aprovadores', 'aprovadores')
-      .orderBy('solicitacao.criado_em', 'DESC');
+      .orderBy('solicitacao.created_at', 'DESC');
 
     if (filtros.status) {
       queryBuilder.andWhere('solicitacao.status = :status', { status: filtros.status });
@@ -656,7 +598,7 @@ export class AprovacaoService {
       .andWhere('aprovadores.usuario_id = :aprovadorId', { aprovadorId })
       .andWhere('aprovadores.ativo = true')
       .andWhere('aprovadores.aprovado IS NULL')
-      .orderBy('solicitacao.criado_em', 'DESC');
+      .orderBy('solicitacao.created_at', 'DESC');
 
     const [solicitacoes, total] = await queryBuilder
       .skip((page - 1) * limit)
@@ -685,7 +627,7 @@ export class AprovacaoService {
        .leftJoinAndSelect('solicitacao.aprovadores', 'aprovadores')
        .where('solicitacao.status = :status', { status: StatusSolicitacao.PENDENTE })
        .andWhere("solicitacao.dados_acao->'params'->>'id' = :entidadeId", { entidadeId })
-       .orderBy('solicitacao.criado_em', 'DESC');
+       .orderBy('solicitacao.created_at', 'DESC');
 
     const [solicitacoes, total] = await queryBuilder
       .skip((page - 1) * limit)
@@ -699,14 +641,14 @@ export class AprovacaoService {
       status: solicitacao.status,
       dados_acao: solicitacao.dados_acao,
       justificativa: solicitacao.justificativa,
-      criado_em: solicitacao.criado_em,
+      created_at: solicitacao.created_at,
       acao_aprovacao: {
         id: solicitacao.acao_aprovacao.id,
         tipo_acao: solicitacao.acao_aprovacao.tipo_acao,
         estrategia: solicitacao.acao_aprovacao.estrategia,
         descricao: solicitacao.acao_aprovacao.descricao
       },
-      aprovadores: solicitacao.aprovadores
+      aprovadores: solicitacao.solicitacao_aprovadores
          .filter(aprovador => aprovador.ativo)
          .map(aprovador => ({
            id: aprovador.id,
@@ -731,8 +673,15 @@ export class AprovacaoService {
     try {
       this.logger.log(`Executando ação aprovada para solicitação: ${solicitacao.codigo}`);
       
-      // Registra auditoria do início da execução
-      await this.auditEventEmitter.emitEntityUpdated(
+      // Obter o ID do último aprovador que tomou a decisão
+      const ultimoAprovador = solicitacao.solicitacao_aprovadores
+        .filter(a => a.aprovado === true && a.decidido_em)
+        .sort((a, b) => new Date(b.decidido_em).getTime() - new Date(a.decidido_em).getTime())[0];
+      
+      const aprovadorId = ultimoAprovador?.usuario_id || SYSTEM_USER_UUID;
+      
+      // Registra auditoria do início da execução (não-bloqueante)
+      this.auditEventEmitter.emitEntityUpdated(
         'SolicitacaoAprovacao',
         solicitacao.id,
         {
@@ -744,9 +693,10 @@ export class AprovacaoService {
           tipo_acao: solicitacao.acao_aprovacao.tipo_acao,
           status_execucao: 'INICIANDO',
           dados_acao: solicitacao.dados_acao,
-          metodo_execucao: solicitacao.metodo_execucao
+          metodo_execucao: solicitacao.metodo_execucao,
+          aprovador_responsavel: aprovadorId
         },
-        SYSTEM_USER_UUID
+        aprovadorId
       );
       
       // Executa a ação usando o serviço de execução
@@ -760,46 +710,43 @@ export class AprovacaoService {
         executado_em: new Date()
       };
       
-      // Atualiza a solicitação como executada
-      await this.solicitacaoRepository.update(solicitacao.id, {
-        status: StatusSolicitacao.EXECUTADA,
-        executado_em: new Date()
-      });
-      
-      // Registra auditoria do sucesso da execução
-      await this.auditEventEmitter.emitEntityUpdated(
-        'SolicitacaoAprovacao',
-        solicitacao.id,
-        {
-          status: StatusSolicitacao.APROVADA,
-          executado_em: null
-        },
-        {
-          codigo: solicitacao.codigo,
-          tipo_acao: solicitacao.acao_aprovacao.tipo_acao,
-          status_execucao: 'CONCLUIDA',
+      // Atualiza status e registra auditoria em paralelo para melhor performance
+      await Promise.all([
+        this.solicitacaoRepository.update(solicitacao.id, {
           status: StatusSolicitacao.EXECUTADA,
-          executado_em: dadosExecucao.executado_em,
-          dados_execucao: dadosExecucao
-        },
-        SYSTEM_USER_UUID
-      );
+          executado_em: new Date()
+        }),
+        this.auditEventEmitter.emitEntityUpdated(
+          'SolicitacaoAprovacao',
+          solicitacao.id,
+          {
+            status: StatusSolicitacao.APROVADA,
+            executado_em: null
+          },
+          {
+            codigo: solicitacao.codigo,
+            tipo_acao: solicitacao.acao_aprovacao.tipo_acao,
+            status_execucao: 'CONCLUIDA',
+            status: StatusSolicitacao.EXECUTADA,
+            executado_em: dadosExecucao.executado_em,
+            dados_execucao: dadosExecucao,
+            aprovador_responsavel: aprovadorId
+          },
+          aprovadorId
+        )
+      ]);
       
-      // Emitir evento de execução bem-sucedida via Ably
-      await this.ablyService.publishMessage('aprovacao', 'solicitacao.executada', {
+      // Evento consolidado de execução bem-sucedida
+      const eventoExecucao = {
         solicitacao,
         solicitanteId: solicitacao.solicitante_id,
+        aprovadorId: aprovadorId,
         dadosExecucao: dadosExecucao,
         timestamp: new Date()
-      });
+      };
 
-      // Manter EventEmitter para compatibilidade com listeners internos
-      this.eventEmitter.emit('solicitacao.executada', {
-        solicitacao,
-        solicitanteId: solicitacao.solicitante_id,
-        dadosExecucao: dadosExecucao,
-        timestamp: new Date()
-      });
+      // Emite evento para processamento pelos listeners
+      this.eventEmitter.emit('solicitacao.executada', eventoExecucao);
       
       this.logger.log(`Ação executada com sucesso para solicitação: ${solicitacao.codigo}`);
       
@@ -808,48 +755,49 @@ export class AprovacaoService {
     } catch (error) {
       this.logger.error(`Erro ao executar ação para solicitação ${solicitacao.codigo}:`, error);
       
-      // Atualiza status para erro de execução
-      await this.solicitacaoRepository.update(solicitacao.id, {
-        status: StatusSolicitacao.ERRO_EXECUCAO,
-        erro_execucao: error.message
-      });
+      // Obter o ID do último aprovador que tomou a decisão
+      const ultimoAprovador = solicitacao.solicitacao_aprovadores
+        .filter(a => a.aprovado === true && a.decidido_em)
+        .sort((a, b) => new Date(b.decidido_em).getTime() - new Date(a.decidido_em).getTime())[0];
       
-      // Registra auditoria do erro de execução
-      await this.auditEventEmitter.emitEntityUpdated(
-        'SolicitacaoAprovacao',
-        solicitacao.id,
-        {
-          status: StatusSolicitacao.APROVADA,
-          erro_execucao: null
-        },
-        {
-          codigo: solicitacao.codigo,
-          tipo_acao: solicitacao.acao_aprovacao.tipo_acao,
-          status_execucao: 'ERRO',
+      const aprovadorId = ultimoAprovador?.usuario_id || SYSTEM_USER_UUID;
+      
+      // Atualiza status e registra auditoria em paralelo
+      await Promise.all([
+        this.solicitacaoRepository.update(solicitacao.id, {
           status: StatusSolicitacao.ERRO_EXECUCAO,
           erro_execucao: error.message
-        },
-        'SISTEMA'
-      );
+        }),
+        this.auditEventEmitter.emitEntityUpdated(
+          'SolicitacaoAprovacao',
+          solicitacao.id,
+          {
+            status: StatusSolicitacao.APROVADA,
+            erro_execucao: null
+          },
+          {
+            codigo: solicitacao.codigo,
+            tipo_acao: solicitacao.acao_aprovacao.tipo_acao,
+            status_execucao: 'ERRO',
+            status: StatusSolicitacao.ERRO_EXECUCAO,
+            erro_execucao: error.message,
+            aprovador_responsavel: aprovadorId
+          },
+          aprovadorId
+        )
+      ]);
       
-      // Emitir evento de erro de execução via Ably
-      await this.ablyService.publishMessage('aprovacao', 'solicitacao.erro_execucao', {
+      // Evento consolidado de erro
+      const eventoErro = {
         solicitacao,
         solicitanteId: solicitacao.solicitante_id,
+        aprovadorId: aprovadorId,
         erro: error.message,
         timestamp: new Date()
-      });
+      };
 
-      // Manter EventEmitter para compatibilidade com listeners internos
-      this.eventEmitter.emit('solicitacao.erro_execucao', {
-        solicitacao,
-        solicitanteId: solicitacao.solicitante_id,
-        erro: error.message,
-        timestamp: new Date()
-      });
-      
-      // Notifica sobre o erro
-      await this.notificarSolicitante(solicitacao.id, 'ERRO_EXECUCAO');
+      // Emite evento para processamento pelos listeners
+      this.eventEmitter.emit('solicitacao.erro_execucao', eventoErro);
       
       throw error;
     }
@@ -858,7 +806,7 @@ export class AprovacaoService {
   /**
    * Cancela uma solicitação pendente
    */
-  async cancelarSolicitacao(solicitacaoId: string, usuarioId: string): Promise<SolicitacaoAprovacao> {
+  async cancelarSolicitacao(solicitacaoId: string, usuarioId: string, motivo?: string): Promise<SolicitacaoAprovacao> {
     const solicitacao = await this.obterSolicitacao(solicitacaoId);
     
     if (solicitacao.solicitante_id !== usuarioId) {
@@ -894,26 +842,14 @@ export class AprovacaoService {
       processado_por: usuarioId
     });
 
-    // Emitir evento de cancelamento via Ably
-    await this.ablyService.publishMessage('aprovacao', 'solicitacao.cancelada', {
-      solicitacao,
-      usuarioId,
-      aprovadores: solicitacao.aprovadores.map(a => a.usuario_id),
-      statusAnterior,
-      timestamp: new Date()
-    });
-
-    // Manter EventEmitter para compatibilidade com listeners internos
+    // Emite evento para processamento pelos listeners
     this.eventEmitter.emit('solicitacao.cancelada', {
       solicitacao,
-      usuarioId,
-      aprovadores: solicitacao.aprovadores.map(a => a.usuario_id),
-      statusAnterior,
+      solicitanteId: solicitacao.solicitante_id,
+      motivo,
+      aprovadores: solicitacao.solicitacao_aprovadores.map(a => a.usuario_id),
       timestamp: new Date()
     });
-
-    // Notifica os aprovadores sobre o cancelamento
-    await this.notificarAprovadores(solicitacaoId, 'CANCELADA');
 
     this.logger.log(`Solicitação ${solicitacao.codigo} cancelada por ${usuarioId}`);
     
@@ -950,7 +886,7 @@ export class AprovacaoService {
   async obterAcaoAprovacao(id: string): Promise<AcaoAprovacao> {
     const acao = await this.acaoAprovacaoRepository.findOne({
       where: { id },
-      relations: ['aprovadores']
+      relations: ['configuracao_aprovadores']
     });
 
     if (!acao) {
@@ -999,52 +935,126 @@ export class AprovacaoService {
   /**
    * Adiciona aprovador a uma configuração
    */
-  async adicionarAprovador(acaoId: string, usuarioId: string): Promise<Aprovador> {
+  async adicionarAprovador(acaoId: string, usuarioId: string): Promise<ConfiguracaoAprovador> {
     const acao = await this.acaoAprovacaoRepository.findOne({ where: { id: acaoId } });
     
     if (!acao) {
       throw new NotFoundException('Configuração de ação não encontrada');
     }
 
-    // Verifica se o aprovador já existe
-    const existente = await this.aprovadorRepository.findOne({
-      where: { acao_aprovacao_id: acaoId, usuario_id: usuarioId }
+    // Verifica se o aprovador já existe (incluindo inativos)
+    const existente = await this.configuracaoAprovadorRepository.findOne({
+      where: { 
+        acao_aprovacao_id: acaoId, 
+        usuario_id: usuarioId
+      }
     });
 
     if (existente) {
-      throw new BadRequestException('Aprovador já cadastrado para esta ação');
+      if (existente.ativo) {
+        throw new BadRequestException('Aprovador já cadastrado para esta ação');
+      } else {
+        // Reativa aprovador existente
+        existente.ativo = true;
+        return this.configuracaoAprovadorRepository.save(existente);
+      }
     }
 
-    const aprovador = this.aprovadorRepository.create({
-      acao_aprovacao_id: acaoId,
-      usuario_id: usuarioId,
-      ativo: true
-    });
+    try {
+      const aprovador = this.configuracaoAprovadorRepository.create({
+        acao_aprovacao_id: acaoId,
+        usuario_id: usuarioId,
+        ativo: true
+      });
 
-    return this.aprovadorRepository.save(aprovador);
+      return await this.configuracaoAprovadorRepository.save(aprovador);
+    } catch (error) {
+      // Em caso de erro de constraint (duplicata), tenta buscar o registro existente
+      if (error.code === '23505') { // Unique constraint violation
+        const aprovadorExistente = await this.configuracaoAprovadorRepository.findOne({
+          where: { 
+            acao_aprovacao_id: acaoId, 
+            usuario_id: usuarioId
+          }
+        });
+        
+        if (aprovadorExistente) {
+          this.logger.warn(`Aprovador duplicado detectado e corrigido para ação ${acaoId} e usuário ${usuarioId}`);
+          return aprovadorExistente;
+        }
+      }
+      throw error;
+    }
   }
 
   /**
    * Lista aprovadores de uma configuração
    */
-  async listarAprovadores(acaoId: string, ativo?: boolean): Promise<Aprovador[]> {
+  async listarAprovadores(acaoId: string, ativo?: boolean): Promise<ConfiguracaoAprovador[]> {
     const where: any = { acao_aprovacao_id: acaoId };
     
     if (ativo !== undefined) {
       where.ativo = ativo;
     }
 
-    return this.aprovadorRepository.find({
+    return this.configuracaoAprovadorRepository.find({
       where,
-      order: { criado_em: 'ASC' }
+      order: { created_at: 'ASC' }
     });
+  }
+
+  /**
+   * Remove aprovadores duplicados de uma configuração
+   * Mantém apenas o primeiro registro de cada usuário por ação
+   */
+  async removerAprovadoresDuplicados(acaoId?: string): Promise<{ removidos: number }> {
+    try {
+      const query = this.configuracaoAprovadorRepository.createQueryBuilder('aprovador')
+        .select(['aprovador.id', 'aprovador.acao_aprovacao_id', 'aprovador.usuario_id', 'aprovador.created_at']);
+      
+      if (acaoId) {
+        query.andWhere('aprovador.acao_aprovacao_id = :acaoId', { acaoId });
+      }
+      
+      const aprovadores = await query.getMany();
+      
+      // Agrupa por acao_aprovacao_id + usuario_id
+      const grupos = aprovadores.reduce((acc, aprovador) => {
+        const chave = `${aprovador.acao_aprovacao_id}-${aprovador.usuario_id}`;
+        if (!acc[chave]) {
+          acc[chave] = [];
+        }
+        acc[chave].push(aprovador);
+        return acc;
+      }, {} as Record<string, any[]>);
+      
+      // Identifica duplicatas (mantém o primeiro, remove os demais)
+      const idsParaRemover: string[] = [];
+      Object.values(grupos).forEach(grupo => {
+        if (grupo.length > 1) {
+          // Ordena por data de criação e remove todos exceto o primeiro
+          grupo.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+          idsParaRemover.push(...grupo.slice(1).map(a => a.id));
+        }
+      });
+      
+      if (idsParaRemover.length > 0) {
+        await this.configuracaoAprovadorRepository.delete(idsParaRemover);
+        this.logger.log(`Removidos ${idsParaRemover.length} aprovadores duplicados`);
+      }
+      
+      return { removidos: idsParaRemover.length };
+    } catch (error) {
+      this.logger.error('Erro ao remover aprovadores duplicados:', error);
+      throw error;
+    }
   }
 
   /**
    * Remove um aprovador de uma configuração
    */
   async removerAprovador(acaoId: string, aprovadorId: string): Promise<void> {
-    const aprovador = await this.aprovadorRepository.findOne({
+    const aprovador = await this.configuracaoAprovadorRepository.findOne({
       where: {
         id: aprovadorId,
         acao_aprovacao_id: acaoId
@@ -1055,7 +1065,7 @@ export class AprovacaoService {
       throw new NotFoundException('Aprovador não encontrado');
     }
 
-    await this.aprovadorRepository.update(aprovadorId, { ativo: false });
+    await this.configuracaoAprovadorRepository.update(aprovadorId, { ativo: false });
     
     this.logger.log(`Aprovador ${aprovadorId} removido da configuração ${acaoId}`);
   }
@@ -1170,15 +1180,14 @@ export class AprovacaoService {
 
       // Criar aprovadores para todos os usuários elegíveis
       const aprovadores = aprovadoresElegiveis.map(usuario => 
-        this.aprovadorRepository.create({
+        this.solicitacaoAprovadorRepository.create({
           solicitacao_aprovacao_id: solicitacaoId,
-          acao_aprovacao_id: configuracao.id,
           usuario_id: usuario.id,
           ativo: true
         })
       );
 
-      await this.aprovadorRepository.save(aprovadores);
+      await this.solicitacaoAprovadorRepository.save(aprovadores);
 
       this.logger.log(
         `Escalonamento por setor concluído. ` +
@@ -1238,14 +1247,13 @@ export class AprovacaoService {
       }
 
       // Criar aprovador sendo o próprio solicitante
-      const aprovador = this.aprovadorRepository.create({
+      const aprovador = this.solicitacaoAprovadorRepository.create({
         solicitacao_aprovacao_id: solicitacaoId,
-        acao_aprovacao_id: configuracao.id,
         usuario_id: solicitanteId,
         ativo: true
       });
 
-      await this.aprovadorRepository.save(aprovador);
+      await this.solicitacaoAprovadorRepository.save(aprovador);
 
       this.logger.log(
         `Autoaprovação por perfil configurada com sucesso. ` +
@@ -1472,21 +1480,32 @@ export class AprovacaoService {
    */
   private async criarAprovadoresParaSolicitacao(
     solicitacaoId: string,
-    aprovadoresConfig: Aprovador[]
+    aprovadoresConfig: ConfiguracaoAprovador[]
   ): Promise<void> {
-    const aprovadores = aprovadoresConfig
+    // Remove duplicatas baseado no usuario_id para evitar aprovadores duplicados
+    const aprovadoresUnicos = aprovadoresConfig
       .filter(a => a.ativo)
-      .map(aprovadorConfig => 
-        this.aprovadorRepository.create({
-          solicitacao_aprovacao_id: solicitacaoId,
-          acao_aprovacao_id: aprovadorConfig.acao_aprovacao_id,
-          usuario_id: aprovadorConfig.usuario_id,
-          ativo: true
-        })
-      );
+      .reduce((acc, aprovador) => {
+        const existe = acc.find(a => a.usuario_id === aprovador.usuario_id);
+        if (!existe) {
+          acc.push(aprovador);
+        }
+        return acc;
+      }, [] as ConfiguracaoAprovador[]);
+
+    this.logger.debug(`Aprovadores únicos após deduplicação: ${aprovadoresUnicos.length} de ${aprovadoresConfig.length} originais`);
+
+    const aprovadores = aprovadoresUnicos.map(aprovadorConfig => 
+      this.solicitacaoAprovadorRepository.create({
+        solicitacao_aprovacao_id: solicitacaoId,
+        usuario_id: aprovadorConfig.usuario_id,
+        ativo: true
+      })
+    );
 
     if (aprovadores.length > 0) {
-      await this.aprovadorRepository.save(aprovadores);
+      await this.solicitacaoAprovadorRepository.save(aprovadores);
+      this.logger.log(`Criados ${aprovadores.length} aprovadores únicos para solicitação ${solicitacaoId}`);
     }
   }
 
@@ -1518,131 +1537,6 @@ export class AprovacaoService {
     }
     
     return solicitacaoAtualizada;
-  }
-
-  /**
-   * Notifica os aprovadores sobre eventos da solicitação
-   */
-  private async notificarAprovadores(
-    solicitacaoId: string,
-    tipoEvento: 'NOVA_SOLICITACAO' | 'CANCELADA'
-  ): Promise<void> {
-    try {
-      const solicitacao = await this.obterSolicitacao(solicitacaoId);
-      const aprovadores = solicitacao.aprovadores.filter(a => a.ativo);
-
-      for (const aprovador of aprovadores) {
-        let titulo: string;
-        let conteudo: string;
-
-        switch (tipoEvento) {
-          case 'NOVA_SOLICITACAO':
-            titulo = 'Nova Solicitação de Aprovação';
-            conteudo = `Uma nova solicitação (${solicitacao.codigo}) aguarda sua aprovação para: ${solicitacao.acao_aprovacao.nome}`;
-            break;
-          case 'CANCELADA':
-            titulo = 'Solicitação Cancelada';
-            conteudo = `A solicitação ${solicitacao.codigo} foi cancelada pelo solicitante`;
-            break;
-        }
-
-        await this.notificacaoService.criarNotificacaoAprovacao({
-          destinatario_id: aprovador.usuario_id,
-          titulo,
-          conteudo,
-          solicitacao_id: solicitacaoId,
-          link: `/aprovacoes/${solicitacaoId}`
-        });
-      }
-
-      this.logger.log(`Notificações enviadas para ${aprovadores.length} aprovadores - Evento: ${tipoEvento}`);
-    } catch (error) {
-      this.logger.error(`Erro ao notificar aprovadores: ${error.message}`, error.stack);
-    }
-  }
-
-  /**
-   * Notifica o solicitante sobre o resultado da aprovação
-   */
-  private async notificarSolicitante(
-    solicitacaoId: string,
-    resultado: 'APROVADA' | 'REJEITADA' | 'ERRO_EXECUCAO'
-  ): Promise<void> {
-    try {
-      const solicitacao = await this.obterSolicitacao(solicitacaoId);
-
-      let titulo: string;
-      let conteudo: string;
-
-      switch (resultado) {
-        case 'APROVADA':
-          titulo = 'Solicitação Aprovada';
-          conteudo = `Sua solicitação ${solicitacao.codigo} foi aprovada e executada automaticamente`;
-          break;
-        case 'REJEITADA':
-          titulo = 'Solicitação Rejeitada';
-          conteudo = `Sua solicitação ${solicitacao.codigo} foi rejeitada`;
-          break;
-        case 'ERRO_EXECUCAO':
-          titulo = 'Erro na Execução';
-          conteudo = `Sua solicitação ${solicitacao.codigo} foi aprovada, mas ocorreu um erro durante a execução`;
-          break;
-      }
-
-      await this.notificacaoService.criarNotificacaoAprovacao({
-        destinatario_id: solicitacao.solicitante_id,
-        titulo,
-        conteudo,
-        solicitacao_id: solicitacaoId,
-        link: `/aprovacoes/${solicitacaoId}`
-      });
-
-      this.logger.log(`Notificação enviada para solicitante - Resultado: ${resultado}`);
-    } catch (error) {
-      this.logger.error(`Erro ao notificar solicitante: ${error.message}`, error.stack);
-    }
-  }
-
-  /**
-   * Notifica outros aprovadores sobre a decisão tomada
-   */
-  private async notificarOutrosAprovadores(
-    solicitacaoId: string,
-    aprovadorQueDecidiu: string,
-    decisao: 'APROVADA' | 'REJEITADA'
-  ): Promise<void> {
-    try {
-      const solicitacao = await this.obterSolicitacao(solicitacaoId);
-      
-      // Busca outros aprovadores que ainda não decidiram
-      const outrosAprovadores = solicitacao.aprovadores.filter(
-        aprovador => aprovador.usuario_id !== aprovadorQueDecidiu && 
-                    aprovador.ativo && 
-                    !aprovador.jaDecidiu()
-      );
-
-      // Notifica cada aprovador sobre a decisão
-      for (const aprovador of outrosAprovadores) {
-        const titulo = decisao === 'APROVADA' ? 'Solicitação Aprovada por Outro Aprovador' : 'Solicitação Rejeitada por Outro Aprovador';
-        const conteudo = `A solicitação ${solicitacao.codigo} foi ${decisao.toLowerCase()} por outro aprovador. Ação: ${solicitacao.acao_aprovacao.nome}`;
-
-        await this.notificacaoService.criarNotificacaoAprovacao({
-          destinatario_id: aprovador.usuario_id,
-          titulo,
-          conteudo,
-          solicitacao_id: solicitacaoId,
-          link: `/aprovacoes/${solicitacaoId}`
-        });
-      }
-
-      if (outrosAprovadores.length > 0) {
-        this.logger.log(
-          `${outrosAprovadores.length} aprovadores notificados sobre decisão ${decisao} da solicitação ${solicitacao.codigo}`
-        );
-      }
-    } catch (error) {
-      this.logger.error(`Erro ao notificar outros aprovadores: ${error.message}`, error.stack);
-    }
   }
 
   /**

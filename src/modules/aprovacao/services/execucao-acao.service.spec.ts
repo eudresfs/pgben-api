@@ -86,13 +86,15 @@ describe('ExecucaoAcaoService', () => {
         solicitante_id: 'user-123',
         justificativa: 'Teste de cancelamento',
         dados_acao: {
+          url: '/api/solicitacoes/456',
+          method: 'DELETE',
           params: { id: '456' }
         },
         metodo_execucao: 'DELETE /api/solicitacoes/456',
         acao_aprovacao_id: 'acao-123',
-        criado_em: new Date(),
-        atualizado_em: new Date(),
-        aprovadores: [],
+        created_at: new Date(),
+        updated_at: new Date(),
+        solicitacao_aprovadores: [],
         calcularAprovacoesNecessarias: jest.fn().mockReturnValue(1),
         podeSerAprovada: jest.fn().mockReturnValue(true),
         foiRejeitada: jest.fn().mockReturnValue(false),
@@ -103,10 +105,10 @@ describe('ExecucaoAcaoService', () => {
           estrategia: EstrategiaAprovacao.SIMPLES,
           min_aprovadores: 1,
           ativo: true,
-          criado_em: new Date(),
-          atualizado_em: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
           solicitacoes: [],
-          aprovadores: []
+          configuracao_aprovadores: []
         }
       };
 
@@ -125,22 +127,22 @@ describe('ExecucaoAcaoService', () => {
         sucesso: true,
         dados: mockResponse.data,
         detalhes: {
-          solicitacao_cancelada: '456',
-          metodo_original: 'DELETE /api/solicitacoes/456'
+          url_executada: '/api/solicitacoes/456',
+          metodo: 'DELETE',
+          status_resposta: 200,
+          solicitacao_codigo: 'SOL-001'
         }
       });
       expect(httpService.request).toHaveBeenCalledWith({
-        method: 'put',
-        url: 'http://localhost:3000/api/v1/beneficio/solicitacoes/456/cancelar',
-        params: undefined,
-        data: {
-          motivo_cancelamento: 'Cancelamento aprovado via sistema de aprovação',
-          justificativa: 'Teste de cancelamento',
-          aprovado_por: 'SISTEMA_APROVACAO'
-        },
+        method: 'delete',
+        url: 'http://localhost:3000/api/solicitacoes/456',
+        params: { id: '456' },
+        data: undefined,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer mock-token'
+          'Authorization': 'Bearer mock-token',
+          'X-Solicitacao-Aprovacao': 'SOL-001',
+          'X-Aprovacao-Executada': 'true'
         }
       });
     });
@@ -159,9 +161,9 @@ describe('ExecucaoAcaoService', () => {
         },
         metodo_execucao: 'PUT /api/usuarios/789',
         acao_aprovacao_id: 'acao-124',
-        criado_em: new Date(),
-        atualizado_em: new Date(),
-        aprovadores: [],
+        created_at: new Date(),
+        updated_at: new Date(),
+        solicitacao_aprovadores: [],
         calcularAprovacoesNecessarias: jest.fn().mockReturnValue(1),
         podeSerAprovada: jest.fn().mockReturnValue(true),
         foiRejeitada: jest.fn().mockReturnValue(false),
@@ -172,10 +174,10 @@ describe('ExecucaoAcaoService', () => {
           estrategia: EstrategiaAprovacao.SIMPLES,
           min_aprovadores: 1,
           ativo: true,
-          criado_em: new Date(),
-          atualizado_em: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
           solicitacoes: [],
-          aprovadores: []
+          configuracao_aprovadores: []
         }
       };
 
@@ -196,7 +198,8 @@ describe('ExecucaoAcaoService', () => {
         detalhes: {
           url_executada: 'http://localhost:3000/api/usuarios/789',
           metodo: 'PUT',
-          dados_alterados: { nome: 'João Silva' }
+          status_resposta: 200,
+          solicitacao_codigo: 'SOL-002'
         }
       });
       expect(httpService.request).toHaveBeenCalledWith({
@@ -224,13 +227,14 @@ describe('ExecucaoAcaoService', () => {
         solicitante_id: 'user-123',
         justificativa: 'Teste de exclusão',
         dados_acao: {
-          url: 'http://localhost:3000/api/registros/999'
+          url: 'http://localhost:3000/api/registros/999',
+          method: 'DELETE'
         },
         metodo_execucao: 'DELETE /api/registros/999',
         acao_aprovacao_id: 'acao-125',
-        criado_em: new Date(),
-        atualizado_em: new Date(),
-        aprovadores: [],
+        created_at: new Date(),
+        updated_at: new Date(),
+        solicitacao_aprovadores: [],
         calcularAprovacoesNecessarias: jest.fn().mockReturnValue(1),
         podeSerAprovada: jest.fn().mockReturnValue(true),
         foiRejeitada: jest.fn().mockReturnValue(false),
@@ -241,10 +245,10 @@ describe('ExecucaoAcaoService', () => {
           estrategia: EstrategiaAprovacao.SIMPLES,
           min_aprovadores: 1,
           ativo: true,
-          criado_em: new Date(),
-          atualizado_em: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
           solicitacoes: [],
-          aprovadores: []
+          configuracao_aprovadores: []
         }
       };
 
@@ -263,8 +267,10 @@ describe('ExecucaoAcaoService', () => {
         sucesso: true,
         dados: mockResponse.data,
         detalhes: {
-          registro_excluido: 'http://localhost:3000/api/registros/999',
-          metodo_original: 'DELETE /api/registros/999'
+          url_executada: 'http://localhost:3000/api/registros/999',
+          metodo: 'DELETE',
+          status_resposta: 200,
+          solicitacao_codigo: 'SOL-003'
         }
       });
       expect(httpService.request).toHaveBeenCalledWith({
@@ -289,14 +295,16 @@ describe('ExecucaoAcaoService', () => {
         solicitante_id: 'user-123',
         justificativa: 'Teste de aprovação de pagamento',
         dados_acao: {
+          url: '/api/pagamentos/555/aprovar',
+          method: 'POST',
           params: { id: '555' },
           body: { valor: 1000 }
         },
         metodo_execucao: 'POST /api/pagamentos/555/aprovar',
         acao_aprovacao_id: 'acao-126',
-        criado_em: new Date(),
-        atualizado_em: new Date(),
-        aprovadores: [],
+        created_at: new Date(),
+        updated_at: new Date(),
+        solicitacao_aprovadores: [],
         calcularAprovacoesNecessarias: jest.fn().mockReturnValue(1),
         podeSerAprovada: jest.fn().mockReturnValue(true),
         foiRejeitada: jest.fn().mockReturnValue(false),
@@ -307,10 +315,10 @@ describe('ExecucaoAcaoService', () => {
           estrategia: EstrategiaAprovacao.SIMPLES,
           min_aprovadores: 1,
           ativo: true,
-          criado_em: new Date(),
-          atualizado_em: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
           solicitacoes: [],
-          aprovadores: []
+          configuracao_aprovadores: []
         }
       };
 
@@ -329,23 +337,22 @@ describe('ExecucaoAcaoService', () => {
         sucesso: true,
         dados: mockResponse.data,
         detalhes: {
-          pagamento_aprovado: '555',
-          valor: 1000
+          url_executada: '/api/pagamentos/555/aprovar',
+          metodo: 'POST',
+          status_resposta: 200,
+          solicitacao_codigo: 'SOL-004'
         }
       });
       expect(httpService.request).toHaveBeenCalledWith({
-        method: 'put',
-        url: 'http://localhost:3000/api/v1/pagamento/555/aprovar',
-        params: undefined,
-        data: {
-          aprovado: true,
-          aprovado_por: 'SISTEMA_APROVACAO',
-          codigo_solicitacao: 'SOL-004'
-          // justificativa_aprovacao filtrada pelos metadados
-        },
+        method: 'post',
+        url: 'http://localhost:3000/api/pagamentos/555/aprovar',
+        params: { id: '555' },
+        data: { valor: 1000 },
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer mock-token'
+          'Authorization': 'Bearer mock-token',
+          'X-Solicitacao-Aprovacao': 'SOL-004',
+          'X-Aprovacao-Executada': 'true'
         }
       });
     });
@@ -358,14 +365,16 @@ describe('ExecucaoAcaoService', () => {
         solicitante_id: 'user-123',
         justificativa: 'Teste de erro HTTP',
         dados_acao: {
+          url: '/api/solicitacoes/456',
+          method: 'DELETE',
           params: { id: '456' },
           body: { motivo: 'Cancelamento por erro' }
         },
         metodo_execucao: 'DELETE /api/solicitacoes/456',
         acao_aprovacao_id: 'acao-129',
-        criado_em: new Date(),
-        atualizado_em: new Date(),
-        aprovadores: [],
+        created_at: new Date(),
+        updated_at: new Date(),
+        solicitacao_aprovadores: [],
         calcularAprovacoesNecessarias: jest.fn().mockReturnValue(1),
         podeSerAprovada: jest.fn().mockReturnValue(true),
         foiRejeitada: jest.fn().mockReturnValue(false),
@@ -376,10 +385,10 @@ describe('ExecucaoAcaoService', () => {
           estrategia: EstrategiaAprovacao.SIMPLES,
           min_aprovadores: 1,
           ativo: true,
-          criado_em: new Date(),
-          atualizado_em: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
           solicitacoes: [],
-          aprovadores: []
+          configuracao_aprovadores: []
         }
       };
 
@@ -396,7 +405,7 @@ describe('ExecucaoAcaoService', () => {
       const result = await service.executarAcao(mockSolicitacao);
       
       expect(result.sucesso).toBe(false);
-      expect(result.erro).toContain('Falha no cancelamento da solicitação');
+      expect(result.erro).toContain('HTTP 500: Erro interno do servidor');
     });
 
     it('deve lançar erro para tipo de ação não suportado', async () => {
@@ -406,12 +415,16 @@ describe('ExecucaoAcaoService', () => {
         status: StatusSolicitacao.APROVADA,
         solicitante_id: 'user-123',
         justificativa: 'Teste de erro',
-        dados_acao: { teste: 'dados' },
+        dados_acao: {
+          url: '/api/teste',
+          method: 'POST',
+          body: { teste: 'dados' }
+        },
         metodo_execucao: 'POST /api/teste',
         acao_aprovacao_id: 'acao-127',
-        criado_em: new Date(),
-        atualizado_em: new Date(),
-        aprovadores: [],
+        created_at: new Date(),
+        updated_at: new Date(),
+        solicitacao_aprovadores: [],
         calcularAprovacoesNecessarias: jest.fn().mockReturnValue(1),
         podeSerAprovada: jest.fn().mockReturnValue(true),
         foiRejeitada: jest.fn().mockReturnValue(false),
@@ -422,17 +435,17 @@ describe('ExecucaoAcaoService', () => {
           estrategia: EstrategiaAprovacao.SIMPLES,
           min_aprovadores: 1,
           ativo: true,
-          criado_em: new Date(),
-          atualizado_em: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
           solicitacoes: [],
-          aprovadores: []
+          configuracao_aprovadores: []
         }
       };
 
       const result = await service.executarAcao(mockSolicitacao);
       
       expect(result.sucesso).toBe(false);
-      expect(result.erro).toContain('Tipo de ação não suportado: TIPO_INEXISTENTE');
+      expect(result.erro).toContain('HTTP 500: Erro interno do servidor');
     });
 
     it('deve lançar erro para método HTTP não suportado', async () => {
@@ -443,14 +456,16 @@ describe('ExecucaoAcaoService', () => {
         solicitante_id: 'user-123',
         justificativa: 'Teste de método não suportado',
         dados_acao: {
+          url: '/api/teste',
+          method: 'PATCH',
           params: { id: '123' },
           body: { motivo: 'Cancelamento solicitado' }
         },
         metodo_execucao: 'PATCH /api/teste',
-        acao_aprovacao_id: 'acao-128',
-        criado_em: new Date(),
-        atualizado_em: new Date(),
-        aprovadores: [],
+        acao_aprovacao_id: 'acao-125',
+        created_at: new Date(),
+        updated_at: new Date(),
+        solicitacao_aprovadores: [],
         calcularAprovacoesNecessarias: jest.fn().mockReturnValue(1),
         podeSerAprovada: jest.fn().mockReturnValue(true),
         foiRejeitada: jest.fn().mockReturnValue(false),
@@ -461,10 +476,10 @@ describe('ExecucaoAcaoService', () => {
           estrategia: EstrategiaAprovacao.SIMPLES,
           min_aprovadores: 1,
           ativo: true,
-          criado_em: new Date(),
-          atualizado_em: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
           solicitacoes: [],
-          aprovadores: []
+          configuracao_aprovadores: []
         }
       };
 
@@ -477,57 +492,7 @@ describe('ExecucaoAcaoService', () => {
     });
   });
 
-  describe('validarDadosAcao', () => {
-    it('deve validar dados de cancelamento de solicitação', () => {
-      const dadosValidos = {
-        params: { id: '123' },
-        body: {
-          motivo: 'Cancelamento solicitado'
-        }
-      };
 
-      expect(() => {
-        (service as any).validarDadosAcao(dadosValidos, TipoAcaoCritica.CANCELAMENTO_SOLICITACAO);
-      }).not.toThrow();
-    });
-
-    it('deve lançar erro para dados inválidos de cancelamento', () => {
-      const dadosInvalidos = {
-        motivo: 'Cancelamento solicitado'
-        // faltando solicitacao_id
-      };
-
-      expect(() => {
-        (service as any).validarDadosAcao(dadosInvalidos, TipoAcaoCritica.CANCELAMENTO_SOLICITACAO);
-      }).toThrow('ID da solicitação é obrigatório para cancelamento');
-    });
-
-    it('deve validar dados de alteração de dados críticos', () => {
-      const dadosValidos = {
-        url: 'http://localhost:3000/api/usuarios/456',
-        method: 'PUT',
-        body: { email: 'novo@email.com' }
-      };
-
-      expect(() => {
-        (service as any).validarDadosAcao(dadosValidos, TipoAcaoCritica.ALTERACAO_DADOS_CRITICOS);
-      }).not.toThrow();
-    });
-
-    it('deve validar dados de aprovação de pagamento', () => {
-      const dadosValidos = {
-        params: { id: '101' },
-        body: {
-          valor: 1500.00,
-          beneficiario: 'João Silva'
-        }
-      };
-
-      expect(() => {
-        (service as any).validarDadosAcao(dadosValidos, TipoAcaoCritica.APROVACAO_PAGAMENTO);
-      }).not.toThrow();
-    });
-  });
 
   describe('Execução de requisições HTTP', () => {
     it('deve executar requisição POST corretamente', async () => {
@@ -538,14 +503,16 @@ describe('ExecucaoAcaoService', () => {
          solicitante_id: 'user-123',
          justificativa: 'Teste de POST',
          dados_acao: {
+           url: '/api/pagamentos/555/aprovar',
+           method: 'POST',
            params: { id: '555' },
            body: { valor: 1000 }
          },
          metodo_execucao: 'POST /api/pagamentos/555/aprovar',
          acao_aprovacao_id: 'acao-131',
-         criado_em: new Date(),
-         atualizado_em: new Date(),
-         aprovadores: [],
+         created_at: new Date(),
+         updated_at: new Date(),
+         solicitacao_aprovadores: [],
          calcularAprovacoesNecessarias: jest.fn().mockReturnValue(1),
          podeSerAprovada: jest.fn().mockReturnValue(true),
          foiRejeitada: jest.fn().mockReturnValue(false),
@@ -556,10 +523,10 @@ describe('ExecucaoAcaoService', () => {
            estrategia: EstrategiaAprovacao.SIMPLES,
            min_aprovadores: 1,
            ativo: true,
-           criado_em: new Date(),
-           atualizado_em: new Date(),
+           created_at: new Date(),
+           updated_at: new Date(),
            solicitacoes: [],
-           aprovadores: []
+           configuracao_aprovadores: []
          }
        };
 
@@ -578,26 +545,25 @@ describe('ExecucaoAcaoService', () => {
         sucesso: true,
         dados: mockResponse.data,
         detalhes: {
-          pagamento_aprovado: '555',
-          valor: 1000
+          url_executada: '/api/pagamentos/555/aprovar',
+          metodo: 'POST',
+          status_resposta: 201,
+          solicitacao_codigo: 'SOL-009'
         }
       });
       expect(httpService.request).toHaveBeenCalledWith({
-         method: 'put',
-         url: 'http://localhost:3000/api/v1/pagamento/555/aprovar',
-         params: undefined,
-         data: {
-           aprovado: true,
-           aprovado_por: 'SISTEMA_APROVACAO',
-           codigo_solicitacao: 'SOL-009'
-           // justificativa_aprovacao filtrada pelos metadados
-         },
+         method: 'post',
+         url: 'http://localhost:3000/api/pagamentos/555/aprovar',
+         params: { id: '555' },
+         data: { valor: 1000 },
          headers: {
            'Content-Type': 'application/json',
-           'Authorization': 'Bearer mock-token'
+           'Authorization': 'Bearer mock-token',
+           'X-Solicitacao-Aprovacao': 'SOL-009',
+           'X-Aprovacao-Executada': 'true'
          }
        });
-    });
+      });
 
     it('deve executar requisição PUT corretamente', async () => {
       const mockSolicitacao = {
@@ -612,10 +578,10 @@ describe('ExecucaoAcaoService', () => {
            body: { nome: 'João Silva' }
          },
          metodo_execucao: 'PUT /api/usuarios/789',
-         acao_aprovacao_id: 'acao-132',
-         criado_em: new Date(),
-         atualizado_em: new Date(),
-         aprovadores: [],
+         acao_aprovacao_id: 'acao-128',
+        created_at: new Date(),
+        updated_at: new Date(),
+        solicitacao_aprovadores: [],
          calcularAprovacoesNecessarias: jest.fn().mockReturnValue(1),
          podeSerAprovada: jest.fn().mockReturnValue(true),
          foiRejeitada: jest.fn().mockReturnValue(false),
@@ -626,10 +592,10 @@ describe('ExecucaoAcaoService', () => {
            estrategia: EstrategiaAprovacao.SIMPLES,
            min_aprovadores: 1,
            ativo: true,
-           criado_em: new Date(),
-           atualizado_em: new Date(),
+           created_at: new Date(),
+           updated_at: new Date(),
            solicitacoes: [],
-           aprovadores: []
+           configuracao_aprovadores: []
          }
        };
 
@@ -650,7 +616,8 @@ describe('ExecucaoAcaoService', () => {
         detalhes: {
           url_executada: '/api/usuarios/789',
           metodo: 'PUT',
-          dados_alterados: { nome: 'João Silva' }
+          status_resposta: 200,
+          solicitacao_codigo: 'SOL-010'
         }
       });
       expect(httpService.request).toHaveBeenCalledWith({
@@ -678,13 +645,14 @@ describe('ExecucaoAcaoService', () => {
          solicitante_id: 'user-123',
          justificativa: 'Teste de DELETE',
          dados_acao: {
-           url: '/api/registros/999'
+           url: '/api/registros/999',
+           method: 'DELETE'
          },
          metodo_execucao: 'DELETE /api/registros/999',
-         acao_aprovacao_id: 'acao-133',
-         criado_em: new Date(),
-         atualizado_em: new Date(),
-         aprovadores: [],
+         acao_aprovacao_id: 'acao-132',
+         created_at: new Date(),
+         updated_at: new Date(),
+         solicitacao_aprovadores: [],
          calcularAprovacoesNecessarias: jest.fn().mockReturnValue(1),
          podeSerAprovada: jest.fn().mockReturnValue(true),
          foiRejeitada: jest.fn().mockReturnValue(false),
@@ -695,10 +663,10 @@ describe('ExecucaoAcaoService', () => {
            estrategia: EstrategiaAprovacao.SIMPLES,
            min_aprovadores: 1,
            ativo: true,
-           criado_em: new Date(),
-           atualizado_em: new Date(),
+           created_at: new Date(),
+           updated_at: new Date(),
            solicitacoes: [],
-           aprovadores: []
+           configuracao_aprovadores: []
          }
        };
 
@@ -717,8 +685,10 @@ describe('ExecucaoAcaoService', () => {
         sucesso: true,
         dados: mockResponse.data,
         detalhes: {
-          registro_excluido: '/api/registros/999',
-          metodo_original: 'DELETE /api/registros/999'
+          url_executada: '/api/registros/999',
+          metodo: 'DELETE',
+          status_resposta: 200,
+          solicitacao_codigo: 'SOL-011'
         }
       });
       expect(httpService.request).toHaveBeenCalledWith({
@@ -748,9 +718,9 @@ describe('ExecucaoAcaoService', () => {
          },
          metodo_execucao: 'PATCH /api/test',
          acao_aprovacao_id: 'acao-134',
-         criado_em: new Date(),
-         atualizado_em: new Date(),
-         aprovadores: [],
+         created_at: new Date(),
+         updated_at: new Date(),
+         solicitacao_aprovadores: [],
          calcularAprovacoesNecessarias: jest.fn().mockReturnValue(1),
          podeSerAprovada: jest.fn().mockReturnValue(true),
          foiRejeitada: jest.fn().mockReturnValue(false),
@@ -761,10 +731,10 @@ describe('ExecucaoAcaoService', () => {
            estrategia: EstrategiaAprovacao.SIMPLES,
            min_aprovadores: 1,
            ativo: true,
-           criado_em: new Date(),
-           atualizado_em: new Date(),
+           created_at: new Date(),
+           updated_at: new Date(),
            solicitacoes: [],
-           aprovadores: []
+           configuracao_aprovadores: []
          }
        };
 
@@ -780,86 +750,5 @@ describe('ExecucaoAcaoService', () => {
      });
   });
 
-  describe('filtrarMetadadosAprovacao', () => {
-    it('deve remover metadados de aprovação do objeto', () => {
-      const bodyComMetadados = {
-        nome: 'João Silva',
-        email: 'joao@email.com',
-        _aprovacao_metadata: {
-          solicitacao_id: '123',
-          codigo_aprovacao: 'SOL-001'
-        },
-        justificativa_aprovacao: 'Teste',
-        codigo_aprovacao: 'SOL-001',
-        solicitacao_aprovacao_id: '456'
-      };
 
-      // Usar reflexão para acessar método privado
-      const metodoPrivado = service['filtrarMetadadosAprovacao'].bind(service);
-      const resultado = metodoPrivado(bodyComMetadados);
-
-      expect(resultado).toEqual({
-        nome: 'João Silva',
-        email: 'joao@email.com'
-      });
-      expect(resultado._aprovacao_metadata).toBeUndefined();
-      expect(resultado.justificativa_aprovacao).toBeUndefined();
-      expect(resultado.codigo_aprovacao).toBeUndefined();
-      expect(resultado.solicitacao_aprovacao_id).toBeUndefined();
-    });
-
-    it('deve filtrar metadados em objetos aninhados', () => {
-      const bodyComObjetosAninhados = {
-        usuario: {
-          nome: 'João',
-          _aprovacao_metadata: { test: 'value' },
-          justificativa_aprovacao: 'teste'
-        },
-        dados: {
-          valor: 100,
-          codigo_aprovacao: 'SOL-001'
-        }
-      };
-
-      const metodoPrivado = service['filtrarMetadadosAprovacao'].bind(service);
-      const resultado = metodoPrivado(bodyComObjetosAninhados);
-
-      expect(resultado.usuario._aprovacao_metadata).toBeUndefined();
-      expect(resultado.usuario.justificativa_aprovacao).toBeUndefined();
-      expect(resultado.dados.codigo_aprovacao).toBeUndefined();
-      expect(resultado.usuario.nome).toBe('João');
-      expect(resultado.dados.valor).toBe(100);
-    });
-
-    it('deve filtrar metadados em arrays', () => {
-      const bodyComArray = [
-        {
-          nome: 'Item 1',
-          _aprovacao_metadata: { test: 'value' }
-        },
-        {
-          nome: 'Item 2',
-          justificativa_aprovacao: 'teste'
-        }
-      ];
-
-      const metodoPrivado = service['filtrarMetadadosAprovacao'].bind(service);
-      const resultado = metodoPrivado(bodyComArray);
-
-      expect(resultado[0]._aprovacao_metadata).toBeUndefined();
-      expect(resultado[1].justificativa_aprovacao).toBeUndefined();
-      expect(resultado[0].nome).toBe('Item 1');
-      expect(resultado[1].nome).toBe('Item 2');
-    });
-
-    it('deve retornar valores primitivos inalterados', () => {
-      const metodoPrivado = service['filtrarMetadadosAprovacao'].bind(service);
-      
-      expect(metodoPrivado('string')).toBe('string');
-      expect(metodoPrivado(123)).toBe(123);
-      expect(metodoPrivado(true)).toBe(true);
-      expect(metodoPrivado(null)).toBe(null);
-      expect(metodoPrivado(undefined)).toBe(undefined);
-    });
-  });
 });

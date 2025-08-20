@@ -32,7 +32,7 @@ import { TipoAcaoCritica, EstrategiaAprovacao } from '../enums';
  * Consolida o gerenciamento de ações críticas e suas configurações
  */
 @ApiTags('Aprovação - Configurações')
-@Controller('v1/aprovacao/configuracoes')
+@Controller('aprovacao/configuracoes')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class ConfiguracaoAprovacaoController {

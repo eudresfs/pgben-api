@@ -14,13 +14,15 @@ export class NotificationEmailListener {
     private readonly usuarioService: UsuarioService,
   ) {}
 
-  @OnEvent(NOTIFICATION_CREATED, { async: true })
+  // TEMPORARIAMENTE DESABILITADO - Evitar duplicidade de emails
+  // O NotificationManagerService já envia emails via canal email
+  // @OnEvent(NOTIFICATION_CREATED, { async: true })
   async handleNotificationCreated(event: NotificationCreatedEvent) {
     const n = event.notification;
 
     try {
-      // Buscar o email do usuário pelo ID
-      const usuario = await this.usuarioService.findById(n.destinatario_id);
+      // Buscar o email do usuário pelo ID (sem contexto de escopo para notificações)
+      const usuario = await this.usuarioService.findByIdForNotification(n.destinatario_id);
 
       if (!usuario?.email) {
         this.logger.warn(

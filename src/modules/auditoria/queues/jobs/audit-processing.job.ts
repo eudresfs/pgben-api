@@ -36,6 +36,29 @@ export interface AuditProcessingResult {
   error?: string;
 }
 
+/**
+ * Interface para dados de processamento em lote
+ */
+export interface BatchAuditJobData {
+  events: AuditEvent[] | AuditJobData[];
+  config?: AuditEventConfig;
+  batchSize?: number;
+}
+
+/**
+ * Interface para resultado do processamento em lote
+ */
+export interface BatchAuditProcessingResult {
+  success: boolean;
+  processedCount: number;
+  failedCount: number;
+  totalCount: number;
+  totalProcessingTime: number;
+  logIds: string[];
+  errors: string[];
+  batchId: string;
+}
+
 @Injectable()
 export class AuditProcessingJob {
   private readonly logger = new Logger(AuditProcessingJob.name);
@@ -44,6 +67,113 @@ export class AuditProcessingJob {
     private readonly auditRepository: AuditCoreRepository,
     private readonly auditoriaSignatureService?: AuditoriaSignatureService,
   ) {}
+
+  /**
+   * Processa múltiplos eventos de auditoria em lote
+   * Otimização para melhorar throughput e reduzir overhead de transações
+   */
+  async processBatch(data: BatchAuditJobData): Promise<BatchAuditProcessingResult> {
+    const startTime = Date.now();
+    const batchId = this.generateBatchId();
+    const logIds: string[] = [];
+    const errors: string[] = [];
+    let processedCount = 0;
+    let failedCount = 0;
+
+    this.logger.debug(`Processing batch of ${data.events.length} audit events - Batch ID: ${batchId}`);
+
+    try {
+      // Valida dados do lote
+      this.validateBatchData(data);
+
+      // Processa eventos em chunks para otimizar performance
+      const chunkSize = data.batchSize || 50;
+      const chunks = this.chunkArray(data.events as any[], chunkSize);
+
+      for (const chunk of chunks) {
+        try {
+          // Processa chunk em paralelo com limite de concorrência
+          const chunkResults = await Promise.allSettled(
+            chunk.map(event => this.processSingleEventInBatch({
+              event,
+              config: data.config
+            }))
+          );
+
+          // Processa resultados do chunk
+          for (const result of chunkResults) {
+            if (result.status === 'fulfilled' && result.value.success) {
+              processedCount++;
+              if (result.value.logId) {
+                logIds.push(result.value.logId);
+              }
+            } else {
+              failedCount++;
+              const error = result.status === 'rejected' 
+                ? result.reason.message 
+                : result.value.error || 'Unknown error';
+              errors.push(error);
+            }
+          }
+
+          // Log progresso do chunk
+          this.logger.debug(
+            `Batch ${batchId} - Chunk processed: ${processedCount + failedCount}/${data.events.length} events`
+          );
+
+        } catch (chunkError) {
+          this.logger.error(`Failed to process chunk in batch ${batchId}: ${chunkError.message}`);
+          failedCount += chunk.length;
+          errors.push(`Chunk processing failed: ${chunkError.message}`);
+        }
+      }
+
+      const totalProcessingTime = Date.now() - startTime;
+
+      // Atualiza métricas de lote
+      await this.updateBatchMetrics({
+        batchId,
+        processedCount,
+        failedCount,
+        totalProcessingTime,
+        eventsPerSecond: (processedCount / (totalProcessingTime / 1000))
+      });
+
+      this.logger.log(
+        `Batch ${batchId} completed: ${processedCount} processed, ${failedCount} failed in ${totalProcessingTime}ms`
+      );
+
+      return {
+        success: failedCount === 0,
+        processedCount,
+        failedCount,
+        totalCount: data.events.length,
+        totalProcessingTime,
+        logIds,
+        errors,
+        batchId
+      };
+
+    } catch (error) {
+      const totalProcessingTime = Date.now() - startTime;
+      
+      this.logger.error(
+        `Batch ${batchId} failed completely: ${error.message}`,
+        error.stack
+      );
+
+      return {
+        success: false,
+        processedCount: 0,
+        failedCount: data.events.length,
+        totalCount: data.events.length,
+        totalProcessingTime,
+        logIds: [],
+        errors: [error.message],
+        batchId
+      };
+    }
+  }
 
   /**
    * Processa um evento de auditoria
@@ -1550,6 +1680,198 @@ export class AuditProcessingJob {
    */
   private generateLogId(): string {
     return `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Gera ID único para lote de processamento
+   */
+  private generateBatchId(): string {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8);
+    return `batch_${timestamp}_${random}`;
+  }
+
+  /**
+   * Valida dados do lote de auditoria
+   */
+  private validateBatchData(data: BatchAuditJobData): void {
+    if (!data || !data.events || !Array.isArray(data.events)) {
+      throw new Error('Invalid batch data: events array is required');
+    }
+
+    if (data.events.length === 0) {
+      throw new Error('Invalid batch data: events array cannot be empty');
+    }
+
+    if (data.events.length > 1000) {
+      throw new Error('Invalid batch data: maximum 1000 events per batch');
+    }
+
+    // Valida cada evento do lote
+    data.events.forEach((event, index) => {
+      if (!event.eventType) {
+        throw new Error(`Invalid event at index ${index}: eventType is required`);
+      }
+      if (!event.entityName) {
+        throw new Error(`Invalid event at index ${index}: entityName is required`);
+      }
+      if (!event.timestamp) {
+        throw new Error(`Invalid event at index ${index}: timestamp is required`);
+      }
+    });
+  }
+
+  /**
+   * Divide array em chunks menores para processamento otimizado
+   */
+  private chunkArray<T>(array: T[], chunkSize: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+      chunks.push(array.slice(i, i + chunkSize));
+    }
+    return chunks;
+  }
+
+  /**
+   * Processa um único evento dentro de um lote
+   * Versão otimizada para processamento em lote
+   */
+  private async processSingleEventInBatch(data: AuditJobData): Promise<AuditProcessingResult> {
+    const startTime = Date.now();
+
+    try {
+      // Prepara os dados para persistência (sem validação completa para otimizar)
+      const processedData = await this.prepareDataForPersistenceOptimized(data);
+
+      // Persiste o log de auditoria
+      const logId = await this.persistAuditLog(processedData);
+
+      const processingTime = Date.now() - startTime;
+
+      return {
+        success: true,
+        logId,
+        processingTime,
+        compressed: data.config?.compress || false,
+        signed: data.config?.sign || false,
+      };
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+
+      return {
+        success: false,
+        processingTime,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Versão otimizada de prepareDataForPersistence para lotes
+   * Remove algumas validações para melhorar performance
+   */
+  private async prepareDataForPersistenceOptimized(data: AuditJobData): Promise<any> {
+    const { event, config } = data;
+
+    let logData = {
+      id: this.generateLogId(),
+      event_type: event.eventType,
+      entity_name: event.entityName,
+      entity_id: event.entityId,
+      user_id: event.userId,
+      timestamp: event.timestamp,
+      description: this.generateDescription(event),
+      metadata: event.metadata || {},
+      ip_address: event.requestContext?.ip,
+      user_agent: event.requestContext?.userAgent,
+      risk_level: this.calculateRiskLevel(event),
+      tipo_operacao: this.mapEventTypeToTipoOperacao(event.eventType),
+    };
+
+    // Compressão opcional (apenas para eventos grandes)
+    if (config?.compress && JSON.stringify(logData).length > 10000) {
+      logData = await this.compressData(logData);
+    }
+
+    // Assinatura opcional (apenas para eventos críticos)
+    if (config?.sign && event.riskLevel === 'CRITICAL') {
+      logData = await this.signData(logData);
+    }
+
+    return logData;
+  }
+
+  /**
+   * Atualiza métricas específicas de processamento em lote
+   */
+  private async updateBatchMetrics(metrics: {
+    batchId: string;
+    processedCount: number;
+    failedCount: number;
+    totalProcessingTime: number;
+    eventsPerSecond: number;
+  }): Promise<void> {
+    try {
+      const batchMetrics = {
+        batchId: metrics.batchId,
+        processedEvents: metrics.processedCount,
+        failedEvents: metrics.failedCount,
+        totalEvents: metrics.processedCount + metrics.failedCount,
+        processingTimeMs: metrics.totalProcessingTime,
+        eventsPerSecond: Math.round(metrics.eventsPerSecond * 100) / 100,
+        successRate: metrics.processedCount / (metrics.processedCount + metrics.failedCount),
+        timestamp: new Date().toISOString(),
+      };
+
+      this.logger.debug(
+        `Batch metrics updated: ${JSON.stringify(batchMetrics)}`
+      );
+
+      // Verifica se o throughput está dentro do esperado
+      const expectedThroughput = 100; // eventos por segundo
+      if (batchMetrics.eventsPerSecond < expectedThroughput * 0.7) {
+        this.logger.warn(
+          `Low batch throughput detected: ${batchMetrics.eventsPerSecond} events/sec (expected: ${expectedThroughput})`
+        );
+      }
+
+      // Verifica taxa de sucesso
+      if (batchMetrics.successRate < 0.95) {
+        this.logger.warn(
+          `Low batch success rate: ${(batchMetrics.successRate * 100).toFixed(2)}% (expected: >95%)`
+        );
+      }
+
+    } catch (error) {
+      this.logger.error(
+        `Failed to update batch metrics: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * Mapeia tipo de evento para TipoOperacao enum
+   */
+  private mapEventTypeToTipoOperacao(eventType: string): TipoOperacao {
+    const eventTypeMap: Record<string, TipoOperacao> = {
+      'ENTITY_CREATED': TipoOperacao.CREATE,
+      'ENTITY_UPDATED': TipoOperacao.UPDATE,
+      'ENTITY_DELETED': TipoOperacao.DELETE,
+      'ENTITY_VIEWED': TipoOperacao.READ,
+      'LOGIN_SUCCESS': TipoOperacao.READ,
+      'LOGIN_FAILED': TipoOperacao.READ,
+      'LOGOUT': TipoOperacao.READ,
+      'PASSWORD_CHANGE': TipoOperacao.UPDATE,
+      'PERMISSION_CHANGE': TipoOperacao.UPDATE,
+      'ROLE_CHANGE': TipoOperacao.UPDATE,
+      'CONFIG_CHANGE': TipoOperacao.UPDATE,
+      'USER_CREATION': TipoOperacao.CREATE,
+      'DOCUMENT_UPLOAD': TipoOperacao.CREATE,
+      'DOCUMENT_DOWNLOAD': TipoOperacao.READ,
+      'SENSITIVE_DATA_ACCESSED': TipoOperacao.READ,
+    };
+
+    return eventTypeMap[eventType] || TipoOperacao.READ;
   }
 
   /**

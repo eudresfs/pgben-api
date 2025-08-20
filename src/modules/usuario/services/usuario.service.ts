@@ -765,6 +765,34 @@ export class UsuarioService {
   }
 
   /**
+   * Busca usuário por ID SEM aplicar escopo (para notificações e operações internas)
+   * @param id ID do usuário
+   * @returns Usuário encontrado ou null
+   */
+  async findByIdForNotification(id: string): Promise<Usuario | null> {
+    this.logger.debug(`Buscando usuário por ID para notificação: ${id}`);
+
+    try {
+      const usuario = await this.usuarioRepository.findByIdGlobal(id);
+
+      if (!usuario) {
+        this.logger.warn(`Usuário não encontrado para notificação: ${id}`);
+        return null;
+      }
+
+      // Remover campos sensíveis mesmo em operações internas
+      const { senhaHash, ...usuarioSemSenha } = usuario;
+      return usuarioSemSenha as Usuario;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar usuário por ID para notificação: ${error.message}`,
+        error.stack,
+      );
+      return null; // Retorna null em caso de erro para não quebrar o fluxo de notificação
+    }
+  }
+
+  /**
    * Verifica se o usuário está bloqueado por excesso de tentativas
    * @param usuario Usuário a ser verificado
    * @returns true se estiver bloqueado
