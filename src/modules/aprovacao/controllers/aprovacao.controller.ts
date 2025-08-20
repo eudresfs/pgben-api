@@ -336,34 +336,4 @@ export class AprovacaoController {
       data: resultado
     };
   }
-
-  /**
-   * Remove aprovadores duplicados da configuração
-   */
-  @Post('limpar-duplicados')
-  @RequiresPermission({permissionName: 'aprovacao:admin'})
-  @ApiOperation({ 
-    summary: 'Remove aprovadores duplicados',
-    description: 'Remove aprovadores duplicados das configurações de ação, mantendo apenas o primeiro registro de cada usuário por ação'
-  })
-  @ApiQuery({
-    name: 'acaoId',
-    required: false,
-    description: 'ID da ação específica para limpeza (opcional - se não informado, limpa todas as ações)'
-  })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Aprovadores duplicados removidos com sucesso'
-  })
-  @SecurityAudit('limpeza-aprovadores-duplicados', RiskLevel.HIGH)
-  async limparAprovadoresDuplicados(
-    @Query('acaoId') acaoId?: string
-  ) {
-    const resultado = await this.aprovacaoService.removerAprovadoresDuplicados(acaoId);
-
-    return {
-      message: `Limpeza concluída: ${resultado.removidos} aprovadores duplicados removidos`,
-      data: resultado
-    };
-  }
 }

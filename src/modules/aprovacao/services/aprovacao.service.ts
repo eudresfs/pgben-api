@@ -13,6 +13,7 @@ import { ExecucaoAcaoService } from './execucao-acao.service';
 import { PermissionService } from '../../../auth/services/permission.service';
 import { SYSTEM_USER_UUID } from '../../../shared/constants/system.constants';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { TipoEscopo } from '../../../entities/user-permission.entity';
 
 /**
  * Serviço principal consolidado para gerenciamento de aprovações
@@ -933,7 +934,55 @@ export class AprovacaoService {
   }
 
   /**
-   * Adiciona aprovador a uma configuração
+   * Cadastra automaticamente todas as permissões necessárias do módulo de aprovação
+   * @param usuarioId ID do usuário que receberá as permissões
+   * @param createdBy ID do usuário que está criando as permissões
+   */
+  private async cadastrarPermissoesAprovacao(usuarioId: string, createdBy: string): Promise<void> {
+    // Lista completa de permissões do módulo de aprovação
+    const permissoes = [
+      // Permissões do AprovacaoController
+      { nome: 'aprovacao.criar', descricao: 'Criar solicitações de aprovação' },
+      { nome: 'aprovacao.listar', descricao: 'Listar solicitações de aprovação' },
+      { nome: 'aprovacao.visualizar', descricao: 'Visualizar detalhes de solicitações de aprovação' },
+      { nome: 'aprovacao.processar', descricao: 'Processar (aprovar/rejeitar) solicitações' },
+      { nome: 'aprovacao.listar.pendentes', descricao: 'Listar aprovações pendentes' },
+      { nome: 'aprovacao.cancelar', descricao: 'Cancelar solicitações de aprovação' }
+    ];
+
+    try {
+      for (const permissao of permissoes) {
+        // Cria a permissão se não existir
+        await this.permissionService.createPermissionIfNotExists(
+          permissao.nome,
+          permissao.descricao,
+          createdBy
+        );
+
+        // Concede a permissão ao usuário com escopo global
+        await this.permissionService.grantPermission(
+          usuarioId,
+          permissao.nome,
+          TipoEscopo.GLOBAL,
+          null,
+          null, // Sem data de expiração
+          createdBy
+        );
+      }
+
+      this.logger.log(`Permissões de aprovação cadastradas com sucesso para o usuário ${usuarioId}`);
+    } catch (error) {
+      this.logger.error(`Erro ao cadastrar permissões de aprovação para usuário ${usuarioId}: ${error.message}`, {
+        usuarioId,
+        createdBy,
+        stack: error.stack
+      });
+      // Não lança erro para não interromper o fluxo principal
+    }
+  }
+
+  /**
+   * Adiciona aprovador a uma configuração e cadastra as permissões necessárias
    */
   async adicionarAprovador(acaoId: string, usuarioId: string): Promise<ConfiguracaoAprovador> {
     const acao = await this.acaoAprovacaoRepository.findOne({ where: { id: acaoId } });
@@ -954,9 +1003,14 @@ export class AprovacaoService {
       if (existente.ativo) {
         throw new BadRequestException('Aprovador já cadastrado para esta ação');
       } else {
-        // Reativa aprovador existente
+        // Reativa aprovador existente e cadastra permissões
         existente.ativo = true;
-        return this.configuracaoAprovadorRepository.save(existente);
+        const aprovadorReativado = await this.configuracaoAprovadorRepository.save(existente);
+        
+        // Cadastra as permissões necessárias para o aprovador
+        await this.cadastrarPermissoesAprovacao(usuarioId, SYSTEM_USER_UUID);
+        
+        return aprovadorReativado;
       }
     }
 
@@ -967,7 +1021,12 @@ export class AprovacaoService {
         ativo: true
       });
 
-      return await this.configuracaoAprovadorRepository.save(aprovador);
+      const novoAprovador = await this.configuracaoAprovadorRepository.save(aprovador);
+      
+      // Cadastra as permissões necessárias para o novo aprovador
+      await this.cadastrarPermissoesAprovacao(usuarioId, SYSTEM_USER_UUID);
+      
+      return novoAprovador;
     } catch (error) {
       // Em caso de erro de constraint (duplicata), tenta buscar o registro existente
       if (error.code === '23505') { // Unique constraint violation
@@ -980,6 +1039,10 @@ export class AprovacaoService {
         
         if (aprovadorExistente) {
           this.logger.warn(`Aprovador duplicado detectado e corrigido para ação ${acaoId} e usuário ${usuarioId}`);
+          
+          // Cadastra as permissões mesmo para aprovador duplicado
+          await this.cadastrarPermissoesAprovacao(usuarioId, SYSTEM_USER_UUID);
+          
           return aprovadorExistente;
         }
       }
