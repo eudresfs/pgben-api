@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { AcaoAprovacao, SolicitacaoAprovacao } from '../entities';
 import { ConfiguracaoAprovador } from '../entities/configuracao-aprovador.entity';
 import { SolicitacaoAprovador } from '../entities/solicitacao-aprovador.entity';
@@ -982,6 +982,46 @@ export class AprovacaoService {
   }
 
   /**
+   * Remove as permissões de aprovação de um usuário
+   * @param usuarioId - ID do usuário
+   * @param removedBy - ID do usuário que está removendo as permissões
+   */
+  private async removerPermissoesAprovacao(usuarioId: string, removedBy: string): Promise<void> {
+    // Lista completa de permissões do módulo de aprovação
+    const permissoes = [
+      // Permissões do AprovacaoController
+      'aprovacao.criar',
+      'aprovacao.listar',
+      'aprovacao.visualizar',
+      'aprovacao.processar',
+      'aprovacao.listar.pendentes',
+      'aprovacao.cancelar',
+    ];
+
+    try {
+      for (const permissao of permissoes) {
+        // Remove a permissão do usuário
+        await this.permissionService.revokePermission(
+          usuarioId,
+          permissao,
+          TipoEscopo.GLOBAL,
+          null,
+          removedBy
+        );
+      }
+
+      this.logger.log(`Permissões de aprovação removidas com sucesso para o usuário ${usuarioId}`);
+    } catch (error) {
+      this.logger.error(`Erro ao remover permissões de aprovação para usuário ${usuarioId}: ${error.message}`, {
+        usuarioId,
+        removedBy,
+        stack: error.stack
+      });
+      // Não lança erro para não interromper o fluxo principal
+    }
+  }
+
+  /**
    * Adiciona aprovador a uma configuração e cadastra as permissões necessárias
    */
   async adicionarAprovador(acaoId: string, usuarioId: string): Promise<ConfiguracaoAprovador> {
@@ -1115,6 +1155,7 @@ export class AprovacaoService {
 
   /**
    * Remove um aprovador de uma configuração
+   * Verifica se o usuário não é aprovador de outras ações antes de remover permissões
    */
   async removerAprovador(acaoId: string, aprovadorId: string): Promise<void> {
     const aprovador = await this.configuracaoAprovadorRepository.findOne({
@@ -1128,7 +1169,23 @@ export class AprovacaoService {
       throw new NotFoundException('Aprovador não encontrado');
     }
 
+    // Desativa o aprovador da configuração específica
     await this.configuracaoAprovadorRepository.update(aprovadorId, { ativo: false });
+    
+    // Verifica se o usuário ainda é aprovador de outras ações
+    const outrasAcoes = await this.configuracaoAprovadorRepository.count({
+      where: {
+        usuario_id: aprovador.usuario_id,
+        ativo: true,
+        id: Not(aprovadorId) // Exclui o aprovador que acabou de ser desativado
+      }
+    });
+
+    // Se não é mais aprovador de nenhuma ação, remove as permissões
+    if (outrasAcoes === 0) {
+      await this.removerPermissoesAprovacao(aprovador.usuario_id, SYSTEM_USER_UUID);
+      this.logger.log(`Permissões de aprovação removidas para usuário ${aprovador.usuario_id} - não é mais aprovador de nenhuma ação`);
+    }
     
     this.logger.log(`Aprovador ${aprovadorId} removido da configuração ${acaoId}`);
   }
