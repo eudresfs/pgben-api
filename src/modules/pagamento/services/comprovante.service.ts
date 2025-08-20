@@ -12,10 +12,13 @@ import { DocumentoUrlService } from '../../documento/services/documento-url.serv
 import { PagamentoRepository } from '../repositories/pagamento.repository';
 import { ComprovanteUploadDto } from '../dtos/comprovante-upload.dto';
 import { ComprovanteResponseDto } from '../dtos/comprovante-response.dto';
+import { GerarComprovanteDto, ComprovanteGeradoDto } from '../dtos/gerar-comprovante.dto';
 import { Documento } from '../../../entities/documento.entity';
 import { TipoDocumentoEnum } from '../../../enums/tipo-documento.enum';
 import { Pagamento } from '../../../entities/pagamento.entity';
-import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
+import { StatusPagamentoEnum } from '../../../enums';
+import { PdfGeneratorUtil } from '../utils/pdf-generator.util';
+import { ComprovanteDadosMapper } from '../mappers/comprovante-dados.mapper';
 
 /**
  * Service simplificado para gerenciamento de comprovantes
@@ -269,6 +272,146 @@ export class ComprovanteService {
   async hasComprovantes(pagamentoId: string): Promise<boolean> {
     const pagamento = await this.pagamentoRepository.findById(pagamentoId);
     return !!(pagamento && pagamento.comprovante_id);
+  }
+
+  /**
+   * Gera comprovante em PDF pré-preenchido
+   */
+  async gerarComprovantePdf(
+    pagamentoId: string,
+    gerarDto: GerarComprovanteDto,
+  ): Promise<ComprovanteGeradoDto> {
+    this.logger.log(`Iniciando geração de comprovante PDF para pagamento ${pagamentoId}`);
+
+    // Buscar pagamento com todos os relacionamentos necessários
+    const pagamento = await this.buscarPagamentoCompleto(pagamentoId);
+
+    // Validar dados obrigatórios
+    ComprovanteDadosMapper.validarDadosObrigatorios(pagamento);
+
+    // Determinar tipo de comprovante baseado no código do tipo de benefício
+    const tipoComprovante = this.determinarTipoComprovante(pagamento.solicitacao.tipo_beneficio.codigo);
+
+    // Mapear dados para o formato do comprovante
+    const dadosComprovante = ComprovanteDadosMapper.mapearParaComprovante(pagamento);
+
+    // Gerar PDF
+    const pdfGenerator = new PdfGeneratorUtil();
+    const template = pdfGenerator.criarConfiguracao(tipoComprovante);
+    const pdfBuffer = await pdfGenerator.gerarComprovante(dadosComprovante, template);
+    
+    // Gerar nome do arquivo
+    const nomeArquivo = pdfGenerator.gerarNomeArquivo(dadosComprovante, template);
+    
+    // Converter para base64 se necessário
+    const conteudoBase64 = gerarDto.formato === 'base64' ? pdfGenerator.converterParaBase64(pdfBuffer) : undefined;
+
+    this.logger.log(`Comprovante PDF gerado com sucesso: ${nomeArquivo}`);
+
+    return {
+      nomeArquivo,
+      tipoMime: 'application/pdf',
+      tamanho: pdfBuffer.length,
+      dataGeracao: new Date(),
+      tipoComprovante: tipoComprovante as any,
+      conteudoBase64,
+    };
+  }
+
+  /**
+   * Gera apenas o buffer do PDF para download direto
+   */
+  async gerarPdfBuffer(
+    pagamentoId: string,
+    gerarDto: GerarComprovanteDto,
+  ): Promise<Buffer> {
+    this.logger.log(`Gerando buffer PDF para pagamento ${pagamentoId}`);
+
+    // Buscar pagamento com todos os relacionamentos necessários
+    const pagamento = await this.buscarPagamentoCompleto(pagamentoId);
+
+    // Validar dados obrigatórios
+    ComprovanteDadosMapper.validarDadosObrigatorios(pagamento);
+
+    // Determinar tipo de comprovante baseado no código do tipo de benefício
+    const tipoComprovante = this.determinarTipoComprovante(pagamento.solicitacao.tipo_beneficio.codigo);
+
+    // Mapear dados para o formato do comprovante
+    const dadosComprovante = ComprovanteDadosMapper.mapearParaComprovante(pagamento);
+
+    // Gerar PDF
+    const pdfGenerator = new PdfGeneratorUtil();
+    const template = pdfGenerator.criarConfiguracao(tipoComprovante);
+    const pdfBuffer = await pdfGenerator.gerarComprovante(dadosComprovante, template);
+    
+    this.logger.log(`Buffer PDF gerado com sucesso para pagamento ${pagamentoId}`);
+    
+    return pdfBuffer;
+  }
+
+  /**
+   * Determina o tipo de comprovante baseado no código do tipo de benefício
+   */
+  private determinarTipoComprovante(codigoTipoBeneficio: string): string {
+    const mapeamento = {
+      'cesta-basica': 'Cesta Básica',
+      'aluguel-social': 'Aluguel Social',
+    };
+
+    const tipoComprovante = mapeamento[codigoTipoBeneficio];
+    
+    if (!tipoComprovante) {
+      throw new BadRequestException(
+        `Tipo de benefício não suportado para geração de comprovante: ${codigoTipoBeneficio}`,
+      );
+    }
+
+    return tipoComprovante;
+  }
+
+  /**
+   * Busca um pagamento com todos os relacionamentos necessários para gerar o comprovante
+   */
+  private async buscarPagamentoCompleto(pagamentoId: string): Promise<Pagamento> {
+    // Primeiro busca o pagamento com tipo de benefício para verificar se precisa de endereço
+    const pagamentoBase = await this.pagamentoRepository
+      .createScopedQueryBuilder('pagamento')
+      .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+      .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
+      .where('pagamento.id = :id', { id: pagamentoId })
+      .getOne();
+
+    if (!pagamentoBase) {
+      throw new NotFoundException('Pagamento não encontrado');
+    }
+
+    // Verifica se é aluguel social para incluir endereços
+    const isAluguelSocial = pagamentoBase.solicitacao?.tipo_beneficio?.codigo === 'aluguel-social';
+
+    // Busca completa com joins condicionais
+    const queryBuilder = this.pagamentoRepository
+      .createScopedQueryBuilder('pagamento')
+      .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
+      .leftJoinAndSelect('beneficiario.contatos', 'contatos')
+      .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
+      .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
+      .leftJoinAndSelect('solicitacao.unidade', 'unidade');
+
+    // Adiciona join com endereços apenas se for aluguel social
+    if (isAluguelSocial) {
+      queryBuilder.leftJoinAndSelect('beneficiario.enderecos', 'enderecos');
+    }
+
+    const pagamento = await queryBuilder
+      .where('pagamento.id = :id', { id: pagamentoId })
+      .getOne();
+
+    if (!pagamento) {
+      throw new NotFoundException('Pagamento não encontrado');
+    }
+    
+    return pagamento;
   }
 
   // ========== MÉTODOS PRIVADOS ==========

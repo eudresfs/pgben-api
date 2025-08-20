@@ -28,6 +28,13 @@ export class PagamentoRepository {
   }
 
   /**
+   * Cria um query builder com escopo
+   */
+  createScopedQueryBuilder(alias: string) {
+    return this.scopedRepository.createScopedQueryBuilder(alias);
+  }
+
+  /**
    * Busca pagamento por ID
    */
   async findById(id: string): Promise<Pagamento | null> {

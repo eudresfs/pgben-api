@@ -19,6 +19,7 @@ import {
   ApiConsumes,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -32,6 +33,7 @@ import { Usuario } from '../../../entities';
 import { ComprovanteService } from '../services/comprovante.service';
 import { ComprovanteUploadDto } from '../dtos/comprovante-upload.dto';
 import { ComprovanteResponseDto } from '../dtos/comprovante-response.dto';
+import { GerarComprovanteDto, ComprovanteGeradoDto } from '../dtos/gerar-comprovante.dto';
 import { DataMaskingResponseInterceptor } from '../interceptors/data-masking-response.interceptor';
 
 /**
@@ -113,6 +115,77 @@ export class ComprovanteController {
       data: this.mapToResponseDto(comprovante),
       message: 'Comprovante enviado com sucesso',
     };
+  }
+
+  /**
+   * Gera comprovante em PDF pré-preenchido
+   */
+  @Get('gerar-comprovante')
+  @ApiOperation({ 
+    summary: 'Gera comprovante em PDF pré-preenchido',
+    description: 'Gera um comprovante em PDF com dados pré-preenchidos do pagamento para assinatura. Quando formato=pdf, retorna o arquivo para download direto.'
+  })
+  @ApiParam({
+    name: 'pagamentoId',
+    type: 'string',
+    description: 'ID do pagamento',
+  })
+  @ApiQuery({
+    name: 'formato',
+    enum: ['pdf', 'base64'],
+    description: 'Formato de retorno do comprovante. pdf=download direto, base64=metadados com conteúdo codificado',
+    required: false,
+    example: 'pdf',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Comprovante PDF gerado com sucesso',
+    content: {
+      'application/pdf': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+      'application/json': {
+        schema: {
+          $ref: '#/components/schemas/ComprovanteGeradoDto',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Pagamento não encontrado',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dados obrigatórios ausentes ou inválidos',
+  })
+  @RequiresPermission({
+    permissionName: 'pagamento.visualizar',
+  })
+  async gerarComprovante(
+    @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string,
+    @Query() query: GerarComprovanteDto,
+    @Res() res?: Response,
+  ): Promise<ComprovanteGeradoDto | void> {
+    const resultado = await this.comprovanteService.gerarComprovantePdf(pagamentoId, query);
+    
+    // Se formato for 'pdf' (padrão), retorna arquivo para download
+    if (!query.formato || query.formato === 'pdf') {
+      // Buscar o buffer do PDF novamente para download
+      const pdfBuffer = await this.comprovanteService.gerarPdfBuffer(pagamentoId, query);
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${resultado.nomeArquivo}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      res.send(pdfBuffer);
+      return;
+    }
+    
+    // Se formato for 'base64', retorna metadados com conteúdo
+    return resultado;
   }
 
   /**
