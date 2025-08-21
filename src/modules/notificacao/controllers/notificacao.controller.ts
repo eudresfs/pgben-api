@@ -30,7 +30,7 @@ import {
   FiltrosNotificacaoDto,
   RespostaListagemNotificacaoDto,
 } from '../dto/filtros-notificacao.dto';
-import { RequiresPermission } from '@/auth/decorators/requires-permission.decorator';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { TipoEscopo } from '@/entities/user-permission.entity';
 
 /**

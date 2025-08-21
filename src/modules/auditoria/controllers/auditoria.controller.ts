@@ -28,7 +28,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { ScopeType } from '../../../entities/user-permission.entity';
-import { Public } from '@/auth/decorators/public.decorator';
+import { Public } from '../../../auth/decorators/public.decorator';
 
 /**
  * Controlador de Auditoria

@@ -1,5 +1,4 @@
 // Arquivo de configuração para ambiente de testes
-import 'jest-extended';
 import { TipoOperacao } from '../src/enums/tipo-operacao.enum';
 
 // Configurações de ambiente para testes
@@ -54,7 +53,7 @@ jest.mock('@nestjs/bull', () => {
 });
 
 // Mock global para MinIO
-jest.mock('../src/modules/minio/services/minio.service', () => {
+jest.mock('../src/shared/services/minio.service', () => {
   return {
     MinioService: jest.fn().mockImplementation(() => ({
       inicializarBucket: jest.fn().mockResolvedValue(undefined),
@@ -91,7 +90,7 @@ jest.mock('../src/modules/minio/services/minio.service', () => {
 });
 
 // Mock para o LogAuditoria Repository
-jest.mock('../src/modules/auditoria/entities/log-auditoria.entity', () => {
+jest.mock('../src/entities/log-auditoria.entity', () => {
   return {
     LogAuditoria: class LogAuditoria {
       id: string = 'mock-log-id';
@@ -143,7 +142,7 @@ jest.mock('../src/modules/auditoria/services/auditoria-queue.processor', () => {
 });
 
 // Mock para o serviço de criptografia
-jest.mock('../src/modules/criptografia/services/criptografia.service', () => {
+jest.mock('../src/shared/services/criptografia.service', () => {
   return {
     CriptografiaService: jest.fn().mockImplementation(() => ({
       criptografar: jest.fn().mockImplementation((texto) => {
@@ -197,22 +196,4 @@ jest.mock('../src/modules/criptografia/services/criptografia.service', () => {
       }),
     })),
   };
-});
-
-// Mock para supertest
-jest.mock('supertest', () => {
-  const mockRequest = {
-    get: jest.fn().mockReturnThis(),
-    post: jest.fn().mockReturnThis(),
-    put: jest.fn().mockReturnThis(),
-    patch: jest.fn().mockReturnThis(),
-    delete: jest.fn().mockReturnThis(),
-    set: jest.fn().mockReturnThis(),
-    send: jest.fn().mockReturnThis(),
-    attach: jest.fn().mockReturnThis(),
-    field: jest.fn().mockReturnThis(),
-    expect: jest.fn().mockResolvedValue({ body: {} }),
-  };
-
-  return jest.fn(() => mockRequest);
 });

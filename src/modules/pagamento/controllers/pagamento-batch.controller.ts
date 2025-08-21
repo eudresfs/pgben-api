@@ -28,7 +28,7 @@ import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { CancelarPagamentoDto } from '../dtos/cancelar-pagamento.dto';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { UserRole } from '../../../enums';
-import { RequiresPermission } from '@/auth/decorators/requires-permission.decorator';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 
 /**
  * Controller para operações em lote de pagamentos

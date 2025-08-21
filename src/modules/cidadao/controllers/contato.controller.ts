@@ -20,8 +20,8 @@ import { ContatoService } from '../services/contato.service';
 import { ContatoDto } from '../dto/contato.dto';
 import { Contato } from '../../../entities/contato.entity';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
-import { PermissionGuard } from '@/auth/guards/permission.guard';
-import { RequiresPermission } from '@/auth/decorators/requires-permission.decorator';
+import { PermissionGuard } from '../../../auth/guards/permission.guard';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { TipoEscopo } from '@/entities/user-permission.entity';
 
 @ApiTags('Contatos')

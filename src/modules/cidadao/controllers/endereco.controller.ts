@@ -20,8 +20,8 @@ import { EnderecoService } from '../services/endereco.service';
 import { EnderecoDto } from '../dto/endereco.dto';
 import { Endereco } from '../../../entities/endereco.entity';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
-import { PermissionGuard } from '@/auth/guards/permission.guard';
-import { RequiresPermission } from '@/auth/decorators/requires-permission.decorator';
+import { PermissionGuard } from '../../../auth/guards/permission.guard';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { TipoEscopo } from '@/entities/user-permission.entity';
 
 @ApiTags('Endereços')

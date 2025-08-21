@@ -32,8 +32,8 @@ import { CreateSituacaoMoradiaDto } from '../dto/create-situacao-moradia.dto';
 import { CreateSituacaoMoradiaBodyDto } from '../dto/create-situacao-moradia-body.dto';
 import { UpdateSituacaoMoradiaDto } from '../dto/update-situacao-moradia.dto';
 import { SituacaoMoradiaResponseDto } from '../dto/situacao-moradia-response.dto';
-import { PermissionGuard } from '@/auth/guards/permission.guard';
-import { RequiresPermission } from '@/auth/decorators/requires-permission.decorator';
+import { PermissionGuard } from '../../../auth/guards/permission.guard';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { TipoEscopo } from '@/entities/user-permission.entity';
 
 /**

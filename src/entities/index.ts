@@ -126,5 +126,11 @@ export {
   UploadTokenStatus,
 } from '../modules/easy-upload/entities/upload-token.entity';
 
-// Exportações de Auth/Permissões
+// Entidades de Monitoramento e Visitas Domiciliares
+export { AgendamentoVisita } from '../modules/monitoramento/entities/agendamento-visita.entity';
+export { VisitaDomiciliar } from '../modules/monitoramento/entities/visita-domiciliar.entity';
+export { AvaliacaoVisita } from '../modules/monitoramento/entities/avaliacao-visita.entity';
+export { HistoricoMonitoramento } from '../modules/monitoramento/entities/historico-monitoramento.entity';
+
+// Entidades de Permissões
 export { ScopeType } from './user-permission.entity';

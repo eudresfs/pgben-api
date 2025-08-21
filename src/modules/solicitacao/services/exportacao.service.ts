@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { Solicitacao } from '../../../entities/solicitacao.entity';
 import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
 
@@ -45,10 +45,10 @@ export class ExportacaoService {
       }
 
       if (filtros?.data_inicio && filtros?.data_fim) {
-        where.created_at = {
-          $gte: new Date(filtros.data_inicio),
-          $lte: new Date(filtros.data_fim),
-        };
+        where.created_at = Between(
+          new Date(filtros.data_inicio),
+          new Date(filtros.data_fim)
+        );
       }
 
       // Buscar solicitações

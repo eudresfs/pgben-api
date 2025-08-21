@@ -28,6 +28,7 @@ import { RecursoModule } from './modules/recurso/recurso.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { PagamentoModule } from './modules/pagamento/pagamento.module';
 import { AprovacaoModule } from './modules/aprovacao/aprovacao.module';
+import { MonitoramentoModule } from './modules/monitoramento/monitoramento.module';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { CatalogAwareExceptionFilter } from './shared/exceptions/error-catalog';
 import { LoggingModule } from './shared/logging/logging.module';
@@ -173,12 +174,12 @@ import { RequestContextHolder } from './common/services/request-context-holder.s
 
     // Módulo de notificações
     NotificacaoModule,
-
-    // Módulo de aprovação v2
+    // Módulo de aprovação
     AprovacaoModule,
-
+    // Módulo de monitoramento domiciliar
+    MonitoramentoModule,
     // Módulo de upload facilitado
-    // EasyUploadModule,
+    EasyUploadModule,
   ],
   controllers: [AppController],
   providers: [

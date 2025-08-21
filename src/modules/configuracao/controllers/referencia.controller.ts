@@ -17,7 +17,7 @@ import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { ConcessaoService } from '@/modules/beneficio/services/concessao.service';
 import { StatusConcessao } from '@/entities';
-import { Public } from '@/auth/decorators/public.decorator';
+import { Public } from '../../../auth/decorators/public.decorator';
 import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { UserAccessTokenClaims } from '../../../auth/dtos/auth-token-output.dto';
 import { Status } from '@/enums';

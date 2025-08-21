@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, LessThan } from 'typeorm';
 import { DocumentoBatchJob } from '../../../../entities/documento-batch-job.entity';
 import { StatusDownloadLoteEnum } from '../../../../entities/documento-batch-job.entity';
 
@@ -87,9 +87,7 @@ export class BatchJobManagerService {
           StatusDownloadLoteEnum.PENDING,
           StatusDownloadLoteEnum.PROCESSING,
         ]),
-        created_at: {
-          $lt: timeoutDate,
-        } as any,
+        created_at: LessThan(timeoutDate),
       },
     });
 
