@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.8](https://github.com/kemosoft-team/pgben-server/compare/v0.1.7...v0.1.8) (2025-08-22)
+
+
+### Features
+
+* **approval:** add automatic permission registration for approvers ([01730df](https://github.com/kemosoft-team/pgben-server/commit/01730df274a2f468b699432c46044aaa4cbb2a0b))
+* **cidadao:** add nacionalidade field and portal transparencia integration ([af45b30](https://github.com/kemosoft-team/pgben-server/commit/af45b30d980fed6acda49cad9c8cc6c7a6c34951))
+* **monitoramento:** add monitoring module with visit scheduling and evaluation ([51d65ce](https://github.com/kemosoft-team/pgben-server/commit/51d65ceb6dedf9d467839ac3fc7b6459a5954f0e))
+* **pagamento:** add payment release criteria and filtering options ([2aff515](https://github.com/kemosoft-team/pgben-server/commit/2aff515a768b911f1edf4449b1da3316fe2bfa9f))
+
+
+### Bug Fixes
+
+* **aprovacao:** prevent permission removal when user is still approver in other actions ([65b981e](https://github.com/kemosoft-team/pgben-server/commit/65b981e6dcecfe103e545e4cbda12626c8b9d351))
+
 ### [0.1.7](https://github.com/kemosoft-team/pgben-server/compare/v0.1.6...v0.1.7) (2025-08-20)
 
 
