@@ -263,7 +263,7 @@ export class SolicitacaoController {
               description: 'Exemplo de solicitação para auxílio natalidade',
               value: {
                 beneficiario_id: '550e8400-e29b-41d4-a716-446655440000',
-                tipo_beneficio_id: '660e8400-e29b-41d4-a716-446655440001',
+                beneficio_id: '660e8400-e29b-41d4-a716-446655440001',
                 unidade_id: '770e8400-e29b-41d4-a716-446655440002',
                 observacoes:
                   'Solicitação para auxílio natalidade - primeiro filho',
@@ -292,7 +292,7 @@ export class SolicitacaoController {
               description: 'Exemplo de solicitação para aluguel social',
               value: {
                 beneficiario_id: '550e8400-e29b-41d4-a716-446655440003',
-                tipo_beneficio_id: '660e8400-e29b-41d4-a716-446655440004',
+                beneficio_id: '660e8400-e29b-41d4-a716-446655440004',
                 unidade_id: '770e8400-e29b-41d4-a716-446655440002',
                 observacoes:
                   'Família em situação de vulnerabilidade habitacional',
