@@ -1,5 +1,6 @@
 import { Module, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { HttpModule } from '@nestjs/axios';
 import { CidadaoController } from './controllers/cidadao.controller';
 import { CidadaoService } from './services/cidadao.service';
 import { CidadaoRepository } from './repositories/cidadao.repository';
@@ -14,6 +15,7 @@ import {
   Solicitacao,
 } from '../../entities';
 import { CacheModule } from '../../shared/cache';
+import { EnhancedCacheService } from '../../shared/cache/enhanced-cache.service';
 import { InfoBancariaController } from './controllers/info-bancaria.controller';
 import { InfoBancariaService } from './services/info-bancaria.service';
 import { InfoBancariaRepository } from './repositories/info-bancaria.repository';
@@ -49,6 +51,10 @@ import { createScopedRepositoryProvider } from '../../common/providers/scoped-re
       Endereco,
       Solicitacao, // Adicionado para validação cruzada com composição familiar
     ]),
+    HttpModule.register({
+      timeout: 10000,
+      maxRedirects: 3,
+    }),
     CacheModule,
     AuthModule,
     NotificacaoModule,
@@ -74,6 +80,7 @@ import { createScopedRepositoryProvider } from '../../common/providers/scoped-re
     SituacaoMoradiaService,
     ContatoService,
     EnderecoService,
+    EnhancedCacheService,
   ],
   exports: [
     TypeOrmModule,

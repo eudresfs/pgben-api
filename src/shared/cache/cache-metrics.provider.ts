@@ -285,29 +285,6 @@ export class CacheMetricsProvider implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Registra um hit no cache
-   */
-  registerCacheHit(): void {
-    this.cacheHits++;
-    this.cacheOperations.get++;
-  }
-
-  /**
-   * Registra um miss no cache
-   */
-  registerCacheMiss(): void {
-    this.cacheMisses++;
-    this.cacheOperations.get++;
-  }
-
-  /**
-   * Registra uma operação de set no cache
-   */
-  registerCacheSet(): void {
-    this.cacheOperations.set++;
-  }
-
-  /**
    * Registra uma operação de delete no cache
    */
   registerCacheDelete(): void {
@@ -325,8 +302,182 @@ export class CacheMetricsProvider implements OnModuleInit, OnModuleDestroy {
    * Registra uma falha no cache
    */
   registerCacheFailure(): void {
-    this.cacheFailures++;
-    this.metricsService.recordCacheOperation('failure', false, this.cacheType);
+    if (this.metricsDisabled || !this.cacheEnabled) return;
+
+    try {
+      this.metricsService.recordCacheOperation(
+        'failure',
+        false,
+        'unknown'
+      );
+    } catch (error) {
+      this.logger.debug(
+        `Erro ao registrar falha de cache: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Registra um cache hit com métricas detalhadas
+   * @param entityType Tipo da entidade
+   * @param duration Duração da operação em ms
+   */
+  registerCacheHit(entityType: string, duration: number): void {
+    if (this.metricsDisabled || !this.cacheEnabled) return;
+
+    try {
+      this.metricsService.recordCacheOperation(
+        'get',
+        true,
+        this.cacheType,
+      );
+      
+      this.metricsService.recordCacheOperationDuration(
+        'get',
+        duration / 1000, // Converter para segundos
+        this.cacheType,
+      );
+    } catch (error) {
+      this.logger.debug(
+        `Erro ao registrar cache hit: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Registra um cache miss com métricas detalhadas
+   * @param entityType Tipo da entidade
+   * @param duration Duração da operação em ms
+   */
+  registerCacheMiss(entityType: string, duration: number): void {
+    if (this.metricsDisabled || !this.cacheEnabled) return;
+
+    try {
+      this.metricsService.recordCacheOperation(
+        'get',
+        false,
+        this.cacheType,
+      );
+      
+      this.metricsService.recordCacheOperationDuration(
+        'get',
+        duration / 1000, // Converter para segundos
+        this.cacheType,
+      );
+    } catch (error) {
+      this.logger.debug(
+        `Erro ao registrar cache miss: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Registra uma operação de set no cache
+   * @param entityType Tipo da entidade
+   * @param duration Duração da operação em ms
+   */
+  registerCacheSet(entityType: string, duration: number): void {
+    if (this.metricsDisabled || !this.cacheEnabled) return;
+
+    try {
+      this.metricsService.recordCacheOperation(
+        'set',
+        true,
+        this.cacheType,
+      );
+      
+      this.metricsService.recordCacheOperationDuration(
+        'set',
+        duration / 1000, // Converter para segundos
+        this.cacheType,
+      );
+    } catch (error) {
+      this.logger.debug(
+        `Erro ao registrar cache set: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Registra uma operação de set em lote
+   * @param entityType Tipo da entidade
+   * @param operationCount Número de operações
+   * @param duration Duração total em ms
+   */
+  registerCacheBatchSet(entityType: string, operationCount: number, duration: number): void {
+    if (this.metricsDisabled || !this.cacheEnabled) return;
+
+    try {
+      this.metricsService.recordCacheOperation(
+        'batch_set',
+        true,
+        entityType
+      );
+      
+      this.metricsService.recordCacheOperationDuration(
+        'batch_set',
+        duration / 1000,
+        entityType
+      );
+    } catch (error) {
+      this.logger.debug(
+        `Erro ao registrar cache batch set: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Registra uma operação de invalidação
+   * @param entityType Tipo da entidade
+   * @param duration Duração da operação em ms
+   */
+  registerCacheInvalidation(entityType: string, duration: number): void {
+    if (this.metricsDisabled || !this.cacheEnabled) return;
+
+    try {
+      this.metricsService.recordCacheOperation(
+        'invalidation',
+        true,
+        this.cacheType,
+      );
+      
+      this.metricsService.recordCacheOperationDuration(
+        'invalidation',
+        duration / 1000, // Converter para segundos
+        this.cacheType,
+      );
+    } catch (error) {
+      this.logger.debug(
+        `Erro ao registrar cache invalidation: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Registra um erro de cache com tipo de entidade
+   * @param entityType Tipo da entidade
+   * @param duration Duração da operação em ms
+   */
+  registerCacheError(entityType: string, duration: number): void {
+    if (this.metricsDisabled || !this.cacheEnabled) return;
+
+    try {
+      this.metricsService.recordCacheOperation(
+        'error',
+        false,
+        this.cacheType,
+      );
+      
+      this.metricsService.recordCacheOperationDuration(
+        'error',
+        duration / 1000, // Converter para segundos
+        this.cacheType,
+      );
+    } catch (error) {
+      this.logger.debug(
+        `Erro ao registrar cache error: ${error.message}`,
+      );
+    }
   }
 
   /**

@@ -9,12 +9,14 @@ import {
   IsArray,
   ValidateIf,
   IsDate,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Sexo } from '../../../enums/sexo.enum';
 import { EstadoCivil } from '../../../enums/estado-civil.enum';
 import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
+import { NacionalidadeValidator } from '../validators/nacionalidade-validator';
 import { CreateComposicaoFamiliarDto } from './create-composicao-familiar.dto';
 import { ContatoDto } from './contato.dto';
 import { EnderecoDto } from './endereco.dto';
@@ -64,6 +66,17 @@ export class UpdateCidadaoDto {
     description: 'Cidade de Naturalidade',
   })
   naturalidade?: string;
+
+  @IsString({ message: 'Nacionalidade deve ser uma string' })
+  @IsOptional()
+  @MaxLength(50, { message: 'Nacionalidade deve ter no máximo 50 caracteres' })
+  @Validate(NacionalidadeValidator, { message: 'Nacionalidade inválida' })
+  @ApiPropertyOptional({
+    example: 'Brasileira',
+    description: 'Nacionalidade do cidadão',
+    maxLength: 50,
+  })
+  nacionalidade?: string;
 
   @IsOptional()
   @ApiPropertyOptional({

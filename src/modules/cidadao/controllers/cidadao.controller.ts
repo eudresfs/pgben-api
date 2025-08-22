@@ -29,6 +29,7 @@ import {
   CidadaoResponseDto,
   CidadaoPaginatedResponseDto,
 } from '../dto/cidadao-response.dto';
+import { DadosPortalTransparenciaDto } from '../dto/portal-transparencia-response.dto';
 import { AutoAudit, SensitiveDataAccess } from '../../auditoria';
 import { TransferirUnidadeDto } from '../dto/transferir-unidade.dto';
 
@@ -339,7 +340,7 @@ export class CidadaoController {
   async findByCpf(
     @Param('cpf') cpf: string,
     @Request() req,
-  ): Promise<CidadaoResponseDto> {
+  ): Promise<CidadaoResponseDto | DadosPortalTransparenciaDto> {
     return this.cidadaoService.findByCpf(cpf, true, req.user.id);
   }
 

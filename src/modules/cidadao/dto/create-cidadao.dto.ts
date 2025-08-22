@@ -22,6 +22,7 @@ import { CreateInfoBancariaBodyDto } from './create-info-bancaria-body.dto';
 import { Sexo, EstadoCivil, TipoDocumentoEnum } from '../../../enums';
 import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
+import { NacionalidadeValidator } from '../validators/nacionalidade-validator';
 
 /**
  * DTO para criação de cidadão
@@ -71,6 +72,18 @@ export class CreateCidadaoDto {
     description: 'Cidade de Naturalidade',
   })
   naturalidade?: string;
+
+  @IsString({ message: 'Nacionalidade deve ser uma string' })
+  @IsOptional()
+  @MaxLength(50, { message: 'Nacionalidade deve ter no máximo 50 caracteres' })
+  @Validate(NacionalidadeValidator, { message: 'Nacionalidade inválida' })
+  @ApiPropertyOptional({
+    example: 'Brasileira',
+    description: 'Nacionalidade do cidadão',
+    default: 'Brasileira',
+    maxLength: 50,
+  })
+  nacionalidade?: string;
 
   @IsOptional()
   @ApiProperty({

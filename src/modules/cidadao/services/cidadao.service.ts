@@ -3,7 +3,10 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 import { CidadaoRepository } from '../repositories/cidadao.repository';
 import { CreateCidadaoDto } from '../dto/create-cidadao.dto';
 import {
@@ -21,9 +24,17 @@ import { ConfigService } from '@nestjs/config';
 import { AuditEventEmitter, AuditEventType } from '../../auditoria';
 import { Cidadao } from '../../../entities/cidadao.entity';
 import { TransferirUnidadeDto } from '../dto/transferir-unidade.dto';
+import {
+  PortalTransparenciaResponseDto,
+  DadosPortalTransparenciaDto,
+  NovoBolsaFamiliaSacadoResponseDto,
+} from '../dto/portal-transparencia-response.dto';
+import { EnhancedCacheService } from '../../../shared/cache/enhanced-cache.service';
 
 @Injectable()
 export class CidadaoService {
+  private readonly logger = new Logger(CidadaoService.name);
+
   constructor(
     private readonly cidadaoRepository: CidadaoRepository,
     private readonly contatoService: ContatoService,
@@ -34,6 +45,8 @@ export class CidadaoService {
     private readonly composicaoFamiliarService: ComposicaoFamiliarService,
     private readonly configService: ConfigService,
     private readonly auditEmitter: AuditEventEmitter,
+    private readonly httpService: HttpService,
+    private readonly enhancedCacheService: EnhancedCacheService,
   ) {}
 
   async findAll(
@@ -112,7 +125,7 @@ export class CidadaoService {
     cpf: string,
     includeRelations = false,
     userId?: string,
-  ): Promise<CidadaoResponseDto> {
+  ): Promise<CidadaoResponseDto | DadosPortalTransparenciaDto> {
     if (!cpf || cpf.trim() === '') {
       throw new BadRequestException('CPF é obrigatório');
     }
@@ -122,27 +135,45 @@ export class CidadaoService {
       throw new BadRequestException('CPF deve ter 11 dígitos');
     }
 
+    // Primeiro, tentar encontrar na base local
     const cidadao = await this.cidadaoRepository.findByCpf(
       cpfClean,
       includeRelations,
     );
-    if (!cidadao) {
-      throw new NotFoundException('Cidadão não encontrado');
+
+    if (cidadao) {
+      // Cidadão encontrado na base local
+      // Auditoria de acesso a dados sensíveis por CPF
+      await this.auditEmitter.emitSensitiveDataEvent(
+        AuditEventType.SENSITIVE_DATA_ACCESSED,
+        'Cidadao',
+        cidadao.id,
+        userId || 'system',
+        ['cpf'],
+        'Consulta por CPF - Base Local',
+      );
+
+      return plainToInstance(CidadaoResponseDto, cidadao, {
+        excludeExtraneousValues: true,
+      });
     }
 
-    // Auditoria de acesso a dados sensíveis por CPF
-    await this.auditEmitter.emitSensitiveDataEvent(
-      AuditEventType.SENSITIVE_DATA_ACCESSED,
-      'Cidadao',
-      cidadao.id,
-      userId || 'system',
-      ['cpf'],
-      'Consulta por CPF',
+    // Fallback: consultar Portal da Transparência se não encontrado localmente
+    this.logger.debug(`Cidadão não encontrado na base local para CPF: ${cpfClean.substring(0, 3)}***. Consultando Portal da Transparência...`);
+    
+    const dadosPortalTransparencia = await this.consultarPortalTransparencia(
+      cpfClean,
+      userId,
     );
 
-    return plainToInstance(CidadaoResponseDto, cidadao, {
-      excludeExtraneousValues: true,
-    });
+    if (dadosPortalTransparencia) {
+      this.logger.debug(`Dados encontrados no Portal da Transparência para CPF: ${cpfClean.substring(0, 3)}***`);
+      return dadosPortalTransparencia;
+    }
+
+    // Se não encontrado em nenhuma fonte, lançar exceção
+    this.logger.warn(`Cidadão não encontrado em nenhuma fonte para CPF: ${cpfClean.substring(0, 3)}***`);
+    throw new NotFoundException('Cidadão não encontrado na base local nem no Portal da Transparência');
   }
 
   async findByNis(
@@ -181,6 +212,302 @@ export class CidadaoService {
       excludeExtraneousValues: true,
     });
   }
+
+  /**
+   * Consulta dados de pessoa física no Portal da Transparência
+   * @param cpf CPF da pessoa física (apenas números)
+   * @param userId ID do usuário que está fazendo a consulta (para auditoria)
+   * @returns Dados consolidados do Portal da Transparência
+   */
+  async consultarPortalTransparencia(
+    cpf: string,
+    userId?: string,
+  ): Promise<DadosPortalTransparenciaDto | null> {
+    try {
+      // Validar CPF
+      if (!cpf || cpf.trim() === '') {
+        throw new BadRequestException('CPF é obrigatório');
+      }
+
+      const cpfClean = cpf.replace(/\D/g, '');
+      if (cpfClean.length !== 11) {
+        throw new BadRequestException('CPF deve ter 11 dígitos');
+      }
+
+      // Verificar cache primeiro
+      const cacheKey = `portal_transparencia:${cpfClean}`;
+      const dadosCache = await this.enhancedCacheService.get<DadosPortalTransparenciaDto>(
+        cacheKey,
+        'portal_transparencia'
+      );
+      
+      if (dadosCache) {
+        this.logger.debug(`Dados encontrados no cache para CPF: ${cpfClean.substring(0, 3)}***`);
+        return dadosCache;
+      }
+
+      // Obter chave da API do Portal da Transparência
+      const apiKey = this.configService.get<string>('API_PORTAL_TRANSPARENCIA');
+      if (!apiKey) {
+        this.logger.warn('Chave da API do Portal da Transparência não configurada');
+        return null;
+      }
+
+      // Configurar URL e headers da requisição
+      const url = 'https://api.portaldatransparencia.gov.br/api-de-dados/pessoa-fisica';
+      const headers = {
+        'chave-api-dados': apiKey,
+        'Accept': '*/json',
+        'User-Agent': 'PGBEN-Server/1.0',
+      };
+
+      const params = {
+        cpf: cpfClean,
+      };
+
+      // Realizar requisição HTTP
+      const response = await firstValueFrom(
+        this.httpService.get<PortalTransparenciaResponseDto>(url, {
+          headers,
+          params,
+          timeout: 8000,
+        }),
+      );
+
+      if (!response.data) {
+        this.logger.warn('Portal da Transparência retornou resposta vazia');
+        return null;
+      }
+
+      // Processar e consolidar dados
+      const dadosConsolidados = await this.processarDadosPortalTransparencia(response.data, userId);
+      dadosConsolidados.cpf = cpfClean;
+
+      // Armazenar no cache com TTL de 6 horas (dados do Portal da Transparência são relativamente estáveis)
+      await this.enhancedCacheService.set(
+        cacheKey,
+        dadosConsolidados,
+        'portal_transparencia',
+        6 * 60 * 60 // 6 horas em segundos
+      );
+
+      // Auditoria da consulta externa
+      await this.auditEmitter.emitSensitiveDataEvent(
+        AuditEventType.SENSITIVE_DATA_ACCESSED,
+        'PortalTransparencia',
+        cpfClean,
+        userId || 'system',
+        ['cpf', 'nome', 'nis', 'naturalidade'],
+        'Consulta no Portal da Transparência',
+      );
+
+      this.logger.debug(`Dados obtidos do Portal da Transparência para CPF: ${dadosConsolidados.cpf}`);
+
+      return dadosConsolidados;
+    } catch (error) {
+      // Log do erro sem expor dados sensíveis
+      this.logger.error(
+        `Erro ao consultar Portal da Transparência: ${error.message}`,
+        error.stack,
+      );
+
+      // Se for erro de API (401, 403, etc.), retornar null ao invés de lançar exceção
+      if (error.response?.status >= 400 && error.response?.status < 500) {
+        this.logger.warn(
+          `Erro de autenticação/autorização no Portal da Transparência: ${error.response.status}`,
+        );
+        return null;
+      }
+
+      // Para outros erros, também retornar null para não quebrar o fluxo
+      return null;
+    }
+  }
+
+  /**
+   * Processa e consolida dados do Portal da Transparência
+   * @param dados Dados brutos retornados pela API
+   * @param userId ID do usuário para auditoria
+   * @returns Dados consolidados e formatados
+   */
+  private async processarDadosPortalTransparencia(
+    dados: PortalTransparenciaResponseDto,
+    userId?: string,
+  ): Promise<DadosPortalTransparenciaDto> {
+    const beneficiosAtivos: string[] = [];
+    const sancoes: string[] = [];
+    const vinculosGovernamentais: string[] = [];
+
+    // Mapear benefícios ativos
+    if (dados.favorecidoBolsaFamilia) beneficiosAtivos.push('Bolsa Família');
+    if (dados.favorecidoNovoBolsaFamilia) beneficiosAtivos.push('Novo Bolsa Família');
+    if (dados.favorecidoAuxilioBrasil) beneficiosAtivos.push('Auxílio Brasil');
+    if (dados.auxilioEmergencial) beneficiosAtivos.push('Auxílio Emergencial');
+    if (dados.favorecidoBpc) beneficiosAtivos.push('BPC');
+    if (dados.favorecidoPeti) beneficiosAtivos.push('PETI');
+    if (dados.favorecidoSafra) beneficiosAtivos.push('Safra');
+    if (dados.favorecidoSeguroDefeso) beneficiosAtivos.push('Seguro Defeso');
+    if (dados.favorecidoAuxilioReconstrucao) beneficiosAtivos.push('Auxílio Reconstrução');
+    if (dados.favorecidoTransferencias) beneficiosAtivos.push('Transferências Diretas');
+
+    // Mapear sanções
+    if (dados.sancionadoCEIS) sancoes.push('CEIS - Cadastro de Empresas Inidôneas e Suspensas');
+    if (dados.sancionadoCNEP) sancoes.push('CNEP - Cadastro Nacional de Empresas Punidas');
+    if (dados.sancionadoCEAF) sancoes.push('CEAF - Cadastro de Entidades sem Fins Lucrativos Impedidas');
+
+    // Mapear vínculos governamentais
+    if (dados.servidor) vinculosGovernamentais.push('Servidor Público Ativo');
+    if (dados.servidorInativo) vinculosGovernamentais.push('Servidor Público Inativo');
+    if (dados.favorecidoDespesas) vinculosGovernamentais.push('Favorecido de Despesas');
+    if (dados.beneficiarioDiarias) vinculosGovernamentais.push('Beneficiário de Diárias');
+    if (dados.permissionario) vinculosGovernamentais.push('Permissionário');
+    if (dados.contratado) vinculosGovernamentais.push('Contratado');
+    if (dados.participanteLicitacao) vinculosGovernamentais.push('Participante de Licitação');
+    if (dados.pensionistaOuRepresentanteLegal) vinculosGovernamentais.push('Pensionista ou Representante Legal');
+    if (dados.instituidorPensao) vinculosGovernamentais.push('Instituidor de Pensão');
+
+    // Validar e filtrar NIS inválido
+    // O Portal da Transparência pode retornar valores inválidos como "00000000000" ou "11111111111"
+    const nisValido = this.validarNis(dados.nis);
+
+    // Consultar dados do Novo Bolsa Família se o benefício estiver ativo e NIS for válido
+    let novoBolsaFamiliaSacado: NovoBolsaFamiliaSacadoResponseDto[] = [];
+    if (dados.favorecidoNovoBolsaFamilia && nisValido) {
+      try {
+        novoBolsaFamiliaSacado = await this.consultarNovoBolsaFamiliaSacado(
+          nisValido,
+          '202506',
+          1,
+          userId,
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Erro ao consultar Novo Bolsa Família para NIS ${nisValido}: ${error.message}`,
+        );
+      }
+    }
+
+    return plainToInstance(DadosPortalTransparenciaDto, {
+      cpf: dados.cpf,
+      nome: dados.nome,
+      nis: nisValido || undefined,
+      naturalidade: novoBolsaFamiliaSacado.length > 0 ? novoBolsaFamiliaSacado[0].naturalidade : undefined,
+      beneficiosAtivos,
+      sancoes,
+      vinculosGovernamentais,
+      dadosBolsaFamilia: novoBolsaFamiliaSacado.length > 0 ? novoBolsaFamiliaSacado : undefined,
+    }, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+/**
+ * Valida se o NIS é válido, ignorando valores inválidos conhecidos
+ * @param nis Número de Identificação Social
+ * @returns NIS válido ou null se inválido
+ */
+private validarNis(nis?: string): string | null {
+  const nisClean = nis?.replace(/\D/g, '') ?? '';
+
+  if (
+    nisClean.length !== 11 ||
+    /^(\d)\1{10}$/.test(nisClean) // repete o mesmo dígito 11 vezes
+  ) {
+    this.logger?.debug?.(`NIS inválido ignorado: ${nisClean}`);
+    return null;
+  }
+
+  return nisClean;
+}
+
+/**
+ * Consulta dados do Novo Bolsa Família sacado por NIS
+ * @param nis Número de Identificação Social
+ * @param anoMesReferencia Ano e mês de referência no formato YYYYMM
+ * @param pagina Número da página para paginação
+ * @param userId ID do usuário para auditoria
+ * @returns Dados do Novo Bolsa Família sacado ou null se não encontrado
+ */
+private async consultarNovoBolsaFamiliaSacado(
+  nis: string,
+  anoMesReferencia: string = '202506',
+  pagina: number = 1,
+  userId?: string,
+): Promise<NovoBolsaFamiliaSacadoResponseDto[]> {
+  try {
+    // Obter chave da API do Portal da Transparência
+    const apiKey = this.configService.get<string>('API_PORTAL_TRANSPARENCIA');
+    if (!apiKey) {
+      this.logger.warn('Chave da API do Portal da Transparência não configurada');
+      return [];
+    }
+
+    // Configurar URL e headers da requisição
+    const url = 'https://api.portaldatransparencia.gov.br/api-de-dados/novo-bolsa-familia-sacado-por-nis';
+    const headers = {
+      'chave-api-dados': apiKey,
+      'Accept': 'application/json',
+      'User-Agent': 'PGBEN-Server/1.0',
+    };
+
+    const params = {
+      nis,
+      anoMesReferencia,
+      pagina: pagina.toString(),
+    };
+
+    // Realizar requisição HTTP
+    const response = await firstValueFrom(
+      this.httpService.get<NovoBolsaFamiliaSacadoResponseDto[]>(url, {
+        headers,
+        params,
+        timeout: 8000,
+      }),
+    );
+
+    if (!response.data || !Array.isArray(response.data)) {
+      this.logger.warn('Portal da Transparência retornou resposta vazia para Novo Bolsa Família');
+      return [];
+    }
+
+    // Adicionar propriedade naturalidade a cada item
+    const dadosComNaturalidade = response.data.map(item => ({
+      ...item,
+      naturalidade: `${item.municipio.nomeIBGE}/${item.municipio.uf.nome}`,
+    }));
+
+    // Auditoria da consulta externa
+    await this.auditEmitter.emitSensitiveDataEvent(
+      AuditEventType.SENSITIVE_DATA_ACCESSED,
+      'PortalTransparencia-NovoBolsaFamilia',
+      nis,
+      userId || 'system',
+      ['nis', 'nome', 'cpf', 'valorSaque'],
+      'Consulta do Novo Bolsa Família sacado por NIS',
+    );
+
+    this.logger.debug(`Dados do Novo Bolsa Família obtidos para NIS: ${nis}`);
+
+    return dadosComNaturalidade;
+  } catch (error) {
+    // Log do erro sem expor dados sensíveis
+    this.logger.error(
+      `Erro ao consultar Novo Bolsa Família por NIS: ${error.message}`,
+      error.stack,
+    );
+
+    // Se for erro de API (401, 403, etc.), retornar array vazio ao invés de lançar exceção
+    if (error.response?.status >= 400 && error.response?.status < 500) {
+      this.logger.warn(
+        `Erro de autenticação/autorização no Portal da Transparência (Novo Bolsa Família): ${error.response.status}`,
+      );
+      return [];
+    }
+
+    // Para outros erros, também retornar array vazio para não quebrar o fluxo
+    return [];
+  }
+}
 
   async create(
     createCidadaoDto: CreateCidadaoDto,

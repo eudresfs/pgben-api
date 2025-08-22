@@ -84,6 +84,12 @@ export class Cidadao {
   @IsNotEmpty({ message: 'Naturalidade é obrigatório' })
   naturalidade: string;
 
+  @Column({ default: 'Brasileira' })
+  @IsOptional()
+  @IsString({ message: 'Nacionalidade deve ser uma string' })
+  @MaxLength(50, { message: 'Nacionalidade deve ter no máximo 50 caracteres' })
+  nacionalidade: string;
+
   @Column({ nullable: false })
   @IsNotEmpty({ message: 'Prontuario SUAS é obrigatório' })
   prontuario_suas: string;
@@ -434,6 +440,7 @@ export class Cidadao {
     novoCidadao.nis = this.nis;
     novoCidadao.nome_mae = this.nome_mae;
     novoCidadao.naturalidade = this.naturalidade;
+    novoCidadao.nacionalidade = this.nacionalidade;
     novoCidadao.prontuario_suas = this.prontuario_suas;
     novoCidadao.data_nascimento = this.data_nascimento;
     novoCidadao.sexo = this.sexo;
