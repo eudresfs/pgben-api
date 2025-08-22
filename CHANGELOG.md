@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.9](https://github.com/kemosoft-team/pgben-server/compare/v0.1.8...v0.1.9) (2025-08-22)
+
+
+### Bug Fixes
+
+* **email:** correct email deduplication logic and add tests ([5e783e5](https://github.com/kemosoft-team/pgben-server/commit/5e783e50f24423acfb0bee1372c006b2d3d448c2))
+
 ### [0.1.8](https://github.com/kemosoft-team/pgben-server/compare/v0.1.7...v0.1.8) (2025-08-22)
 
 
