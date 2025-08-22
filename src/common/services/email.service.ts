@@ -587,13 +587,20 @@ export class EmailService implements OnModuleDestroy {
    * Verifica se o email é duplicado baseado em hash de conteúdo
    * Evita envio de emails idênticos em um período de 5 minutos
    */
+  /**
+   * Verifica se um email é duplicado baseado no destinatário, assunto e conteúdo
+   * @param recipient - Destinatário do email
+   * @param subject - Assunto do email
+   * @param content - Conteúdo do email (HTML ou texto)
+   * @returns true se o email NÃO é duplicado, false se É duplicado
+   */
   private checkEmailDeduplication(
     recipient: string,
     subject: string,
     content: string,
   ): boolean {
     const now = Date.now();
-    const deduplicationWindowMs = 1 * 60 * 1000; // 1 minutos
+    const deduplicationWindowMs = 1 * 60 * 1000; // 1 minuto
 
     // Gerar hash único baseado no destinatário, assunto e conteúdo
     const contentHash = crypto
@@ -601,17 +608,36 @@ export class EmailService implements OnModuleDestroy {
       .update(`${recipient}:${subject}:${content}`)
       .digest('hex');
 
+    this.logger.debug('Verificando deduplicação de email', {
+      recipient,
+      subject,
+      contentHash: contentHash.substring(0, 12),
+      cacheSize: this.deduplicationCache.size,
+      deduplicationWindowMs,
+    });
+
     // Verificar se já foi enviado recentemente
     const lastSent = this.deduplicationCache.get(contentHash);
     if (lastSent && now - lastSent < deduplicationWindowMs) {
+      const timeSinceLastSent = now - lastSent;
       this.logger.warn(
-        `Email duplicado detectado e bloqueado para ${recipient}. Hash: ${contentHash.substring(0, 8)}...`,
+        `Email duplicado detectado e bloqueado para ${recipient}`,
+        {
+          contentHash: contentHash.substring(0, 12),
+          timeSinceLastSent,
+          deduplicationWindowMs,
+          lastSentAt: new Date(lastSent).toISOString(),
+        },
       );
       return false; // Email duplicado
     }
 
     // Registrar o envio
     this.deduplicationCache.set(contentHash, now);
+    this.logger.debug('Email registrado no cache de deduplicação', {
+      contentHash: contentHash.substring(0, 12),
+      timestamp: new Date(now).toISOString(),
+    });
 
     // Limpar entradas antigas do cache (mais de 5 minutos)
     const cleanupThreshold = now - 5 * 60 * 1000;
@@ -626,6 +652,10 @@ export class EmailService implements OnModuleDestroy {
     if (cleaned > 0) {
       this.logger.debug(
         `Cache de deduplicação limpo: ${cleaned} entradas removidas`,
+        {
+          remainingEntries: this.deduplicationCache.size,
+          cleanupThreshold: new Date(cleanupThreshold).toISOString(),
+        },
       );
     }
 
@@ -662,7 +692,7 @@ export class EmailService implements OnModuleDestroy {
 
       // Verificar deduplicação
       const recipientString = Array.isArray(options.to) ? options.to.join(',') : options.to;
-      if (this.checkEmailDeduplication(recipientString, subject, html || text || '')) {
+      if (!this.checkEmailDeduplication(recipientString, subject, html || text || '')) {
         this.logger.warn('E-mail duplicado detectado e bloqueado', {
           to: recipientString,
           subject,
