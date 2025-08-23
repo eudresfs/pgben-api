@@ -20,6 +20,7 @@ import {
   EstrategiaAprovacao,
   TipoAcaoCritica,
 } from '../enums';
+import { Status } from '../../../enums/status.enum';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { NotificacaoService } from '../../notificacao/services/notificacao.service';
 import { AprovacaoNotificationService } from './aprovacao-notification.service';
@@ -60,6 +61,7 @@ describe('AprovacaoService', () => {
     update: jest.fn(),
     createQueryBuilder: jest.fn(() => ({
       innerJoin: jest.fn().mockReturnThis(),
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       getOne: jest.fn().mockResolvedValue(null),
@@ -89,12 +91,26 @@ describe('AprovacaoService', () => {
   };
 
   const mockSolicitacaoAprovadorRepository = {
-    findOne: jest.fn(),
     find: jest.fn(),
+    findOne: jest.fn(),
     save: jest.fn(),
-    remove: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
+    delete: jest.fn(),
+    createQueryBuilder: jest.fn().mockReturnValue({
+      innerJoin: jest.fn().mockReturnThis(),
+      leftJoin: jest.fn().mockReturnThis(),
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue(null),
+      getMany: jest.fn().mockResolvedValue([]),
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      offset: jest.fn().mockReturnThis(),
+    }),
   };
 
   // Mocks para as dependências do AprovacaoService
@@ -138,6 +154,7 @@ describe('AprovacaoService', () => {
 
   const mockPermissionService = {
     hasPermission: jest.fn(),
+    createPermissionIfNotExists: jest.fn().mockResolvedValue({}),
   };
 
   beforeEach(async () => {
@@ -239,7 +256,7 @@ describe('AprovacaoService', () => {
       const mockAcaoAprovacao = {
         id: 1,
         tipo_acao: tipoAcao,
-        ativo: true,
+        status: Status.ATIVO,
       };
 
       mockAcaoAprovacaoRepository.findOne.mockResolvedValue(mockAcaoAprovacao);
@@ -250,7 +267,7 @@ describe('AprovacaoService', () => {
       // Assert
       expect(resultado).toBe(true);
       expect(mockAcaoAprovacaoRepository.findOne).toHaveBeenCalledWith({
-        where: { tipo_acao: tipoAcao, ativo: true },
+        where: { tipo_acao: tipoAcao, status: Status.ATIVO },
       });
     });
 
@@ -277,7 +294,7 @@ describe('AprovacaoService', () => {
         tipo_acao: tipoAcao,
         estrategia: EstrategiaAprovacao.MAIORIA,
         min_aprovadores: 2,
-        ativo: true,
+        status: Status.ATIVO,
         configuracao_aprovadores: [
           { id: 1, usuario_id: '1', perfil: 'admin' },
           { id: 2, usuario_id: '2', perfil: 'supervisor' }
@@ -336,8 +353,40 @@ describe('AprovacaoService', () => {
       mockAcaoAprovacaoRepository.findOne.mockResolvedValueOnce(mockConfiguracao);
       mockSolicitacaoAprovacaoRepository.create.mockReturnValue(mockSolicitacao);
       mockSolicitacaoAprovacaoRepository.save.mockResolvedValue(mockSolicitacao);
-      // Mock para o findOne usado no obterSolicitacao
-      mockSolicitacaoAprovacaoRepository.findOne.mockResolvedValue(mockSolicitacao);
+      
+      // Mock do createQueryBuilder para validação (não deve encontrar solicitação pendente)
+       const mockQueryBuilderValidacao = {
+         innerJoin: jest.fn().mockReturnThis(),
+         leftJoinAndSelect: jest.fn().mockReturnThis(),
+         where: jest.fn().mockReturnThis(),
+         andWhere: jest.fn().mockReturnThis(),
+         getOne: jest.fn().mockResolvedValue(null), // Não há solicitação pendente
+         getMany: jest.fn().mockResolvedValue([]),
+         select: jest.fn().mockReturnThis(),
+         orderBy: jest.fn().mockReturnThis(),
+         limit: jest.fn().mockReturnThis(),
+         offset: jest.fn().mockReturnThis(),
+       };
+       
+       // Mock do createQueryBuilder para obterSolicitacao (após criação)
+       const mockQueryBuilderObter = {
+         innerJoin: jest.fn().mockReturnThis(),
+         leftJoinAndSelect: jest.fn().mockReturnThis(),
+         where: jest.fn().mockReturnThis(),
+         andWhere: jest.fn().mockReturnThis(),
+         getOne: jest.fn().mockResolvedValue(mockSolicitacao),
+         getMany: jest.fn().mockResolvedValue([]),
+         select: jest.fn().mockReturnThis(),
+         orderBy: jest.fn().mockReturnThis(),
+         limit: jest.fn().mockReturnThis(),
+         offset: jest.fn().mockReturnThis(),
+       };
+       
+       // Primeira chamada para validação, segunda para obter
+       mockSolicitacaoAprovacaoRepository.createQueryBuilder
+         .mockReturnValueOnce(mockQueryBuilderValidacao)
+         .mockReturnValueOnce(mockQueryBuilderObter);
+      
       mockSolicitacaoAprovadorRepository.create.mockImplementation((data) => data);
       mockSolicitacaoAprovadorRepository.save.mockImplementation((data) => Promise.resolve(data));
 
@@ -403,7 +452,37 @@ describe('AprovacaoService', () => {
         rejeitar: jest.fn()
       };
 
-      mockSolicitacaoAprovacaoRepository.findOne.mockResolvedValue(mockSolicitacao);
+      // Mock do createQueryBuilder para retornar a solicitação
+      const mockQueryBuilder = {
+        innerJoin: jest.fn().mockReturnThis(),
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(mockSolicitacao),
+        getMany: jest.fn().mockResolvedValue([]),
+        select: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        offset: jest.fn().mockReturnThis(),
+      };
+      mockSolicitacaoAprovacaoRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      
+      // Mock do createQueryBuilder para buscar aprovador
+       const mockAprovadorQueryBuilder = {
+         innerJoin: jest.fn().mockReturnThis(),
+         leftJoin: jest.fn().mockReturnThis(),
+         leftJoinAndSelect: jest.fn().mockReturnThis(),
+         where: jest.fn().mockReturnThis(),
+         andWhere: jest.fn().mockReturnThis(),
+         getOne: jest.fn().mockResolvedValue(mockAprovador),
+         getMany: jest.fn().mockResolvedValue([]),
+         select: jest.fn().mockReturnThis(),
+         addSelect: jest.fn().mockReturnThis(),
+         orderBy: jest.fn().mockReturnThis(),
+         limit: jest.fn().mockReturnThis(),
+         offset: jest.fn().mockReturnThis(),
+       };
+       mockSolicitacaoAprovadorRepository.createQueryBuilder.mockReturnValue(mockAprovadorQueryBuilder);
       mockSolicitacaoAprovadorRepository.findOne.mockResolvedValue(mockAprovador);
       mockSolicitacaoAprovadorRepository.save.mockResolvedValue({
         ...mockAprovador,
@@ -427,7 +506,20 @@ describe('AprovacaoService', () => {
       const aprovadorId = '1';
       const aprovado = true;
 
-      mockSolicitacaoAprovacaoRepository.findOne.mockResolvedValue(null);
+      // Mock do createQueryBuilder para retornar null (solicitação não encontrada)
+      const mockQueryBuilder = {
+        innerJoin: jest.fn().mockReturnThis(),
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(null),
+        getMany: jest.fn().mockResolvedValue([]),
+        select: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        offset: jest.fn().mockReturnThis(),
+      };
+      mockSolicitacaoAprovacaoRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
       // Act & Assert
       await expect(service.processarAprovacao(solicitacaoId, aprovadorId, aprovado))
@@ -445,7 +537,20 @@ describe('AprovacaoService', () => {
         status: StatusSolicitacao.APROVADA,
       };
 
-      mockSolicitacaoAprovacaoRepository.findOne.mockResolvedValue(mockSolicitacao);
+      // Mock do createQueryBuilder para retornar a solicitação processada
+      const mockQueryBuilder = {
+        innerJoin: jest.fn().mockReturnThis(),
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(mockSolicitacao),
+        getMany: jest.fn().mockResolvedValue([]),
+        select: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        offset: jest.fn().mockReturnThis(),
+      };
+      mockSolicitacaoAprovacaoRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
       // Act & Assert
       await expect(service.processarAprovacao(solicitacaoId, aprovadorId, aprovado))
@@ -462,7 +567,7 @@ describe('AprovacaoService', () => {
         descricao: 'Aprovação para criação de novos usuários',
         estrategia: EstrategiaAprovacao.MAIORIA,
         min_aprovadores: 2,
-        ativo: true,
+        status: Status.ATIVO,
       };
 
       const mockAcaoAprovacao = { id: 1, ...dto };
@@ -498,7 +603,7 @@ describe('AprovacaoService', () => {
       const mockNovaAcao = {
         id: 1,
         ...dto,
-        ativo: true
+        status: Status.ATIVO
       };
 
       mockAcaoAprovacaoRepository.findOne.mockResolvedValue(null);
@@ -517,7 +622,7 @@ describe('AprovacaoService', () => {
         descricao: dto.descricao,
         estrategia: dto.estrategia,
         min_aprovadores: dto.min_aprovadores,
-        ativo: true
+        status: Status.ATIVO
       });
     });
   });
@@ -538,7 +643,7 @@ describe('AprovacaoService', () => {
         id: 1,
         acao_aprovacao_id: acaoId,
         usuario_id: usuarioId,
-        ativo: true,
+        status: Status.ATIVO,
       };
 
       mockAcaoAprovacaoRepository.findOne.mockResolvedValue(mockAcao);
@@ -576,7 +681,7 @@ describe('AprovacaoService', () => {
         id: 1,
         acao_aprovacao_id: acaoId,
         usuario_id: usuarioId,
-        ativo: true,
+        status: Status.ATIVO,
       };
 
       mockAcaoAprovacaoRepository.findOne.mockResolvedValue(mockAcao);

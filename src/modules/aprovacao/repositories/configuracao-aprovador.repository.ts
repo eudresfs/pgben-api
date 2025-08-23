@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
 import { ConfiguracaoAprovador } from '../entities/configuracao-aprovador.entity';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * Repositório para gerenciar configurações de aprovadores
@@ -18,7 +19,7 @@ export class ConfiguracaoAprovadorRepository extends Repository<ConfiguracaoApro
     return this.find({
       where: {
         acao_aprovacao_id: acaoAprovacaoId,
-        ativo: true
+        status: Status.ATIVO
       },
       order: {
         ordem_aprovacao: 'ASC'
@@ -37,7 +38,7 @@ export class ConfiguracaoAprovadorRepository extends Repository<ConfiguracaoApro
       where: {
         usuario_id: usuarioId,
         acao_aprovacao_id: acaoAprovacaoId,
-        ativo: true
+        status: Status.ATIVO
       }
     });
   }
@@ -53,7 +54,7 @@ export class ConfiguracaoAprovadorRepository extends Repository<ConfiguracaoApro
       where: {
         usuario_id: usuarioId,
         acao_aprovacao_id: acaoAprovacaoId,
-        ativo: true
+        status: Status.ATIVO
       }
     });
     return count > 0;
@@ -63,16 +64,30 @@ export class ConfiguracaoAprovadorRepository extends Repository<ConfiguracaoApro
    * Busca todas as ações que um usuário pode aprovar
    */
   async buscarAcoesPorUsuario(usuarioId: string): Promise<ConfiguracaoAprovador[]> {
-    return this.find({
-      where: {
-        usuario_id: usuarioId,
-        ativo: true
-      },
-      relations: ['acao_aprovacao'],
-      order: {
-        ordem_aprovacao: 'ASC'
-      }
-    });
+    return this.createQueryBuilder('configuracao')
+      .select([
+        'configuracao.id',
+        'configuracao.usuario_id',
+        'configuracao.acao_aprovacao_id',
+        'configuracao.ordem_aprovacao',
+        'configuracao.status',
+        'configuracao.created_at',
+        'configuracao.updated_at'
+      ])
+      .leftJoin('configuracao.acao_aprovacao', 'acao')
+      .addSelect([
+        'acao.id',
+        'acao.tipo_acao',
+        'acao.nome',
+        'acao.descricao',
+        'acao.estrategia',
+        'acao.min_aprovadores',
+        'acao.status'
+      ])
+      .where('configuracao.usuario_id = :usuarioId', { usuarioId })
+      .andWhere('configuracao.status = :status', { status: Status.ATIVO })
+      .orderBy('configuracao.ordem_aprovacao', 'ASC')
+      .getMany();
   }
 
   /**
@@ -88,7 +103,7 @@ export class ConfiguracaoAprovadorRepository extends Repository<ConfiguracaoApro
         acao_aprovacao_id: acaoAprovacaoId
       },
       {
-        ativo: false
+        status: Status.INATIVO
       }
     );
   }
@@ -100,7 +115,7 @@ export class ConfiguracaoAprovadorRepository extends Repository<ConfiguracaoApro
     return this.count({
       where: {
         acao_aprovacao_id: acaoAprovacaoId,
-        ativo: true
+        status: Status.ATIVO
       }
     });
   }

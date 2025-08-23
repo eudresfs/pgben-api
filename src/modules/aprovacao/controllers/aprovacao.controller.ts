@@ -25,6 +25,7 @@ import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { AprovacaoService } from '../services';
 import { CriarSolicitacaoDto, ProcessarAprovacaoDto } from '../dtos';
+import { ListaAprovacoesPendentesResponseDto } from '../dtos/response/aprovacao-response.dto';
 import { StatusSolicitacao } from '../enums';
 import { 
   AuditEntity, 
@@ -103,7 +104,8 @@ export class AprovacaoController {
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiResponse({ 
     status: HttpStatus.OK, 
-    description: 'Lista de solicitações retornada com sucesso' 
+    description: 'Lista de solicitações retornada com sucesso',
+    type: ListaAprovacoesPendentesResponseDto
   })
   async listarSolicitacoes(
     @Request() req: any,
@@ -231,7 +233,8 @@ export class AprovacaoController {
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiResponse({ 
     status: HttpStatus.OK, 
-    description: 'Lista de solicitações pendentes' 
+    description: 'Lista de solicitações pendentes',
+    type: ListaAprovacoesPendentesResponseDto
   })
   async minhasSolicitacoesPendentes(
     @Query('page') page: number = 1,
@@ -273,7 +276,8 @@ export class AprovacaoController {
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiResponse({ 
     status: HttpStatus.OK, 
-    description: 'Lista de aprovações pendentes para a entidade' 
+    description: 'Lista de aprovações pendentes para a entidade',
+    type: ListaAprovacoesPendentesResponseDto
   })
   @ApiResponse({ 
     status: HttpStatus.BAD_REQUEST, 

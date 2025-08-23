@@ -17,7 +17,7 @@ export class PagamentoRepository {
   constructor(
     @InjectScopedRepository(Pagamento)
     private readonly scopedRepository: ScopedRepository<Pagamento>,
-  ) {}
+  ) { }
 
   /**
    * Cria um novo pagamento
@@ -278,6 +278,12 @@ export class PagamentoRepository {
       .leftJoinAndSelect('pagamento.concessao', 'concessao')
       .leftJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .leftJoin('solicitacao.beneficiario', 'beneficiario')
+      .addSelect([
+        'beneficiario.id',
+        'beneficiario.nome',
+        'beneficiario.cpf',
+      ])
+
       .leftJoin('solicitacao.unidade', 'unidade')
       .leftJoin('solicitacao.tecnico', 'tecnico')
       .leftJoin('pagamento.responsavel_liberacao', 'responsavel_liberacao')
@@ -287,10 +293,6 @@ export class PagamentoRepository {
         'tipo_beneficio.id',
         'tipo_beneficio.nome',
         'tipo_beneficio.codigo',
-        // Beneficiário
-        'beneficiario.id',
-        'beneficiario.nome',
-        'beneficiario.cpf',
         // Unidade
         'unidade.id',
         'unidade.nome',
@@ -300,14 +302,6 @@ export class PagamentoRepository {
         // Usuário liberador
         'responsavel_liberacao.id',
         'responsavel_liberacao.nome',
-        // Informações bancárias
-        'info_bancaria.id',
-        'info_bancaria.tipo_chave_pix',
-        'info_bancaria.chave_pix',
-        'info_bancaria.tipo_conta',
-        'info_bancaria.banco',
-        'info_bancaria.agencia',
-        'info_bancaria.conta',
       ]);
 
     // Aplicar filtros
@@ -377,7 +371,7 @@ export class PagamentoRepository {
       filtros.pagamento_ids.forEach((id, index) => {
         UuidValidator.validateOrThrow(id, `pagamento_ids[${index}]`);
       });
-      
+
       // Usar IN clause para buscar múltiplos IDs de forma eficiente
       queryBuilder.andWhere('pagamento.id IN (:...pagamento_ids)', {
         pagamento_ids: filtros.pagamento_ids,
@@ -425,7 +419,7 @@ export class PagamentoRepository {
     queryBuilder
       .skip(skip)
       .take(limit)
-      .orderBy( `pagamento.${filtros.sort_by}`, filtros.sort_order )
+      .orderBy(`pagamento.${filtros.sort_by}`, filtros.sort_order)
       .addOrderBy('pagamento.numero_parcela', 'ASC');
 
     const [items, total] = await queryBuilder.getManyAndCount();

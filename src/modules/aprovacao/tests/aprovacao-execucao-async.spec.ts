@@ -9,6 +9,7 @@ import { AcaoAprovacao, SolicitacaoAprovacao } from '../entities';
 import { ConfiguracaoAprovador } from '../entities/configuracao-aprovador.entity';
 import { SolicitacaoAprovador } from '../entities/solicitacao-aprovador.entity';
 import { StatusSolicitacao, TipoAcaoCritica, EstrategiaAprovacao } from '../enums';
+import { Status } from '../../../enums/status.enum';
 import { AprovacaoNotificationService } from '../services/aprovacao-notification.service';
 import { NotificationManagerService } from '../../notificacao/services/notification-manager.service';
 import { NotificacaoService } from '../../notificacao/services/notificacao.service';
@@ -41,6 +42,16 @@ describe('AprovacaoService - Execução Assíncrona', () => {
     update: jest.fn(),
     create: jest.fn(),
     find: jest.fn(),
+    createQueryBuilder: jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      leftJoin: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getOne: jest.fn(),
+      getMany: jest.fn(),
+    }),
   };
 
   const mockConfiguracaoAprovadorRepository = {
@@ -199,7 +210,7 @@ describe('AprovacaoService - Execução Assíncrona', () => {
         descricao: 'Teste de cancelamento',
         estrategia: EstrategiaAprovacao.SIMPLES,
         min_aprovadores: 1,
-        ativo: true,
+        status: Status.ATIVO,
         created_at: new Date(),
         updated_at: new Date(),
         solicitacoes: [],
@@ -211,6 +222,12 @@ describe('AprovacaoService - Execução Assíncrona', () => {
         codigo: 'SOL-001',
         status: StatusSolicitacao.PENDENTE,
         solicitante_id: 'user-789',
+        solicitante: {
+          id: 'user-789',
+          nome: 'Usuário Teste',
+          email: 'teste@exemplo.com',
+          status: Status.ATIVO,
+        } as any,
         justificativa: 'Solicitação de teste',
         dados_acao: {
           params: { id: '123' },
@@ -235,7 +252,7 @@ describe('AprovacaoService - Execução Assíncrona', () => {
         aprovado: null,
         justificativa_decisao: null,
         decidido_em: null,
-        ativo: true,
+        status: Status.ATIVO,
         created_at: new Date(),
         updated_at: new Date(),
         acao_aprovacao_id: 'acao-123',
@@ -251,6 +268,18 @@ describe('AprovacaoService - Execução Assíncrona', () => {
       
       // Configurar o mock do SolicitacaoAprovadorRepository para retornar o aprovador
       mockSolicitacaoAprovadorRepository.findOne = jest.fn().mockResolvedValue(mockAprovador);
+      
+      // Configurar o createQueryBuilder para retornar o aprovador
+      mockSolicitacaoAprovadorRepository.createQueryBuilder.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        leftJoin: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(mockAprovador),
+        getMany: jest.fn().mockResolvedValue([mockAprovador]),
+      });
       
       // Configurar o aprovador como aprovado
       const aprovadorAprovado = {
@@ -348,7 +377,7 @@ describe('AprovacaoService - Execução Assíncrona', () => {
         id: 'aprovador-123',
         usuario_id: aprovadorId,
         solicitacao_aprovacao_id: solicitacaoId,
-        ativo: true,
+        status: Status.ATIVO,
         aprovado: null,
         justificativa_decisao: null,
         decidido_em: null,

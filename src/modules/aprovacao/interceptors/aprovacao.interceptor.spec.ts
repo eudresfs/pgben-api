@@ -5,6 +5,7 @@ import { of, firstValueFrom } from 'rxjs';
 import { AprovacaoInterceptor } from './aprovacao.interceptor';
 import { AprovacaoService } from '../services/aprovacao.service';
 import { TipoAcaoCritica, StatusSolicitacao, EstrategiaAprovacao } from '../enums';
+import { Status } from '../../../enums/status.enum';
 import { ConfiguracaoAprovacao } from '../decorators';
 import { CacheService } from '../../../shared/services/cache.service';
 
@@ -41,7 +42,7 @@ describe('AprovacaoInterceptor', () => {
     obterUsuario: jest.fn().mockResolvedValue({
       id: 1,
       perfil: 'ADMIN',
-      status: 'ATIVO'
+      status: Status.ATIVO
     }),
     verificarPermissaoGeral: jest.fn().mockResolvedValue(false),
   };
@@ -300,7 +301,7 @@ describe('AprovacaoInterceptor', () => {
       mockAprovacaoService.obterUsuario.mockResolvedValue({
         id: 1,
         perfil: 'ADMIN',
-        status: 'ATIVO'
+        status: Status.ATIVO
       });
       (mockCallHandler.handle as jest.Mock).mockReturnValue(of({ success: true }));
 
@@ -417,7 +418,7 @@ describe('AprovacaoInterceptor', () => {
       mockAprovacaoService.obterUsuario.mockResolvedValue({
         id: 1,
         perfil: 'USER', // Perfil que não permite auto-aprovação
-        status: 'ATIVO'
+        status: Status.ATIVO
       });
       mockAprovacaoService.verificarPermissaoGeral.mockResolvedValue(false);
       mockAprovacaoService.criarSolicitacaoComEstrategia.mockResolvedValue(mockSolicitacao);
@@ -496,7 +497,7 @@ describe('AprovacaoInterceptor', () => {
       mockAprovacaoService.obterUsuario.mockResolvedValue({
         id: 1,
         perfil: 'USER', // Perfil diferente de ADMIN
-        status: 'ATIVO'
+        status: Status.ATIVO
       });
 
       // Act
@@ -558,7 +559,7 @@ describe('AprovacaoInterceptor', () => {
       mockAprovacaoService.obterUsuario.mockResolvedValue({
         id: 1,
         perfil: 'USER', // Perfil que não permite auto-aprovação
-        status: 'ATIVO'
+        status: Status.ATIVO
       });
       mockAprovacaoService.verificarPermissaoGeral.mockResolvedValue(false); // Negar permissão geral
       mockAprovacaoService.criarSolicitacaoComEstrategia.mockResolvedValue(mockSolicitacao);

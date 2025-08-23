@@ -11,6 +11,7 @@ import {
 import { StatusSolicitacao } from '../enums';
 import { AcaoAprovacao } from './acao-aprovacao.entity';
 import { SolicitacaoAprovador } from './solicitacao-aprovador.entity';
+import { Usuario } from '@/entities';
 
 /**
  * Entidade simplificada para solicitações de aprovação
@@ -142,7 +143,11 @@ export class SolicitacaoAprovacao {
   })
   acao_aprovacao_id: string;
 
+  @ManyToOne(() => Usuario, usuario => usuario)
+  @JoinColumn({ name: 'solicitante_id' })
+  solicitante: Usuario;
 
+  // Relacionamento com aprovadores
   @OneToMany(() => SolicitacaoAprovador, (solicitacaoAprovador) => solicitacaoAprovador.solicitacao_aprovacao)
   solicitacao_aprovadores: SolicitacaoAprovador[];
 

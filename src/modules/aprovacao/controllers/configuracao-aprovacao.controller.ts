@@ -26,6 +26,7 @@ import { RequiresPermission } from '../../../auth/decorators/requires-permission
 import { AprovacaoService } from '../services';
 import { CriarAcaoAprovacaoDto } from '../dtos';
 import { TipoAcaoCritica, EstrategiaAprovacao } from '../enums';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * Controller simplificado para gerenciar configurações de aprovação
@@ -79,7 +80,7 @@ export class ConfiguracaoAprovacaoController {
     summary: 'Listar configurações',
     description: 'Lista todas as configurações de aprovação disponíveis'
   })
-  @ApiQuery({ name: 'ativo', required: false, type: Boolean })
+  @ApiQuery({ name: 'status', required: false, enum: Status })
   @ApiQuery({ name: 'tipo_acao', required: false, enum: TipoAcaoCritica })
   @ApiQuery({ name: 'estrategia', required: false, enum: EstrategiaAprovacao })
   @ApiResponse({ 
@@ -87,11 +88,11 @@ export class ConfiguracaoAprovacaoController {
     description: 'Lista de configurações retornada com sucesso' 
   })
   async listarConfiguracoes(
-    @Query('ativo') ativo?: boolean,
+    @Query('status') status?: Status,
     @Query('tipo_acao') tipoAcao?: TipoAcaoCritica,
     @Query('estrategia') estrategia?: EstrategiaAprovacao
   ) {
-    const filtros = { ativo, tipo_acao: tipoAcao, estrategia };
+    const filtros = { status, tipo_acao: tipoAcao, estrategia };
     
     // Remove filtros undefined
     Object.keys(filtros).forEach(key => 
@@ -241,16 +242,16 @@ export class ConfiguracaoAprovacaoController {
     description: 'Lista todos os aprovadores de uma configuração'
   })
   @ApiParam({ name: 'id', description: 'ID da configuração' })
-  @ApiQuery({ name: 'ativo', required: false, type: Boolean })
+  @ApiQuery({ name: 'status', required: false, enum: Status })
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Lista de aprovadores retornada com sucesso' 
   })
   async listarAprovadores(
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('ativo') ativo?: boolean
+    @Query('status') status?: Status
   ) {
-    const aprovadores = await this.aprovacaoService.listarAprovadores(id, ativo);
+    const aprovadores = await this.aprovacaoService.listarAprovadores(id, status);
 
     return {
       message: 'Aprovadores listados com sucesso',
