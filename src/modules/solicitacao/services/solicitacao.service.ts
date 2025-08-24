@@ -24,7 +24,17 @@ import {
   throwInternalError,
 } from '../../../shared/exceptions/error-catalog/domains/solicitacao.errors';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, ILike, Connection, In, DataSource, SelectQueryBuilder } from 'typeorm';
+import {
+  Repository,
+  Between,
+  ILike,
+  Connection,
+  In,
+  DataSource,
+  SelectQueryBuilder,
+  Brackets,
+} from 'typeorm';
+import { SolicitacaoRepository } from '../repositories/solicitacao.repository';
 import {
   Solicitacao,
   StatusSolicitacao,
@@ -33,6 +43,8 @@ import {
   DeterminacaoJudicial,
   StatusPendencia,
   Pendencia,
+  Contato,
+  TipoBeneficio,
 } from '../../../entities';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
@@ -40,37 +52,38 @@ import { AvaliarSolicitacaoDto } from '../dto/avaliar-solicitacao.dto';
 import { VincularProcessoJudicialDto } from '../dto/vincular-processo-judicial.dto';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 import { VincularDeterminacaoJudicialDto } from '../dto/vincular-determinacao-judicial.dto';
-import { ConverterPapelDto } from '../dto/converter-papel.dto';
+
 import { ProcessoJudicialRepository } from '../../judicial/repositories/processo-judicial.repository';
 import { ROLES } from '../../../shared/constants/roles.constants';
 import { ValidacaoExclusividadeService } from './validacao-exclusividade.service';
 import { CidadaoService } from '../../cidadao/services/cidadao.service';
 import { Logger } from '@nestjs/common';
 
-
-interface FindAllOptions {
+export interface FindAllOptions {
+  search?: string;
   page?: number;
   limit?: number;
   status?: StatusSolicitacao;
+  usuario_id?: string;
   unidade_id?: string;
   beneficio_id?: string;
   beneficiario_id?: string;
   protocolo?: string;
   data_inicio?: string;
   data_fim?: string;
-  sortBy?: 'data_abertura' | 'protocolo' | 'status';
+  sortBy?: 'data_abertura' | 'data_aprovacao';
   sortOrder?: 'ASC' | 'DESC';
 }
 
 export interface PaginatedResponse<T> {
   items: T[];
   meta: {
-    currentPage: number;
-    itemsPerPage: number;
-    totalItems: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
   };
 }
 
@@ -84,8 +97,7 @@ export class SolicitacaoService {
   private readonly logger: Logger;
 
   constructor(
-    @InjectRepository(Solicitacao)
-    private solicitacaoRepository: Repository<Solicitacao>,
+    private solicitacaoRepository: SolicitacaoRepository,
 
     @InjectRepository(HistoricoSolicitacao)
     private historicoRepository: Repository<HistoricoSolicitacao>,
@@ -97,6 +109,9 @@ export class SolicitacaoService {
 
     @InjectRepository(DeterminacaoJudicial)
     private determinacaoJudicialRepository: Repository<DeterminacaoJudicial>,
+
+    @InjectRepository(TipoBeneficio)
+    private tipoBeneficioRepository: Repository<TipoBeneficio>,
 
     private connection: Connection,
     private dataSource: DataSource,
@@ -110,33 +125,36 @@ export class SolicitacaoService {
     this.logger = new Logger('SolicitacaoService');
   }
 
-  
   /**
    * Lista todas as solicitações com paginação e filtros
    * @param options Opções de filtro, paginação e ordenação
    * @returns Lista paginada de solicitações
    */
-  async findAll(options: FindAllOptions): Promise<PaginatedResponse<Solicitacao>> {
+  async findAll(
+    options: FindAllOptions,
+  ): Promise<PaginatedResponse<Solicitacao>> {
     const page = Math.max(1, options.page || 1);
     const limit = Math.min(100, Math.max(1, options.limit || 10));
     const sortBy = options.sortBy || 'data_abertura';
     const sortOrder = options.sortOrder || 'DESC';
-    
-    const allowedSortFields = ['data_abertura', 'protocolo', 'status'];
+
+    const allowedSortFields = ['data_abertura', 'data_aprovacao'];
     if (!allowedSortFields.includes(sortBy)) {
-      throw new BadRequestException(`Campo de ordenação '${sortBy}' não permitido`);
+      throw new BadRequestException(
+        `Campo de ordenação '${sortBy}' não permitido`,
+      );
     }
-  
+
     let dataInicio: Date | undefined;
     let dataFim: Date | undefined;
-    
+
     if (options.data_inicio) {
       dataInicio = new Date(options.data_inicio);
       if (isNaN(dataInicio.getTime())) {
         throw new BadRequestException('Data de início inválida');
       }
     }
-    
+
     if (options.data_fim) {
       dataFim = new Date(options.data_fim);
       if (isNaN(dataFim.getTime())) {
@@ -144,9 +162,9 @@ export class SolicitacaoService {
       }
       dataFim.setHours(23, 59, 59, 999);
     }
-  
+
     const queryBuilder = this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+      .createScopedQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
       .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
@@ -156,12 +174,16 @@ export class SolicitacaoService {
         'solicitacao.id',
         'solicitacao.protocolo',
         'solicitacao.status',
+        'solicitacao.valor',
         'solicitacao.data_abertura',
         'solicitacao.data_aprovacao',
         'solicitacao.observacoes',
+        'solicitacao.determinacao_judicial_flag',
+        'solicitacao.prioridade',
         // Dados básicos do beneficiário
         'beneficiario.id',
         'beneficiario.nome',
+        'beneficiario.cpf',
         // Dados básicos do benefício
         'tipo_beneficio.id',
         'tipo_beneficio.nome',
@@ -171,11 +193,35 @@ export class SolicitacaoService {
         'tecnico.nome',
         // Dados básicos da unidade
         'unidade.id',
-        'unidade.nome'
+        'unidade.nome',
       ]);
-  
+
+    // Aplicar filtro de busca se fornecido
+    if (options.search) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where('LOWER(beneficiario.nome) LIKE LOWER(:search)', {
+            search: `%${options.search}%`,
+          })
+            .orWhere('beneficiario.cpf LIKE :searchExact', {
+              searchExact: `%${options.search}%`,
+            })
+            .orWhere('LOWER(solicitacao.protocolo) LIKE LOWER(:search)', {
+              search: `%${options.search}%`,
+            })
+            .orWhere('LOWER(tipo_beneficio.nome) LIKE LOWER(:search)', {
+              search: `%${options.search}%`,
+            })
+            .orWhere('LOWER(tipo_beneficio.codigo) LIKE LOWER(:search)', {
+              search: `%${options.search}%`,
+            });
+        }),
+      );
+    }
+
     this.applyFilters(queryBuilder, {
       status: options.status,
+      tecnico_id: options.usuario_id,
       unidade_id: options.unidade_id,
       beneficio_id: options.beneficio_id,
       beneficiario_id: options.beneficiario_id,
@@ -183,17 +229,17 @@ export class SolicitacaoService {
       data_inicio: dataInicio,
       data_fim: dataFim,
     });
-  
+
     const skip = (page - 1) * limit;
     queryBuilder
       .skip(skip)
       .take(limit)
       .orderBy(`solicitacao.${sortBy}`, sortOrder);
-  
+
     const startTime = Date.now();
     const [items, total] = await queryBuilder.getManyAndCount();
     const executionTime = Date.now() - startTime;
-    
+
     if (executionTime > 1000) {
       this.logger.warn(`Query lenta detectada: ${executionTime}ms`, {
         filters: options,
@@ -201,68 +247,79 @@ export class SolicitacaoService {
         totalCount: total,
       });
     }
-  
-    const totalPages = Math.ceil(total / limit);
-    
+
+    const pages = Math.ceil(total / limit);
+
     return {
       items,
       meta: {
-        currentPage: page,
-        itemsPerPage: limit,
-        totalItems: total,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1,
+        page,
+        limit,
+        total,
+        pages,
+        hasNext: page < pages,
+        hasPrev: page > 1,
       },
     };
   }
-  
+
   /**
    * Aplica filtros condicionais ao query builder
    * @param queryBuilder Instance do query builder
    * @param filters Objeto com os filtros a serem aplicados
    */
-  private applyFilters(queryBuilder: SelectQueryBuilder<Solicitacao>, filters: any) {
+  private applyFilters(
+    queryBuilder: SelectQueryBuilder<Solicitacao>,
+    filters: any,
+  ) {
     if (filters.status) {
-      queryBuilder.andWhere('solicitacao.status = :status', { status: filters.status });
-    }
-    
-    if (filters.unidade_id) {
-      queryBuilder.andWhere('solicitacao.unidade_id = :unidade_id', { 
-        unidade_id: filters.unidade_id 
+      queryBuilder.andWhere('solicitacao.status = :status', {
+        status: filters.status,
       });
     }
-  
+
+    if (filters.unidade_id) {
+      queryBuilder.andWhere('solicitacao.unidade_id = :unidade_id', {
+        unidade_id: filters.unidade_id,
+      });
+    }
+
     if (filters.beneficio_id) {
       queryBuilder.andWhere('solicitacao.tipo_beneficio_id = :beneficio_id', {
         beneficio_id: filters.beneficio_id,
       });
     }
-  
+
+    if (filters.tecnico_id) {
+      queryBuilder.andWhere('solicitacao.tecnico_id = :tecnico_id', {
+        tecnico_id: filters.tecnico_id,
+      });
+    }
+
     if (filters.beneficiario_id) {
       queryBuilder.andWhere('solicitacao.beneficiario_id = :beneficiario_id', {
         beneficiario_id: filters.beneficiario_id,
       });
     }
-  
+
     if (filters.protocolo) {
       queryBuilder.andWhere('solicitacao.protocolo ILIKE :protocolo', {
         protocolo: `%${filters.protocolo}%`,
       });
     }
-  
+
     if (filters.data_inicio && filters.data_fim) {
       queryBuilder.andWhere(
         'solicitacao.data_abertura BETWEEN :inicio AND :fim',
-        { inicio: filters.data_inicio, fim: filters.data_fim }
+        { inicio: filters.data_inicio, fim: filters.data_fim },
       );
     } else if (filters.data_inicio) {
-      queryBuilder.andWhere('solicitacao.data_abertura >= :inicio', { 
-        inicio: filters.data_inicio 
+      queryBuilder.andWhere('solicitacao.data_abertura >= :inicio', {
+        inicio: filters.data_inicio,
       });
     } else if (filters.data_fim) {
-      queryBuilder.andWhere('solicitacao.data_abertura <= :fim', { 
-        fim: filters.data_fim 
+      queryBuilder.andWhere('solicitacao.data_abertura <= :fim', {
+        fim: filters.data_fim,
       });
     }
   }
@@ -272,7 +329,7 @@ export class SolicitacaoService {
    */
   async findById(id: string): Promise<Solicitacao> {
     const solicitacao = await this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+      .createScopedQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
       .leftJoinAndSelect('solicitacao.solicitante', 'solicitante')
       .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
@@ -281,16 +338,16 @@ export class SolicitacaoService {
       .leftJoinAndSelect('solicitacao.documentos', 'documentos')
       .leftJoinAndSelect('solicitacao.concessao', 'concessao')
       .select([
-        // Dados básicos da solicitação
+        // Dados Solicitação
         'solicitacao.id',
         'solicitacao.protocolo',
         'solicitacao.status',
+        'solicitacao.valor',
         'solicitacao.parecer_semtas',
         'solicitacao.dados_complementares',
         'solicitacao.data_abertura',
         'solicitacao.observacoes',
-
-        // Dados básicos do beneficiário
+        // Dados Benefíciário
         'beneficiario.id',
         'beneficiario.nome',
         'beneficiario.cpf',
@@ -301,35 +358,26 @@ export class SolicitacaoService {
         'beneficiario.naturalidade',
         'beneficiario.sexo',
         'beneficiario.estado_civil',
-        'beneficiario.telefone',
-        'beneficiario.email',
-
-        // Dados básicos do solicitante
+        // Dados Solicitante
         'solicitante.id',
         'solicitante.nome',
         'solicitante.cpf',
         'solicitante.nis',
         'solicitante.data_nascimento',
-        'solicitante.telefone',
-
-        // Dados básicos do benefício
+        // Dados Benefício
         'tipo_beneficio.id',
         'tipo_beneficio.nome',
         'tipo_beneficio.descricao',
         'tipo_beneficio.codigo',
-        'tipo_beneficio.valor',
-
-        // Dados básicos do técnico
+        // Dados Técnico
         'tecnico.id',
         'tecnico.nome',
-        
-        // Dados básicos da unidade
+        // Dados Unidade
         'unidade.id',
         'unidade.nome',
         'unidade.sigla',
-
-        // Dados da concessão
-        'concessao.id'
+        // Dados Concessão
+        'concessao.id',
       ])
       .where('solicitacao.id = :id', { id })
       .getOne();
@@ -338,7 +386,49 @@ export class SolicitacaoService {
       throwSolicitacaoNotFound(id);
     }
 
+    // Busca contatos em paralelo
+    const [contatoBeneficiario, contatoSolicitante] = await Promise.all([
+      solicitacao.beneficiario
+        ? this.buscarContatoMaisRecente(solicitacao.beneficiario.id)
+        : null,
+      solicitacao.solicitante
+        ? this.buscarContatoMaisRecente(solicitacao.solicitante.id)
+        : null,
+    ]);
+
+    // Adiciona os contatos encontrados
+    if (contatoBeneficiario && solicitacao.beneficiario) {
+      solicitacao.beneficiario.contatos = [contatoBeneficiario];
+    }
+    if (contatoSolicitante && solicitacao.solicitante) {
+      solicitacao.solicitante.contatos = [contatoSolicitante];
+    }
+
     return solicitacao;
+  }
+
+  /**
+   * Busca o contato mais recente de um cidadão
+   * Prioriza contatos com proprietario = true, depois proprietario = false
+   */
+  private async buscarContatoMaisRecente(
+    cidadaoId: string,
+  ): Promise<Contato | null> {
+    // Tenta buscar contato com proprietario = true primeiro
+    let contato = await this.dataSource.getRepository(Contato).findOne({
+      where: { cidadao_id: cidadaoId, proprietario: true },
+      order: { created_at: 'DESC' },
+    });
+
+    // Se não encontrou, busca com proprietario = false
+    if (!contato) {
+      contato = await this.dataSource.getRepository(Contato).findOne({
+        where: { cidadao_id: cidadaoId, proprietario: false },
+        order: { created_at: 'DESC' },
+      });
+    }
+
+    return contato;
   }
 
   /**
@@ -348,14 +438,20 @@ export class SolicitacaoService {
     createSolicitacaoDto: CreateSolicitacaoDto,
     user: any,
   ): Promise<Solicitacao> {
-    this.logger.log(`Iniciando criação de solicitação para beneficiário: ${createSolicitacaoDto.beneficiario_id}`);
-    
+    this.logger.log(
+      `Iniciando criação de solicitação para beneficiário: ${createSolicitacaoDto.beneficiario_id}`,
+    );
+
     try {
       // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
-      
-      // Validar se o beneficiário existe
+
+      // Validar se o beneficiário existe e obter seus dados
+      let beneficiario;
       try {
-        await this.cidadaoService.findById(createSolicitacaoDto.beneficiario_id, false);
+        beneficiario = await this.cidadaoService.findById(
+          createSolicitacaoDto.beneficiario_id,
+          true, // incluir relações para obter a unidade
+        );
       } catch (error) {
         if (error.status === 404) {
           throw new BadRequestException('Beneficiário não encontrado');
@@ -366,7 +462,10 @@ export class SolicitacaoService {
       // Validar se o solicitante existe (quando informado)
       if (createSolicitacaoDto.solicitante_id) {
         try {
-          await this.cidadaoService.findById(createSolicitacaoDto.solicitante_id, false);
+          await this.cidadaoService.findById(
+            createSolicitacaoDto.solicitante_id,
+            false,
+          );
         } catch (error) {
           if (error.status === 404) {
             throw new BadRequestException('Solicitante não encontrado');
@@ -376,14 +475,61 @@ export class SolicitacaoService {
       }
 
       // Validar que solicitante não pode ser o mesmo que beneficiário
-      if (createSolicitacaoDto.solicitante_id && 
-          createSolicitacaoDto.solicitante_id === createSolicitacaoDto.beneficiario_id) {
-        throw new BadRequestException('Solicitante não pode ser o mesmo que o beneficiário');
+      if (
+        createSolicitacaoDto.solicitante_id &&
+        createSolicitacaoDto.solicitante_id ===
+          createSolicitacaoDto.beneficiario_id
+      ) {
+        throw new BadRequestException(
+          'Solicitante não pode ser o mesmo que o beneficiário',
+        );
       }
 
-      // Validar exclusividade de papel para o beneficiário
-      await this.validacaoExclusividadeService.validarExclusividadeBeneficiario(
+      // Validar se o tipo de benefício existe e está ativo
+      const tipoBeneficio = await this.dataSource
+        .getRepository(TipoBeneficio)
+        .findOne({
+          where: { id: createSolicitacaoDto.tipo_beneficio_id },
+          select: ['id', 'status', 'nome'],
+        });
+
+      if (!tipoBeneficio) {
+        throw new BadRequestException('Tipo de benefício não encontrado');
+      }
+
+      // REGRA DE NEGÓCIO 2: Validar se o benefício está ativo
+      if (tipoBeneficio.status !== 'ativo') {
+        throw new BadRequestException(
+          `Uma solicitação só pode ser criada para benefícios ativos. O benefício "${tipoBeneficio.nome}" está inativo.`,
+        );
+      }
+
+      // REGRA DE NEGÓCIO 1: Validar se a unidade do beneficiário é igual à unidade do técnico
+      // Determinar a unidade do técnico
+      let unidadeTecnico: string;
+      if (!user.unidade_id) {
+        if (!createSolicitacaoDto.unidade_id) {
+          throwWorkflowStepRequired('unidade_id', {
+            data: { context: 'unidade_validation' },
+          });
+        }
+        unidadeTecnico = createSolicitacaoDto.unidade_id;
+      } else {
+        unidadeTecnico = user.unidade_id;
+      }
+
+      // Validar se a unidade do beneficiário é igual à unidade do técnico
+      if (beneficiario.unidade_id !== unidadeTecnico && user.escopo !== 'GLOBAL') {
+        throw new BadRequestException(
+          'Solicitações só podem ser feitas pela unidade atual do beneficiário. ' +
+            'Em caso de mudança de endereço, transfira o beneficiário de unidade antes.',
+        );
+      }
+
+      // Validar exclusividade para o beneficiário
+      await this.validacaoExclusividadeService.validarExclusividade(
         createSolicitacaoDto.beneficiario_id,
+        createSolicitacaoDto.tipo_beneficio_id,
       );
 
       // Verificar se já existe uma solicitação em andamento para o mesmo cidadão e tipo de benefício
@@ -392,7 +538,7 @@ export class SolicitacaoService {
         StatusSolicitacao.ABERTA,
         StatusSolicitacao.PENDENTE,
         StatusSolicitacao.EM_ANALISE,
-        StatusSolicitacao.APROVADA
+        StatusSolicitacao.APROVADA,
       ];
 
       // Verifica se existe uma solicitação em andamento para o mesmo beneficiário e benefício
@@ -400,82 +546,110 @@ export class SolicitacaoService {
         where: {
           beneficiario_id: createSolicitacaoDto.beneficiario_id,
           tipo_beneficio_id: createSolicitacaoDto.tipo_beneficio_id,
-          status: In(statusEmAndamento)
-        }
+          status: In(statusEmAndamento),
+        },
       });
 
       // Se existir, retorna os dados da solicitação existente
       if (solicitacaoExistente) {
-        this.logger.log(`Solicitação já existe para este beneficiário e tipo de benefício: ${solicitacaoExistente.id}`);
+        this.logger.log(
+          `Solicitação já existe para este beneficiário e tipo de benefício: ${solicitacaoExistente.id}`,
+        );
         return solicitacaoExistente;
       }
 
-      // Determinar a unidade: se usuário não tem unidade, usar do DTO (obrigatório)
-      let unidadeId: string;
-      if (!user.unidade_id) {
-        if (!createSolicitacaoDto.unidade_id) {
-          throwWorkflowStepRequired(
-            'unidade_id',
-            { data: { context: 'unidade_validation' } }
-          );
-        }
-        unidadeId = createSolicitacaoDto.unidade_id;
-      } else {
-        unidadeId = user.unidade_id;
-      }
+      // Usar a unidade já validada nas regras de negócio
+      const unidadeId = unidadeTecnico;
 
       // Normalizar enums nos dados complementares antes de salvar
-      const dadosComplementares = createSolicitacaoDto.dados_complementares || {};
-      const normalizedDadosComplementares = normalizeEnumFields(dadosComplementares);
+      const dadosComplementares =
+        createSolicitacaoDto.dados_complementares || {};
+      const normalizedDadosComplementares =
+        normalizeEnumFields(dadosComplementares);
+
+      // Buscar valor de referência do benefício se não foi fornecido
+      let valorSolicitacao = createSolicitacaoDto.valor;
+      if (!valorSolicitacao) {
+        const tipoBeneficio = await this.tipoBeneficioRepository.findOne({
+          where: { id: createSolicitacaoDto.tipo_beneficio_id },
+          select: ['valor'],
+        });
+        
+        if (tipoBeneficio && tipoBeneficio.valor) {
+          valorSolicitacao = tipoBeneficio.valor;
+          this.logger.log(
+            `Valor de referência do benefício aplicado: ${valorSolicitacao} para tipo de benefício ${createSolicitacaoDto.tipo_beneficio_id}`,
+          );
+        }
+      }
 
       // ===== TRANSAÇÃO MÍNIMA APENAS PARA OPERAÇÕES DE ESCRITA =====
-      const solicitacaoSalva = await this.dataSource.transaction(async (manager) => {
-        // Criar uma nova instância de Solicitacao com repositório tipado
-        const repo = manager.getRepository(Solicitacao);
-        
-        // Criar objeto de solicitação
-        const solicitacao = repo.create({
-          beneficiario_id: createSolicitacaoDto.beneficiario_id,
-          solicitante_id: createSolicitacaoDto.solicitante_id,
-          tipo_beneficio_id: createSolicitacaoDto.tipo_beneficio_id,
-          unidade_id: unidadeId,
-          tecnico_id: user.id,
-          status: StatusSolicitacao.RASCUNHO,
-          data_abertura: new Date(),
-          dados_complementares: normalizedDadosComplementares
-        });
+      const solicitacaoSalva = await this.dataSource.transaction(
+        async (manager) => {
+          // Criar uma nova instância de Solicitacao com repositório tipado
+          const repo = manager.getRepository(Solicitacao);
 
-        // Salvar a solicitação
-        const savedSolicitacao = await repo.save(solicitacao);
+          // Buscar o código do tipo de benefício para gerar o protocolo
+          const tipoBeneficio = await manager.getRepository(TipoBeneficio).findOne({
+            where: { id: createSolicitacaoDto.tipo_beneficio_id },
+            select: ['codigo']
+          });
 
-        // Registrar no histórico
-        const historicoRepo = manager.getRepository(HistoricoSolicitacao);
-        const historico = historicoRepo.create({
-          solicitacao_id: savedSolicitacao.id,
-          usuario_id: user.id,
-          status_atual: StatusSolicitacao.RASCUNHO,
-          observacao: createSolicitacaoDto.determinacao_judicial_flag 
-            ? 'Solicitação criada por determinação judicial'
-            : 'Solicitação criada',
-          dados_alterados: createSolicitacaoDto.determinacao_judicial_flag
-            ? { 
-                acao: 'criacao',
-                determinacao_judicial: true,
-                determinacao_judicial_id: createSolicitacaoDto.determinacao_judicial_id
-              }
-            : { acao: 'criacao' },
-          ip_usuario: user.ip || '0.0.0.0'
-        });
+          // Gerar um UUID único para usar no protocolo e como ID da solicitação
+          const { v4: uuidv4 } = await import('uuid');
+          const uniqueId = uuidv4();
 
-        await historicoRepo.save(historico);
+          // Criar objeto de solicitação
+          const solicitacao = repo.create({
+            id: uniqueId, // Definir o ID explicitamente
+            beneficiario_id: createSolicitacaoDto.beneficiario_id,
+            solicitante_id: createSolicitacaoDto.solicitante_id,
+            tipo_beneficio_id: createSolicitacaoDto.tipo_beneficio_id,
+            unidade_id: unidadeId,
+            tecnico_id: user.id,
+            status: StatusSolicitacao.RASCUNHO,
+            data_abertura: new Date(),
+            dados_complementares: normalizedDadosComplementares,
+            valor: valorSolicitacao,
+          });
 
-        return savedSolicitacao.id;
-      });
+          // Gerar o protocolo com o código do benefício e o UUID único
+          const codigoBeneficio = tipoBeneficio?.codigo || 'SOL';
+          solicitacao.generateProtocol(codigoBeneficio, uniqueId);
+
+          // Salvar a solicitação com o protocolo já gerado
+          const savedSolicitacao = await repo.save(solicitacao);
+
+          // Registrar no histórico
+          const historicoRepo = manager.getRepository(HistoricoSolicitacao);
+          const historico = historicoRepo.create({
+            solicitacao_id: savedSolicitacao.id,
+            usuario_id: user.id,
+            status_atual: StatusSolicitacao.RASCUNHO,
+            observacao: createSolicitacaoDto.determinacao_judicial_flag
+              ? 'Solicitação criada por determinação judicial'
+              : 'Solicitação criada',
+            dados_alterados: createSolicitacaoDto.determinacao_judicial_flag
+              ? {
+                  acao: 'criacao',
+                  determinacao_judicial: true,
+                  determinacao_judicial_id:
+                    createSolicitacaoDto.determinacao_judicial_id,
+                }
+              : { acao: 'criacao' },
+            ip_usuario: user.ip || '0.0.0.0',
+          });
+
+          await historicoRepo.save(historico);
+
+          return savedSolicitacao.id;
+        },
+      );
 
       // ===== CONSULTA PÓS-TRANSAÇÃO =====
       // Buscar a solicitação completa após a transação
       const solicitacaoCompleta = await this.solicitacaoRepository
-        .createQueryBuilder('solicitacao')
+        .createScopedQueryBuilder('solicitacao')
         .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
         .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
         .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
@@ -515,10 +689,13 @@ export class SolicitacaoService {
         throwSolicitacaoNotFound(solicitacaoSalva);
       }
 
-      this.logger.log(`Solicitação criada com sucesso: ${solicitacaoSalva}`);
+      // Solicitação criada com sucesso
       return solicitacaoCompleta;
     } catch (error) {
-      this.logger.error(`Erro ao criar solicitação: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao criar solicitação: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -531,11 +708,11 @@ export class SolicitacaoService {
     updateSolicitacaoDto: UpdateSolicitacaoDto,
     user: any,
   ): Promise<Solicitacao> {
-    this.logger.log(`Iniciando atualização da solicitação: ${id}`);
+    // Iniciando atualização da solicitação
 
     try {
       // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
-      
+
       // Buscar a solicitação fora da transação
       const solicitacao = await this.findById(id);
 
@@ -546,17 +723,13 @@ export class SolicitacaoService {
       ];
 
       if (!EDITABLE_STATUSES.includes(solicitacao.status)) {
-        throwInvalidStatusTransition(
-          solicitacao.status,
-          'EDITABLE',
-          {
-            data: {
-              solicitacaoId: id,
-              statusAtual: solicitacao.status,
-              statusPossiveis: EDITABLE_STATUSES,
-            },
+        throwInvalidStatusTransition(solicitacao.status, 'EDITABLE', {
+          data: {
+            solicitacaoId: id,
+            statusAtual: solicitacao.status,
+            statusPossiveis: EDITABLE_STATUSES,
           },
-        );
+        });
       }
 
       // Preparar dados para atualização
@@ -565,14 +738,15 @@ export class SolicitacaoService {
 
       // Nota: beneficiario_id não pode ser atualizado conforme definido no DTO
       if (updateSolicitacaoDto.tipo_beneficio_id) {
-        dadosAtualizacao.tipo_beneficio_id = updateSolicitacaoDto.tipo_beneficio_id;
+        dadosAtualizacao.tipo_beneficio_id =
+          updateSolicitacaoDto.tipo_beneficio_id;
         camposAlterados.push('tipo_beneficio_id');
       }
 
       if (updateSolicitacaoDto.dados_complementares) {
         // Normalizar enums nos dados complementares antes de salvar
         dadosAtualizacao.dados_complementares = normalizeEnumFields(
-          updateSolicitacaoDto.dados_complementares
+          updateSolicitacaoDto.dados_complementares,
         );
         camposAlterados.push('dados_complementares');
       }
@@ -602,7 +776,7 @@ export class SolicitacaoService {
           dados_alterados: {
             campos_alterados: camposAlterados,
           },
-          ip_usuario: user.ip || '0.0.0.0'
+          ip_usuario: user.ip || '0.0.0.0',
         });
 
         await historicoRepo.save(historico);
@@ -610,11 +784,14 @@ export class SolicitacaoService {
 
       // ===== CONSULTA PÓS-TRANSAÇÃO =====
       const solicitacaoAtualizada = await this.findById(id);
-      
-      this.logger.log(`Solicitação ${id} atualizada com sucesso`);
+
+      // Solicitação atualizada com sucesso
       return solicitacaoAtualizada;
     } catch (error) {
-      this.logger.error(`Erro ao atualizar solicitação ${id}: ${error.message}`, error);
+      this.logger.error(
+        `Erro ao atualizar solicitação ${id}: ${error.message}`,
+        error,
+      );
       throw error;
     }
   }
@@ -623,16 +800,20 @@ export class SolicitacaoService {
    * Submete uma solicitação para análise
    */
   async submeterSolicitacao(id: string, user: any): Promise<Solicitacao> {
-    this.logger.log(`Iniciando submissão da solicitação: ${id}`);
-    
+    // Iniciando submissão da solicitação
+
     try {
       // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
-      
+
       // Buscar a solicitação fora da transação
       const solicitacao = await this.findById(id);
 
       // Verificar se a solicitação está em estado que permite submissão
-      if (![StatusSolicitacao.ABERTA, StatusSolicitacao.PENDENTE].includes(solicitacao.status)) {
+      if (
+        ![StatusSolicitacao.ABERTA, StatusSolicitacao.PENDENTE].includes(
+          solicitacao.status,
+        )
+      ) {
         throwInvalidStatusTransition(
           solicitacao.status,
           StatusSolicitacao.EM_ANALISE,
@@ -647,7 +828,7 @@ export class SolicitacaoService {
       // Preparar dados para atualização
       const dadosAtualizacao = {
         status: StatusSolicitacao.EM_ANALISE,
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       // ===== TRANSAÇÃO MÍNIMA APENAS PARA OPERAÇÕES DE ESCRITA =====
@@ -667,9 +848,9 @@ export class SolicitacaoService {
           status_atual: StatusSolicitacao.EM_ANALISE,
           observacao: 'Solicitação submetida para análise',
           dados_alterados: {
-            status: StatusSolicitacao.EM_ANALISE
+            status: StatusSolicitacao.EM_ANALISE,
           },
-          ip_usuario: user.ip || '0.0.0.0'
+          ip_usuario: user.ip || '0.0.0.0',
         });
 
         await historicoRepo.save(historico);
@@ -677,11 +858,14 @@ export class SolicitacaoService {
 
       // ===== CONSULTA PÓS-TRANSAÇÃO =====
       const solicitacaoAtualizada = await this.findById(id);
-      
-      this.logger.log(`Solicitação ${id} submetida para análise com sucesso`);
+
+      // Solicitação submetida para análise com sucesso
       return solicitacaoAtualizada;
     } catch (error) {
-      this.logger.error(`Erro ao submeter solicitação ${id}: ${error.message}`, error);
+      this.logger.error(
+        `Erro ao submeter solicitação ${id}: ${error.message}`,
+        error,
+      );
       throw error;
     }
   }
@@ -694,11 +878,11 @@ export class SolicitacaoService {
     avaliarSolicitacaoDto: AvaliarSolicitacaoDto,
     user: any,
   ): Promise<Solicitacao> {
-    this.logger.log(`Iniciando avaliação da solicitação: ${id}`);
-    
+    // Iniciando avaliação da solicitação
+
     try {
       // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
-      
+
       // Buscar a solicitação fora da transação
       const solicitacao = await this.findById(id);
 
@@ -707,16 +891,15 @@ export class SolicitacaoService {
         solicitacao.status !== StatusSolicitacao.PENDENTE &&
         solicitacao.status !== StatusSolicitacao.EM_ANALISE
       ) {
-        throwInvalidStatusTransition(
-          solicitacao.status,
-          'AVALIACAO',
-          {
-            data: {
-              solicitacaoId: id,
-              statusesPermitidos: [StatusSolicitacao.PENDENTE, StatusSolicitacao.EM_ANALISE],
-            },
+        throwInvalidStatusTransition(solicitacao.status, 'AVALIACAO', {
+          data: {
+            solicitacaoId: id,
+            statusesPermitidos: [
+              StatusSolicitacao.PENDENTE,
+              StatusSolicitacao.EM_ANALISE,
+            ],
           },
-        );
+        });
       }
 
       // Determinar o novo status
@@ -727,7 +910,7 @@ export class SolicitacaoService {
       // Preparar dados para atualização
       const dadosAtualizacao: any = {
         status: novoStatus,
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       // Adicionar dados específicos para solicitações aprovadas
@@ -753,31 +936,37 @@ export class SolicitacaoService {
           usuario_id: user.id,
           status_anterior: solicitacao.status,
           status_atual: novoStatus,
-          observacao: avaliarSolicitacaoDto.parecer || 
-            (avaliarSolicitacaoDto.aprovado ? 'Solicitação aprovada' : 'Solicitação com pendências'),
+          observacao:
+            avaliarSolicitacaoDto.parecer ||
+            (avaliarSolicitacaoDto.aprovado
+              ? 'Solicitação aprovada'
+              : 'Solicitação com pendências'),
           dados_alterados: {
             status: novoStatus,
-            aprovado: avaliarSolicitacaoDto.aprovado
+            aprovado: avaliarSolicitacaoDto.aprovado,
           },
-          ip_usuario: user.ip || '0.0.0.0'
+          ip_usuario: user.ip || '0.0.0.0',
         });
 
         await historicoRepo.save(historico);
 
         // Registrar pendências quando não aprovado
-        if (!avaliarSolicitacaoDto.aprovado && 
-            avaliarSolicitacaoDto.pendencias && 
-            avaliarSolicitacaoDto.pendencias.length > 0) {
-          
+        if (
+          !avaliarSolicitacaoDto.aprovado &&
+          avaliarSolicitacaoDto.pendencias &&
+          avaliarSolicitacaoDto.pendencias.length > 0
+        ) {
           // Criar array de pendências para inserção em lote
-          const pendencias = avaliarSolicitacaoDto.pendencias.map(descricaoTexto => {
-            return pendenciaRepo.create({
-              solicitacao_id: id,
-              descricao: descricaoTexto,
-              status: StatusPendencia.ABERTA,
-              registrado_por_id: user.id
-            });
-          });
+          const pendencias = avaliarSolicitacaoDto.pendencias.map(
+            (descricaoTexto) => {
+              return pendenciaRepo.create({
+                solicitacao_id: id,
+                descricao: descricaoTexto,
+                status: StatusPendencia.ABERTA,
+                registrado_por_id: user.id,
+              });
+            },
+          );
 
           // Salvar todas as pendências de uma vez
           await pendenciaRepo.save(pendencias);
@@ -786,11 +975,16 @@ export class SolicitacaoService {
 
       // ===== CONSULTA PÓS-TRANSAÇÃO =====
       const solicitacaoAtualizada = await this.findById(id);
-      
-      this.logger.log(`Solicitação ${id} avaliada com sucesso. Status: ${novoStatus}`);
+
+      this.logger.log(
+        `Solicitação ${id} avaliada com sucesso. Status: ${novoStatus}`,
+      );
       return solicitacaoAtualizada;
     } catch (error) {
-      this.logger.error(`Erro ao avaliar solicitação ${id}: ${error.message}`, error);
+      this.logger.error(
+        `Erro ao avaliar solicitação ${id}: ${error.message}`,
+        error,
+      );
       throw error;
     }
   }
@@ -802,31 +996,27 @@ export class SolicitacaoService {
    * Cancela uma solicitação
    */
   async cancelarSolicitacao(id: string, user: any): Promise<Solicitacao> {
-    this.logger.log(`Iniciando cancelamento da solicitação: ${id}`);
-    
+    // Iniciando cancelamento da solicitação
+
     try {
       // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
-      
+
       // Buscar a solicitação fora da transação
       const solicitacao = await this.findById(id);
 
       // No novo ciclo de vida simplificado, solicitações aprovadas não podem ser canceladas
       if (solicitacao.status === StatusSolicitacao.APROVADA) {
-        throwSolicitacaoCannotDelete(
-          id,
-          solicitacao.status,
-          {
-            data: {
-              motivo: 'Solicitação aprovada não pode ser cancelada',
-            },
+        throwSolicitacaoCannotDelete(id, solicitacao.status, {
+          data: {
+            motivo: 'Solicitação aprovada não pode ser cancelada',
           },
-        );
+        });
       }
 
       // Preparar dados para atualização
       const dadosAtualizacao = {
         status: StatusSolicitacao.CANCELADA,
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       // ===== TRANSAÇÃO MÍNIMA APENAS PARA OPERAÇÕES DE ESCRITA =====
@@ -846,9 +1036,9 @@ export class SolicitacaoService {
           status_atual: StatusSolicitacao.CANCELADA,
           observacao: 'Solicitação cancelada pelo usuário',
           dados_alterados: {
-            status: StatusSolicitacao.CANCELADA
+            status: StatusSolicitacao.CANCELADA,
           },
-          ip_usuario: user.ip || '0.0.0.0'
+          ip_usuario: user.ip || '0.0.0.0',
         });
 
         await historicoRepo.save(historico);
@@ -856,11 +1046,14 @@ export class SolicitacaoService {
 
       // ===== CONSULTA PÓS-TRANSAÇÃO =====
       const solicitacaoAtualizada = await this.findById(id);
-      
-      this.logger.log(`Solicitação ${id} cancelada com sucesso`);
+
+      // Solicitação cancelada com sucesso
       return solicitacaoAtualizada;
     } catch (error) {
-      this.logger.error(`Erro ao cancelar solicitação ${id}: ${error.message}`, error);
+      this.logger.error(
+        `Erro ao cancelar solicitação ${id}: ${error.message}`,
+        error,
+      );
       throw error;
     }
   }
@@ -917,14 +1110,11 @@ export class SolicitacaoService {
         });
 
         if (!processoJudicial) {
-          throwProcessoJudicialNotFound(
-            vincularDto.processo_judicial_id,
-            {
-              data: {
-                solicitacaoId,
-              },
+          throwProcessoJudicialNotFound(vincularDto.processo_judicial_id, {
+            data: {
+              solicitacaoId,
             },
-          );
+          });
         }
 
         // Verificar se a solicitação já tem este processo vinculado
@@ -978,16 +1168,13 @@ export class SolicitacaoService {
           `Erro ao vincular processo judicial: ${error.message}`,
           error.stack,
         );
-        throwInternalError(
-          'Erro ao vincular processo judicial à solicitação',
-          {
-            data: {
-              solicitacaoId,
-              processoJudicialId: vincularDto.processo_judicial_id,
-              errorMessage: error.message,
-            },
+        throwInternalError('Erro ao vincular processo judicial à solicitação', {
+          data: {
+            solicitacaoId,
+            processoJudicialId: vincularDto.processo_judicial_id,
+            errorMessage: error.message,
           },
-        );
+        });
       }
     });
   }
@@ -1009,29 +1196,22 @@ export class SolicitacaoService {
 
         // Verificar se o usuário tem permissão
         if (![ROLES.ADMIN, ROLES.GESTOR].includes(user.role)) {
-          throwAccessDenied(
-            solicitacaoId,
-            user.id,
-            {
-              data: {
-                acao: 'desvincular_processo_judicial',
-                roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR],
-                roleAtual: user.role,
-              },
+          throwAccessDenied(solicitacaoId, user.id, {
+            data: {
+              acao: 'desvincular_processo_judicial',
+              roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR],
+              roleAtual: user.role,
             },
-          );
+          });
         }
 
         // Verificar se a solicitação tem processo vinculado
         if (!solicitacao.processo_judicial_id) {
-          throwProcessoJudicialNotLinked(
-            solicitacaoId,
-            {
-              data: {
-                motivo: 'Solicitação não possui processo judicial vinculado',
-              },
+          throwProcessoJudicialNotLinked(solicitacaoId, {
+            data: {
+              motivo: 'Solicitação não possui processo judicial vinculado',
             },
-          );
+          });
         }
 
         // Guardar informação do processo para o histórico
@@ -1111,17 +1291,13 @@ export class SolicitacaoService {
 
         // Verificar se o usuário tem permissão
         if (![ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO].includes(user.role)) {
-          throwAccessDenied(
-            solicitacaoId,
-            user.id,
-            {
-              data: {
-                acao: 'vincular_determinacao_judicial',
-                roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO],
-                roleAtual: user.role,
-              },
+          throwAccessDenied(solicitacaoId, user.id, {
+            data: {
+              acao: 'vincular_determinacao_judicial',
+              roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO],
+              roleAtual: user.role,
             },
-          );
+          });
         }
 
         // Verificar se a determinação judicial existe
@@ -1209,161 +1385,6 @@ export class SolicitacaoService {
     });
   }
 
-
-  /**
-   * Converte um cidadão da composição familiar para beneficiário principal de uma nova solicitação
-   * @param converterPapelDto Dados para conversão de papel
-   * @param user Usuário que está realizando a operação
-   * @returns Nova solicitação criada
-   */
-  async converterPapel(
-    converterPapelDto: ConverterPapelDto,
-    user: any,
-  ): Promise<Solicitacao> {
-    this.logger.log(
-      `Iniciando conversão de papel para cidadão ${converterPapelDto.cidadao_id}`,
-    );
-
-    return this.connection.transaction(async (manager) => {
-      try {
-        // Buscar a solicitação de origem
-        const solicitacaoOrigem = await this.findById(
-          converterPapelDto.solicitacao_origem_id,
-        );
-
-        if (!solicitacaoOrigem) {
-          throwSolicitacaoNotFound(
-            converterPapelDto.solicitacao_origem_id,
-            {
-              data: {
-                contexto: 'conversao_papel',
-              },
-            },
-          );
-        }
-
-        // Verificar se o cidadão está na composição familiar da solicitação
-        const composicaoFamiliar =
-          solicitacaoOrigem.dados_complementares?.composicao_familiar || [];
-        const membroIndex = composicaoFamiliar.findIndex(
-          (membro) => membro.cidadao_id === converterPapelDto.cidadao_id,
-        );
-
-        if (membroIndex === -1) {
-          throwCidadaoNotInComposicaoFamiliar(
-            converterPapelDto.cidadao_id,
-            converterPapelDto.solicitacao_origem_id,
-            {
-              data: {
-                contexto: 'conversao_papel',
-              },
-            },
-          );
-        }
-
-        // Obter o membro e remover da composição familiar
-        const membro = { ...composicaoFamiliar[membroIndex] };
-        composicaoFamiliar.splice(membroIndex, 1);
-
-        // Atualizar a solicitação de origem com a nova composição familiar
-        solicitacaoOrigem.dados_complementares = {
-          ...solicitacaoOrigem.dados_complementares,
-          composicao_familiar: composicaoFamiliar,
-        };
-
-        await manager.save(solicitacaoOrigem);
-
-        // Criar uma nova solicitação com o cidadão como beneficiário principal
-        const novaSolicitacao = new Solicitacao();
-        novaSolicitacao.beneficiario_id = converterPapelDto.cidadao_id;
-        novaSolicitacao.tipo_beneficio_id = converterPapelDto.tipo_beneficio_id;
-        novaSolicitacao.unidade_id = converterPapelDto.unidade_id;
-        novaSolicitacao.tecnico_id = user.id;
-        novaSolicitacao.status = StatusSolicitacao.RASCUNHO;
-        novaSolicitacao.data_abertura = new Date();
-        novaSolicitacao.solicitacao_original_id =
-          converterPapelDto.solicitacao_origem_id;
-        novaSolicitacao.dados_complementares =
-          converterPapelDto.dados_complementares || {};
-
-        // Adicionar observação sobre a conversão de papel
-        novaSolicitacao.observacoes = `Solicitação criada a partir da conversão de papel. Justificativa: ${converterPapelDto.justificativa}`;
-
-        await manager.save(novaSolicitacao);
-
-        // Registrar no histórico da solicitação de origem
-        const historicoOrigem = this.historicoRepository.create(
-          normalizeEnumFields({
-            solicitacao_id: solicitacaoOrigem.id,
-            status_anterior: solicitacaoOrigem.status,
-            status_atual: solicitacaoOrigem.status,
-            usuario_id: user.id,
-            observacao: `Cidadão removido da composição familiar para se tornar beneficiário principal em nova solicitação (${novaSolicitacao.protocolo})`,
-            dados_alterados: {
-              composicao_familiar: {
-                acao: 'remocao_membro',
-                cidadao_id: converterPapelDto.cidadao_id,
-                nova_solicitacao_id: novaSolicitacao.id,
-                nova_solicitacao_protocolo: novaSolicitacao.protocolo,
-              },
-            },
-            ip_usuario: user.ip || '0.0.0.0',
-          }),
-        );
-
-        await manager.save(historicoOrigem);
-
-        // Registrar no histórico da nova solicitação
-        const historicoNova = this.historicoRepository.create(
-          normalizeEnumFields({
-            solicitacao_id: novaSolicitacao.id,
-            status_anterior: StatusSolicitacao.RASCUNHO,
-            status_atual: StatusSolicitacao.RASCUNHO,
-            usuario_id: user.id,
-            observacao: `Solicitação criada a partir da conversão de papel do cidadão que estava na composição familiar da solicitação ${solicitacaoOrigem.protocolo}`,
-            dados_alterados: {
-              conversao_papel: {
-                solicitacao_origem_id: solicitacaoOrigem.id,
-                solicitacao_origem_protocolo: solicitacaoOrigem.protocolo,
-                justificativa: converterPapelDto.justificativa,
-              },
-            },
-            ip_usuario: user.ip || '0.0.0.0',
-          }),
-        );
-
-        await manager.save(historicoNova);
-
-        this.logger.log(
-          `Conversão de papel concluída com sucesso. Nova solicitação: ${novaSolicitacao.id}`,
-        );
-
-        return this.findById(novaSolicitacao.id);
-      } catch (error) {
-        // Se for um erro do catálogo, relançar
-        if (error.name === 'AppError') {
-          throw error;
-        }
-
-        this.logger.error(
-          `Erro ao converter papel do cidadão: ${error.message}`,
-          error.stack,
-        );
-        throwInternalError(
-          'Erro ao converter papel do cidadão para beneficiário principal',
-          {
-            data: {
-              cidadaoId: converterPapelDto.cidadao_id,
-              solicitacaoOrigemId: converterPapelDto.solicitacao_origem_id,
-              errorMessage: error.message,
-            },
-          },
-        );
-      }
-    });
-  }
-
-
   async desvincularDeterminacaoJudicial(
     solicitacaoId: string,
     user: any,
@@ -1375,29 +1396,22 @@ export class SolicitacaoService {
 
         // Verificar se o usuário tem permissão
         if (![ROLES.ADMIN, ROLES.GESTOR].includes(user.role)) {
-          throwAccessDenied(
-            solicitacaoId,
-            user.id,
-            {
-              data: {
-                acao: 'desvincular_determinacao_judicial',
-                roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR],
-                roleAtual: user.role,
-              },
+          throwAccessDenied(solicitacaoId, user.id, {
+            data: {
+              acao: 'desvincular_determinacao_judicial',
+              roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR],
+              roleAtual: user.role,
             },
-          );
+          });
         }
 
         // Verificar se a solicitação tem determinação vinculada
         if (!solicitacao.determinacao_judicial_id) {
-          throwDeterminacaoJudicialNotLinked(
-            solicitacaoId,
-            {
-              data: {
-                motivo: 'Solicitação não possui determinação judicial vinculada',
-              },
+          throwDeterminacaoJudicialNotLinked(solicitacaoId, {
+            data: {
+              motivo: 'Solicitação não possui determinação judicial vinculada',
             },
-          );
+          });
         }
 
         // Guardar informação da determinação para o histórico
@@ -1457,5 +1471,66 @@ export class SolicitacaoService {
         );
       }
     });
+  }
+
+  /**
+   * Realiza o soft delete de uma solicitação
+   * @param solicitacaoId ID da solicitação a ser removida
+   * @param user Usuário que está realizando a exclusão
+   * @returns void
+   * @throws NotFoundException se a solicitação não for encontrada
+   * @throws BadRequestException se o status não permitir exclusão
+   */
+  async removerSolicitacao(
+    solicitacaoId: string,
+    user: any,
+  ): Promise<void> {
+    this.logger.log(`Iniciando remoção da solicitação: ${solicitacaoId}`);
+
+    try {
+      // Buscar a solicitação para validar
+      const solicitacao = await this.findById(solicitacaoId);
+
+      // Validar se o status permite exclusão (apenas RASCUNHO ou ABERTA)
+      const statusPermitidos = [
+        StatusSolicitacao.RASCUNHO,
+        StatusSolicitacao.ABERTA,
+      ];
+
+      if (!statusPermitidos.includes(solicitacao.status)) {
+        throwSolicitacaoCannotDelete(solicitacaoId, solicitacao.status, {
+          data: {
+            motivo: `Apenas solicitações com status 'RASCUNHO' ou 'ABERTA' podem ser excluídas. Status atual: '${solicitacao.status}'`,
+            statusPermitidos,
+          },
+        });
+      }
+
+      // Realizar o soft delete utilizando o método do repositório
+      await this.solicitacaoRepository.remover(solicitacaoId);
+
+      // Registrar a exclusão no histórico
+      await this.historicoRepository.save({
+        solicitacao_id: solicitacaoId,
+        status_anterior: solicitacao.status,
+        status_atual: solicitacao.status,
+        usuario_id: user.id,
+        observacao: `Solicitação removida (soft delete) pelo usuário`,
+        dados_alterados: {
+          acao: 'soft_delete',
+          status_anterior: solicitacao.status,
+          motivo: 'Exclusão lógica da solicitação',
+        },
+        ip_usuario: user.ip || '0.0.0.0',
+      });
+
+      this.logger.log(`Solicitação ${solicitacaoId} removida com sucesso`);
+    } catch (error) {
+      this.logger.error(
+        `Erro ao remover solicitação ${solicitacaoId}: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
   }
 }

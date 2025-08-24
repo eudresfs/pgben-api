@@ -5,6 +5,7 @@ import {
   ParseUUIDPipe,
   Body,
   UseGuards,
+  UseInterceptors,
   Req,
   Get,
   HttpCode,
@@ -30,6 +31,9 @@ import {
   ObservacaoTransicaoDto,
   AprovacaoSolicitacaoDto,
 } from '../dto/observacao-transicao.dto';
+import { RequerAprovacao } from '../../aprovacao/decorators/requer-aprovacao.decorator';
+import { TipoAcaoCritica } from '../../aprovacao/enums';
+import { AprovacaoInterceptor } from '../../aprovacao/interceptors/aprovacao.interceptor';
 
 /**
  * Controller de Workflow de Solicitação
@@ -40,6 +44,7 @@ import {
 @ApiTags('Solicitação')
 @Controller('solicitacao/workflow')
 @UseGuards(JwtAuthGuard, PermissionGuard)
+@UseInterceptors(AprovacaoInterceptor)
 @ApiBearerAuth()
 export class WorkflowSolicitacaoController {
   constructor(private readonly workflowService: WorkflowSolicitacaoService) {}
@@ -66,33 +71,6 @@ export class WorkflowSolicitacaoController {
   }
 
   /**
-   * Submete um rascunho de solicitação
-   * @param solicitacaoId ID da solicitação
-   * @param req Requisição
-   * @returns Resultado da transição
-   */
-  @Post(':solicitacaoId/submeter')
-  @RequiresPermission({
-    permissionName: 'solicitacao.submeter',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @ApiOperation({
-    summary: 'Submete um rascunho de solicitação',
-    description: 'Altera o estado de uma solicitação de RASCUNHO para ABERTA.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Rascunho submetido com sucesso',
-  })
-  async submeterRascunho(
-    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
-    @Req() req: any,
-  ): Promise<ResultadoTransicaoEstado> {
-    return this.workflowService.submeterRascunho(solicitacaoId, req.user.id);
-  }
-
-  /**
    * Envia uma solicitação para análise
    * @param solicitacaoId ID da solicitação
    * @param req Requisição
@@ -102,7 +80,7 @@ export class WorkflowSolicitacaoController {
   @RequiresPermission({
     permissionName: 'solicitacao.enviar-para-analise',
     scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId'
+    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({
     summary: 'Envia uma solicitação para análise',
@@ -129,7 +107,7 @@ export class WorkflowSolicitacaoController {
    */
   @Post(':solicitacaoId/aprovar')
   @RequiresPermission({
-    permissionName: 'solicitacao.aprovar'
+    permissionName: 'solicitacao.aprovar',
   })
   @ApiOperation({
     summary: 'Aprova uma solicitação',
@@ -199,8 +177,11 @@ export class WorkflowSolicitacaoController {
   @Post(':solicitacaoId/cancelar')
   @RequiresPermission({
     permissionName: 'solicitacao.cancelar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
+  })
+  @RequerAprovacao({
+    tipo: TipoAcaoCritica.CANCELAMENTO_SOLICITACAO,
+    permitirAutoAprovacao: true,
+    descricao: 'Cancelamento de solicitação',
   })
   @ApiOperation({
     summary: 'Cancela uma solicitação',
@@ -211,7 +192,7 @@ export class WorkflowSolicitacaoController {
     description: 'Solicitação cancelada com sucesso',
   })
   async cancelarSolicitacao(
-    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
+    @Param('solicitacao_id', ParseUUIDPipe) solicitacaoId: string,
     @Body() body: ObservacaoTransicaoDto,
     @Req() req: any,
   ): Promise<ResultadoTransicaoEstado> {
@@ -222,7 +203,6 @@ export class WorkflowSolicitacaoController {
     );
   }
 
-  
   /**
    * Realiza uma transição de estado genérica
    * @param solicitacaoId ID da solicitação

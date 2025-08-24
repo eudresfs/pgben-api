@@ -161,10 +161,10 @@ services:
       # Configurações do MinIO
       - MINIO_ENDPOINT=minio
       - MINIO_PORT=9000
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin123
-      - MINIO_USE_SSL=false
-      - MINIO_BUCKET_NAME=pgben-documents
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
+      - MINIO_USE_SSL=${MINIO_USE_SSL:-false}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-pgben-documents}
       # Configurações de segurança
       - JWT_SECRET=dev-jwt-secret-key
       - COOKIE_SECRET=dev-cookie-secret-key

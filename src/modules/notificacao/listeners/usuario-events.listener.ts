@@ -1,6 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-// import { NotificationManagerService } from '../services/notification-manager.service'; // TODO: Reativar após resolver dependência circular
+import {
+  INotificationManagerService,
+  NOTIFICATION_MANAGER_SERVICE,
+} from '../interfaces/notification-manager.interface';
 import { CanalNotificacao } from '../../../entities/notification-template.entity';
 
 /**
@@ -12,7 +15,8 @@ export class UsuarioEventsListener {
   private readonly logger = new Logger(UsuarioEventsListener.name);
 
   constructor(
-    // private readonly notificationManager: NotificationManagerService, // TODO: Reativar após resolver dependência circular
+    @Inject(NOTIFICATION_MANAGER_SERVICE)
+    private readonly notificationManager: INotificationManagerService,
   ) {}
 
   /**
@@ -32,21 +36,20 @@ export class UsuarioEventsListener {
     );
 
     try {
-      // TODO: Reativar após resolver dependência circular
-      // await this.notificationManager.criarNotificacao({
-      //   destinatario_id: payload.userId,
-      //   canal: CanalNotificacao.EMAIL,
-      //   dados_contexto: {
-      //     nome: payload.nome,
-      //     email: payload.email,
-      //     senha: payload.senha,
-      //     data_criacao: new Date().toLocaleDateString('pt-BR'),
-      //     url_sistema: process.env.FRONTEND_URL || 'http://localhost:3000',
-      //   },
-      // });
+      await this.notificationManager.criarNotificacao({
+        destinatario_id: payload.userId,
+        canal: CanalNotificacao.EMAIL,
+        dados_contexto: {
+          nome: payload.nome,
+          email: payload.email,
+          senha: payload.senha,
+          data_criacao: new Date().toLocaleDateString('pt-BR'),
+          url_sistema: process.env.FRONTEND_URL || 'http://localhost:3000',
+        },
+      });
 
       this.logger.log(
-        `Notificação de primeiro acesso temporariamente desabilitada para usuário: ${payload.userId}`,
+        `Notificação de primeiro acesso enviada para usuário: ${payload.userId}`,
       );
     } catch (error) {
       this.logger.error(
@@ -72,20 +75,19 @@ export class UsuarioEventsListener {
     );
 
     try {
-      // TODO: Reativar após resolver dependência circular
-      // await this.notificationManager.criarNotificacao({
-      //   destinatario_id: payload.userId,
-      //   canal: CanalNotificacao.EMAIL,
-      //   dados_contexto: {
-      //     nome: payload.nome,
-      //     email: payload.email,
-      //     data_criacao: new Date().toLocaleDateString('pt-BR'),
-      //     url_sistema: process.env.FRONTEND_URL || 'http://localhost:3000',
-      //   },
-      // });
+      await this.notificationManager.criarNotificacao({
+        destinatario_id: payload.userId,
+        canal: CanalNotificacao.EMAIL,
+        dados_contexto: {
+          nome: payload.nome,
+          email: payload.email,
+          data_criacao: new Date().toLocaleDateString('pt-BR'),
+          url_sistema: process.env.FRONTEND_URL || 'http://localhost:3000',
+        },
+      });
 
       this.logger.log(
-        `Notificação de validação de email temporariamente desabilitada para usuário: ${payload.userId}`,
+        `Notificação de validação de email enviada para usuário: ${payload.userId}`,
       );
     } catch (error) {
       this.logger.error(
@@ -112,22 +114,21 @@ export class UsuarioEventsListener {
     );
 
     try {
-      // TODO: Reativar após resolver dependência circular
-      // await this.notificationManager.criarNotificacao({
-      //   destinatario_id: payload.userId,
-      //   canal: CanalNotificacao.EMAIL,
-      //   dados_contexto: {
-      //     nome: payload.nome,
-      //     email: payload.email,
-      //     senha_temporaria: payload.senhaTemporaria,
-      //     data_solicitacao: new Date().toLocaleDateString('pt-BR'),
-      //     hora_solicitacao: new Date().toLocaleTimeString('pt-BR'),
-      //     url_sistema: process.env.FRONTEND_URL || 'http://localhost:3000',
-      //   },
-      // });
+      await this.notificationManager.criarNotificacao({
+        destinatario_id: payload.userId,
+        canal: CanalNotificacao.EMAIL,
+        dados_contexto: {
+          nome: payload.nome,
+          email: payload.email,
+          senha_temporaria: payload.senhaTemporaria,
+          data_solicitacao: new Date().toLocaleDateString('pt-BR'),
+          hora_solicitacao: new Date().toLocaleTimeString('pt-BR'),
+          url_sistema: process.env.FRONTEND_URL || 'http://localhost:3000',
+        },
+      });
 
       this.logger.log(
-        `Notificação de recuperação de senha temporariamente desabilitada para usuário: ${payload.userId}`,
+        `Notificação de recuperação de senha enviada para usuário: ${payload.userId}`,
       );
     } catch (error) {
       this.logger.error(

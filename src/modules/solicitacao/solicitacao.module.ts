@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from '../../auth/auth.module';
+import { createScopedRepositoryProvider } from '../../common/providers/scoped-repository.provider';
 
 import { forwardRef } from '@nestjs/common';
 import { BeneficioModule } from '../beneficio/beneficio.module';
@@ -11,6 +12,7 @@ import { CidadaoModule } from '../cidadao/cidadao.module';
 import { UsuarioModule } from '../usuario/usuario.module';
 import { NotificacaoModule } from '../notificacao/notificacao.module';
 import { ConfiguracaoModule } from '../configuracao/configuracao.module';
+import { DocumentoModule } from '../documento/documento.module';
 import { SolicitacaoController } from './controllers/solicitacao.controller';
 import { SolicitacaoService } from './services/solicitacao.service';
 import { DeterminacaoJudicialController } from './controllers/determinacao-judicial.controller';
@@ -36,9 +38,15 @@ import {
   Pendencia,
   Usuario,
   NotificationTemplate,
+  ComposicaoFamiliar,
+  TipoBeneficio,
 } from '../../entities';
 import { MonitoramentoAluguelSocialService } from './services/monitoramento-aluguel-social.service';
 import { TemplateMappingService } from './services/template-mapping.service';
+import { SolicitacaoRepository } from './repositories/solicitacao.repository';
+import { HistoricoSolicitacaoRepository } from './repositories/historico-solicitacao.repository';
+import { PendenciaRepository } from './repositories/pendencia.repository';
+import { SharedModule } from '../../shared/shared.module';
 
 /**
  * Módulo de Solicitações
@@ -55,6 +63,8 @@ import { TemplateMappingService } from './services/template-mapping.service';
       DeterminacaoJudicial,
       Usuario, // Adicionado para permitir injeção do Repository<Usuario>
       NotificationTemplate, // Adicionado para permitir injeção do TemplateRepository
+      ComposicaoFamiliar, // Adicionado para validação cruzada com solicitações
+      TipoBeneficio, // Adicionado para permitir injeção do Repository<TipoBeneficio>
     ]),
     // Importa o módulo judicial para acesso aos repositórios e serviços
     JudicialModule,
@@ -74,6 +84,14 @@ import { TemplateMappingService } from './services/template-mapping.service';
     // Módulo de agendamento para tarefas programadas
     ScheduleModule.forRoot(),
     forwardRef(() => BeneficioModule),
+    // Módulo de documentos para validação de requisitos documentais
+    DocumentoModule,
+    // Módulo de aprovação para AprovacaoInterceptor
+    forwardRef(() =>
+      import('../aprovacao/aprovacao.module').then((m) => m.AprovacaoModule),
+    ),
+    // Módulo compartilhado para CacheService
+    SharedModule,
   ],
   controllers: [
     SolicitacaoController,
@@ -83,6 +101,17 @@ import { TemplateMappingService } from './services/template-mapping.service';
     PendenciaController,
   ],
   providers: [
+    // Repositórios com escopo
+    createScopedRepositoryProvider(Solicitacao),
+    createScopedRepositoryProvider(HistoricoSolicitacao),
+    createScopedRepositoryProvider(Pendencia),
+
+    // Repositórios customizados
+    SolicitacaoRepository,
+    HistoricoSolicitacaoRepository,
+    PendenciaRepository,
+
+    // Serviços
     SolicitacaoService,
     DeterminacaoJudicialService,
     DeterminacaoJudicialAdapterService,

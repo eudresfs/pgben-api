@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, TableForeignKey } from 'typeorm';
 
-export class CreateConcessaoAndUpdatePagamento1750333000000 implements MigrationInterface {
+export class CreateConcessaoAndUpdatePagamento1750333000000
+  implements MigrationInterface
+{
   private readonly concessaoTable = 'concessao';
   private readonly concessaoStatusEnum = 'status_concessao_enum';
   private readonly pagamentoTable = 'pagamento';
@@ -47,14 +49,16 @@ export class CreateConcessaoAndUpdatePagamento1750333000000 implements Migration
     `);
 
     // 4. Adicionar FK pagamento -> concessao
-    await queryRunner.createForeignKey("pagamento", new TableForeignKey({
-      name: "fk_pagamento_concessao",
-      columnNames: ["concessao_id"],
-      referencedTableName: "concessao",
-      referencedColumnNames: ["id"],
-      onDelete: "CASCADE", // ou SET NULL ou RESTRICT, dependendo da sua regra de negócio
-    }));
-
+    await queryRunner.createForeignKey(
+      'pagamento',
+      new TableForeignKey({
+        name: 'fk_pagamento_concessao',
+        columnNames: ['concessao_id'],
+        referencedTableName: 'concessao',
+        referencedColumnNames: ['id'],
+        onDelete: 'CASCADE', // ou SET NULL ou RESTRICT, dependendo da sua regra de negócio
+      }),
+    );
 
     // 5. Tornar solicitacao_id opcional removendo NOT NULL constraint se existir
     await queryRunner.query(`

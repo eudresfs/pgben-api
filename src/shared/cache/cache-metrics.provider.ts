@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
@@ -74,7 +79,9 @@ export class CacheMetricsProvider implements OnModuleInit, OnModuleDestroy {
     try {
       // Verificar se as métricas foram desabilitadas devido a falhas consecutivas
       if (this.metricsDisabled) {
-        this.logger.debug('Coleta de métricas de cache temporariamente desabilitada devido a falhas consecutivas');
+        this.logger.debug(
+          'Coleta de métricas de cache temporariamente desabilitada devido a falhas consecutivas',
+        );
         this.reportEmptyMetrics();
         return;
       }
@@ -89,40 +96,46 @@ export class CacheMetricsProvider implements OnModuleInit, OnModuleDestroy {
       try {
         // Teste simples de conectividade com timeout reduzido
         const testPromise = this.cacheQueue.getJobCounts();
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout na verificação de conectividade')), 2000)
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error('Timeout na verificação de conectividade')),
+            2000,
+          ),
         );
-        
+
         await Promise.race([testPromise, timeoutPromise]);
-        
+
         // Se chegou até aqui, resetar contador de falhas
         this.consecutiveFailures = 0;
         if (this.metricsDisabled) {
           this.metricsDisabled = false;
-          this.logger.log('Coleta de métricas de cache reabilitada - Redis acessível novamente');
+          this.logger.log(
+            'Coleta de métricas de cache reabilitada - Redis acessível novamente',
+          );
         }
       } catch (connectivityError) {
         // Incrementar contador de falhas consecutivas
         this.consecutiveFailures++;
-        
+
         // Se houver erro de conectividade ou autenticação, reportar métricas vazias
-        if (connectivityError.message.includes('NOAUTH') || 
-            connectivityError.message.includes('Authentication') ||
-            connectivityError.message.includes('Timeout') ||
-            connectivityError.message.includes('Connection')) {
-          
+        if (
+          connectivityError.message.includes('NOAUTH') ||
+          connectivityError.message.includes('Authentication') ||
+          connectivityError.message.includes('Timeout') ||
+          connectivityError.message.includes('Connection')
+        ) {
           this.logger.warn(
-            `Redis não acessível (${connectivityError.message}) - Falha ${this.consecutiveFailures}/${this.maxConsecutiveFailures}`
+            `Redis não acessível (${connectivityError.message}) - Falha ${this.consecutiveFailures}/${this.maxConsecutiveFailures}`,
           );
-          
+
           // Desabilitar coleta após muitas falhas consecutivas
           if (this.consecutiveFailures >= this.maxConsecutiveFailures) {
             this.metricsDisabled = true;
             this.logger.error(
-              `Coleta de métricas de cache desabilitada após ${this.maxConsecutiveFailures} falhas consecutivas`
+              `Coleta de métricas de cache desabilitada após ${this.maxConsecutiveFailures} falhas consecutivas`,
             );
           }
-          
+
           this.reportEmptyMetrics();
           return;
         }
@@ -132,34 +145,43 @@ export class CacheMetricsProvider implements OnModuleInit, OnModuleDestroy {
       // Coletar métricas do Redis via Bull com timeout e limitação
       const timeout = 5000; // 5 segundos de timeout
       const maxJobs = 50; // Reduzir ainda mais para evitar sobrecarga
-      
-      const jobCounts = await Promise.race([
+
+      const jobCounts = (await Promise.race([
         this.cacheQueue.getJobCounts(),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout ao obter contadores de jobs')), timeout)
-        )
-      ]) as any;
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error('Timeout ao obter contadores de jobs')),
+            timeout,
+          ),
+        ),
+      ])) as any;
 
       // Coletar apenas jobs ativos e em espera para reduzir carga
-      const [activeJobs, waitingJobs] = await Promise.all([
+      const [activeJobs, waitingJobs] = (await Promise.all([
         Promise.race([
           this.cacheQueue.getJobs(['active'], 0, maxJobs),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout ao obter jobs ativos')), timeout)
-          )
+          new Promise((_, reject) =>
+            setTimeout(
+              () => reject(new Error('Timeout ao obter jobs ativos')),
+              timeout,
+            ),
+          ),
         ]),
         Promise.race([
           this.cacheQueue.getJobs(['waiting'], 0, maxJobs),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout ao obter jobs em espera')), timeout)
-          )
-        ])
-      ]) as any[];
+          new Promise((_, reject) =>
+            setTimeout(
+              () => reject(new Error('Timeout ao obter jobs em espera')),
+              timeout,
+            ),
+          ),
+        ]),
+      ])) as any[];
 
       // Calcular tamanho aproximado do cache em bytes de forma mais eficiente
       let totalSizeBytes = 0;
       const allJobs = [...(activeJobs || []), ...(waitingJobs || [])];
-      
+
       // Calcular tamanho apenas dos primeiros 20 jobs para reduzir processamento
       const jobsToCalculate = allJobs.slice(0, 20);
       for (const job of jobsToCalculate) {
@@ -170,12 +192,17 @@ export class CacheMetricsProvider implements OnModuleInit, OnModuleDestroy {
           }
         } catch (error) {
           // Ignorar erros de serialização de jobs individuais
-          this.logger.debug(`Erro ao calcular tamanho do job: ${error.message}`);
+          this.logger.debug(
+            `Erro ao calcular tamanho do job: ${error.message}`,
+          );
         }
       }
 
       // Estimar tamanho total baseado na amostra
-      if (allJobs.length > jobsToCalculate.length && jobsToCalculate.length > 0) {
+      if (
+        allJobs.length > jobsToCalculate.length &&
+        jobsToCalculate.length > 0
+      ) {
         const avgJobSize = totalSizeBytes / jobsToCalculate.length;
         totalSizeBytes = Math.round(avgJobSize * allJobs.length);
       }
@@ -258,29 +285,6 @@ export class CacheMetricsProvider implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Registra um hit no cache
-   */
-  registerCacheHit(): void {
-    this.cacheHits++;
-    this.cacheOperations.get++;
-  }
-
-  /**
-   * Registra um miss no cache
-   */
-  registerCacheMiss(): void {
-    this.cacheMisses++;
-    this.cacheOperations.get++;
-  }
-
-  /**
-   * Registra uma operação de set no cache
-   */
-  registerCacheSet(): void {
-    this.cacheOperations.set++;
-  }
-
-  /**
    * Registra uma operação de delete no cache
    */
   registerCacheDelete(): void {
@@ -298,8 +302,182 @@ export class CacheMetricsProvider implements OnModuleInit, OnModuleDestroy {
    * Registra uma falha no cache
    */
   registerCacheFailure(): void {
-    this.cacheFailures++;
-    this.metricsService.recordCacheOperation('failure', false, this.cacheType);
+    if (this.metricsDisabled || !this.cacheEnabled) return;
+
+    try {
+      this.metricsService.recordCacheOperation(
+        'failure',
+        false,
+        'unknown'
+      );
+    } catch (error) {
+      this.logger.debug(
+        `Erro ao registrar falha de cache: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Registra um cache hit com métricas detalhadas
+   * @param entityType Tipo da entidade
+   * @param duration Duração da operação em ms
+   */
+  registerCacheHit(entityType: string, duration: number): void {
+    if (this.metricsDisabled || !this.cacheEnabled) return;
+
+    try {
+      this.metricsService.recordCacheOperation(
+        'get',
+        true,
+        this.cacheType,
+      );
+      
+      this.metricsService.recordCacheOperationDuration(
+        'get',
+        duration / 1000, // Converter para segundos
+        this.cacheType,
+      );
+    } catch (error) {
+      this.logger.debug(
+        `Erro ao registrar cache hit: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Registra um cache miss com métricas detalhadas
+   * @param entityType Tipo da entidade
+   * @param duration Duração da operação em ms
+   */
+  registerCacheMiss(entityType: string, duration: number): void {
+    if (this.metricsDisabled || !this.cacheEnabled) return;
+
+    try {
+      this.metricsService.recordCacheOperation(
+        'get',
+        false,
+        this.cacheType,
+      );
+      
+      this.metricsService.recordCacheOperationDuration(
+        'get',
+        duration / 1000, // Converter para segundos
+        this.cacheType,
+      );
+    } catch (error) {
+      this.logger.debug(
+        `Erro ao registrar cache miss: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Registra uma operação de set no cache
+   * @param entityType Tipo da entidade
+   * @param duration Duração da operação em ms
+   */
+  registerCacheSet(entityType: string, duration: number): void {
+    if (this.metricsDisabled || !this.cacheEnabled) return;
+
+    try {
+      this.metricsService.recordCacheOperation(
+        'set',
+        true,
+        this.cacheType,
+      );
+      
+      this.metricsService.recordCacheOperationDuration(
+        'set',
+        duration / 1000, // Converter para segundos
+        this.cacheType,
+      );
+    } catch (error) {
+      this.logger.debug(
+        `Erro ao registrar cache set: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Registra uma operação de set em lote
+   * @param entityType Tipo da entidade
+   * @param operationCount Número de operações
+   * @param duration Duração total em ms
+   */
+  registerCacheBatchSet(entityType: string, operationCount: number, duration: number): void {
+    if (this.metricsDisabled || !this.cacheEnabled) return;
+
+    try {
+      this.metricsService.recordCacheOperation(
+        'batch_set',
+        true,
+        entityType
+      );
+      
+      this.metricsService.recordCacheOperationDuration(
+        'batch_set',
+        duration / 1000,
+        entityType
+      );
+    } catch (error) {
+      this.logger.debug(
+        `Erro ao registrar cache batch set: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Registra uma operação de invalidação
+   * @param entityType Tipo da entidade
+   * @param duration Duração da operação em ms
+   */
+  registerCacheInvalidation(entityType: string, duration: number): void {
+    if (this.metricsDisabled || !this.cacheEnabled) return;
+
+    try {
+      this.metricsService.recordCacheOperation(
+        'invalidation',
+        true,
+        this.cacheType,
+      );
+      
+      this.metricsService.recordCacheOperationDuration(
+        'invalidation',
+        duration / 1000, // Converter para segundos
+        this.cacheType,
+      );
+    } catch (error) {
+      this.logger.debug(
+        `Erro ao registrar cache invalidation: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Registra um erro de cache com tipo de entidade
+   * @param entityType Tipo da entidade
+   * @param duration Duração da operação em ms
+   */
+  registerCacheError(entityType: string, duration: number): void {
+    if (this.metricsDisabled || !this.cacheEnabled) return;
+
+    try {
+      this.metricsService.recordCacheOperation(
+        'error',
+        false,
+        this.cacheType,
+      );
+      
+      this.metricsService.recordCacheOperationDuration(
+        'error',
+        duration / 1000, // Converter para segundos
+        this.cacheType,
+      );
+    } catch (error) {
+      this.logger.debug(
+        `Erro ao registrar cache error: ${error.message}`,
+      );
+    }
   }
 
   /**

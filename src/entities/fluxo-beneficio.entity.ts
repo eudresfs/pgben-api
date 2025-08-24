@@ -246,12 +246,22 @@ export class FluxoBeneficio {
   getNivelCriticidade(): 'BAIXA' | 'MEDIA' | 'ALTA' {
     let pontos = 0;
 
-    if (this.isObrigatorio()) {pontos += 2;}
-    if (!this.permiteRetorno()) {pontos += 2;}
-    if (this.isEtapaDecisao() || this.isEtapaFinal()) {pontos += 1;}
+    if (this.isObrigatorio()) {
+      pontos += 2;
+    }
+    if (!this.permiteRetorno()) {
+      pontos += 2;
+    }
+    if (this.isEtapaDecisao() || this.isEtapaFinal()) {
+      pontos += 1;
+    }
 
-    if (pontos <= 2) {return 'BAIXA';}
-    if (pontos <= 4) {return 'MEDIA';}
+    if (pontos <= 2) {
+      return 'BAIXA';
+    }
+    if (pontos <= 4) {
+      return 'MEDIA';
+    }
     return 'ALTA';
   }
 
@@ -285,19 +295,29 @@ export class FluxoBeneficio {
    */
   isConsistente(): boolean {
     // Verifica se tem tipo de benefício
-    if (!this.tipo_beneficio_id) {return false;}
+    if (!this.tipo_beneficio_id) {
+      return false;
+    }
 
     // Verifica se tem nome da etapa
-    if (!this.nome_etapa || this.nome_etapa.trim() === '') {return false;}
+    if (!this.nome_etapa || this.nome_etapa.trim() === '') {
+      return false;
+    }
 
     // Verifica se ordem é válida
-    if (this.ordem < 1) {return false;}
+    if (this.ordem < 1) {
+      return false;
+    }
 
     // Verifica se tipo de etapa é válido
-    if (!Object.values(TipoEtapa).includes(this.tipo_etapa)) {return false;}
+    if (!Object.values(TipoEtapa).includes(this.tipo_etapa)) {
+      return false;
+    }
 
     // Verifica se perfil responsável é válido
-    if (!Object.values(Role).includes(this.perfil_responsavel)) {return false;}
+    if (!Object.values(Role).includes(this.perfil_responsavel)) {
+      return false;
+    }
 
     return true;
   }
@@ -307,13 +327,19 @@ export class FluxoBeneficio {
    */
   podeSerRemovida(): boolean {
     // Não pode remover se já foi removida
-    if (this.foiRemovido()) {return false;}
+    if (this.foiRemovido()) {
+      return false;
+    }
 
     // Primeira etapa geralmente não pode ser removida
-    if (this.isPrimeiraEtapa()) {return false;}
+    if (this.isPrimeiraEtapa()) {
+      return false;
+    }
 
     // Etapas obrigatórias precisam de cuidado especial
-    if (this.isObrigatorio()) {return false;}
+    if (this.isObrigatorio()) {
+      return false;
+    }
 
     return true;
   }

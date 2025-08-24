@@ -8,14 +8,22 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CacheService, CacheStats } from '../services/cache.service';
-import { PerformanceMonitoringMiddleware, PerformanceStats } from '../middleware/compression.middleware';
+import {
+  PerformanceMonitoringMiddleware,
+  PerformanceStats,
+} from '../middleware/compression.middleware';
 
 /**
  * Controller para monitoramento e gestão de performance
- * 
+ *
  * Este controller fornece endpoints para monitorar cache, métricas de performance
  * e gerenciar otimizações do sistema.
  */
@@ -79,7 +87,9 @@ export class PerformanceController {
     status: 204,
     description: 'Cache removido com sucesso',
   })
-  async deleteCachePattern(@Param('pattern') pattern: string): Promise<{ removedItems: number }> {
+  async deleteCachePattern(
+    @Param('pattern') pattern: string,
+  ): Promise<{ removedItems: number }> {
     const removedItems = await this.cacheService.deletePattern(pattern);
     return { removedItems };
   }
@@ -88,7 +98,9 @@ export class PerformanceController {
    * Obtém estatísticas de performance das requisições
    */
   @Get('requests/stats')
-  @ApiOperation({ summary: 'Obter estatísticas de performance das requisições' })
+  @ApiOperation({
+    summary: 'Obter estatísticas de performance das requisições',
+  })
   @ApiResponse({
     status: 200,
     description: 'Estatísticas de performance retornadas com sucesso',
@@ -123,14 +135,20 @@ export class PerformanceController {
   async getSystemMetrics(): Promise<SystemMetrics> {
     const cacheStats = this.cacheService.getStats();
     const requestStats = this.performanceMonitoring.getPerformanceStats();
-    
+
     // Calcular métricas de performance
-    const avgResponseTime = requestStats.endpoints.length > 0 ?
-      requestStats.endpoints.reduce((sum, endpoint) => sum + endpoint.averageResponseTime, 0) / requestStats.endpoints.length :
-      0;
-    
-    const slowEndpoints = requestStats.endpoints.filter(endpoint => endpoint.averageResponseTime > 1000);
-    
+    const avgResponseTime =
+      requestStats.endpoints.length > 0
+        ? requestStats.endpoints.reduce(
+            (sum, endpoint) => sum + endpoint.averageResponseTime,
+            0,
+          ) / requestStats.endpoints.length
+        : 0;
+
+    const slowEndpoints = requestStats.endpoints.filter(
+      (endpoint) => endpoint.averageResponseTime > 1000,
+    );
+
     return {
       cache: {
         hitRate: this.calculateCacheHitRate(cacheStats),
@@ -164,18 +182,18 @@ export class PerformanceController {
   })
   async optimizeSystem(): Promise<OptimizationResult> {
     const startTime = Date.now();
-    
+
     // Executar limpeza de cache
     const cleanedCacheItems = await this.cacheService.cleanup();
-    
+
     // Forçar garbage collection se disponível
     if (global.gc) {
       global.gc();
     }
-    
+
     const endTime = Date.now();
     const duration = endTime - startTime;
-    
+
     return {
       duration,
       actions: [

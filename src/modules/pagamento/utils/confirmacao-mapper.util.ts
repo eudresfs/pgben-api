@@ -9,48 +9,60 @@ export class ConfirmacaoMapper {
   /**
    * Converte entidade para DTO de resposta
    */
-  static async toResponseDto(confirmacao: ConfirmacaoRecebimento): Promise<ConfirmacaoResponseDto> {
+  static async toResponseDto(
+    confirmacao: ConfirmacaoRecebimento,
+  ): Promise<ConfirmacaoResponseDto> {
     if (!confirmacao) {
       throw new Error('Confirmação não pode ser nula');
     }
 
     return {
       id: confirmacao.id,
-      pagamentoId: confirmacao.pagamento_id,
-      dataConfirmacao: confirmacao.data_confirmacao,
-      metodoConfirmacao: confirmacao.metodo_confirmacao,
-      responsavelConfirmacao: {
+      pagamento_id: confirmacao.pagamento_id,
+      data_confirmacao: confirmacao.data_confirmacao,
+      metodo_confirmacao: confirmacao.metodo_confirmacao,
+      responsavel_confirmacao: {
         id: confirmacao.responsavel_confirmacao?.id || 'sistema',
         nome: confirmacao.responsavel_confirmacao?.nome || 'Sistema',
-        role: 'Sistema'
+        role: 'Sistema',
       },
-      destinatario: confirmacao.destinatario ? {
-        id: confirmacao.destinatario.id,
-        nome: confirmacao.destinatario.nome,
-        relacao: 'Beneficiário'
-      } : undefined,
+      destinatario: confirmacao.destinatario
+        ? {
+            id: confirmacao.destinatario.id,
+            nome: confirmacao.destinatario.nome,
+            relacao: 'Beneficiário',
+          }
+        : undefined,
       observacoes: confirmacao.observacoes,
-      createdAt: confirmacao.created_at,
-      updatedAt: confirmacao.updated_at,
+      created_at: confirmacao.created_at,
+      updated_at: confirmacao.updated_at,
     };
   }
 
   /**
    * Converte lista de entidades para lista de DTOs
    */
-  static async toResponseDtoList(confirmacoes: ConfirmacaoRecebimento[]): Promise<ConfirmacaoResponseDto[]> {
+  static async toResponseDtoList(
+    confirmacoes: ConfirmacaoRecebimento[],
+  ): Promise<ConfirmacaoResponseDto[]> {
     if (!Array.isArray(confirmacoes)) {
       return [];
     }
 
-    const promises = confirmacoes.map(confirmacao => this.toResponseDto(confirmacao));
+    const promises = confirmacoes.map((confirmacao) =>
+      this.toResponseDto(confirmacao),
+    );
     return await Promise.all(promises);
   }
 
   /**
    * Converte DTO de criação para dados da entidade
    */
-  static fromCreateDto(createDto: any, pagamentoId: string, usuarioId: string): Partial<ConfirmacaoRecebimento> {
+  static fromCreateDto(
+    createDto: any,
+    pagamentoId: string,
+    usuarioId: string,
+  ): Partial<ConfirmacaoRecebimento> {
     return {
       pagamento_id: pagamentoId,
       data_confirmacao: createDto.dataConfirmacao || new Date(),
@@ -83,11 +95,13 @@ export class ConfirmacaoMapper {
       temConfirmacao,
       status: temConfirmacao ? 'CONFIRMADO' : 'PENDENTE_CONFIRMACAO',
       quantidadeConfirmacoes: confirmacoes.length,
-      ultimaConfirmacao: ultimaConfirmacao ? {
-        dataConfirmacao: ultimaConfirmacao.data_confirmacao,
-        metodoConfirmacao: ultimaConfirmacao.metodo_confirmacao,
-        responsavel: ultimaConfirmacao.confirmado_por,
-      } : undefined
+      ultimaConfirmacao: ultimaConfirmacao
+        ? {
+            dataConfirmacao: ultimaConfirmacao.data_confirmacao,
+            metodoConfirmacao: ultimaConfirmacao.metodo_confirmacao,
+            responsavel: ultimaConfirmacao.confirmado_por,
+          }
+        : undefined,
     };
   }
 
@@ -96,10 +110,10 @@ export class ConfirmacaoMapper {
    */
   private static mascaraCpf(cpf: string): string {
     if (!cpf) return '';
-    
+
     const cpfLimpo = cpf.replace(/\D/g, '');
     if (cpfLimpo.length !== 11) return cpf;
-    
+
     return `***.***.${cpfLimpo.slice(6, 9)}-**`;
   }
 
@@ -113,21 +127,26 @@ export class ConfirmacaoMapper {
       errors.push('Método de confirmação é obrigatório');
     }
 
-    if (createDto.metodoConfirmacao && !['PRESENCIAL', 'TELEFONE', 'EMAIL', 'SMS', 'WHATSAPP'].includes(createDto.metodoConfirmacao)) {
+    if (
+      createDto.metodoConfirmacao &&
+      !['PRESENCIAL', 'TELEFONE', 'EMAIL', 'SMS', 'WHATSAPP'].includes(
+        createDto.metodoConfirmacao,
+      )
+    ) {
       errors.push('Método de confirmação inválido');
     }
 
     if (createDto.dataConfirmacao) {
       const dataConfirmacao = new Date(createDto.dataConfirmacao);
       const agora = new Date();
-      
+
       if (dataConfirmacao > agora) {
         errors.push('Data de confirmação não pode ser futura');
       }
 
       const trintaDiasAtras = new Date();
       trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
-      
+
       if (dataConfirmacao < trintaDiasAtras) {
         errors.push('Data de confirmação não pode ser anterior a 30 dias');
       }

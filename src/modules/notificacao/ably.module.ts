@@ -46,14 +46,9 @@ import { AuthModule } from '../../auth/auth.module';
     forwardRef(() => AuthModule),
 
     PermissionModule,
-    TypeOrmModule.forFeature([
-      NotificacaoSistema,
-      NotificationTemplate,
-    ]),
+    TypeOrmModule.forFeature([NotificacaoSistema, NotificationTemplate]),
   ],
-  controllers: [
-    AblyController,
-  ],
+  controllers: [AblyController],
   providers: [
     // Configuração
     {
@@ -63,7 +58,7 @@ import { AuthModule } from '../../auth/auth.module';
       },
       inject: [ConfigService],
     },
-    
+
     // Serviços principais
     AblyService,
     AblyAuthService,
@@ -81,7 +76,7 @@ import { AuthModule } from '../../auth/auth.module';
 export class AblyModule {
   constructor(
     private readonly ablyService: AblyService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {
     // Inicialização assíncrona do Ably
     this.initializeAbly();
@@ -92,8 +87,9 @@ export class AblyModule {
    */
   private async initializeAbly(): Promise<void> {
     try {
-      const isAblyEnabled = this.configService.get<string>('ABLY_API_KEY') !== 'disabled';
-      
+      const isAblyEnabled =
+        this.configService.get<string>('ABLY_API_KEY') !== 'disabled';
+
       if (isAblyEnabled) {
         console.log('🚀 Inicializando integração Ably...');
         // A inicialização real acontece no onModuleInit do AblyService

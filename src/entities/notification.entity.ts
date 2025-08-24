@@ -17,6 +17,7 @@ import {
   Min,
 } from 'class-validator';
 import { NotificationTemplate } from './notification-template.entity';
+import { Usuario } from './usuario.entity';
 
 /**
  * Enum para os tipos de notificação
@@ -28,7 +29,8 @@ export enum TipoNotificacao {
   APROVACAO = 'aprovacao',
   LIBERACAO = 'liberacao',
   ALERTA = 'alerta',
-  URGENTE = "urgente",
+  URGENTE = 'urgente',
+  ACOMPANHAMENTO = 'acompanhamento',
 }
 
 /**
@@ -81,6 +83,10 @@ export class NotificacaoSistema {
   @IsNotEmpty({ message: 'ID do destinatário é obrigatório' })
   @IsUUID('4', { message: 'ID do destinatário inválido' })
   destinatario_id: string;
+
+  @ManyToOne(() => Usuario)
+  @JoinColumn({ name: 'destinatario_id' })
+  destinatario: Usuario;
 
   @ManyToOne(() => NotificationTemplate)
   @JoinColumn({ name: 'template_id' })

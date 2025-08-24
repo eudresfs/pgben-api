@@ -9,25 +9,26 @@ export class GetPagamentosQuery {
     public readonly filtros: {
       status?: StatusPagamentoEnum[];
       MetodoPagamentoEnum?: MetodoPagamentoEnum[];
-      solicitacaoId?: string;
-      cidadaoId?: string;
-      dataInicio?: Date;
-      dataFim?: Date;
-      valorMinimo?: number;
-      valorMaximo?: number;
-      responsavelLiberacao?: string;
+      solicitacao_id?: string;
+      concessao_id?: string;
+      cidadao_id?: string;
+      data_inicio?: Date;
+      data_fim?: Date;
+      valor_minimo?: number;
+      valor_maximo?: number;
+      responsavel_liberacao?: string;
     } = {},
     public readonly paginacao: {
       page?: number;
       limit?: number;
-      sortBy?: string;
-      sortOrder?: 'ASC' | 'DESC';
+      sort_by?: string;
+      sort_order?: 'ASC' | 'DESC';
     } = {},
     public readonly incluirRelacionamentos: {
       solicitacao?: boolean;
-      infoBancaria?: boolean;
+      info_bancaria?: boolean;
       comprovantes?: boolean;
-      confirmacaoRecebimento?: boolean;
-    } = {}
+      confirmacao_recebimento?: boolean;
+    } = {},
   ) {}
 }

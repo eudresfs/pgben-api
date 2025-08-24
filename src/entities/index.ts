@@ -32,7 +32,7 @@ export { WorkflowBeneficio } from './workflow-beneficio.entity';
 // Entidades de Dados Específicos de Benefícios (dados do cidadão)
 export { DadosNatalidade } from './dados-natalidade.entity';
 export { DadosAluguelSocial } from './dados-aluguel-social.entity';
-export { DadosFuneral } from './dados-funeral.entity';
+export { DadosAtaude } from './dados-ataude.entity';
 export { DadosCestaBasica } from './dados-cesta-basica.entity';
 
 // Entidades de Cidadão e Família
@@ -40,7 +40,6 @@ export { Cidadao } from './cidadao.entity';
 export { ComposicaoFamiliar } from './composicao-familiar.entity';
 export { DadosSociais } from './dados-sociais.entity';
 export { InfoBancaria } from './info-bancaria.entity';
-export { PapelCidadao } from './papel-cidadao.entity';
 export { SituacaoMoradia } from './situacao-moradia.entity';
 // Entidades de Contato e Endereço
 export { Contato } from './contato.entity';
@@ -54,11 +53,11 @@ export { Parametro } from './parametro.entity';
 
 // Entidades de Documentos
 export { Documento } from './documento.entity';
+export { DocumentoBatchJob } from './documento-batch-job.entity';
 export { RequisitoDocumento } from './requisito-documento.entity';
 
 // Entidades de Histórico e Logs
 export { CategoriaLog } from './categoria-log.entity';
-export { HistoricoConversaoPapel } from './historico-conversao-papel.entity';
 export { HistoricoSolicitacao } from './historico-solicitacao.entity';
 export { LogAuditoria } from './log-auditoria.entity';
 export { RecursoHistorico } from './recurso-historico.entity';
@@ -94,7 +93,6 @@ export { StatusConcessao } from '../enums/status-concessao.enum';
 export { HistoricoConcessao } from './historico-concessao.entity';
 
 // Entidades de Pagamento
-export { ComprovantePagamento } from './comprovante-pagamento.entity';
 export { ConfirmacaoRecebimento } from './confirmacao-recebimento.entity';
 export { Pagamento } from './pagamento.entity';
 
@@ -102,10 +100,8 @@ export { Pagamento } from './pagamento.entity';
 export { Pendencia, StatusPendencia } from './pendencia.entity';
 export { Recurso } from './recurso.entity';
 
-// Entidades de Regras
-export { RegraConflitoPapel } from './regra-conflito-papel.entity';
-
 // Entidades de Segurança e Autenticação
+export { JwtBlacklist } from './jwt-blacklist.entity';
 export { Role } from './role.entity';
 export { TokenRevogado } from './token-revogado.entity';
 export { Usuario } from './usuario.entity';
@@ -120,5 +116,21 @@ export { Solicitacao } from './solicitacao.entity';
 // Exportação do enum StatusSolicitacao
 export { StatusSolicitacao } from '../enums/status-solicitacao.enum';
 
-// Exportações de Auth/Permissões
+// Entidades de Upload
+export {
+  UploadSession,
+  UploadSessionStatus,
+} from '../modules/easy-upload/entities/upload-session.entity';
+export {
+  UploadToken,
+  UploadTokenStatus,
+} from '../modules/easy-upload/entities/upload-token.entity';
+
+// Entidades de Monitoramento e Visitas Domiciliares
+export { AgendamentoVisita } from '../modules/monitoramento/entities/agendamento-visita.entity';
+export { VisitaDomiciliar } from '../modules/monitoramento/entities/visita-domiciliar.entity';
+export { AvaliacaoVisita } from '../modules/monitoramento/entities/avaliacao-visita.entity';
+export { HistoricoMonitoramento } from '../modules/monitoramento/entities/historico-monitoramento.entity';
+
+// Entidades de Permissões
 export { ScopeType } from './user-permission.entity';

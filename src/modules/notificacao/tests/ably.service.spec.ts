@@ -3,7 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AblyService } from '../services/ably.service';
 import { AblyConfig } from '../../../config/ably.config';
-import { IAblyNotificationData, NotificationType, NotificationPriority } from '../interfaces/ably.interface';
+import {
+  IAblyNotificationData,
+  NotificationType,
+  NotificationPriority,
+} from '../interfaces/ably.interface';
 import * as Ably from 'ably';
 
 // Mock do Ably
@@ -30,13 +34,13 @@ describe('AblyService', () => {
     ABLY_MAX_RECONNECT_ATTEMPTS: 5,
     ABLY_ENABLE_TLS: true,
     ABLY_LOG_LEVEL: 'warn',
-    ABLY_ENABLE_FALLBACK: true
+    ABLY_ENABLE_FALLBACK: true,
   };
 
   beforeEach(async () => {
     // Use fake timers para controlar timers nos testes
     jest.useFakeTimers();
-    
+
     // Setup mocks
     mockChannel = {
       publish: jest.fn(),
@@ -45,36 +49,36 @@ describe('AblyService', () => {
       presence: {
         enter: jest.fn(),
         leave: jest.fn(),
-        get: jest.fn()
+        get: jest.fn(),
       } as any,
       history: jest.fn(),
-      state: 'attached'
+      state: 'attached',
     } as any;
 
     mockAblyRealtime = {
       channels: {
-        get: jest.fn().mockReturnValue(mockChannel)
+        get: jest.fn().mockReturnValue(mockChannel),
       },
       connection: {
         state: 'connected',
         id: 'test-connection-id',
         on: jest.fn(),
         off: jest.fn(),
-        close: jest.fn()
+        close: jest.fn(),
       },
       auth: {
-        createTokenRequest: jest.fn()
+        createTokenRequest: jest.fn(),
       },
-      close: jest.fn()
+      close: jest.fn(),
     } as any;
 
     mockAblyRest = {
       channels: {
-        get: jest.fn().mockReturnValue(mockChannel)
+        get: jest.fn().mockReturnValue(mockChannel),
       },
       auth: {
-        createTokenRequest: jest.fn()
-      }
+        createTokenRequest: jest.fn(),
+      },
     } as any;
 
     (Ably.Realtime as jest.Mock).mockImplementation(() => mockAblyRealtime);
@@ -94,10 +98,10 @@ describe('AblyService', () => {
               autoConnect: true,
               disconnectedRetryTimeout: 5000,
               suspendedRetryTimeout: 5000,
-              httpRequestTimeout: 5000
+              httpRequestTimeout: 5000,
             }),
-            getChannelName: jest.fn().mockReturnValue('test-channel')
-          }
+            getChannelName: jest.fn().mockReturnValue('test-channel'),
+          },
         },
         {
           provide: AblyConfig,
@@ -110,24 +114,24 @@ describe('AblyService', () => {
               autoConnect: true,
               disconnectedRetryTimeout: 5000,
               suspendedRetryTimeout: 5000,
-              httpRequestTimeout: 5000
+              httpRequestTimeout: 5000,
             }),
-            getChannelName: jest.fn().mockReturnValue('test-channel')
-          }
+            getChannelName: jest.fn().mockReturnValue('test-channel'),
+          },
         },
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn((key: string) => mockConfig[key])
-          }
+            get: jest.fn((key: string) => mockConfig[key]),
+          },
         },
         {
           provide: EventEmitter2,
           useValue: {
-            emit: jest.fn()
-          }
-        }
-      ]
+            emit: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<AblyService>(AblyService);
@@ -147,14 +151,14 @@ describe('AblyService', () => {
     if (service && typeof service.onModuleDestroy === 'function') {
       await service.onModuleDestroy();
     }
-    
+
     // Garantir que todos os timers sejam limpos
     jest.clearAllTimers();
     jest.useRealTimers();
-    
+
     // Limpar todos os mocks
     jest.restoreAllMocks();
-    
+
     // Forçar garbage collection se disponível
     if (global.gc) {
       global.gc();
@@ -168,7 +172,7 @@ describe('AblyService', () => {
 
     it('deve inicializar com configurações corretas', async () => {
       await service.onModuleInit();
-      
+
       expect(Ably.Realtime).toHaveBeenCalledWith({
         key: 'test-api-key',
         environment: 'test',
@@ -178,16 +182,25 @@ describe('AblyService', () => {
         suspendedRetryTimeout: 5000,
         httpRequestTimeout: 5000,
         tls: true,
-        logLevel: 'warn'
+        logLevel: 'warn',
       });
     });
 
     it('deve configurar listeners de conexão', async () => {
       await service.onModuleInit();
-      
-      expect(mockAblyRealtime.connection.on).toHaveBeenCalledWith('connected', expect.any(Function));
-      expect(mockAblyRealtime.connection.on).toHaveBeenCalledWith('disconnected', expect.any(Function));
-      expect(mockAblyRealtime.connection.on).toHaveBeenCalledWith('failed', expect.any(Function));
+
+      expect(mockAblyRealtime.connection.on).toHaveBeenCalledWith(
+        'connected',
+        expect.any(Function),
+      );
+      expect(mockAblyRealtime.connection.on).toHaveBeenCalledWith(
+        'disconnected',
+        expect.any(Function),
+      );
+      expect(mockAblyRealtime.connection.on).toHaveBeenCalledWith(
+        'failed',
+        expect.any(Function),
+      );
     });
   });
 
@@ -200,7 +213,7 @@ describe('AblyService', () => {
       priority: 'normal' as NotificationPriority,
       data: { test: true },
       timestamp: new Date(),
-      senderId: 'sender-123'
+      senderId: 'sender-123',
     };
 
     beforeEach(async () => {
@@ -209,20 +222,29 @@ describe('AblyService', () => {
 
     it('deve publicar notificação com sucesso', async () => {
       mockChannel.publish.mockResolvedValue(undefined);
-      
-      const result = await service.publishNotification('test-channel', mockNotification);
-      
+
+      const result = await service.publishNotification(
+        'test-channel',
+        mockNotification,
+      );
+
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockNotification);
-      expect(mockChannel.publish).toHaveBeenCalledWith('notification', mockNotification);
+      expect(mockChannel.publish).toHaveBeenCalledWith(
+        'notification',
+        mockNotification,
+      );
     });
 
     it('deve retornar erro quando publicação falha', async () => {
       const error = new Error('Falha na publicação');
       mockChannel.publish.mockRejectedValue(error);
-      
-      const result = await service.publishNotification('test-channel', mockNotification);
-      
+
+      const result = await service.publishNotification(
+        'test-channel',
+        mockNotification,
+      );
+
       expect(result.success).toBe(false);
       expect(result.error).toBe('Falha na publicação');
       expect(result.errorCode).toBe('PUBLISH_FAILED');
@@ -231,20 +253,23 @@ describe('AblyService', () => {
     it('deve validar tamanho da mensagem', async () => {
       const largeNotification = {
         ...mockNotification,
-        message: 'x'.repeat(70000) // Maior que o limite
+        message: 'x'.repeat(70000), // Maior que o limite
       };
-      
-      const result = await service.publishNotification('test-channel', largeNotification);
-      
+
+      const result = await service.publishNotification(
+        'test-channel',
+        largeNotification,
+      );
+
       expect(result.success).toBe(false);
       expect(result.errorCode).toBe('MESSAGE_TOO_LARGE');
     });
 
     it('deve incrementar métricas de publicação', async () => {
       mockChannel.publish.mockResolvedValue(undefined);
-      
+
       await service.publishNotification('test-channel', mockNotification);
-      
+
       const metrics = service.getMetrics();
       expect(metrics.messagesPublished).toBe(1);
     });
@@ -257,17 +282,19 @@ describe('AblyService', () => {
 
     it('deve retornar canal existente', () => {
       const channel = service.getChannel('test-channel');
-      
+
       expect(channel).toBe(mockChannel);
-      expect(mockAblyRealtime.channels.get).toHaveBeenCalledWith('test-channel');
+      expect(mockAblyRealtime.channels.get).toHaveBeenCalledWith(
+        'test-channel',
+      );
     });
 
     it('deve criar novo canal se não existir', () => {
       const newMockChannel = { ...mockChannel };
       mockAblyRealtime.channels.get.mockReturnValue(newMockChannel);
-      
+
       const channel = service.getChannel('new-channel');
-      
+
       expect(channel).toBe(newMockChannel);
       expect(mockAblyRealtime.channels.get).toHaveBeenCalledWith('new-channel');
     });
@@ -280,20 +307,23 @@ describe('AblyService', () => {
 
     it('deve inscrever-se em canal com callback', async () => {
       const callback = jest.fn();
-      
+
       const result = await service.subscribeToChannel('test-channel', callback);
-      
+
       expect(result.success).toBe(true);
-      expect(mockChannel.subscribe).toHaveBeenCalledWith('notification', callback);
+      expect(mockChannel.subscribe).toHaveBeenCalledWith(
+        'notification',
+        callback,
+      );
     });
 
     it('deve retornar erro se inscrição falha', async () => {
       const error = new Error('Falha na inscrição');
       mockChannel.subscribe.mockRejectedValue(error);
       const callback = jest.fn();
-      
+
       const result = await service.subscribeToChannel('test-channel', callback);
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toBe('Falha na inscrição');
     });
@@ -306,7 +336,7 @@ describe('AblyService', () => {
 
     it('deve cancelar inscrição de canal', async () => {
       const result = await service.unsubscribeFromChannel('test-channel');
-      
+
       expect(result.success).toBe(true);
       expect(mockChannel.unsubscribe).toHaveBeenCalled();
     });
@@ -314,9 +344,9 @@ describe('AblyService', () => {
     it('deve retornar erro se cancelamento falha', async () => {
       const error = new Error('Falha no cancelamento');
       mockChannel.unsubscribe.mockRejectedValue(error);
-      
+
       const result = await service.unsubscribeFromChannel('test-channel');
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toBe('Falha no cancelamento');
     });
@@ -329,19 +359,19 @@ describe('AblyService', () => {
 
     it('deve retornar true quando conectado', () => {
       mockAblyRealtime.connection.state = 'connected';
-      
+
       expect(service.isHealthy()).toBe(true);
     });
 
     it('deve retornar false quando desconectado', () => {
       mockAblyRealtime.connection.state = 'disconnected';
-      
+
       expect(service.isHealthy()).toBe(false);
     });
 
     it('deve retornar false quando falhou', () => {
       mockAblyRealtime.connection.state = 'failed';
-      
+
       expect(service.isHealthy()).toBe(false);
     });
   });
@@ -353,7 +383,7 @@ describe('AblyService', () => {
 
     it('deve retornar estado da conexão', () => {
       mockAblyRealtime.connection.state = 'connected';
-      
+
       expect(service.getConnectionState()).toBe('connected');
     });
   });
@@ -365,20 +395,20 @@ describe('AblyService', () => {
 
     it('deve retornar métricas iniciais', () => {
       const metrics = service.getMetrics();
-      
+
       expect(metrics).toEqual({
         messagesPublished: 0,
         messagesReceived: 0,
         activeChannels: 0,
         connectionState: 'connected',
         lastError: null,
-        uptime: expect.any(Number)
+        uptime: expect.any(Number),
       });
     });
 
     it('deve atualizar métricas após publicação', async () => {
       mockChannel.publish.mockResolvedValue(undefined);
-      
+
       await service.publishNotification('test-channel', {
         id: 'test',
         type: 'system' as NotificationType,
@@ -387,9 +417,9 @@ describe('AblyService', () => {
         priority: 'normal' as NotificationPriority,
         data: {},
         timestamp: new Date(),
-        senderId: 'test'
+        senderId: 'test',
       });
-      
+
       const metrics = service.getMetrics();
       expect(metrics.messagesPublished).toBe(1);
     });
@@ -399,7 +429,7 @@ describe('AblyService', () => {
     it('deve fechar conexões ao destruir módulo', async () => {
       await service.onModuleInit();
       await service.onModuleDestroy();
-      
+
       expect(mockAblyRealtime.close).toHaveBeenCalled();
     });
   });
@@ -414,13 +444,13 @@ describe('AblyService', () => {
       mockAblyRealtime.connection.on.mockImplementation((event, handler) => {
         connectionHandlers[event] = handler;
       });
-      
+
       // Simula reconexão
       await service.onModuleInit();
-      
+
       // Verificar se o handler foi registrado
       expect(connectionHandlers['failed']).toBeDefined();
-      
+
       // Simula erro de conexão
       const error = new Error('Erro de conexão');
       if (connectionHandlers['failed']) {
@@ -434,22 +464,25 @@ describe('AblyService', () => {
       mockAblyRealtime.connection.on.mockImplementation((event, handler) => {
         connectionHandlers[event] = handler;
       });
-      
+
       await service.onModuleInit();
-      
+
       // Verificar se o handler foi registrado
       expect(connectionHandlers['failed']).toBeDefined();
-      
+
       const error = new Error('Erro de teste');
       if (connectionHandlers['failed']) {
         connectionHandlers['failed'](error);
-        
-        expect(eventEmitter.emit).toHaveBeenCalledWith('ably.connection.failed', {
-          type: 'failed',
-          connectionId: 'test-connection-id',
-          clientId: 'test-client',
-          timestamp: expect.any(Date)
-        });
+
+        expect(eventEmitter.emit).toHaveBeenCalledWith(
+          'ably.connection.failed',
+          {
+            type: 'failed',
+            connectionId: 'test-connection-id',
+            clientId: 'test-client',
+            timestamp: expect.any(Date),
+          },
+        );
       }
     });
   });
@@ -468,11 +501,14 @@ describe('AblyService', () => {
         priority: 'normal' as NotificationPriority,
         data: {},
         timestamp: new Date(),
-        senderId: ''
+        senderId: '',
       };
-      
-      const result = await service.publishNotification('test-channel', invalidNotification);
-      
+
+      const result = await service.publishNotification(
+        'test-channel',
+        invalidNotification,
+      );
+
       expect(result.success).toBe(false);
       expect(result.errorCode).toBe('INVALID_NOTIFICATION_DATA');
     });
@@ -486,11 +522,11 @@ describe('AblyService', () => {
         priority: 'normal' as NotificationPriority,
         data: {},
         timestamp: new Date(),
-        senderId: 'test'
+        senderId: 'test',
       };
-      
+
       const result = await service.publishNotification('', notification);
-      
+
       expect(result.success).toBe(false);
       expect(result.errorCode).toBe('INVALID_CHANNEL_NAME');
     });

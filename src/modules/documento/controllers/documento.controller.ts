@@ -15,6 +15,7 @@ import {
   HttpCode,
   HttpStatus,
   Request,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
@@ -28,9 +29,24 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { DocumentoService } from '../services/documento.service';
+import { DocumentoBatchService } from '../services/batch-download/documento-batch.service';
+import { DocumentoUrlService } from '../services/documento-url.service';
+import { ThumbnailService } from '../services/thumbnail/thumbnail.service';
+import { ThumbnailFacadeService } from '../services/thumbnail/thumbnail-facade.service';
+import { ThumbnailQueueService } from '../services/thumbnail/thumbnail-queue.service';
+import { StorageProviderFactory } from '../factories/storage-provider.factory';
+import { Documento } from '../../../entities/documento.entity';
+import { LoggingService } from '../../../shared/logging/logging.service';
 import { UploadDocumentoDto } from '../dto/upload-documento.dto';
 import { DocumentoResponseDto } from '../dto/documento-response.dto';
+import {
+  ThumbnailResponseDto,
+  ThumbnailStatusResponseDto,
+  ThumbnailStatsResponseDto,
+} from '../dto/thumbnail-response.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { plainToInstance } from 'class-transformer';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
@@ -40,6 +56,8 @@ import { Usuario } from '../../../entities/usuario.entity';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { ReqContext } from '../../../shared/request-context/req-context.decorator';
 import { RequestContext } from '../../../shared/request-context/request-context.dto';
+import { Public } from '../../../auth/decorators/public.decorator';
+import { ThrottleThumbnail } from '../../../common/decorators/throttle.decorator';
 
 /**
  * Controlador de Documentos
@@ -53,8 +71,17 @@ import { RequestContext } from '../../../shared/request-context/request-context.
 @ApiBearerAuth()
 export class DocumentoController {
   constructor(
+    @InjectRepository(Documento)
+    private readonly documentoRepository: Repository<Documento>,
     private readonly documentoService: DocumentoService,
+    private readonly documentoBatchService: DocumentoBatchService,
+    private readonly documentoUrlService: DocumentoUrlService,
+    private readonly thumbnailService: ThumbnailService,
+    private readonly thumbnailFacadeService: ThumbnailFacadeService,
+    private readonly thumbnailQueueService: ThumbnailQueueService,
+    private readonly storageProviderFactory: StorageProviderFactory,
     private readonly auditEventEmitter: AuditEventEmitter,
+    private readonly logger: LoggingService,
   ) {}
 
   /**
@@ -157,31 +184,47 @@ export class DocumentoController {
   }
 
   /**
-   * Obtém detalhes de um documento específico
+   * Obtém detalhes de um documento específico com verificação de acesso
    */
   @Get(':id')
   @RequiresPermission({ permissionName: 'documento.visualizar' })
   @ApiOperation({ summary: 'Obter detalhes de um documento' })
   @ApiResponse({ status: 200, description: 'Documento encontrado com sucesso' })
   @ApiResponse({ status: 404, description: 'Documento não encontrado' })
+  @ApiResponse({ status: 403, description: 'Acesso negado ao documento' })
   @ApiParam({
     name: 'id',
     description: 'ID do documento',
     type: 'string',
     format: 'uuid',
   })
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.documentoService.findById(id);
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() usuario: Usuario,
+    @ReqContext() context: RequestContext,
+  ) {
+    const documento = await this.documentoService.findById(id);
+
+    // Auditoria do acesso ao documento
+    await this.auditEventEmitter.emitEntityAccessed(
+      'Documento',
+      id,
+      usuario.id?.toString(),
+      { synchronous: false },
+    );
+
+    return documento;
   }
 
   /**
-   * Faz download de um documento
+   * Faz download de um documento com verificação de acesso
    */
   @Get(':id/download')
   @RequiresPermission({ permissionName: 'documento.download' })
   @ApiOperation({ summary: 'Fazer download de um documento' })
   @ApiResponse({ status: 200, description: 'Documento baixado com sucesso' })
   @ApiResponse({ status: 404, description: 'Documento não encontrado' })
+  @ApiResponse({ status: 403, description: 'Acesso negado ao documento' })
   @ApiParam({
     name: 'id',
     description: 'ID do documento',
@@ -191,19 +234,94 @@ export class DocumentoController {
   async download(
     @Param('id', ParseUUIDPipe) id: string,
     @Res() res: Response,
+    @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ) {
-    const resultado = await this.documentoService.download(id);
+    const resultado = await this.documentoService.download(id, usuario.id);
 
-    // Auditoria do download de documento
+    // Auditoria do download de documento com informações detalhadas
     await this.auditEventEmitter.emitEntityAccessed(
       'Documento',
       id,
-      context.user?.id?.toString(),
-      {
-        synchronous: false,
-      },
+      usuario.id?.toString(),
+      { synchronous: false },
     );
+
+    // Headers de segurança para download
+    res.set({
+      'Content-Type': resultado.mimetype,
+      'Content-Disposition': `attachment; filename="${resultado.nomeOriginal}"`,
+      'Content-Length': resultado.buffer.length.toString(),
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      Pragma: 'no-cache',
+      Expires: '0',
+      'X-Content-Type-Options': 'nosniff',
+    });
+
+    res.send(resultado.buffer);
+  }
+
+  /**
+   * Acesso a documento via URL pública (ID do documento)
+   */
+  @Get(':documentoId/public')
+  @Public()
+  @ApiOperation({ summary: 'Acesso a documento via URL pública' })
+  @ApiResponse({
+    status: 200,
+    description: 'Arquivo baixado com sucesso',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Documento não encontrado',
+  })
+  @ApiParam({
+    name: 'documentoId',
+    description: 'ID do documento para acesso público',
+    type: 'string',
+    format: 'uuid',
+  })
+  async accessPublicDocument(
+    @Param('documentoId', ParseUUIDPipe) documentoId: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const resultado = await this.documentoService.download(documentoId);
+
+    res.set({
+      'Content-Type': resultado.mimetype,
+      'Content-Disposition': `attachment; filename="${resultado.nomeOriginal}"`,
+      'Content-Length': resultado.buffer.length.toString(),
+    });
+
+    res.send(resultado.buffer);
+  }
+
+  /**
+   * Acesso a documento via URL privada (hash)
+   */
+  @Get('private/:hash')
+  @Public()
+  @ApiOperation({ summary: 'Acesso a documento via URL privada' })
+  @ApiResponse({
+    status: 200,
+    description: 'Arquivo baixado com sucesso',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Hash inválido ou expirado',
+  })
+  @ApiParam({
+    name: 'hash',
+    description: 'Hash de acesso privado',
+    type: 'string',
+  })
+  async accessPrivateDocument(
+    @Param('hash') hash: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { documentoId } =
+      await this.documentoUrlService.validatePrivateAccess(hash);
+    const resultado = await this.documentoService.download(documentoId);
 
     res.set({
       'Content-Type': resultado.mimetype,
@@ -248,6 +366,20 @@ export class DocumentoController {
       usuario.id,
     );
 
+    // Gerar thumbnail automaticamente após upload bem-sucedido
+    try {
+      await this.thumbnailQueueService.addToQueue(
+        resultado.id,
+        'normal', // priority
+        0, // delay
+      );
+    } catch (error) {
+      console.warn(
+        `Falha ao adicionar documento ${resultado.id} à fila de thumbnails:`,
+        error,
+      );
+    }
+
     // Auditoria do upload de documento
     await this.auditEventEmitter.emitEntityCreated(
       'Documento',
@@ -270,7 +402,7 @@ export class DocumentoController {
   }
 
   /**
-   * Marca um documento como verificado
+   * Marca um documento como verificado com verificação de acesso
    */
   @Post(':id/verificar')
   @RequiresPermission({ permissionName: 'documento.verificar' })
@@ -279,6 +411,7 @@ export class DocumentoController {
     status: 200,
     description: 'Documento verificado com sucesso',
   })
+  @ApiResponse({ status: 403, description: 'Acesso negado ao documento' })
   @ApiParam({
     name: 'id',
     description: 'ID do documento',
@@ -303,12 +436,15 @@ export class DocumentoController {
     @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ) {
-    // Buscar dados do documento antes da verificação
     const documentoAntes = await this.documentoService.findById(id);
-    
-    const resultado = await this.documentoService.verificar(id, usuario.id, observacoes);
-    
-    // Auditoria de verificação
+
+    const resultado = await this.documentoService.verificar(
+      id,
+      usuario.id,
+      observacoes,
+    );
+
+    // Auditoria de verificação com informações detalhadas
     await this.auditEventEmitter.emitEntityUpdated(
       'Documento',
       id,
@@ -319,12 +455,12 @@ export class DocumentoController {
         synchronous: false,
       },
     );
-    
+
     return resultado;
   }
 
   /**
-   * Remove um documento (soft delete)
+   * Remove um documento (soft delete) com verificação de acesso
    */
   @Delete(':id')
   @RequiresPermission({ permissionName: 'documento.excluir' })
@@ -332,6 +468,7 @@ export class DocumentoController {
   @ApiOperation({ summary: 'Remover um documento' })
   @ApiResponse({ status: 204, description: 'Documento removido com sucesso' })
   @ApiResponse({ status: 404, description: 'Documento não encontrado' })
+  @ApiResponse({ status: 403, description: 'Acesso negado ao documento' })
   @ApiParam({
     name: 'id',
     description: 'ID do documento',
@@ -340,20 +477,20 @@ export class DocumentoController {
   })
   async remover(
     @Param('id', ParseUUIDPipe) id: string,
-    @Request() req: any,
+    @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ) {
-    // Buscar dados do documento antes da remoção
+    // Buscar dados do documento antes da remoção com verificação de acesso
     const documentoAntes = await this.documentoService.findById(id);
-    
-    await this.documentoService.remover(id, req.user.id);
-    
-    // Auditoria da remoção de documento
+
+    await this.documentoService.remover(id, usuario.id);
+
+    // Auditoria da remoção de documento com informações detalhadas
     await this.auditEventEmitter.emitEntityDeleted(
       'Documento',
       id,
       documentoAntes,
-      req.user.id?.toString(),
+      usuario.id?.toString(),
       {
         synchronous: false,
       },
@@ -378,5 +515,293 @@ export class DocumentoController {
   })
   async getEstatisticas(@Query('cidadaoId') cidadaoId?: string) {
     return this.documentoService.getEstatisticas(cidadaoId);
+  }
+
+  /**
+   * Obtém thumbnail de um documento
+   */
+  @Get(':id/thumbnail')
+  @ThrottleThumbnail()
+  @RequiresPermission({ permissionName: 'documento.visualizar' })
+  @ApiOperation({
+    summary: 'Obter thumbnail de um documento',
+    description:
+      'Retorna o thumbnail do documento ou gera um novo se não existir',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Thumbnail retornado com sucesso',
+    content: {
+      'image/jpeg': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Documento não encontrado' })
+  @ApiResponse({ status: 403, description: 'Acesso negado ao documento' })
+  @ApiResponse({
+    status: 429,
+    description: 'Muitas requisições - rate limit excedido',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do documento',
+    type: 'string',
+    format: 'uuid',
+  })
+  @ApiQuery({
+    name: 'size',
+    description: 'Tamanho do thumbnail (small, medium, large)',
+    required: false,
+    enum: ['small', 'medium', 'large'],
+    example: 'medium',
+  })
+  async getThumbnail(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('size') size: 'small' | 'medium' | 'large' = 'large',
+    @Res() res: Response,
+    @GetUser() usuario: Usuario,
+    @ReqContext() context: RequestContext,
+  ) {
+    // Verificar acesso ao documento
+    const documento = await this.documentoService.findById(id);
+
+    const storageProvider = this.storageProviderFactory.getProvider();
+    const fileBuffer = await storageProvider.obterArquivo(documento.caminho);
+
+    // Gerar ou obter thumbnail usando o facade (lazy generation + cache)
+    const thumbnailResult = await this.thumbnailFacadeService.getThumbnail(
+      id,
+      fileBuffer,
+      documento.mimetype,
+      size,
+    );
+
+    // Auditoria do acesso ao thumbnail
+    await this.auditEventEmitter.emitEntityAccessed(
+      'DocumentoThumbnail',
+      id,
+      usuario.id?.toString(),
+      { synchronous: false },
+    );
+
+    // Headers de resposta para imagem com cache agressivo
+    res.set({
+      'Content-Type': 'image/jpeg',
+      'Content-Length': thumbnailResult.thumbnailBuffer.length.toString(),
+      'Cache-Control': 'public, max-age=86400, immutable', // Cache por 24 horas, imutável
+      ETag: `"${id}-thumbnail"`, // ETag para validação de cache
+      'Last-Modified':
+        documento.updated_at?.toUTCString() ||
+        documento.created_at.toUTCString(),
+      Vary: 'Accept-Encoding',
+    });
+
+    res.send(thumbnailResult.thumbnailBuffer);
+  }
+
+  /**
+   * Regenera thumbnail de um documento
+   */
+  @Post(':id/thumbnail/regenerar')
+  @RequiresPermission({ permissionName: 'documento.gerenciar' })
+  @ApiOperation({
+    summary: 'Regenerar thumbnail de um documento',
+    description: 'Force a regeneração do thumbnail do documento',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Thumbnail regenerado com sucesso',
+  })
+  @ApiResponse({ status: 404, description: 'Documento não encontrado' })
+  @ApiResponse({ status: 403, description: 'Acesso negado ao documento' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do documento',
+    type: 'string',
+    format: 'uuid',
+  })
+  async regenerateThumbnail(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() usuario: Usuario,
+    @ReqContext() context: RequestContext,
+  ): Promise<ThumbnailResponseDto> {
+    // Verificar acesso ao documento
+    const documento = await this.documentoService.findById(id);
+
+    // Obter arquivo para regenerar thumbnail
+    const storageProvider = this.storageProviderFactory.getProvider();
+    const fileBuffer = await storageProvider.obterArquivo(documento.caminho);
+
+    // Remover thumbnail existente do cache e regenerar
+    await this.thumbnailFacadeService.removeThumbnail(id);
+    const thumbnailResult = await this.thumbnailFacadeService.getThumbnail(
+      id,
+      fileBuffer,
+      documento.mimetype,
+      'medium', // Tamanho padrão para regeneração
+    );
+
+    // Salvar o thumbnail na entidade documento
+    try {
+      if (thumbnailResult?.thumbnailBuffer) {
+        // Converter buffer para base64
+        const thumbnailBase64 =
+          thumbnailResult.thumbnailBuffer.toString('base64');
+
+        // Atualizar a coluna thumbnail na entidade documento
+        await this.documentoRepository.update(id, {
+          thumbnail: thumbnailBase64,
+          updated_at: new Date(),
+        });
+
+        this.logger.info(
+          `Thumbnail salvo na entidade documento: ${id}`,
+          DocumentoController.name,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Erro ao salvar thumbnail na entidade documento ${id}: ${error.message}`,
+        error.stack,
+        DocumentoController.name,
+      );
+      // Não propagar o erro para não quebrar a regeneração
+    }
+
+    // Auditoria da regeneração
+    await this.auditEventEmitter.emitEntityUpdated(
+      'DocumentoThumbnail',
+      id,
+      null,
+      { regenerated: true, fromCache: thumbnailResult?.fromCache },
+      usuario.id?.toString(),
+      { synchronous: false },
+    );
+
+    return plainToInstance(
+      ThumbnailResponseDto,
+      {
+        message: 'Thumbnail regenerado com sucesso',
+        success: true,
+      },
+      {
+        excludeExtraneousValues: true,
+      },
+    );
+  }
+
+  /**
+   * Obtém status de processamento de thumbnail
+   */
+  @Get(':id/thumbnail/status')
+  @RequiresPermission({ permissionName: 'documento.visualizar' })
+  @ApiOperation({
+    summary: 'Obter status de processamento de thumbnail',
+    description:
+      'Retorna o status atual do processamento de thumbnail do documento',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Status retornado com sucesso',
+    type: ThumbnailStatusResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Documento não encontrado' })
+  @ApiResponse({ status: 403, description: 'Acesso negado ao documento' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do documento',
+    type: 'string',
+    format: 'uuid',
+  })
+  async getThumbnailStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() usuario: Usuario,
+    @ReqContext() context: RequestContext,
+  ): Promise<ThumbnailStatusResponseDto> {
+    // Verificar acesso ao documento
+    await this.documentoService.findById(id);
+
+    // Obter status do processamento
+    const status = await this.thumbnailQueueService.getProcessingStatus(id);
+
+    return plainToInstance(ThumbnailStatusResponseDto, status, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  /**
+   * Adiciona documento à fila de processamento de thumbnails
+   */
+  @Post(':id/thumbnail/processar')
+  @RequiresPermission({ permissionName: 'documento.gerenciar' })
+  @ApiOperation({
+    summary: 'Adicionar documento à fila de processamento',
+    description:
+      'Adiciona o documento à fila para processamento assíncrono de thumbnail',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Documento adicionado à fila com sucesso',
+  })
+  @ApiResponse({ status: 404, description: 'Documento não encontrado' })
+  @ApiResponse({ status: 403, description: 'Acesso negado ao documento' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do documento',
+    type: 'string',
+    format: 'uuid',
+  })
+  async queueThumbnailProcessing(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() usuario: Usuario,
+    @ReqContext() context: RequestContext,
+  ) {
+    // Verificar acesso ao documento
+    await this.documentoService.findById(id);
+
+    // Adicionar à fila
+    await this.thumbnailQueueService.addToQueue(id);
+
+    // Auditoria
+    await this.auditEventEmitter.emitEntityUpdated(
+      'DocumentoThumbnailQueue',
+      id,
+      null,
+      { status: 'queued', queuedBy: usuario.id },
+      usuario.id?.toString(),
+      { synchronous: false },
+    );
+
+    return {
+      message: 'Documento adicionado à fila de processamento com sucesso',
+      documentoId: id,
+    };
+  }
+
+  /**
+   * Obtém estatísticas do sistema de thumbnails
+   */
+  @Get('thumbnails/estatisticas')
+  @RequiresPermission({ permissionName: 'documento.estatisticas' })
+  @ApiOperation({
+    summary: 'Obter estatísticas do sistema de thumbnails',
+    description:
+      'Retorna estatísticas agregadas sobre o processamento de thumbnails',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Estatísticas retornadas com sucesso',
+    type: ThumbnailStatsResponseDto,
+  })
+  async getThumbnailStats(): Promise<ThumbnailStatsResponseDto> {
+    const stats = await this.thumbnailQueueService.getStats();
+
+    return plainToInstance(ThumbnailStatsResponseDto, stats, {
+      excludeExtraneousValues: true,
+    });
   }
 }

@@ -46,7 +46,8 @@ export const VALIDACOES_CRITICAS_ERRORS: Record<string, ErrorDefinition> = {
     severity: ErrorSeverity.HIGH,
     localizedMessages: {
       'pt-BR': 'CPF já está cadastrado como beneficiário ativo no sistema',
-      'en-US': 'CPF is already registered as an active beneficiary in the system',
+      'en-US':
+        'CPF is already registered as an active beneficiary in the system',
     },
     legalReference: 'Regra de exclusividade - Sistema SOBE',
   },
@@ -59,7 +60,8 @@ export const VALIDACOES_CRITICAS_ERRORS: Record<string, ErrorDefinition> = {
     severity: ErrorSeverity.HIGH,
     localizedMessages: {
       'pt-BR': 'CPF já faz parte da composição familiar de outro beneficiário',
-      'en-US': 'CPF is already part of another beneficiary\'s family composition',
+      'en-US':
+        "CPF is already part of another beneficiary's family composition",
     },
     legalReference: 'Regra de exclusividade - Sistema SOBE',
   },
@@ -71,23 +73,12 @@ export const VALIDACOES_CRITICAS_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Tempo de residência em Natal é inferior ao mínimo exigido de 2 anos',
-      'en-US': 'Residence time in Natal is less than the required minimum of 2 years',
+      'pt-BR':
+        'Tempo de residência em Natal é inferior ao mínimo exigido de 2 anos',
+      'en-US':
+        'Residence time in Natal is less than the required minimum of 2 years',
     },
     legalReference: 'Lei Municipal 7.205/2021',
-  },
-
-  VAL_2004: {
-    code: 'VAL_2004',
-    message: 'Conflito de papéis: não pode ser beneficiário e membro familiar simultaneamente',
-    httpStatus: HttpStatus.CONFLICT,
-    category: ErrorCategory.VALIDATIONS,
-    severity: ErrorSeverity.CRITICAL,
-    localizedMessages: {
-      'pt-BR': 'Cidadão não pode ser beneficiário principal e membro da composição familiar simultaneamente',
-      'en-US': 'Citizen cannot be main beneficiary and family member simultaneously',
-    },
-    legalReference: 'Regra crítica do sistema - Exclusividade de papéis',
   },
 
   VAL_2005: {
@@ -97,8 +88,10 @@ export const VALIDACOES_CRITICAS_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.HIGH,
     localizedMessages: {
-      'pt-BR': 'Renda familiar per capita excede o limite estabelecido para o benefício',
-      'en-US': 'Family per capita income exceeds the established limit for the benefit',
+      'pt-BR':
+        'Renda familiar per capita excede o limite estabelecido para o benefício',
+      'en-US':
+        'Family per capita income exceeds the established limit for the benefit',
     },
     legalReference: 'Critérios de elegibilidade - Lei 7.205/2021',
   },
@@ -126,7 +119,8 @@ export const VALIDACOES_CRITICAS_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.HIGH,
     localizedMessages: {
-      'pt-BR': 'Comprovante de residência é obrigatório para validar elegibilidade',
+      'pt-BR':
+        'Comprovante de residência é obrigatório para validar elegibilidade',
       'en-US': 'Proof of residence is required to validate eligibility',
     },
   },
@@ -166,7 +160,8 @@ export const VALIDACOES_CRITICAS_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Composição familiar não atende aos critérios mínimos estabelecidos',
+      'pt-BR':
+        'Composição familiar não atende aos critérios mínimos estabelecidos',
       'en-US': 'Family composition does not meet established minimum criteria',
     },
   },
@@ -178,7 +173,8 @@ export const VALIDACOES_CRITICAS_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.HIGH,
     localizedMessages: {
-      'pt-BR': 'Situação de vulnerabilidade social não foi adequadamente comprovada',
+      'pt-BR':
+        'Situação de vulnerabilidade social não foi adequadamente comprovada',
       'en-US': 'Social vulnerability situation has not been adequately proven',
     },
   },
@@ -187,50 +183,6 @@ export const VALIDACOES_CRITICAS_ERRORS: Record<string, ErrorDefinition> = {
 // ========================================
 // HELPERS PARA VALIDAÇÕES CRÍTICAS
 // ========================================
-
-/**
- * Lança erro de conflito de papel - beneficiário ativo
- */
-export function throwConflitoPapelBeneficiario(
-  cpf: string,
-  context: ValidacoesCriticasErrorContext = {},
-  language: string = 'pt-BR',
-): never {
-  throw new AppError(
-    'VAL_2001',
-    {
-      ...context,
-      data: {
-        cpf,
-        ...context.data,
-      },
-    },
-    language,
-  );
-}
-
-/**
- * Lança erro de conflito de papel - composição familiar
- */
-export function throwConflitoPapelComposicao(
-  cpf: string,
-  beneficiarioOriginal: string,
-  context: ValidacoesCriticasErrorContext = {},
-  language: string = 'pt-BR',
-): never {
-  throw new AppError(
-    'VAL_2002',
-    {
-      ...context,
-      data: {
-        cpf,
-        beneficiarioOriginal,
-        ...context.data,
-      },
-    },
-    language,
-  );
-}
 
 /**
  * Lança erro de residência insuficiente
@@ -249,27 +201,6 @@ export function throwResidenciaInsuficiente(
         cpf,
         tempoResidencia,
         minimoExigido: 24, // 2 anos em meses
-        ...context.data,
-      },
-    },
-    language,
-  );
-}
-
-/**
- * Lança erro de conflito de papéis simultâneos
- */
-export function throwConflitoPapelSimultaneo(
-  cpf: string,
-  context: ValidacoesCriticasErrorContext = {},
-  language: string = 'pt-BR',
-): never {
-  throw new AppError(
-    'VAL_2004',
-    {
-      ...context,
-      data: {
-        cpf,
         ...context.data,
       },
     },
@@ -309,9 +240,9 @@ export function throwDocumentoObrigatorioNaoFornecido(
   language: string = 'pt-BR',
 ): never {
   const errorCodes = {
-    'identidade': 'VAL_2011',
-    'residencia': 'VAL_2012',
-    'renda': 'VAL_2013',
+    identidade: 'VAL_2011',
+    residencia: 'VAL_2012',
+    renda: 'VAL_2013',
   };
 
   const errorCode = errorCodes[documentoTipo] || 'VAL_2011';

@@ -76,11 +76,16 @@ export class ResilientAuditoriaService implements OnModuleInit {
           this.auditoriaService = this.moduleRef.get('AuditoriaService', {
             strict: false,
           });
-          this.auditoriaQueueService = this.moduleRef.get('AuditoriaQueueService', {
-            strict: false,
-          });
+          this.auditoriaQueueService = this.moduleRef.get(
+            'AuditoriaQueueService',
+            {
+              strict: false,
+            },
+          );
 
-          this.logger.log('Serviços de auditoria inicializados via lazy loading');
+          this.logger.log(
+            'Serviços de auditoria inicializados via lazy loading',
+          );
         } catch (error) {
           this.logger.warn(
             `Falha ao inicializar serviços de auditoria: ${error.message}`,

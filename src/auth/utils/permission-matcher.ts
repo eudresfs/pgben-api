@@ -34,8 +34,10 @@ export class PermissionMatcher {
     userPermissions: string[],
     required: string,
   ): boolean {
-    this.logger.debug(`Verificando se usuário com permissões [${userPermissions.join(', ')}] possui permissão '${required}'`);
-    
+    this.logger.debug(
+      `Verificando se usuário com permissões [${userPermissions.join(', ')}] possui permissão '${required}'`,
+    );
+
     // Verificar cada permissão do usuário
     for (const userPermission of userPermissions) {
       // Caso 1: Usuário tem permissão total (*.*)
@@ -46,36 +48,46 @@ export class PermissionMatcher {
 
       // Caso 2: Correspondência exata (modulo.acao === modulo.acao)
       if (userPermission === required) {
-        this.logger.debug(`Correspondência exata: ${userPermission} === ${required}`);
+        this.logger.debug(
+          `Correspondência exata: ${userPermission} === ${required}`,
+        );
         return true;
       }
-      
+
       // Caso 3: Permissão de módulo (modulo.* cobre modulo.qualquercoisa)
       if (userPermission.endsWith('.*')) {
         // Extrair o prefixo do módulo (ex: "modulo" de "modulo.*")
-        const modulePrefix = userPermission.substring(0, userPermission.length - 2); // Remove ".*"
-        
+        const modulePrefix = userPermission.substring(
+          0,
+          userPermission.length - 2,
+        ); // Remove ".*"
+
         // Verifica se a permissão requerida começa com o mesmo módulo
         // e tem apenas uma parte adicional após o módulo (modulo.acao)
         const requiredParts = required.split('.');
         const moduleParts = modulePrefix.split('.');
-        
-        if (requiredParts.length > 0 && 
-            moduleParts.length > 0 && 
-            requiredParts[0] === moduleParts[0]) {
-          
-          this.logger.debug(`Correspondência por wildcard de módulo: ${userPermission} cobre ${required}`);
+
+        if (
+          requiredParts.length > 0 &&
+          moduleParts.length > 0 &&
+          requiredParts[0] === moduleParts[0]
+        ) {
+          this.logger.debug(
+            `Correspondência por wildcard de módulo: ${userPermission} cobre ${required}`,
+          );
           return true;
         }
       }
-      
+
       // Caso 4: Usar a implementação robusta de patternMatches para casos mais complexos
       if (this.patternMatches(userPermission, required)) {
-        this.logger.debug(`Correspondência por padrão: ${userPermission} cobre ${required}`);
+        this.logger.debug(
+          `Correspondência por padrão: ${userPermission} cobre ${required}`,
+        );
         return true;
       }
     }
-    
+
     this.logger.debug(`Nenhuma correspondência encontrada para '${required}'`);
     return false;
   }
@@ -90,12 +102,16 @@ export class PermissionMatcher {
 
     // Escapa caracteres de regex e converte * para '.*' (qualquer sequência)
     const escaped = pattern.replace(/[-/\\^$+?.()|[\]{}]/g, '\\$&');
-    const regexStr = '^' + escaped.replace(/\\\*/g, '.*').replace(/\*/g, '.*') + '$';
+    const regexStr =
+      '^' + escaped.replace(/\\\*/g, '.*').replace(/\*/g, '.*') + '$';
     try {
       const regex = new RegExp(regexStr);
       return regex.test(permission);
     } catch (err) {
-      this.logger.warn(`Padrão de permissão inválido: ${pattern}`, err as Error);
+      this.logger.warn(
+        `Padrão de permissão inválido: ${pattern}`,
+        err as Error,
+      );
       return false;
     }
   }

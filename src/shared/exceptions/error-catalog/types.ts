@@ -47,6 +47,8 @@ export interface ErrorDefinition {
   severity: ErrorSeverity;
   /** Mensagens localizadas */
   localizedMessages?: Record<string, string>;
+  /** Mensagens contextuais específicas para diferentes campos/situações */
+  contextualMessages?: Record<string, string>;
   /** Ações sugeridas para resolução */
   suggestedActions?: string[];
   /** Referência legal ou normativa */

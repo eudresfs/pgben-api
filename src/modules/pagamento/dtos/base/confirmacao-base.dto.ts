@@ -2,10 +2,10 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
  * DTO base para confirmações
- * 
+ *
  * Define campos comuns compartilhados entre diferentes DTOs de confirmação
  * para seguir o princípio DRY (Don't Repeat Yourself).
- * 
+ *
  * @author Equipe PGBen
  */
 export abstract class ConfirmacaoBaseDto {
@@ -34,7 +34,7 @@ export abstract class ConfirmacaoBaseDto {
     description: 'Data de criação do registro',
     example: 'ISO 8601 date string',
   })
-  createdAt: Date;
+  created_at: Date;
 
   /**
    * Data da última atualização do registro
@@ -43,7 +43,7 @@ export abstract class ConfirmacaoBaseDto {
     description: 'Data da última atualização do registro',
     example: 'ISO 8601 date string',
   })
-  updatedAt: Date;
+  updated_at: Date;
 }
 
 /**

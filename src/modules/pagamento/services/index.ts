@@ -1,6 +1,6 @@
 /**
  * Índice de exportações dos serviços do módulo de pagamento
- * 
+ *
  * Centraliza todas as exportações dos serviços para facilitar importações
  * e manter organização do código após a consolidação da Fase 2.
  */

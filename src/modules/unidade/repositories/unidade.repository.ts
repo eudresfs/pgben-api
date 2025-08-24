@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Repository, DataSource, FindManyOptions } from 'typeorm';
 import { StatusUnidade, Unidade } from '../../../entities/unidade.entity';
-import { throwUnidadeNotFound, throwUnidadeOperationFailed } from '../../../shared/exceptions/error-catalog/domains/unidade.errors';
+import {
+  throwUnidadeNotFound,
+  throwUnidadeOperationFailed,
+} from '../../../shared/exceptions/error-catalog/domains/unidade.errors';
 
 /**
  * Repositório de unidades

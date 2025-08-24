@@ -39,20 +39,25 @@ export class CreatePagamentoHandler {
         const job = await this.pagamentoQueueService.adicionarJobCriarPagamento(
           pagamentoData,
           usuarioId,
-          5 // Alta prioridade para criação
+          5, // Alta prioridade para criação
         );
 
         return { jobId: job.id.toString() };
       }
 
       // Processamento síncrono
-      const pagamento = await this.pagamentoService.create(pagamentoData, usuarioId);
-      
+      const pagamento = await this.pagamentoService.create(
+        pagamentoData,
+        usuarioId,
+      );
+
       this.logger.log(`Pagamento criado com sucesso: ${pagamento.id}`);
       return pagamento;
-
     } catch (error) {
-      this.logger.error(`Erro ao executar criação de pagamento: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao executar criação de pagamento: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -71,7 +76,7 @@ export class CreatePagamentoHandler {
       throw new Error('ID do usuário é obrigatório');
     }
 
-    if (!pagamentoData.solicitacaoId) {
+    if (!pagamentoData.solicitacao_id) {
       throw new Error('ID da solicitação é obrigatório');
     }
 

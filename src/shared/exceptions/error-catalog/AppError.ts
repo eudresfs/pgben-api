@@ -9,11 +9,7 @@
  */
 
 import { HttpException } from '@nestjs/common';
-import {
-  ErrorDefinition,
-  ErrorCategory,
-  ErrorSeverity,
-} from './types';
+import { ErrorDefinition, ErrorCategory, ErrorSeverity } from './types';
 
 // Removida a importação estática do ERROR_CATALOG para evitar dependência circular
 
@@ -67,7 +63,7 @@ export class AppError extends HttpException {
     // Importação dinâmica do catálogo para evitar dependência circular
     // Isso garante que o catálogo já esteja completamente construído quando for usado
     const { ERROR_CATALOG } = require('./catalog');
-    
+
     const definition = ERROR_CATALOG[errorCode];
 
     if (!definition) {
@@ -166,9 +162,17 @@ export class AppError extends HttpException {
    * Retorna dados seguros para resposta da API (sem informações sensíveis)
    */
   public getApiResponse(includeDetails: boolean = false): Record<string, any> {
+    // Usar contextualMessage se disponível, senão usar localizedMessage ou message padrão
+    const contextualMessage = this.context.data?.contextualMessage;
+    const userFriendlyMessage = this.context.data?.userFriendlyMessage;
+
     const response = {
       code: this.errorCode,
-      message: this.localizedMessage || this.message,
+      message:
+        contextualMessage ||
+        userFriendlyMessage ||
+        this.localizedMessage ||
+        this.message,
       category: this.definition.category,
       timestamp: this.timestamp.toISOString(),
     };

@@ -3,6 +3,7 @@ import { Usuario } from '../../entities/usuario.entity';
 import { RoleType } from '../../shared/constants/roles.constants';
 import { Permission } from '../../entities/permission.entity';
 import { ScopeType, TipoEscopo } from '../../entities/user-permission.entity';
+import { UserAccessTokenClaims } from '../dtos/auth-token-output.dto';
 
 /**
  * DTO para saída de usuário compatível com o serviço de autenticação
@@ -37,18 +38,6 @@ export class UserOutput {
 }
 
 /**
- * Claims do token de acesso do usuário
- */
-export interface UserAccessTokenClaims {
-  id: string | number;
-  username: string;
-  roles: RoleType[];
-  permissions?: string[];
-  permissionScopes?: Record<string, string>;
-  unidade_id?: string;
-}
-
-/**
  * Adaptador para converter a entidade Usuario para o formato esperado pelo serviço de autenticação
  */
 export class UsuarioAdapter {
@@ -67,7 +56,7 @@ export class UsuarioAdapter {
     userOutput.updated_at =
       usuario.updated_at?.toISOString() || new Date().toISOString();
     // Obter o nome da role a partir da entidade Role
-    userOutput.roles = usuario.role ? [usuario.role.nome as RoleType] : [];
+    userOutput.roles = usuario.role ? [usuario.role.codigo as RoleType] : [];
     // Incluir unidade_id se disponível
     userOutput.unidade_id = usuario.unidade_id;
 
@@ -90,12 +79,17 @@ export class UsuarioAdapter {
     const claims: UserAccessTokenClaims = {
       id: usuario.id,
       username: usuario.email, // Usando email como username
-      roles: usuario.role ? [usuario.role.nome as RoleType] : [],
+      roles: usuario.role ? [usuario.role.codigo as RoleType] : [],
     };
 
     // Incluir unidade_id se disponível
     if (usuario.unidade_id) {
       claims.unidade_id = usuario.unidade_id;
+    }
+
+    // Incluir escopo da role se disponível
+    if (usuario.role && usuario.role.escopo) {
+      claims.escopo = usuario.role.escopo;
     }
 
     // Adiciona permissões se disponíveis

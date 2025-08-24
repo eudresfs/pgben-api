@@ -1,4 +1,8 @@
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { Pagamento } from '../../../entities/pagamento.entity';
 
@@ -10,7 +14,10 @@ export class PagamentoValidationUtil {
   /**
    * Valida se um pagamento existe
    */
-  static validarExistencia(pagamento: Pagamento | null, pagamentoId: string): void {
+  static validarExistencia(
+    pagamento: Pagamento | null,
+    pagamentoId: string,
+  ): void {
     if (!pagamento) {
       throw new NotFoundException(`Pagamento ${pagamentoId} não encontrado`);
     }
@@ -20,11 +27,15 @@ export class PagamentoValidationUtil {
    * Valida se um pagamento pode receber comprovantes
    */
   static validarParaComprovante(pagamento: Pagamento): void {
-    const statusPermitidos = [StatusPagamentoEnum.PENDENTE, StatusPagamentoEnum.LIBERADO, StatusPagamentoEnum.PAGO];
-    
+    const statusPermitidos = [
+      StatusPagamentoEnum.PENDENTE,
+      StatusPagamentoEnum.LIBERADO,
+      StatusPagamentoEnum.PAGO,
+    ];
+
     if (!statusPermitidos.includes(pagamento.status)) {
       throw new BadRequestException(
-        `Não é possível anexar comprovantes a um pagamento ${pagamento.status.toLowerCase()}`
+        `Não é possível anexar comprovantes a um pagamento ${pagamento.status.toLowerCase()}`,
       );
     }
   }
@@ -34,17 +45,22 @@ export class PagamentoValidationUtil {
    */
   static validarParaConfirmacao(pagamento: Pagamento): void {
     // Verificar status válido para confirmação
-    const statusPermitidos = [StatusPagamentoEnum.LIBERADO, StatusPagamentoEnum.PAGO];
-    
+    const statusPermitidos = [
+      StatusPagamentoEnum.LIBERADO,
+      StatusPagamentoEnum.PAGO,
+    ];
+
     if (!statusPermitidos.includes(pagamento.status)) {
       throw new ConflictException(
-        `Pagamento deve estar liberado ou pago para receber confirmação. Status atual: ${pagamento.status}`
+        `Pagamento deve estar liberado ou pago para receber confirmação. Status atual: ${pagamento.status}`,
       );
     }
 
     // Verificar se pagamento tem valor
     if (!pagamento.valor || pagamento.valor <= 0) {
-      throw new BadRequestException('Pagamento sem valor válido não pode ser confirmado');
+      throw new BadRequestException(
+        'Pagamento sem valor válido não pode ser confirmado',
+      );
     }
 
     // Verificar se não está vencido
@@ -56,17 +72,25 @@ export class PagamentoValidationUtil {
   /**
    * Valida arquivo de comprovante
    */
-  static validarArquivo(file: Express.Multer.File, maxSize: number, allowedTypes: string[]): void {
+  static validarArquivo(
+    file: Express.Multer.File,
+    maxSize: number,
+    allowedTypes: string[],
+  ): void {
     if (!file) {
       throw new BadRequestException('Arquivo é obrigatório');
     }
 
     if (file.size > maxSize) {
-      throw new BadRequestException(`Arquivo muito grande. Tamanho máximo: ${maxSize / 1024 / 1024}MB`);
+      throw new BadRequestException(
+        `Arquivo muito grande. Tamanho máximo: ${maxSize / 1024 / 1024}MB`,
+      );
     }
 
     if (!allowedTypes.includes(file.mimetype)) {
-      throw new BadRequestException(`Tipo de arquivo não permitido. Tipos aceitos: ${allowedTypes.join(', ')}`);
+      throw new BadRequestException(
+        `Tipo de arquivo não permitido. Tipos aceitos: ${allowedTypes.join(', ')}`,
+      );
     }
 
     if (!file.originalname || file.originalname.trim() === '') {
@@ -83,15 +107,23 @@ export class PagamentoValidationUtil {
     }
 
     if (valor > 10000) {
-      throw new BadRequestException('Valor do pagamento excede o limite máximo permitido');
+      throw new BadRequestException(
+        'Valor do pagamento excede o limite máximo permitido',
+      );
     }
   }
 
   /**
    * Valida transição de status do pagamento
    */
-  static validarTransicaoStatus(statusAtual: StatusPagamentoEnum, novoStatus: StatusPagamentoEnum): void {
-    const transicoesPermitidas: Record<StatusPagamentoEnum, StatusPagamentoEnum[]> = {
+  static validarTransicaoStatus(
+    statusAtual: StatusPagamentoEnum,
+    novoStatus: StatusPagamentoEnum,
+  ): void {
+    const transicoesPermitidas: Record<
+      StatusPagamentoEnum,
+      StatusPagamentoEnum[]
+    > = {
       [StatusPagamentoEnum.PENDENTE]: [
         StatusPagamentoEnum.LIBERADO,
         StatusPagamentoEnum.AGENDADO,
@@ -109,12 +141,19 @@ export class PagamentoValidationUtil {
       ],
       [StatusPagamentoEnum.PAGO]: [
         StatusPagamentoEnum.CONFIRMADO,
+        StatusPagamentoEnum.VENCIDO,
       ],
-      [StatusPagamentoEnum.CONFIRMADO]: [],
+      [StatusPagamentoEnum.CONFIRMADO]: [StatusPagamentoEnum.RECEBIDO],
+      [StatusPagamentoEnum.RECEBIDO]: [],
       [StatusPagamentoEnum.CANCELADO]: [],
       [StatusPagamentoEnum.VENCIDO]: [
-        StatusPagamentoEnum.PENDENTE,
+        StatusPagamentoEnum.LIBERADO,
         StatusPagamentoEnum.CANCELADO,
+        StatusPagamentoEnum.REGULARIZADO,
+      ],
+      [StatusPagamentoEnum.REGULARIZADO]: [
+        StatusPagamentoEnum.PENDENTE,
+        StatusPagamentoEnum.LIBERADO,
       ],
       [StatusPagamentoEnum.SUSPENSO]: [
         StatusPagamentoEnum.PENDENTE,
@@ -124,7 +163,7 @@ export class PagamentoValidationUtil {
 
     if (!transicoesPermitidas[statusAtual]?.includes(novoStatus)) {
       throw new BadRequestException(
-        `Transição de status inválida: ${statusAtual} -> ${novoStatus}`
+        `Transição de status inválida: ${statusAtual} -> ${novoStatus}`,
       );
     }
   }

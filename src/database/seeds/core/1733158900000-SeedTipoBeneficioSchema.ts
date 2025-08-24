@@ -5,7 +5,7 @@ import {
   CampoEstrutura,
   MetadadosEstrutura,
 } from '../../../entities/tipo-beneficio-schema.entity';
-import { Status } from '@/enums';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * Seed para popular a tabela tipo_beneficio_schema com estruturas das entidades existentes
@@ -55,7 +55,9 @@ export class SeedTipoBeneficioSchema1733158900000 {
           console.log(`⚠️  Schema já existe para: ${tipoBeneficio.nome}`);
         }
       } else {
-        console.warn(`❌ Estrutura não definida para: ${tipoBeneficio.nome} (chave: ${chaveEstrutura})`);
+        console.warn(
+          `❌ Estrutura não definida para: ${tipoBeneficio.nome} (chave: ${chaveEstrutura})`,
+        );
       }
     }
   }
@@ -74,10 +76,10 @@ export class SeedTipoBeneficioSchema1733158900000 {
 
     // Mapeamento dos nomes para as chaves do objeto estruturas
     const mapeamento: Record<string, string> = {
-      'beneficio_natalidade': 'beneficio_natalidade',
-      'beneficio_funeral': 'beneficio_funeral',
-      'cesta_basica': 'cesta_basica',
-      'aluguel_social': 'aluguel_social',
+      beneficio_natalidade: 'beneficio_natalidade',
+      beneficio_funeral: 'beneficio_funeral',
+      cesta_basica: 'cesta_basica',
+      aluguel_social: 'aluguel_social',
     };
 
     return mapeamento[nomeNormalizado] || nomeNormalizado;
@@ -108,27 +110,53 @@ export class SeedTipoBeneficioSchema1733158900000 {
 
       // Construir objeto de validações de forma mais completa
       const validacoes: any = {};
-      
+
       // Mapear validações do campo principal
-      if (campo.min !== undefined) {validacoes.min = campo.min;}
-      if (campo.max !== undefined) {validacoes.max = campo.max;}
-      
+      if (campo.min !== undefined) {
+        validacoes.min = campo.min;
+      }
+      if (campo.max !== undefined) {
+        validacoes.max = campo.max;
+      }
+
       // Mapear validações do objeto validation
       if (campo.validation) {
-        if (campo.validation.min !== undefined) {validacoes.min = campo.validation.min;}
-        if (campo.validation.max !== undefined) {validacoes.max = campo.validation.max;}
-        if (campo.validation.minLength !== undefined) {validacoes.minLength = campo.validation.minLength;}
-        if (campo.validation.maxLength !== undefined) {validacoes.maxLength = campo.validation.maxLength;}
-        if (campo.validation.pattern) {validacoes.pattern = campo.validation.pattern;}
-        if (campo.validation.minDate) {validacoes.minDate = campo.validation.minDate;}
-        if (campo.validation.maxDate) {validacoes.maxDate = campo.validation.maxDate;}
-        if (campo.validation.integer !== undefined) {validacoes.integer = campo.validation.integer;}
-        if (campo.validation.maxItems !== undefined) {validacoes.maxItems = campo.validation.maxItems;}
-        if (campo.validation.items) {validacoes.items = campo.validation.items;}
+        if (campo.validation.min !== undefined) {
+          validacoes.min = campo.validation.min;
+        }
+        if (campo.validation.max !== undefined) {
+          validacoes.max = campo.validation.max;
+        }
+        if (campo.validation.minLength !== undefined) {
+          validacoes.minLength = campo.validation.minLength;
+        }
+        if (campo.validation.maxLength !== undefined) {
+          validacoes.maxLength = campo.validation.maxLength;
+        }
+        if (campo.validation.pattern) {
+          validacoes.pattern = campo.validation.pattern;
+        }
+        if (campo.validation.minDate) {
+          validacoes.minDate = campo.validation.minDate;
+        }
+        if (campo.validation.maxDate) {
+          validacoes.maxDate = campo.validation.maxDate;
+        }
+        if (campo.validation.integer !== undefined) {
+          validacoes.integer = campo.validation.integer;
+        }
+        if (campo.validation.maxItems !== undefined) {
+          validacoes.maxItems = campo.validation.maxItems;
+        }
+        if (campo.validation.items) {
+          validacoes.items = campo.validation.items;
+        }
       }
 
       // Mapear opções para select/multiselect/radio com novo formato
-      let opcoes: Array<{ value: string | number; label: string; disabled?: boolean }> | undefined;
+      let opcoes:
+        | Array<{ value: string | number; label: string; disabled?: boolean }>
+        | undefined;
       if (campo.options && Array.isArray(campo.options)) {
         opcoes = campo.options.map((option: any) => {
           if (typeof option === 'string') {
@@ -137,7 +165,7 @@ export class SeedTipoBeneficioSchema1733158900000 {
             return {
               value: option.value,
               label: option.label || option.value,
-              disabled: option.disabled || false
+              disabled: option.disabled || false,
             };
           }
           return { value: option, label: String(option) };
@@ -145,7 +173,7 @@ export class SeedTipoBeneficioSchema1733158900000 {
       } else if (campo.validation?.enum) {
         opcoes = campo.validation.enum.map((value: any) => ({
           value: value,
-          label: String(value)
+          label: String(value),
         }));
       }
 
@@ -156,7 +184,7 @@ export class SeedTipoBeneficioSchema1733158900000 {
           campo: campo.dependeDe.campo,
           valor: campo.dependeDe.valor,
           condicao: campo.dependeDe.condicao || 'igual',
-          acao: campo.dependeDe.acao || 'mostrar'
+          acao: campo.dependeDe.acao || 'mostrar',
         };
       }
 
@@ -165,36 +193,36 @@ export class SeedTipoBeneficioSchema1733158900000 {
         // Layout e posicionamento
         colSpan: campo.colSpan || 1,
         order: campo.order,
-        
+
         // Formatação e máscara
         placeholder: campo.placeholder,
         mask: this.obterMascara(nomeCampo, campo.type),
-        
+
         // Comportamento
         disabled: campo.disabled || false,
         readonly: campo.readonly || false,
         hidden: campo.hidden || false,
-        
+
         // Estilo e aparência
         variant: campo.variant || 'outlined',
         size: campo.size || 'medium',
         color: campo.color || 'primary',
-        
+
         // Propriedades específicas por tipo
         multiple: campo.multiple,
         accept: campo.accept,
         step: campo.step,
-        
+
         // Ajuda e documentação
         helpText: campo.helpText,
         tooltip: campo.tooltip,
-        
+
         // Validação visual
         showValidationIcon: campo.showValidationIcon !== false,
-        
+
         // Agrupamento
         group: campo.group,
-        section: campo.section
+        section: campo.section,
       };
 
       // Para textarea, mapear rows
@@ -212,7 +240,7 @@ export class SeedTipoBeneficioSchema1733158900000 {
         validacoes: Object.keys(validacoes).length > 0 ? validacoes : undefined,
         opcoes: opcoes,
         dependeDe: dependeDe,
-        ui: ui
+        ui: ui,
       };
 
       campos.push(campoEstrutura);
@@ -226,8 +254,15 @@ export class SeedTipoBeneficioSchema1733158900000 {
    */
   private validarTipoCampo(tipo: string): boolean {
     const tiposSuportados = [
-      'text', 'textarea', 'number', 'checkbox', 'date', 
-      'select', 'multiselect', 'radio', 'file'
+      'text',
+      'textarea',
+      'number',
+      'checkbox',
+      'date',
+      'select',
+      'multiselect',
+      'radio',
+      'file',
     ];
     return tiposSuportados.includes(tipo);
   }
@@ -238,18 +273,18 @@ export class SeedTipoBeneficioSchema1733158900000 {
   private obterMascara(nomeCampo: string, tipo: string): string | undefined {
     // Máscaras baseadas no nome do campo
     const mascarasPorNome: Record<string, string> = {
-      'cpf': '000.000.000-00',
-      'cnpj': '00.000.000/0000-00',
-      'telefone': '(00) 00000-0000',
-      'telefone_cadastrado_cpf': '(00) 00000-0000',
-      'telefone_contato': '(00) 00000-0000',
-      'celular': '(00) 00000-0000',
-      'cep': '00000-000',
-      'rg': '00.000.000-0',
-      'numero_certidao_obito': '000000 00 00 0000 0 00000 000 0000000-00',
-      'numero_certidao_nascimento': '000000 00 00 0000 0 00000 000 0000000-00',
-      'numero_nis': '000.00000.00-0',
-      'numero_titulo_eleitor': '0000 0000 0000'
+      cpf: '000.000.000-00',
+      cnpj: '00.000.000/0000-00',
+      telefone: '(00) 00000-0000',
+      telefone_cadastrado_cpf: '(00) 00000-0000',
+      telefone_contato: '(00) 00000-0000',
+      celular: '(00) 00000-0000',
+      cep: '00000-000',
+      rg: '00.000.000-0',
+      numero_certidao_obito: '000000 00 00 0000 0 00000 000 0000000-00',
+      numero_certidao_nascimento: '000000 00 00 0000 0 00000 000 0000000-00',
+      numero_nis: '000.00000.00-0',
+      numero_titulo_eleitor: '0000 0000 0000',
     };
 
     // Verificar se existe máscara específica para o nome do campo
@@ -265,9 +300,11 @@ export class SeedTipoBeneficioSchema1733158900000 {
         return '00/00/0000';
       case 'number':
         // Para campos numéricos que representam valores monetários
-        if (nomeCampo.toLowerCase().includes('valor') || 
-            nomeCampo.toLowerCase().includes('renda') ||
-            nomeCampo.toLowerCase().includes('salario')) {
+        if (
+          nomeCampo.toLowerCase().includes('valor') ||
+          nomeCampo.toLowerCase().includes('renda') ||
+          nomeCampo.toLowerCase().includes('salario')
+        ) {
           return 'R$ 0.000,00';
         }
         break;
@@ -289,8 +326,10 @@ export class SeedTipoBeneficioSchema1733158900000 {
             label: 'Realiza pré-natal',
             required: false,
             colSpan: 1,
-            placeholder: 'Marque se a gestante realiza acompanhamento pré-natal',
-            helpText: 'Indique se a gestante está fazendo acompanhamento médico regular',
+            placeholder:
+              'Marque se a gestante realiza acompanhamento pré-natal',
+            helpText:
+              'Indique se a gestante está fazendo acompanhamento médico regular',
             section: 'dados_gestacao',
             validation: {
               type: 'boolean',
@@ -367,7 +406,7 @@ export class SeedTipoBeneficioSchema1733158900000 {
               { value: 2, label: '2 filhos' },
               { value: 3, label: '3 filhos' },
               { value: 4, label: '4 filhos' },
-              { value: 5, label: '5 ou mais filhos' }
+              { value: 5, label: '5 ou mais filhos' },
             ],
             validation: {
               type: 'number',
@@ -440,7 +479,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
                 value: 'familias_atingidas_calamidade_publica',
               },
               {
-                label: 'Famílias/indivíduos em situação de risco ou vulnerabilidade',
+                label:
+                  'Famílias/indivíduos em situação de risco ou vulnerabilidade',
                 value: 'familias_situacao_risco_vulnerabilidade',
               },
             ],
@@ -471,13 +511,25 @@ export class SeedTipoBeneficioSchema1733158900000 {
               { label: 'Em conflito com a lei', value: 'conflito_lei' },
               { label: 'Situação de drogadição', value: 'situacao_drogadicao' },
               { label: 'Em situação de rua', value: 'situacao_rua' },
-              { label: 'Gravidez na adolescência', value: 'gravidez_adolescencia' },
-              { label: 'Egresso do acolhimento institucional', value: 'egresso_acolhimento_institucional' },
+              {
+                label: 'Gravidez na adolescência',
+                value: 'gravidez_adolescencia',
+              },
+              {
+                label: 'Egresso do acolhimento institucional',
+                value: 'egresso_acolhimento_institucional',
+              },
               { label: 'Ausência de renda', value: 'ausencia_renda' },
               { label: 'Ausência de moradia', value: 'ausencia_moradia' },
-              { label: 'Incapacitante para atividade laboral', value: 'incapacitante_laboral' },
+              {
+                label: 'Incapacitante para atividade laboral',
+                value: 'incapacitante_laboral',
+              },
               { label: 'Desemprego', value: 'desemprego' },
-              { label: 'Situação de Migração ou Refúgio', value: 'migracao_refugio' },
+              {
+                label: 'Situação de Migração ou Refúgio',
+                value: 'migracao_refugio',
+              },
               { label: 'Desastre ambiental', value: 'desastre_ambiental' },
               { label: 'Enchente', value: 'enchente' },
               { label: 'Desapropriação', value: 'desapropriacao' },
@@ -517,7 +569,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
             required: true,
             colSpan: 2,
             rows: 3,
-            placeholder: 'Descreva detalhadamente a situação atual da moradia da família',
+            placeholder:
+              'Descreva detalhadamente a situação atual da moradia da família',
             validation: {
               type: 'string',
               minLength: 20,
@@ -539,7 +592,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
             label: 'Caso judicializado Lei Maria da Penha',
             required: false,
             colSpan: 1,
-            placeholder: 'Marque se há processo judicial relacionado à Lei Maria da Penha',
+            placeholder:
+              'Marque se há processo judicial relacionado à Lei Maria da Penha',
             validation: {
               type: 'boolean',
             },
@@ -550,7 +604,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
             required: false,
             colSpan: 2,
             rows: 2,
-            placeholder: 'Informações complementares relevantes para a análise do caso',
+            placeholder:
+              'Informações complementares relevantes para a análise do caso',
             validation: {
               type: 'string',
               maxLength: 500,
@@ -586,7 +641,7 @@ export class SeedTipoBeneficioSchema1733158900000 {
               { label: 'Único', value: 'unico' },
               { label: 'Mensal', value: 'mensal' },
               { label: 'Bimestral', value: 'bimestral' },
-              { label: 'Trimestral', value: 'trimestral' }
+              { label: 'Trimestral', value: 'trimestral' },
             ],
             validation: {
               type: 'enum',

@@ -1,8 +1,21 @@
-# Monitoramento e Observabilidade do Sistema SSE
+# ⚠️ MIGRADO: Monitoramento SSE → Ably
 
-## Visão Geral
+## IMPORTANTE - SISTEMA DESCONTINUADO
 
-Este documento descreve as estratégias de monitoramento, métricas e observabilidade para o sistema de notificações SSE (Server-Sent Events) do SEMTAS.
+> **Este documento é mantido apenas para referência histórica. O sistema SSE foi completamente substituído pelo Ably.**
+> 
+> **📋 Para monitoramento do Ably, consulte a documentação oficial:** [Ably Monitoring](https://ably.com/docs/general/statistics)
+
+## ~~Visão Geral~~
+
+~~Este documento descreve as estratégias de monitoramento, métricas e observabilidade para o sistema de notificações SSE (Server-Sent Events) do SEMTAS.~~
+
+**MIGRAÇÃO CONCLUÍDA**: O monitoramento agora é feito através do dashboard do Ably, que oferece:
+- ✅ Métricas em tempo real
+- ✅ Alertas automáticos
+- ✅ Histórico de conexões
+- ✅ Análise de performance
+- ✅ Logs detalhados
 
 ## Métricas Principais
 

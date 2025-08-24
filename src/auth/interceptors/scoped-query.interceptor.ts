@@ -1,4 +1,10 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor, Logger } from '@nestjs/common';
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+  Logger,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { Reflector } from '@nestjs/core';
 import { SKIP_UNIT_FILTER_KEY } from '../decorators/skip-unit-filter.decorator';
@@ -40,7 +46,9 @@ export class ScopedQueryInterceptor implements NestInterceptor {
       context.getHandler(),
     );
     if (skipFilter) {
-      this.logger.debug('SkipUnitFilter ativo – não aplicando filtro de unidade');
+      this.logger.debug(
+        'SkipUnitFilter ativo – não aplicando filtro de unidade',
+      );
       return next.handle();
     }
 
@@ -53,7 +61,9 @@ export class ScopedQueryInterceptor implements NestInterceptor {
       }
       if (!request.query.unidadeId) {
         request.query.unidadeId = scope.unidadeId;
-        this.logger.debug(`Filtro de unidadeId injetado automaticamente: ${scope.unidadeId}`);
+        this.logger.debug(
+          `Filtro de unidadeId injetado automaticamente: ${scope.unidadeId}`,
+        );
       }
     }
 

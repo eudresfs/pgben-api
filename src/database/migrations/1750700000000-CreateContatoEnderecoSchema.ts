@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateContatoEnderecoSchema1750700000000 implements MigrationInterface {
+export class CreateContatoEnderecoSchema1750700000000
+  implements MigrationInterface
+{
   name = 'CreateContatoEnderecoSchema1750700000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -25,7 +27,9 @@ export class CreateContatoEnderecoSchema1750700000000 implements MigrationInterf
       );
     `);
 
-    await queryRunner.query(`CREATE INDEX "IDX_contato_cidadao_whatsapp" ON "contato" ("cidadao_id", "is_whatsapp")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_contato_cidadao_whatsapp" ON "contato" ("cidadao_id", "is_whatsapp")`,
+    );
 
     // --- ENDERECO ---
     await queryRunner.query(`
@@ -50,7 +54,9 @@ export class CreateContatoEnderecoSchema1750700000000 implements MigrationInterf
       );
     `);
 
-    await queryRunner.query(`CREATE INDEX "IDX_endereco_atual" ON "endereco" ("cidadao_id", "data_fim_vigencia")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_endereco_atual" ON "endereco" ("cidadao_id", "data_fim_vigencia")`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

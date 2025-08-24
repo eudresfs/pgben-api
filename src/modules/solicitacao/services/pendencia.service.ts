@@ -1,9 +1,17 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { plainToClass } from 'class-transformer';
 import { Pendencia, StatusPendencia } from '../../../entities/pendencia.entity';
-import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
+import {
+  Solicitacao,
+  StatusSolicitacao,
+} from '../../../entities/solicitacao.entity';
 import { Usuario } from '../../../entities/usuario.entity';
 import {
   CreatePendenciaDto,
@@ -69,10 +77,10 @@ export class PendenciaService {
     if (createPendenciaDto.prazo_resolucao) {
       const prazoResolucao = new Date(createPendenciaDto.prazo_resolucao);
       const agora = new Date();
-      
+
       if (prazoResolucao <= agora) {
         throw new BadRequestException(
-          'O prazo de resolução deve ser maior que a data atual'
+          'O prazo de resolução deve ser maior que a data atual',
         );
       }
     }
@@ -111,7 +119,9 @@ export class PendenciaService {
       data: {
         pendenciaId: pendenciaSalva.id,
         descricao: createPendenciaDto.descricao,
-        prazo: createPendenciaDto.prazo_resolucao ? new Date(createPendenciaDto.prazo_resolucao) : undefined,
+        prazo: createPendenciaDto.prazo_resolucao
+          ? new Date(createPendenciaDto.prazo_resolucao)
+          : undefined,
         usuarioId: usuarioId,
       },
     });
@@ -136,7 +146,7 @@ export class PendenciaService {
           solicitacao_id: solicitacao.id,
         },
       },
-      usuarioId
+      usuarioId,
     );
 
     // Enviar notificação
@@ -153,7 +163,7 @@ export class PendenciaService {
       dados: {
         pendenciaId: pendenciaSalva.id,
         solicitacaoId: solicitacao.id,
-        protocolo: solicitacao.protocolo, 
+        protocolo: solicitacao.protocolo,
         descricao: pendenciaSalva.descricao,
         prioridade: 'high',
       },
@@ -193,11 +203,10 @@ export class PendenciaService {
     }
 
     if (pendencia.status !== StatusPendencia.ABERTA) {
-      throw new BadRequestException('Apenas pendências abertas podem ser resolvidas');
+      throw new BadRequestException(
+        'Apenas pendências abertas podem ser resolvidas',
+      );
     }
-
-    // TODO: Implementar verificação de permissões específicas para solicitação
-    // Por enquanto, a verificação é feita pelo PermissionGuard no controller
 
     // Verificar se o usuário existe
     const usuario = await this.usuarioRepository.findOne({
@@ -214,19 +223,22 @@ export class PendenciaService {
     pendencia.status = StatusPendencia.RESOLVIDA;
     pendencia.resolvido_por_id = usuarioId;
     pendencia.data_resolucao = new Date();
-    pendencia.observacao_resolucao = resolverPendenciaDto.observacao_resolucao || null;
+    pendencia.observacao_resolucao =
+      resolverPendenciaDto.observacao_resolucao || null;
 
     const pendenciaAtualizada = await this.pendenciaRepository.save(pendencia);
 
     // Verificar se todas as pendências da solicitação foram sanadas
-    const todasPendenciasSanadas = await this.verificarTodasPendenciasSanadas(pendencia.solicitacao_id);
-    
+    const todasPendenciasSanadas = await this.verificarTodasPendenciasSanadas(
+      pendencia.solicitacao_id,
+    );
+
     // Alterar status da solicitação para EM_ANALISE apenas se todas as pendências foram sanadas
     if (todasPendenciasSanadas) {
       const solicitacao = await this.solicitacaoRepository.findOne({
         where: { id: pendencia.solicitacao_id },
       });
-      
+
       if (solicitacao) {
         solicitacao.status = StatusSolicitacao.EM_ANALISE;
         await this.solicitacaoRepository.save(solicitacao);
@@ -240,7 +252,7 @@ export class PendenciaService {
       timestamp: new Date(),
       data: {
         pendenciaId: pendencia.id,
-        resolucao: resolverPendenciaDto.resolucao,
+        resolucao: resolverPendenciaDto.observacao_resolucao,
         usuarioId: usuarioId,
         dataResolucao: new Date(),
       },
@@ -282,7 +294,7 @@ export class PendenciaService {
           pendencia_descricao: pendencia.descricao,
         },
       },
-      usuarioId
+      usuarioId,
     );
 
     // Enviar notificação
@@ -312,7 +324,7 @@ export class PendenciaService {
         where: { id: pendencia.solicitacao_id },
         relations: ['tecnico'],
       });
-      
+
       if (solicitacao?.tecnico_id) {
         this.eventEmitter.emit('sse.notificacao', {
           userId: solicitacao.tecnico_id,
@@ -350,7 +362,9 @@ export class PendenciaService {
     }
 
     if (pendencia.status !== StatusPendencia.ABERTA) {
-      throw new BadRequestException('Apenas pendências abertas podem ser canceladas');
+      throw new BadRequestException(
+        'Apenas pendências abertas podem ser canceladas',
+      );
     }
 
     const dadosAnteriores = { ...pendencia };
@@ -368,14 +382,16 @@ export class PendenciaService {
     const pendenciaAtualizada = await this.pendenciaRepository.save(pendencia);
 
     // Verificar se todas as pendências da solicitação foram sanadas
-    const todasPendenciasSanadas = await this.verificarTodasPendenciasSanadas(pendencia.solicitacao_id);
-    
+    const todasPendenciasSanadas = await this.verificarTodasPendenciasSanadas(
+      pendencia.solicitacao_id,
+    );
+
     // Alterar status da solicitação para EM_ANALISE apenas se todas as pendências foram sanadas
     if (todasPendenciasSanadas) {
       const solicitacao = await this.solicitacaoRepository.findOne({
         where: { id: pendencia.solicitacao_id },
       });
-      
+
       if (solicitacao) {
         solicitacao.status = StatusSolicitacao.EM_ANALISE;
         await this.solicitacaoRepository.save(solicitacao);
@@ -432,7 +448,7 @@ export class PendenciaService {
           motivo_cancelamento: cancelarPendenciaDto.motivo_cancelamento,
         },
       },
-      usuarioId
+      usuarioId,
     );
 
     // Emitir notificação SSE para pendência cancelada
@@ -455,7 +471,7 @@ export class PendenciaService {
         where: { id: pendencia.solicitacao_id },
         relations: ['tecnico'],
       });
-      
+
       if (solicitacao?.tecnico_id) {
         this.eventEmitter.emit('sse.notificacao', {
           userId: solicitacao.tecnico_id,
@@ -503,7 +519,7 @@ export class PendenciaService {
     filtros: FiltrosPendenciaDto,
   ): Promise<PaginatedResponseDto<PendenciaResponseDto>> {
     // Aplicar filtros e retornar pendências paginadas
-    
+
     const queryBuilder = this.criarQueryBuilder(false);
 
     // Aplicar filtros específicos
@@ -515,7 +531,7 @@ export class PendenciaService {
     // Executar consulta com paginação
     const page = filtros.page || 1;
     const limit = filtros.limit || 10;
-    
+
     const [pendencias, total] = await queryBuilder
       .skip((page - 1) * limit)
       .take(limit)
@@ -529,17 +545,14 @@ export class PendenciaService {
 
     const totalPages = Math.ceil(total / limit);
 
-    return new PaginatedResponseDto(
-      pendenciasDto,
-      {
-        page,
-        limit,
-        total,
-        pages: totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1,
-      },
-    );
+    return new PaginatedResponseDto(pendenciasDto, {
+      page,
+      limit,
+      total,
+      pages: totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    });
   }
 
   /**
@@ -566,7 +579,7 @@ export class PendenciaService {
    */
   async buscarPendenciasVencidas(): Promise<PendenciaResponseDto[]> {
     const agora = new Date();
-    
+
     const pendencias = await this.criarQueryBuilder(true)
       .where('pendencia.status = :status', { status: StatusPendencia.ABERTA })
       .andWhere('pendencia.prazo_resolucao < :agora', { agora })
@@ -583,7 +596,9 @@ export class PendenciaService {
   /**
    * Verifica se todas as pendências de uma solicitação foram sanadas
    */
-  private async verificarTodasPendenciasSanadas(solicitacaoId: string): Promise<boolean> {
+  private async verificarTodasPendenciasSanadas(
+    solicitacaoId: string,
+  ): Promise<boolean> {
     const pendenciasAbertas = await this.pendenciaRepository.count({
       where: {
         solicitacao_id: solicitacaoId,
@@ -597,7 +612,9 @@ export class PendenciaService {
   /**
    * Cria um QueryBuilder otimizado para consultas de pendências
    */
-  private criarQueryBuilder(incluirSolicitacao = false): SelectQueryBuilder<Pendencia> {
+  private criarQueryBuilder(
+    incluirSolicitacao = false,
+  ): SelectQueryBuilder<Pendencia> {
     const queryBuilder = this.pendenciaRepository
       .createQueryBuilder('pendencia')
       .leftJoinAndSelect('pendencia.registrado_por', 'registrado_por')
@@ -662,9 +679,12 @@ export class PendenciaService {
     }
 
     if (filtros.data_resolucao_inicio) {
-      queryBuilder.andWhere('pendencia.data_resolucao >= :dataResolucaoInicio', {
-        dataResolucaoInicio: new Date(filtros.data_resolucao_inicio),
-      });
+      queryBuilder.andWhere(
+        'pendencia.data_resolucao >= :dataResolucaoInicio',
+        {
+          dataResolucaoInicio: new Date(filtros.data_resolucao_inicio),
+        },
+      );
     }
 
     if (filtros.data_resolucao_fim) {
@@ -676,9 +696,12 @@ export class PendenciaService {
     }
 
     if (filtros.prazo_resolucao_inicio) {
-      queryBuilder.andWhere('pendencia.prazo_resolucao >= :prazoResolucaoInicio', {
-        prazoResolucaoInicio: new Date(filtros.prazo_resolucao_inicio),
-      });
+      queryBuilder.andWhere(
+        'pendencia.prazo_resolucao >= :prazoResolucaoInicio',
+        {
+          prazoResolucaoInicio: new Date(filtros.prazo_resolucao_inicio),
+        },
+      );
     }
 
     if (filtros.prazo_resolucao_fim) {
@@ -708,10 +731,10 @@ export class PendenciaService {
       const hoje = new Date();
       const seteDias = new Date();
       seteDias.setDate(hoje.getDate() + 7);
-      
+
       hoje.setHours(0, 0, 0, 0);
       seteDias.setHours(23, 59, 59, 999);
-      
+
       queryBuilder
         .andWhere('pendencia.status = :statusAberta', {
           statusAberta: StatusPendencia.ABERTA,
@@ -741,7 +764,8 @@ export class PendenciaService {
       data_resolucao: 'pendencia.data_resolucao',
     };
 
-    const campoFinal = camposPermitidos[campoOrdenacao] || 'pendencia.created_at';
+    const campoFinal =
+      camposPermitidos[campoOrdenacao] || 'pendencia.created_at';
     queryBuilder.orderBy(campoFinal, direcaoOrdenacao as 'ASC' | 'DESC');
 
     // Ordenação secundária por data de criação

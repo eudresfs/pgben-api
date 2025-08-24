@@ -65,7 +65,17 @@ export class MimeValidationService {
     const startTime = Date.now();
     const vId = validationId || crypto.randomUUID().substring(0, 8);
 
-    this.logger.info('Iniciando validação MIME completa', MimeValidationService.name, { validationId: vId, filename: file.originalname, size: file.size, detectedMimeType: file.mimetype, tipoBeneficio });
+    this.logger.info(
+      'Iniciando validação MIME completa',
+      MimeValidationService.name,
+      {
+        validationId: vId,
+        filename: file.originalname,
+        size: file.size,
+        detectedMimeType: file.mimetype,
+        tipoBeneficio,
+      },
+    );
 
     try {
       const config = getMimeConfigForBenefit(tipoBeneficio);
@@ -73,16 +83,27 @@ export class MimeValidationService {
 
       const processingTime = Date.now() - startTime;
 
-      this.logger.info('Validação MIME concluída', MimeValidationService.name, { validationId: vId, isValid: result.isValid, processingTime, errorsCount: result.validationErrors.length, warningsCount: result.securityWarnings.length });
+      this.logger.info('Validação MIME concluída', MimeValidationService.name, {
+        validationId: vId,
+        isValid: result.isValid,
+        processingTime,
+        errorsCount: result.validationErrors.length,
+        warningsCount: result.securityWarnings.length,
+      });
 
       return result;
     } catch (error) {
       const processingTime = Date.now() - startTime;
 
-      this.logger.error('Erro durante validação MIME', error, MimeValidationService.name, {
-        processingTime,
-        filename: file.originalname
-      });
+      this.logger.error(
+        'Erro durante validação MIME',
+        error,
+        MimeValidationService.name,
+        {
+          processingTime,
+          filename: file.originalname,
+        },
+      );
 
       throw new BadRequestException(
         `Falha na validação do arquivo: ${error.message}`,
@@ -107,7 +128,17 @@ export class MimeValidationService {
     const expectedMimeType = getExpectedMimeType(file.originalname);
     const fileHash = this.calculateFileHash(file.buffer);
 
-    this.logger.debug('Informações do arquivo extraídas', MimeValidationService.name, { validationId, fileExtension, detectedMimeType, expectedMimeType, fileHash: fileHash.substring(0, 16) + '...' });
+    this.logger.debug(
+      'Informações do arquivo extraídas',
+      MimeValidationService.name,
+      {
+        validationId,
+        fileExtension,
+        detectedMimeType,
+        expectedMimeType,
+        fileHash: fileHash.substring(0, 16) + '...',
+      },
+    );
 
     // 1. Validar tamanho do arquivo
     if (file.size > config.maxFileSize) {
@@ -175,7 +206,16 @@ export class MimeValidationService {
     const isValid = validationErrors.length === 0;
 
     if (!isValid) {
-      this.logger.warn('Arquivo rejeitado na validação', MimeValidationService.name, { validationId, filename: file.originalname, errors: validationErrors, warnings: securityWarnings });
+      this.logger.warn(
+        'Arquivo rejeitado na validação',
+        MimeValidationService.name,
+        {
+          validationId,
+          filename: file.originalname,
+          errors: validationErrors,
+          warnings: securityWarnings,
+        },
+      );
     }
 
     return {

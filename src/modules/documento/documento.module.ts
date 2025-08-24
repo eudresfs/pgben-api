@@ -1,22 +1,59 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { DocumentoController } from './controllers/documento.controller';
+import { DocumentoOrganizacionalController } from './controllers/documento-organizacional.controller';
+import { DocumentoBatchController } from './controllers/documento-batch.controller';
 import { DocumentoService } from './services/documento.service';
+import { DocumentoBatchService } from './services/batch-download/documento-batch.service';
+import { DocumentoBatchSchedulerService } from './services/batch-download/documento-batch-scheduler.service';
+import { DocumentoUrlService } from './services/documento-url.service';
 import { LoggingService } from '../../shared/logging/logging.service';
 import { StorageProviderFactory } from './factories/storage-provider.factory';
 import { LocalStorageAdapter } from './adapters/local-storage.adapter';
 import { S3StorageAdapter } from './adapters/s3-storage.adapter';
 import { MimeValidationService } from './services/mime-validation.service';
+import { DocumentoAuditService } from './services/documento-audit.service';
 import { InputSanitizerValidator } from './validators/input-sanitizer.validator';
-import { diskStorage, memoryStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { Documento } from '../../entities';
+import { Documento, DocumentoBatchJob } from '../../entities';
 import { AuthModule } from '../../auth/auth.module';
 import { LoggingModule } from '../../shared/logging/logging.module';
 import { SharedModule } from '../../shared/shared.module';
 import { StorageHealthService } from './services/storage-health.service';
 import { AuditoriaSharedModule } from '../../shared/auditoria/auditoria-shared.module';
+
+// Novos componentes de segurança
+import { InputValidationInterceptor } from './interceptors/input-validation.interceptor';
+import { UrlSanitizerInterceptor } from './interceptors/url-sanitizer.interceptor';
+import { DocumentoRateLimitMiddleware } from './middleware/documento-rate-limit.middleware';
+import { DocumentoPathService } from './services/documento-path.service';
+import { CacheModule } from '../../shared/cache/cache.module';
+
+// Novos serviços especializados de upload
+import {
+  DocumentoUploadValidationService,
+  DocumentoFileProcessingService,
+  DocumentoReuseService,
+  DocumentoStorageService,
+  DocumentoMetadataService,
+  DocumentoPersistenceService,
+} from './services/upload';
+
+// Serviços de thumbnail
+import { ThumbnailService } from './services/thumbnail/thumbnail.service';
+import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.service';
+import { ThumbnailFacadeService } from './services/thumbnail/thumbnail-facade.service';
+
+// Serviços de conversão de documentos Office
+import { OfficeConverterService } from './services/office-converter/office-converter.service';
+
+// Serviços de download em lote
+import { BatchJobManagerService } from './services/batch-download/batch-job-manager.service';
+import { ZipGeneratorService } from './services/batch-download/zip-generator.service';
+import { DocumentFilterService } from './services/batch-download/document-filter.service';
 
 /**
  * Módulo de Documentos
@@ -26,7 +63,7 @@ import { AuditoriaSharedModule } from '../../shared/auditoria/auditoria-shared.m
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Documento]),
+    TypeOrmModule.forFeature([Documento, DocumentoBatchJob]),
     MulterModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -50,8 +87,11 @@ import { AuditoriaSharedModule } from '../../shared/auditoria/auditoria-shared.m
           }
         },
         limits: {
-          fileSize:
-            configService.get<number>('MAX_FILE_SIZE') || 10 * 1024 * 1024, // 10MB
+          fileSize: configService.get<number>(
+            'UPLOAD_MAX_FILE_SIZE',
+            5 * 1024 * 1024,
+          ), // 5MB default
+          files: 1,
         },
       }),
       inject: [ConfigService],
@@ -61,34 +101,95 @@ import { AuditoriaSharedModule } from '../../shared/auditoria/auditoria-shared.m
     LoggingModule,
     SharedModule,
     AuditoriaSharedModule,
+    CacheModule,
+    // BatchDownloadModule removido para evitar dependência circular
   ],
-  controllers: [DocumentoController],
+  controllers: [
+    DocumentoController,
+    DocumentoOrganizacionalController,
+    DocumentoBatchController,
+  ],
   providers: [
     DocumentoService,
-    MimeValidationService,
+    DocumentoBatchService,
+    DocumentoBatchSchedulerService,
+    DocumentoUrlService,
+    LoggingService,
     StorageProviderFactory,
     LocalStorageAdapter,
-    StorageHealthService,
-    {
-      provide: S3StorageAdapter,
-      useFactory: (configService: ConfigService, loggingService: LoggingService) => {
-        // Verifica se está usando S3
-        const useS3 = configService.get('USE_S3') === 'true';
-        if (!useS3) {
-          // Retorna null se não estiver usando S3
-          return null;
-        }
-        return new S3StorageAdapter(configService, loggingService);
-      },
-      inject: [ConfigService, LoggingService],
-    },
+    S3StorageAdapter,
+    MimeValidationService,
+    DocumentoAuditService,
+    DocumentoPathService,
     InputSanitizerValidator,
+    StorageHealthService,
+
+    // Novos serviços especializados de upload
+    DocumentoUploadValidationService,
+    DocumentoFileProcessingService,
+    DocumentoReuseService,
+    DocumentoStorageService,
+    DocumentoMetadataService,
+    DocumentoPersistenceService,
+
+    // Serviços de conversão de documentos Office
+    OfficeConverterService,
+
+    // Serviços de thumbnail
+    {
+      provide: ThumbnailService,
+      useFactory: (
+        storageProviderFactory: StorageProviderFactory,
+        officeConverterService: OfficeConverterService,
+      ) => {
+        return new ThumbnailService(
+          storageProviderFactory,
+          officeConverterService,
+        );
+      },
+      inject: [StorageProviderFactory, OfficeConverterService],
+    },
+    ThumbnailQueueService,
+    ThumbnailFacadeService,
+
+    // Serviços de download em lote
+    BatchJobManagerService,
+    ZipGeneratorService,
+    DocumentFilterService,
+
+    // Interceptors de segurança
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: InputValidationInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: UrlSanitizerInterceptor,
+    },
+
+    // Middleware será registrado via configure()
+    DocumentoRateLimitMiddleware,
   ],
   exports: [
-    TypeOrmModule,
     DocumentoService,
+    DocumentoBatchService,
+    DocumentoUrlService,
     StorageProviderFactory,
+    MimeValidationService,
+    DocumentoPathService,
     StorageHealthService,
+    OfficeConverterService,
+    ThumbnailService,
+    ThumbnailQueueService,
+    ThumbnailFacadeService,
+    BatchJobManagerService,
+    ZipGeneratorService,
+    DocumentFilterService,
   ],
 })
-export class DocumentoModule {}
+export class DocumentoModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // Aplicar rate limiting apenas nas rotas de documentos
+    consumer.apply(DocumentoRateLimitMiddleware).forRoutes('documento');
+  }
+}

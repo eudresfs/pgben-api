@@ -1,4 +1,3 @@
-
 import {
   Injectable,
   NestInterceptor,
@@ -28,17 +27,17 @@ export interface AuditoriaMetadata {
 
 /**
  * Interceptor de Auditoria para o Módulo de Pagamento
- * 
+ *
  * Captura automaticamente informações das requisições HTTP e registra
  * logs de auditoria para todas as operações críticas do módulo de pagamento.
- * 
+ *
  * Funcionalidades:
  * - Captura dados da requisição (método, URL, IP, user-agent)
  * - Extrai informações do usuário autenticado
  * - Registra timestamp de início e fim da operação
  * - Mascara dados sensíveis antes de registrar
  * - Trata erros sem impactar a operação principal
- * 
+ *
  * @author Equipe PGBen
  */
 @Injectable()
@@ -57,13 +56,9 @@ export class AuditoriaInterceptor implements NestInterceptor {
     const controller = context.getClass();
 
     // Obter metadados de auditoria do decorator
-    const auditoriaMetadata = this.reflector.get<AuditoriaMetadata>(
-      AUDITORIA_METADATA_KEY,
-      handler,
-    ) || this.reflector.get<AuditoriaMetadata>(
-      AUDITORIA_METADATA_KEY,
-      controller,
-    );
+    const auditoriaMetadata =
+      this.reflector.get<AuditoriaMetadata>(AUDITORIA_METADATA_KEY, handler) ||
+      this.reflector.get<AuditoriaMetadata>(AUDITORIA_METADATA_KEY, controller);
 
     // Se não há metadados de auditoria, pular o interceptor
     if (!auditoriaMetadata) {
@@ -108,7 +103,7 @@ export class AuditoriaInterceptor implements NestInterceptor {
             auditError.stack,
           );
         });
-        
+
         // Re-throw o erro original
         throw error;
       }),
@@ -169,13 +164,13 @@ export class AuditoriaInterceptor implements NestInterceptor {
    */
   private filtrarHeaders(headers: any): any {
     const headersSeguras = { ...headers };
-    
+
     // Remover headers sensíveis
     delete headersSeguras.authorization;
     delete headersSeguras.cookie;
     delete headersSeguras['x-api-key'];
     delete headersSeguras['x-auth-token'];
-    
+
     return headersSeguras;
   }
 
@@ -251,11 +246,13 @@ export class AuditoriaInterceptor implements NestInterceptor {
           status_http: response.statusCode,
           tempo_execucao: tempoExecucao,
           sucesso,
-          detalhes_erro: error ? {
-            message: error.message,
-            stack: error.stack?.split('\n').slice(0, 5).join('\n'),
-            name: error.name,
-          } : null,
+          detalhes_erro: error
+            ? {
+                message: error.message,
+                stack: error.stack?.split('\n').slice(0, 5).join('\n'),
+                name: error.name,
+              }
+            : null,
           usuario: {
             email: usuario?.email,
             perfil: usuario?.perfil,
@@ -271,7 +268,7 @@ export class AuditoriaInterceptor implements NestInterceptor {
             auditData.entityName,
             auditData.entityId,
             auditData.newData || {},
-            auditData.userId
+            auditData.userId,
           );
           break;
         case TipoOperacao.UPDATE:
@@ -280,7 +277,7 @@ export class AuditoriaInterceptor implements NestInterceptor {
             auditData.entityId,
             auditData.previousData || {},
             auditData.newData || {},
-            auditData.userId
+            auditData.userId,
           );
           break;
         case TipoOperacao.DELETE:
@@ -288,18 +285,19 @@ export class AuditoriaInterceptor implements NestInterceptor {
             auditData.entityName,
             auditData.entityId,
             auditData.previousData || {},
-            auditData.userId
+            auditData.userId,
           );
           break;
         default:
           await this.auditEventEmitter.emitSystemEvent(
             AuditEventType.SYSTEM_INFO,
             {
-              description: auditData.description || `${operacao} em ${entidade}`,
+              description:
+                auditData.description || `${operacao} em ${entidade}`,
               userId: auditData.userId,
               entityName: auditData.entityName,
-              entityId: auditData.entityId
-            }
+              entityId: auditData.entityId,
+            },
           );
       }
 
@@ -327,20 +325,23 @@ export class AuditoriaInterceptor implements NestInterceptor {
 
     // Mascarar dados bancários
     if (dadosMascarados.dadosBancarios || dadosMascarados.infoBancaria) {
-      const infoBancaria = dadosMascarados.dadosBancarios || dadosMascarados.infoBancaria;
-      
+      const infoBancaria =
+        dadosMascarados.dadosBancarios || dadosMascarados.infoBancaria;
+
       if (infoBancaria.conta) {
         infoBancaria.conta = DataMaskingUtil.maskConta(infoBancaria.conta);
       }
-      
+
       if (infoBancaria.agencia) {
-        infoBancaria.agencia = DataMaskingUtil.maskAgencia(infoBancaria.agencia);
+        infoBancaria.agencia = DataMaskingUtil.maskAgencia(
+          infoBancaria.agencia,
+        );
       }
-      
+
       if (infoBancaria.pixChave || infoBancaria.chavePix) {
         const chave = infoBancaria.pixChave || infoBancaria.chavePix;
         const tipo = infoBancaria.pixTipo || infoBancaria.pixType;
-        
+
         if (chave && tipo) {
           const chaveMascarada = DataMaskingUtil.maskPixKey(chave, tipo);
           if (infoBancaria.pixChave) {
@@ -355,7 +356,10 @@ export class AuditoriaInterceptor implements NestInterceptor {
 
     // Mascarar outros campos sensíveis
     if (dadosMascarados.cpf) {
-      dadosMascarados.cpf = dadosMascarados.cpf.replace(/(\d{3})\.(\d{3})\.(\d{3})-(\d{2})/, '***.***.***-**');
+      dadosMascarados.cpf = dadosMascarados.cpf.replace(
+        /(\d{3})\.(\d{3})\.(\d{3})-(\d{2})/,
+        '***.***.***-**',
+      );
     }
 
     if (dadosMascarados.senha || dadosMascarados.password) {
@@ -399,25 +403,27 @@ export class AuditoriaInterceptor implements NestInterceptor {
     error?: any;
     tempoExecucao: number;
   }): string {
-    const { operacao, entidade, descricao, sucesso, error, tempoExecucao } = dados;
+    const { operacao, entidade, descricao, sucesso, error, tempoExecucao } =
+      dados;
 
     if (descricao) {
       return descricao;
     }
 
-    const operacaoTexto = {
-      'CREATE': 'Criação',
-      'UPDATE': 'Atualização',
-      'DELETE': 'Exclusão',
-      'READ': 'Consulta',
-      [TipoOperacao.READ]: 'Consulta',
-    }[operacao] || operacao;
+    const operacaoTexto =
+      {
+        CREATE: 'Criação',
+        UPDATE: 'Atualização',
+        DELETE: 'Exclusão',
+        READ: 'Consulta',
+        [TipoOperacao.READ]: 'Consulta',
+      }[operacao] || operacao;
 
     const statusTexto = sucesso ? 'realizada com sucesso' : 'falhou';
     const tempoTexto = `em ${tempoExecucao}ms`;
-    
+
     let resultado = `${operacaoTexto} de ${entidade} ${statusTexto} ${tempoTexto}`;
-    
+
     if (!sucesso && error) {
       resultado += ` - Erro: ${error.message}`;
     }
@@ -428,7 +434,11 @@ export class AuditoriaInterceptor implements NestInterceptor {
   /**
    * Determina o nível de risco baseado na operação e contexto
    */
-  private determinarNivelRisco(operacao: string, entidade: string, error?: any): 'LOW' | 'MEDIUM' | 'HIGH' {
+  private determinarNivelRisco(
+    operacao: string,
+    entidade: string,
+    error?: any,
+  ): 'LOW' | 'MEDIUM' | 'HIGH' {
     // Operações de pagamento são sempre de alto risco
     if (entidade.toLowerCase().includes('pagamento')) {
       return 'HIGH';
@@ -460,17 +470,23 @@ export class AuditoriaInterceptor implements NestInterceptor {
     const chavesComuns = Object.keys(dados);
 
     // Campos financeiros
-    const camposFinanceiros = ['valor', 'conta_bancaria', 'agencia', 'banco', 'pix'];
-    camposFinanceiros.forEach(campo => {
-      if (chavesComuns.some(key => key.toLowerCase().includes(campo))) {
+    const camposFinanceiros = [
+      'valor',
+      'conta_bancaria',
+      'agencia',
+      'banco',
+      'pix',
+    ];
+    camposFinanceiros.forEach((campo) => {
+      if (chavesComuns.some((key) => key.toLowerCase().includes(campo))) {
         camposSensiveis.push(campo);
       }
     });
 
     // Campos de identificação
     const camposIdentificacao = ['cpf', 'cnpj', 'rg', 'documento'];
-    camposIdentificacao.forEach(campo => {
-      if (chavesComuns.some(key => key.toLowerCase().includes(campo))) {
+    camposIdentificacao.forEach((campo) => {
+      if (chavesComuns.some((key) => key.toLowerCase().includes(campo))) {
         camposSensiveis.push(campo);
       }
     });

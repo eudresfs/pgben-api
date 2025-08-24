@@ -4,6 +4,7 @@ export enum TipoDocumentoEnum {
   RG = 'rg',
   CNH = 'cnh',
   PASSAPORTE = 'passaporte',
+  DOCUMENTO_IDENTIFICACAO = 'documento_identificacao',
 
   // Certidões
   CERTIDAO_NASCIMENTO = 'certidao_nascimento',
@@ -42,7 +43,10 @@ export enum TipoDocumentoEnum {
   // Documentos bancários
   EXTRATO_BANCARIO = 'extrato_bancario',
   COMPROVANTE_PIX = 'comprovante_pix',
+  COMPROVANTE_TED = 'comprovante_ted',
+  COMPROVANTE_TRANSFERENCIA = 'comprovante_transferencia',
   DADOS_BANCARIOS = 'dados_bancarios',
+  COMPROVANTE_PAGAMENTO = 'comprovante_pagamento',
 
   // Documentos familiares e sociais
   DECLARACAO_COMPOSICAO_FAMILIAR = 'declaracao_composicao_familiar',
@@ -68,6 +72,10 @@ export enum TipoDocumentoEnum {
   HISTORICO_ESCOLAR = 'historico_escolar',
   MATRICULA_ESCOLAR = 'matricula_escolar',
 
+  // Documentos jurídicos
+  DETEMINACAO_JUDICIAL = 'determinacao_judicial',
+  PROCESSO_JUDICIAL = 'processo_judicial',
+
   // Documentos específicos para mortalidade
   DECLARACAO_OBITO = 'declaracao_obito',
   AUTORIZACAO_SEPULTAMENTO = 'autorizacao_sepultamento',
@@ -92,7 +100,7 @@ export enum TipoDocumentoEnum {
   TERMO_RESPONSABILIDADE = 'termo_responsabilidade',
   FOTO_3X4 = 'foto_3x4',
   OUTRO = 'outro',
-  
+
   // Documentos do módulo de upload fácil
   UPLOAD_FACIL = 'upload_facil',
 }

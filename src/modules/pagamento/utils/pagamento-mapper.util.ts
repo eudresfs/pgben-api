@@ -8,17 +8,19 @@ import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
  * Substitui o pagamento-mapping.service.ts com implementação mais simples
  */
 export class PagamentoMapper {
-  
   /**
    * Mapeia DTO de criação para dados da entidade
    */
-  static fromCreateDto(dto: PagamentoCreateDto, usuarioId: string): Partial<Pagamento> {
+  static fromCreateDto(
+    dto: PagamentoCreateDto,
+    usuarioId: string,
+  ): Partial<Pagamento> {
     return {
       valor: dto.valor,
-      metodoPagamento: dto.metodoPagamento,
+      metodo_pagamento: dto.metodo_pagamento,
       observacoes: dto.observacoes,
       status: StatusPagamentoEnum.PENDENTE,
-      criadoPor: usuarioId,
+      criado_por: usuarioId,
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -29,10 +31,10 @@ export class PagamentoMapper {
    */
   static toEntity(dto: PagamentoCreateDto): Partial<Pagamento> {
     return {
-      infoBancariaId: dto.infoBancariaId,
+      info_bancaria_id: dto.info_bancaria_id,
       valor: dto.valor,
-      dataLiberacao: dto.dataLiberacao,
-      metodoPagamento: dto.metodoPagamento,
+      data_liberacao: dto.data_liberacao,
+      metodo_pagamento: dto.metodo_pagamento,
       observacoes: dto.observacoes,
     };
   }
@@ -40,26 +42,31 @@ export class PagamentoMapper {
   /**
    * Mapeia entidade para DTO de resposta
    */
-  static toResponseDto(pagamento: Pagamento, incluirDadosSensiveis: boolean = false): PagamentoResponseDto {
+  static toResponseDto(
+    pagamento: Pagamento,
+    incluirDadosSensiveis: boolean = false,
+  ): PagamentoResponseDto {
     const dto: PagamentoResponseDto = {
       id: pagamento.id,
-      solicitacaoId: pagamento.solicitacaoId || '',
+      solicitacao_id: pagamento.solicitacao_id || '',
       valor: pagamento.valor,
       status: pagamento.status,
-      metodoPagamento: pagamento.metodoPagamento,
+      metodo_pagamento: pagamento.metodo_pagamento,
       observacoes: pagamento.observacoes,
-      numeroParcela: pagamento.numeroParcela || 1,
-      totalParcelas: pagamento.totalParcelas || 1,
-      dataLiberacao: pagamento.dataLiberacao,
-      dataPagamento: pagamento.dataPagamento,
-      responsavelLiberacao: {
-        id: pagamento.liberadoPor || 'sistema',
+      numero_parcela: pagamento.numero_parcela || 1,
+      total_parcelas: pagamento.total_parcelas || 1,
+      data_liberacao: pagamento.data_liberacao,
+      data_pagamento: pagamento.data_pagamento,
+      responsavel_liberacao: {
+        id: pagamento.liberado_por || 'sistema',
         nome: 'Sistema',
-        role: 'Sistema'
+        role: 'Sistema',
       },
-      quantidadeComprovantes: 0,
-      createdAt: pagamento.created_at,
-      updatedAt: pagamento.updated_at,
+      quantidade_comprovantes: 0,
+      created_at: pagamento.created_at,
+      updated_at: pagamento.updated_at,
+      pode_liberar: false,
+      motivo_liberacao: 'Dados insuficientes para análise',
     };
 
     // Dados sensíveis apenas para usuários autorizados
@@ -72,7 +79,18 @@ export class PagamentoMapper {
       dto.solicitacao = {
         id: pagamento.solicitacao.id,
         beneficiario: pagamento.solicitacao.beneficiario?.nome || 'N/A',
-        tipoBeneficio: pagamento.solicitacao.tipo_beneficio?.nome || 'N/A',
+        tipo_beneficio: {
+          id: pagamento.solicitacao.tipo_beneficio?.id || '',
+          nome: pagamento.solicitacao.tipo_beneficio?.nome || 'N/A',
+        },
+        unidade: {
+          id: pagamento.solicitacao.unidade?.id || '',
+          nome: pagamento.solicitacao.unidade?.nome || 'N/A',
+        },
+        tecnico: {
+          id: pagamento.solicitacao.tecnico?.id || '',
+          nome: pagamento.solicitacao.tecnico?.nome || 'N/A',
+        },
       };
     }
 
@@ -82,9 +100,12 @@ export class PagamentoMapper {
   /**
    * Mapeia lista de entidades para DTOs de resposta
    */
-  static toResponseDtos(pagamentos: Pagamento[], incluirDadosSensiveis: boolean = false): PagamentoResponseDto[] {
-    return pagamentos.map(pagamento => 
-      this.toResponseDto(pagamento, incluirDadosSensiveis)
+  static toResponseDtos(
+    pagamentos: Pagamento[],
+    incluirDadosSensiveis: boolean = false,
+  ): PagamentoResponseDto[] {
+    return pagamentos.map((pagamento) =>
+      this.toResponseDto(pagamento, incluirDadosSensiveis),
     );
   }
 
@@ -93,21 +114,27 @@ export class PagamentoMapper {
    */
   static mapFiltersToCriteria(filtros: any): {
     status?: StatusPagamentoEnum;
-    solicitacaoId?: string;
-    concessaoId?: string;
-    dataInicio?: Date;
-    dataFim?: Date;
+    solicitacao_id?: string;
+    concessao_id?: string;
+    data_inicio?: Date;
+    data_fim?: Date;
     valorMinimo?: number;
     valorMaximo?: number;
   } {
     return {
       status: filtros.status,
-      solicitacaoId: filtros.solicitacaoId,
-      concessaoId: filtros.concessaoId,
-      dataInicio: filtros.dataInicio ? new Date(filtros.dataInicio) : undefined,
-      dataFim: filtros.dataFim ? new Date(filtros.dataFim) : undefined,
-      valorMinimo: filtros.valorMinimo ? parseFloat(filtros.valorMinimo) : undefined,
-      valorMaximo: filtros.valorMaximo ? parseFloat(filtros.valorMaximo) : undefined,
+      solicitacao_id: filtros.solicitacao_id,
+      concessao_id: filtros.concessao_id,
+      data_inicio: filtros.data_inicio
+        ? new Date(filtros.data_inicio)
+        : undefined,
+      data_fim: filtros.data_fim ? new Date(filtros.data_fim) : undefined,
+      valorMinimo: filtros.valorMinimo
+        ? parseFloat(filtros.valorMinimo)
+        : undefined,
+      valorMaximo: filtros.valorMaximo
+        ? parseFloat(filtros.valorMaximo)
+        : undefined,
     };
   }
 
@@ -118,11 +145,11 @@ export class PagamentoMapper {
     items: T[],
     total: number,
     page: number,
-    limit: number
+    limit: number,
   ): {
     data: T[];
     pagination: {
-      currentPage: number;
+      page: number;
       itemsPerPage: number;
       totalItems: number;
       totalPages: number;
@@ -135,7 +162,7 @@ export class PagamentoMapper {
     return {
       data: items,
       pagination: {
-        currentPage: page,
+        page: page,
         itemsPerPage: limit,
         totalItems: total,
         totalPages,
@@ -150,9 +177,9 @@ export class PagamentoMapper {
    */
   static normalizeInput<T extends Record<string, any>>(data: T): Partial<T> {
     const normalized = { ...data };
-    
+
     // Remove campos undefined, null ou strings vazias
-    Object.keys(normalized).forEach(key => {
+    Object.keys(normalized).forEach((key) => {
       const value = normalized[key];
       if (value === undefined || value === null || value === '') {
         delete normalized[key];
@@ -181,7 +208,10 @@ export class PagamentoMapper {
       // Remove possíveis dados pessoais das observações
       masked.observacoes = masked.observacoes
         .replace(/\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/g, '***.***.***-**') // CPF
-        .replace(/\b\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\b/g, '**.***.***\/****-**'); // CNPJ
+        .replace(
+          /\b\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\b/g,
+          '**.***.***\/****-**',
+        ); // CNPJ
     }
 
     return masked;
@@ -222,9 +252,9 @@ export class PagamentoMapper {
       valorMedio: 0,
     };
 
-    pagamentos.forEach(pagamento => {
+    pagamentos.forEach((pagamento) => {
       stats.valorTotal += pagamento.valor;
-      
+
       const status = pagamento.status;
       stats.porStatus[status] = (stats.porStatus[status] || 0) + 1;
     });

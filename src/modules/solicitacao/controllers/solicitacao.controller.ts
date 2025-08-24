@@ -24,18 +24,25 @@ import {
   ApiBody,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { SolicitacaoService, PaginatedResponse } from '../services/solicitacao.service';
+import {
+  SolicitacaoService,
+  PaginatedResponse,
+  FindAllOptions,
+} from '../services/solicitacao.service';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
 import { AvaliarSolicitacaoDto } from '../dto/avaliar-solicitacao.dto';
 import { VincularProcessoJudicialDto } from '../dto/vincular-processo-judicial.dto';
 import { VincularDeterminacaoJudicialDto } from '../dto/vincular-determinacao-judicial.dto';
-import { ConverterPapelDto } from '../dto/converter-papel.dto';
+
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { ScopeType } from '../../../entities/user-permission.entity';
-import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
+import {
+  Solicitacao,
+  StatusSolicitacao,
+} from '../../../entities/solicitacao.entity';
 import { Request } from 'express';
 import { QueryOptimization } from '../../../common/interceptors/query-optimization.interceptor';
 
@@ -51,165 +58,168 @@ import { QueryOptimization } from '../../../common/interceptors/query-optimizati
 export class SolicitacaoController {
   constructor(
     private readonly solicitacaoService: SolicitacaoService,
-    private readonly logger: LoggingService
-  ) { }
+    private readonly logger: LoggingService,
+  ) {}
 
-/**
- * Lista todas as solicitações com filtros e paginação
- */
-@Get()
-@QueryOptimization({
-  enablePagination: true,
-  maxLimit: 100,
-  enableCaching: true,
-  cacheTTL: 120
-})
-@RequiresPermission({
-  permissionName: 'solicitacao.listar',
-  scopeType: ScopeType.UNIT
-})
-@ApiOperation({ summary: 'Listar solicitações' })
-@ApiResponse({
-  status: 200,
-  description: 'Lista de solicitações retornada com sucesso',
-})
-@ApiQuery({
-  name: 'page',
-  required: false,
-  type: Number,
-  description: 'Página atual (mínimo: 1)',
-  example: 1
-})
-@ApiQuery({
-  name: 'limit',
-  required: false,
-  type: Number,
-  description: 'Itens por página (mínimo: 1, máximo: 100)',
-  example: 10
-})
-@ApiQuery({
-  name: 'status',
-  required: false,
-  enum: StatusSolicitacao,
-  description: 'Filtro por status',
-})
-@ApiQuery({
-  name: 'unidade_id',
-  required: false,
-  type: String,
-  description: 'Filtro por unidade',
-})
-@ApiQuery({
-  name: 'beneficio_id',
-  required: false,
-  type: String,
-  description: 'Filtro por tipo de benefício',
-})
-@ApiQuery({
-  name: 'beneficiario_id',
-  required: false,
-  type: String,
-  description: 'Filtro por beneficiário',
-})
-@ApiQuery({
-  name: 'protocolo',
-  required: false,
-  type: String,
-  description: 'Busca por protocolo (busca parcial)',
-})
-@ApiQuery({
-  name: 'data_inicio',
-  required: false,
-  type: String,
-  description: 'Data inicial (formato: YYYY-MM-DD)',
-  example: '2024-01-01'
-})
-@ApiQuery({
-  name: 'data_fim',
-  required: false,
-  type: String,
-  description: 'Data final (formato: YYYY-MM-DD)',
-  example: '2024-12-31'
-})
-@ApiQuery({
-  name: 'sortBy',
-  required: false,
-  enum: ['data_abertura', 'protocolo', 'status'],
-  description: 'Campo para ordenação',
-  example: 'data_abertura'
-})
-@ApiQuery({
-  name: 'sortOrder',
-  required: false,
-  enum: ['ASC', 'DESC'],
-  description: 'Direção da ordenação',
-  example: 'DESC'
-})
-async findAll(
-  @Req() req: Request,
-  @Query('page') page?: number,
-  @Query('limit') limit?: number,
-  @Query('status') status?: StatusSolicitacao,
-  @Query('unidade_id') unidade_id?: string,
-  @Query('beneficio_id') beneficio_id?: string,
-  @Query('beneficiario_id') beneficiario_id?: string,
-  @Query('protocolo') protocolo?: string,
-  @Query('data_inicio') data_inicio?: string,
-  @Query('data_fim') data_fim?: string,
-  @Query('sortBy') sortBy?: 'data_abertura' | 'protocolo' | 'status',
-  @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
-) {
-  const parsedPage = page ? Math.max(1, +page) : undefined;
-  const parsedLimit = limit ? Math.min(100, Math.max(1, +limit)) : undefined;
+  /**
+   * Lista todas as solicitações com filtros e paginação
+   */
+  @Get()
+  @QueryOptimization({
+    enablePagination: true,
+    maxLimit: 100,
+    enableCaching: true,
+    cacheTTL: 120,
+  })
+  @RequiresPermission({
+    permissionName: 'solicitacao.listar',
+    scopeType: ScopeType.UNIT,
+  })
+  @ApiOperation({ summary: 'Listar solicitações' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de solicitações retornada com sucesso',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Página atual (mínimo: 1)',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Itens por página (mínimo: 1, máximo: 100)',
+    example: 10,
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: StatusSolicitacao,
+    description: 'Filtro por status',
+  })
+  @ApiQuery({
+    name: 'unidade_id',
+    required: false,
+    type: String,
+    description: 'Filtro por unidade',
+  })
+  @ApiQuery({
+    name: 'beneficio_id',
+    required: false,
+    type: String,
+    description: 'Filtro por tipo de benefício',
+  })
+  @ApiQuery({
+    name: 'beneficiario_id',
+    required: false,
+    type: String,
+    description: 'Filtro por beneficiário',
+  })
+  @ApiQuery({
+    name: 'protocolo',
+    required: false,
+    type: String,
+    description: 'Busca por protocolo (busca parcial)',
+  })
+  @ApiQuery({
+    name: 'data_inicio',
+    required: false,
+    type: String,
+    description: 'Data inicial (formato: YYYY-MM-DD)',
+    example: '2024-01-01',
+  })
+  @ApiQuery({
+    name: 'data_fim',
+    required: false,
+    type: String,
+    description: 'Data final (formato: YYYY-MM-DD)',
+    example: '2024-12-31',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: ['data_abertura', 'protocolo', 'status'],
+    description: 'Campo para ordenação',
+    example: 'data_abertura',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Direção da ordenação',
+    example: 'DESC',
+  })
+  async findAll(
+    @Req() req: Request,
+    @Query() findAllOptions: FindAllOptions,
+  ) {
+    const parsedPage = findAllOptions.page ? Math.max(1, +findAllOptions.page) : undefined;
+    const parsedLimit = findAllOptions.limit ? Math.min(100, Math.max(1, +findAllOptions.limit)) : undefined;
 
-  if (data_inicio && !this.isValidDateFormat(data_inicio)) {
-    throw new BadRequestException('Formato de data_inicio inválido. Use YYYY-MM-DD');
+    if (findAllOptions.data_inicio && !this.isValidDateFormat(findAllOptions.data_inicio)) {
+      throw new BadRequestException(
+        'Formato de data_inicio inválido. Use YYYY-MM-DD',
+      );
+    }
+
+    if (findAllOptions.data_fim && !this.isValidDateFormat(findAllOptions.data_fim)) {
+      throw new BadRequestException(
+        'Formato de data_fim inválido. Use YYYY-MM-DD',
+      );
+    }
+
+    if (findAllOptions.data_inicio 
+      && findAllOptions.data_fim 
+      && new Date(findAllOptions.data_inicio) > new Date(findAllOptions.data_fim)) {
+      throw new BadRequestException(
+        'Data de início deve ser anterior ou igual à data de fim',
+      );
+    }
+
+    return this.solicitacaoService.findAll({
+      search: findAllOptions.search,
+      page: parsedPage,
+      limit: parsedLimit,
+      status: findAllOptions.status,
+      unidade_id: findAllOptions.unidade_id,
+      beneficio_id: findAllOptions.beneficio_id,
+      beneficiario_id: findAllOptions.beneficiario_id,
+      usuario_id: findAllOptions.usuario_id,
+      protocolo: findAllOptions.protocolo,
+      data_inicio: findAllOptions.data_inicio,
+      data_fim: findAllOptions.data_fim,
+      sortBy: findAllOptions.sortBy,
+      sortOrder: findAllOptions.sortOrder,
+    });
   }
 
-  if (data_fim && !this.isValidDateFormat(data_fim)) {
-    throw new BadRequestException('Formato de data_fim inválido. Use YYYY-MM-DD');
-  }
+  /**
+   * Valida se a string está no formato de data YYYY-MM-DD
+   * @param dateString String da data a ser validada
+   * @returns true se o formato é válido
+   */
+  private isValidDateFormat(dateString: string): boolean {
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(dateString)) {
+      return false;
+    }
 
-  if (data_inicio && data_fim && new Date(data_inicio) > new Date(data_fim)) {
-    throw new BadRequestException('Data de início deve ser anterior ou igual à data de fim');
+    const date = new Date(dateString);
+    return (
+      date instanceof Date &&
+      !isNaN(date.getTime()) &&
+      dateString === date.toISOString().split('T')[0]
+    );
   }
-
-  return this.solicitacaoService.findAll({
-    page: parsedPage,
-    limit: parsedLimit,
-    status,
-    unidade_id,
-    beneficio_id,
-    beneficiario_id,
-    protocolo,
-    data_inicio,
-    data_fim,
-    sortBy,
-    sortOrder,
-  });
-}
-
-/**
- * Valida se a string está no formato de data YYYY-MM-DD
- * @param dateString String da data a ser validada
- * @returns true se o formato é válido
- */
-private isValidDateFormat(dateString: string): boolean {
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!dateRegex.test(dateString)) {
-    return false;
-  }
-  
-  const date = new Date(dateString);
-  return date instanceof Date && !isNaN(date.getTime()) && 
-         dateString === date.toISOString().split('T')[0];
-}
 
   /**
    * Obtém detalhes de uma solicitação específica
    */
   @Get(':id')
-  @RequiresPermission({permissionName: 'solicitacao.visualizar'})
+  @RequiresPermission({ permissionName: 'solicitacao.visualizar' })
   @ApiOperation({ summary: 'Obter detalhes de uma solicitação' })
   @ApiResponse({
     status: 200,
@@ -225,9 +235,7 @@ private isValidDateFormat(dateString: string): boolean {
    */
   @Post()
   @RequiresPermission({
-    permissionName: 'solicitacao.criar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'body.unidadeId',
+    permissionName: 'solicitacao.criar'
   })
   @ApiOperation({
     summary: 'Criar nova solicitação de benefício',
@@ -255,7 +263,7 @@ private isValidDateFormat(dateString: string): boolean {
               description: 'Exemplo de solicitação para auxílio natalidade',
               value: {
                 beneficiario_id: '550e8400-e29b-41d4-a716-446655440000',
-                tipo_beneficio_id: '660e8400-e29b-41d4-a716-446655440001',
+                beneficio_id: '660e8400-e29b-41d4-a716-446655440001',
                 unidade_id: '770e8400-e29b-41d4-a716-446655440002',
                 observacoes:
                   'Solicitação para auxílio natalidade - primeiro filho',
@@ -284,7 +292,7 @@ private isValidDateFormat(dateString: string): boolean {
               description: 'Exemplo de solicitação para aluguel social',
               value: {
                 beneficiario_id: '550e8400-e29b-41d4-a716-446655440003',
-                tipo_beneficio_id: '660e8400-e29b-41d4-a716-446655440004',
+                beneficio_id: '660e8400-e29b-41d4-a716-446655440004',
                 unidade_id: '770e8400-e29b-41d4-a716-446655440002',
                 observacoes:
                   'Família em situação de vulnerabilidade habitacional',
@@ -480,7 +488,7 @@ private isValidDateFormat(dateString: string): boolean {
   }
 
   /**
-   * Avalia uma solicitação (aprovar/reprovar)
+   * Avalia uma solicitação (aprovar/indeferir)
    */
   @Put(':id/avaliar')
   @RequiresPermission({
@@ -494,11 +502,11 @@ private isValidDateFormat(dateString: string): boolean {
     scopeIdExpression: 'solicitacao.unidadeId',
   })
   @RequiresPermission({
-    permissionName: 'solicitacao.status.transicao.EM_ANALISE.REJEITADA',
+    permissionName: 'solicitacao.status.transicao.EM_ANALISE.INDEFERIDA',
     scopeType: ScopeType.UNIT,
     scopeIdExpression: 'solicitacao.unidadeId',
   })
-  @ApiOperation({ summary: 'Avaliar solicitação (aprovar/reprovar)' })
+  @ApiOperation({ summary: 'Avaliar solicitação (aprovar/indeferir)' })
   @ApiBody({
     description: 'Dados da avaliação da solicitação',
     schema: {
@@ -529,9 +537,6 @@ private isValidDateFormat(dateString: string): boolean {
       user,
     );
   }
-
-  // Método liberarBeneficio removido - no novo ciclo de vida simplificado,
-  // APROVADA é um status final e não há mais transição para LIBERADA
 
   /**
    * Cancela uma solicitação
@@ -566,13 +571,6 @@ private isValidDateFormat(dateString: string): boolean {
   @Get(':id/historico')
   @RequiresPermission({
     permissionName: 'solicitacao.visualizar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @RequiresPermission({
-    permissionName: 'solicitacao.historico.visualizar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({ summary: 'Listar histórico de uma solicitação' })
   @ApiResponse({ status: 200, description: 'Histórico retornado com sucesso' })
@@ -587,8 +585,6 @@ private isValidDateFormat(dateString: string): boolean {
   @Post(':id/processo-judicial')
   @RequiresPermission({
     permissionName: 'solicitacao.processo_judicial.vincular',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({ summary: 'Vincular processo judicial a uma solicitação' })
   @ApiResponse({
@@ -623,8 +619,6 @@ private isValidDateFormat(dateString: string): boolean {
   @Delete(':id/processo-judicial')
   @RequiresPermission({
     permissionName: 'solicitacao.processo_judicial.desvincular',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({ summary: 'Desvincular processo judicial de uma solicitação' })
   @ApiResponse({
@@ -650,8 +644,6 @@ private isValidDateFormat(dateString: string): boolean {
   @Post(':id/determinacao-judicial')
   @RequiresPermission({
     permissionName: 'solicitacao.determinacao_judicial.vincular',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({ summary: 'Vincular determinação judicial a uma solicitação' })
   @ApiResponse({
@@ -686,8 +678,6 @@ private isValidDateFormat(dateString: string): boolean {
   @Delete(':id/determinacao-judicial')
   @RequiresPermission({
     permissionName: 'solicitacao.determinacao_judicial.desvincular',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({
     summary: 'Desvincular determinação judicial de uma solicitação',
@@ -701,43 +691,48 @@ private isValidDateFormat(dateString: string): boolean {
     status: 400,
     description: 'Solicitação não possui determinação judicial vinculada',
   })
-  /**
-   * Converte um cidadão da composição familiar para beneficiário principal
-   */
-  @Post('converter-papel')
-  @RequiresPermission({
-    permissionName: 'solicitacao.converter_papel',
-    scopeType: ScopeType.UNIT
-  })
-  @ApiOperation({
-    summary:
-      'Converter cidadão da composição familiar para beneficiário principal',
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Cidadão convertido com sucesso e nova solicitação criada',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Cidadão não encontrado na composição familiar',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Solicitação de origem não encontrada',
-  })
-  @ApiBody({ type: ConverterPapelDto })
-  async converterPapel(
-    @Body() converterPapelDto: ConverterPapelDto,
-    @Req() req: Request,
-  ) {
-    return this.solicitacaoService.converterPapel(converterPapelDto, req.user);
-  }
-
   async desvincularDeterminacaoJudicial(
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: Request,
   ) {
     const user = req.user;
     return this.solicitacaoService.desvincularDeterminacaoJudicial(id, user);
+  }
+
+  /**
+   * Remove uma solicitação (soft delete)
+   */
+  @Delete(':id')
+  @RequiresPermission({
+    permissionName: 'solicitacao.remover',
+  })
+  @ApiOperation({
+    summary: 'Remove uma solicitação (soft delete)',
+    description:
+      'Realiza a exclusão lógica de uma solicitação. Apenas solicitações com status "RASCUNHO" ou "ABERTA" podem ser removidas.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Solicitação removida com sucesso',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Solicitação não encontrada',
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Solicitação não pode ser removida devido ao status atual. Apenas solicitações com status "RASCUNHO" ou "ABERTA" podem ser excluídas.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Usuário não tem permissão para remover esta solicitação',
+  })
+  async removerSolicitacao(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: Request,
+  ): Promise<void> {
+    const user = req.user;
+    return this.solicitacaoService.removerSolicitacao(id, user);
   }
 }

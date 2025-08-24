@@ -3,10 +3,26 @@
  * Esta lista é usada para sanitização de dados em mensagens de erro e logs
  */
 export const SENSITIVE_FIELDS = [
-  'senha', 'password', 'token', 'secret', 'authorization', 'key',
-  'confirmPassword', 'confirmSenha', 'currentPassword', 'senhaAtual', 
-  'newPassword', 'novaSenha', 'cpf', 'rg', 'cnpj', 'cardNumber', 
-  'cartao', 'cvv', 'passaporte', 'biometria'
+  'senha',
+  'password',
+  'token',
+  'secret',
+  'authorization',
+  'key',
+  'confirmPassword',
+  'confirmSenha',
+  'currentPassword',
+  'senhaAtual',
+  'newPassword',
+  'novaSenha',
+  'cpf',
+  'rg',
+  'cnpj',
+  'cardNumber',
+  'cartao',
+  'cvv',
+  'passaporte',
+  'biometria',
 ];
 
 /**
@@ -15,7 +31,7 @@ export const SENSITIVE_FIELDS = [
  * @returns true se o campo for sensível, false caso contrário
  */
 export function isSensitiveField(field: string): boolean {
-  return SENSITIVE_FIELDS.some(sensitive => 
-    field.toLowerCase().includes(sensitive.toLowerCase())
+  return SENSITIVE_FIELDS.some((sensitive) =>
+    field.toLowerCase().includes(sensitive.toLowerCase()),
   );
 }

@@ -10,10 +10,10 @@ import { DataMaskingUtil } from '../utils/data-masking.util';
 
 /**
  * Interceptor para mascaramento automático de dados sensíveis em respostas
- * 
+ *
  * Este interceptor aplica mascaramento de dados bancários e outras informações
  * sensíveis automaticamente nas respostas dos controllers de pagamento.
- * 
+ *
  * @author Equipe PGBen
  */
 @Injectable()
@@ -53,7 +53,7 @@ export class DataMaskingResponseInterceptor implements NestInterceptor {
 
   /**
    * Aplica mascaramento recursivo em objetos
-   * 
+   *
    * @param data - Dados a serem mascarados
    * @returns Dados com informações sensíveis mascaradas
    */
@@ -80,7 +80,11 @@ export class DataMaskingResponseInterceptor implements NestInterceptor {
       const value = maskedData[key];
 
       // Mascaramento de informações bancárias
-      if (key === 'infoBancaria' && typeof value === 'object' && value !== null) {
+      if (
+        key === 'infoBancaria' &&
+        typeof value === 'object' &&
+        value !== null
+      ) {
         maskedData[key] = this.maskBankingInfo(value);
         return;
       }
@@ -102,7 +106,7 @@ export class DataMaskingResponseInterceptor implements NestInterceptor {
 
   /**
    * Mascara informações bancárias específicas
-   * 
+   *
    * @param bankingInfo - Informações bancárias
    * @returns Informações bancárias mascaradas
    */
@@ -124,7 +128,7 @@ export class DataMaskingResponseInterceptor implements NestInterceptor {
 
   /**
    * Aplica mascaramento específico baseado no tipo de campo
-   * 
+   *
    * @param fieldName - Nome do campo
    * @param value - Valor a ser mascarado
    * @returns Valor mascarado
@@ -133,20 +137,20 @@ export class DataMaskingResponseInterceptor implements NestInterceptor {
     switch (fieldName) {
       case 'conta':
         return DataMaskingUtil.maskConta(value);
-      
+
       case 'agencia':
         return DataMaskingUtil.maskAgencia(value);
-      
+
       case 'chavePix':
         // Para chave PIX, assumir tipo 'aleatoria' se não especificado
         return DataMaskingUtil.maskPixKey(value, 'aleatoria');
-      
+
       case 'cpf':
         return DataMaskingUtil.maskPixKey(value, 'cpf');
-      
+
       case 'cnpj':
         return DataMaskingUtil.maskPixKey(value, 'cnpj');
-      
+
       default:
         // Mascaramento genérico: mostrar apenas primeiros e últimos caracteres
         if (value.length <= 4) return value;
@@ -159,17 +163,17 @@ export class DataMaskingResponseInterceptor implements NestInterceptor {
 
   /**
    * Verifica se o contexto atual deve aplicar mascaramento
-   * 
+   *
    * @param context - Contexto de execução
    * @returns True se deve aplicar mascaramento
    */
   private shouldApplyMasking(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
-    
+
     // Não aplicar mascaramento em endpoints internos ou de debug
     const path = request.url;
     const debugPaths = ['/health', '/metrics', '/debug'];
-    
-    return !debugPaths.some(debugPath => path.includes(debugPath));
+
+    return !debugPaths.some((debugPath) => path.includes(debugPath));
   }
 }

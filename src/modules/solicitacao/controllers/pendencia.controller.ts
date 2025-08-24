@@ -56,7 +56,10 @@ export class PendenciaController {
    * Cria uma nova pendência
    */
   @Post()
-  @RequiresPermission({ permissionName: 'pendencia.criar', scopeType: TipoEscopo.UNIDADE })
+  @RequiresPermission({
+    permissionName: 'pendencia.criar',
+    scopeType: TipoEscopo.UNIDADE,
+  })
   @ApiOperation({
     summary: 'Criar nova pendência',
     description: 'Registra uma nova pendência para uma solicitação',
@@ -101,7 +104,10 @@ export class PendenciaController {
    * Busca uma pendência por ID
    */
   @Get(':pendenciaId')
-  @RequiresPermission({ permissionName: 'pendencia.ler', scopeType: TipoEscopo.UNIDADE})
+  @RequiresPermission({
+    permissionName: 'pendencia.ler',
+    scopeType: TipoEscopo.UNIDADE,
+  })
   @ApiOperation({
     summary: 'Buscar pendência por ID',
     description: 'Retorna os detalhes de uma pendência específica',
@@ -127,14 +133,10 @@ export class PendenciaController {
     @GetUser() usuario: Usuario,
     @Req() req: Request,
   ): Promise<PendenciaResponseDto> {
-    return this.pendenciaService.buscarPorId(
-      pendenciaId,
-      usuario.id,
-      {
-        ip: req.ip,
-        userAgent: req.headers['user-agent'],
-      },
-    );
+    return this.pendenciaService.buscarPorId(pendenciaId, usuario.id, {
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
   }
 
   /**
@@ -170,7 +172,10 @@ export class PendenciaController {
    * Resolve uma pendência
    */
   @Put(':pendenciaId/resolver')
-  @RequiresPermission({ permissionName: 'pendencia.atualizar', scopeType: TipoEscopo.UNIDADE })
+  @RequiresPermission({
+    permissionName: 'pendencia.resolver',
+    scopeType: TipoEscopo.UNIDADE,
+  })
   @ApiOperation({
     summary: 'Resolver pendência',
     description: 'Marca uma pendência como resolvida',
@@ -223,7 +228,10 @@ export class PendenciaController {
    * Cancela uma pendência
    */
   @Put(':pendenciaId/cancelar')
-  @RequiresPermission({ permissionName: 'pendencia.atualizar', scopeType: TipoEscopo.UNIDADE})
+  @RequiresPermission({
+    permissionName: 'pendencia.atualizar',
+    scopeType: TipoEscopo.UNIDADE,
+  })
   @ApiOperation({
     summary: 'Cancelar pendência',
     description: 'Marca uma pendência como cancelada',
@@ -276,7 +284,10 @@ export class PendenciaController {
    * Lista pendências de uma solicitação específica
    */
   @Get('solicitacao/:solicitacaoId')
-  @RequiresPermission({ permissionName: 'pendencia.ler', scopeType: TipoEscopo.UNIDADE })
+  @RequiresPermission({
+    permissionName: 'pendencia.ler',
+    scopeType: TipoEscopo.UNIDADE,
+  })
   @ApiOperation({
     summary: 'Listar pendências de uma solicitação',
     description: 'Retorna todas as pendências de uma solicitação específica',
@@ -316,10 +327,14 @@ export class PendenciaController {
    * Lista pendências vencidas
    */
   @Get('relatorios/vencidas')
-  @RequiresPermission({ permissionName: 'pendencia.ler', scopeType: TipoEscopo.UNIDADE })
+  @RequiresPermission({
+    permissionName: 'pendencia.ler',
+    scopeType: TipoEscopo.UNIDADE,
+  })
   @ApiOperation({
     summary: 'Listar pendências vencidas',
-    description: 'Retorna todas as pendências que passaram do prazo de resolução',
+    description:
+      'Retorna todas as pendências que passaram do prazo de resolução',
   })
   @ApiResponse({
     status: HttpStatus.OK,

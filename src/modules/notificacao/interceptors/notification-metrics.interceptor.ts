@@ -1,11 +1,17 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+  Logger,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { EnhancedMetricsService } from '../../../shared/monitoring/enhanced-metrics.service';
 
 /**
  * Interceptor para capturar métricas específicas do módulo de notificação
- * 
+ *
  * Responsabilidades:
  * - Capturar métricas de requests para endpoints de notificação
  * - Monitorar performance de operações de notificação
@@ -21,7 +27,7 @@ export class NotificationMetricsInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
     const response = context.switchToHttp().getResponse();
-    
+
     const startTime = Date.now();
     const method = request.method;
     const route = request.route?.path || request.url;
@@ -42,7 +48,7 @@ export class NotificationMetricsInterceptor implements NestInterceptor {
           statusCode,
           duration,
           userId,
-          success: true
+          success: true,
         });
 
         // Decrementar contador de requests em progresso
@@ -60,7 +66,7 @@ export class NotificationMetricsInterceptor implements NestInterceptor {
           duration,
           userId,
           success: false,
-          error: error.message
+          error: error.message,
         });
 
         // Decrementar contador de requests em progresso
@@ -68,7 +74,7 @@ export class NotificationMetricsInterceptor implements NestInterceptor {
 
         // Re-throw o erro para não interferir no fluxo normal
         throw error;
-      })
+      }),
     );
   }
 
@@ -84,32 +90,33 @@ export class NotificationMetricsInterceptor implements NestInterceptor {
     success: boolean;
     error?: string;
   }) {
-    const { method, route, statusCode, duration, userId, success, error } = data;
+    const { method, route, statusCode, duration, userId, success, error } =
+      data;
 
     try {
       // Registrar request HTTP padrão
       this.metricsService.recordHttpRequest(method, route, statusCode);
-      this.metricsService.recordHttpRequestDuration(method, route, statusCode, duration);
+      this.metricsService.recordHttpRequestDuration(
+        method,
+        route,
+        statusCode,
+        duration,
+      );
 
       // Registrar métricas específicas de notificação
       if (route.includes('/notificacao')) {
         // Identificar tipo de operação
         const operationType = this.getOperationType(route, method);
-        
+
         // Registrar operação de notificação
         this.recordNotificationOperation(operationType, success, duration);
-
-        // Se for SSE, registrar métricas específicas
-        if (route.includes('/sse')) {
-          this.recordSseMetrics(route, method, success, userId);
-        }
 
         // Se houver erro, registrar evento de segurança
         if (!success && error) {
           this.metricsService.recordSecurityEvent(
             'notification_error',
             'error',
-            'notification_module'
+            'notification_module',
           );
         }
       }
@@ -117,7 +124,7 @@ export class NotificationMetricsInterceptor implements NestInterceptor {
       // Log do erro sem interromper o fluxo
       this.logger.warn(
         `Erro ao registrar métricas de notificação: ${metricsError.message}`,
-        { originalError: error, route, method }
+        { originalError: error, route, method },
       );
     }
   }
@@ -126,13 +133,6 @@ export class NotificationMetricsInterceptor implements NestInterceptor {
    * Identifica o tipo de operação baseado na rota e método
    */
   private getOperationType(route: string, method: string): string {
-    if (route.includes('/sse')) {
-      if (method === 'GET' && route.endsWith('/sse')) return 'sse_connect';
-      if (route.includes('/stats')) return 'sse_stats';
-      if (route.includes('/status')) return 'sse_status';
-      return 'sse_operation';
-    }
-
     if (route.includes('/template')) {
       if (method === 'POST') return 'template_create';
       if (method === 'PUT') return 'template_update';
@@ -142,66 +142,33 @@ export class NotificationMetricsInterceptor implements NestInterceptor {
     }
 
     switch (method) {
-      case 'POST': return 'notification_create';
-      case 'GET': return 'notification_read';
-      case 'PUT': 
-      case 'PATCH': return 'notification_update';
-      case 'DELETE': return 'notification_delete';
-      default: return 'notification_operation';
+      case 'POST':
+        return 'notification_create';
+      case 'GET':
+        return 'notification_read';
+      case 'PUT':
+      case 'PATCH':
+        return 'notification_update';
+      case 'DELETE':
+        return 'notification_delete';
+      default:
+        return 'notification_operation';
     }
   }
 
   /**
    * Registra métricas específicas de operações de notificação
    */
-  private recordNotificationOperation(operationType: string, success: boolean, duration: number) {
-    // Aqui podemos usar os métodos existentes do EnhancedMetricsService
-    // ou criar novos métodos específicos se necessário
-    
-    // Por enquanto, vamos usar os métodos existentes de forma criativa
-    if (operationType.startsWith('sse_')) {
-      // Tratar como operação de cache para SSE (conexões ativas)
-      this.metricsService.recordCacheOperation(
-        success ? 'hit' : 'miss',
-        success,
-        'sse'
-      );
-      this.metricsService.recordCacheOperationDuration(
-        'sse_operation',
-        duration,
-        'sse'
-      );
-    } else {
-      // Tratar como operação de sistema
-      this.metricsService.recordSecurityEvent(
-        operationType,
-        success ? 'info' : 'error',
-        'notification_module'
-      );
-    }
-  }
-
-  /**
-   * Registra métricas específicas de SSE
-   */
-  private recordSseMetrics(route: string, method: string, success: boolean, userId?: string) {
-    if (route.endsWith('/sse') && method === 'GET') {
-      // Nova conexão SSE
-      this.metricsService.recordSecurityEvent(
-        'sse_connection_attempt',
-        success ? 'info' : 'error',
-        'notification_module'
-      );
-
-      if (success && userId) {
-        // Registrar acesso a dados (LGPD compliance)
-        this.metricsService.recordLgpdDataAccess(
-          'notification_sse',
-          'read',
-          true,
-          'user'
-        );
-      }
-    }
+  private recordNotificationOperation(
+    operationType: string,
+    success: boolean,
+    duration: number,
+  ) {
+    // Registrar como operação de sistema
+    this.metricsService.recordSecurityEvent(
+      operationType,
+      success ? 'info' : 'error',
+      'notification_module',
+    );
   }
 }

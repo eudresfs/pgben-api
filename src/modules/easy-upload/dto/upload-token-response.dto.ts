@@ -20,7 +20,8 @@ export class UploadTokenResponseDto {
 
   @ApiProperty({
     description: 'URL do QR Code para acesso móvel',
-    example: 'https://api.pgben.com/easy-upload/qr/123e4567-e89b-12d3-a456-426614174000',
+    example:
+      'https://api.pgben.com/easy-upload/qr/123e4567-e89b-12d3-a456-426614174000',
   })
   qr_code_url: string;
 

@@ -6,7 +6,9 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * 2. Remover campos de renovação da tabela solicitacao (devem estar apenas em configuracao_renovacao)
  * 3. Garantir consistência na estrutura de dados
  */
-export class FixPagamentoAndSolicitacaoIssues1750400000000 implements MigrationInterface {
+export class FixPagamentoAndSolicitacaoIssues1750400000000
+  implements MigrationInterface
+{
   name = 'FixPagamentoAndSolicitacaoIssues1750400000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -21,7 +23,7 @@ export class FixPagamentoAndSolicitacaoIssues1750400000000 implements MigrationI
     await queryRunner.query(`
       DROP INDEX IF EXISTS "IDX_solicitacao_renovacao_automatica";
     `);
-    
+
     await queryRunner.query(`
       DROP INDEX IF EXISTS "IDX_solicitacao_data_proxima_renovacao";
     `);
@@ -73,13 +75,13 @@ export class FixPagamentoAndSolicitacaoIssues1750400000000 implements MigrationI
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Reverter as alterações
-    
+
     // 1. Tornar liberado_por NOT NULL novamente (cuidado: pode falhar se houver dados)
     await queryRunner.query(`
       UPDATE "pagamento" SET "liberado_por" = '00000000-0000-0000-0000-000000000000' 
       WHERE "liberado_por" IS NULL;
     `);
-    
+
     await queryRunner.query(`
       ALTER TABLE "pagamento" 
       ALTER COLUMN "liberado_por" SET NOT NULL;

@@ -17,6 +17,7 @@ import {
 } from 'class-validator';
 import { Usuario } from './usuario.entity';
 import { Status } from '../enums/status.enum';
+import { TipoEscopo } from './user-permission.entity';
 
 /**
  * Entidade de Role (Papel)
@@ -32,7 +33,14 @@ export class Role {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true, length: 100 })
+  @Column({ unique: true, length: 50 })
+  @IsNotEmpty({ message: 'Código da role é obrigatório' })
+  @IsString({ message: 'Código deve ser uma string' })
+  @MinLength(2, { message: 'Código deve ter no mínimo 2 caracteres' })
+  @MaxLength(50, { message: 'Código deve ter no máximo 50 caracteres' })
+  codigo: string;
+
+  @Column({ unique: true, length: 100})
   @IsNotEmpty({ message: 'Nome da role é obrigatório' })
   @IsString({ message: 'Nome deve ser uma string' })
   @MinLength(2, { message: 'Nome deve ter no mínimo 2 caracteres' })
@@ -54,6 +62,15 @@ export class Role {
   @IsOptional()
   @IsBoolean({ message: 'Status deve ser um valor booleano' })
   status: Status;
+
+  @Column({
+    type: 'enum',
+    enum: TipoEscopo,
+    default: TipoEscopo.UNIDADE,
+    enumName: 'scope_type',
+  })
+  @IsOptional()
+  escopo: TipoEscopo;
 
   @OneToMany(() => Usuario, (usuario) => usuario.role, {
     cascade: false,

@@ -1,9 +1,9 @@
 /**
  * Arquivo de índice para DTOs base do módulo de pagamento
- * 
+ *
  * Centraliza as exportações dos DTOs base para facilitar as importações
  * e manter a organização do código.
- * 
+ *
  * @author Equipe PGBen
  */
 

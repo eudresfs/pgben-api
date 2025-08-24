@@ -1,29 +1,21 @@
 import { Module, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { HttpModule } from '@nestjs/axios';
 import { CidadaoController } from './controllers/cidadao.controller';
 import { CidadaoService } from './services/cidadao.service';
 import { CidadaoRepository } from './repositories/cidadao.repository';
-import { RegraConflitoPapelRepository } from './repositories/regra-conflito-papel.repository';
 import {
   Cidadao,
-  PapelCidadao,
   ComposicaoFamiliar,
-  HistoricoConversaoPapel,
-  RegraConflitoPapel,
   InfoBancaria,
   DadosSociais,
   SituacaoMoradia,
   Contato,
   Endereco,
+  Solicitacao,
 } from '../../entities';
 import { CacheModule } from '../../shared/cache';
-import { PapelCidadaoService } from './services/papel-cidadao.service';
-import { PapelCidadaoController } from './controllers/papel-cidadao.controller';
-import { VerificacaoPapelService } from './services/verificacao-papel.service';
-import { HistoricoConversaoPapelService } from './services/historico-conversao-papel.service';
-import { VerificacaoPapelController } from './controllers/verificacao-papel.controller';
-import { PapelConflitoController } from './controllers/papel-conflito.controller';
-import { RegraConflitoPapelController } from './controllers/regra-conflito-papel.controller';
+import { EnhancedCacheService } from '../../shared/cache/enhanced-cache.service';
 import { InfoBancariaController } from './controllers/info-bancaria.controller';
 import { InfoBancariaService } from './services/info-bancaria.service';
 import { InfoBancariaRepository } from './repositories/info-bancaria.repository';
@@ -39,6 +31,7 @@ import { EnderecoController } from './controllers/endereco.controller';
 import { EnderecoService } from './services/endereco.service';
 import { AuthModule } from '../../auth/auth.module';
 import { NotificacaoModule } from '../notificacao/notificacao.module';
+import { createScopedRepositoryProvider } from '../../common/providers/scoped-repository.provider';
 
 /**
  * Módulo de cidadãos
@@ -49,27 +42,25 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Cidadao,
-      PapelCidadao,
+      Cidadao, // Adicionado para resolver dependência do DadosSociaisService
       ComposicaoFamiliar,
-      HistoricoConversaoPapel,
-      RegraConflitoPapel,
       InfoBancaria,
       DadosSociais,
       SituacaoMoradia,
       Contato,
       Endereco,
+      Solicitacao, // Adicionado para validação cruzada com composição familiar
     ]),
+    HttpModule.register({
+      timeout: 10000,
+      maxRedirects: 3,
+    }),
     CacheModule,
     AuthModule,
     NotificacaoModule,
   ],
   controllers: [
     CidadaoController,
-    PapelCidadaoController,
-    VerificacaoPapelController,
-    PapelConflitoController,
-    RegraConflitoPapelController,
     InfoBancariaController,
     DadosSociaisController,
     ComposicaoFamiliarController,
@@ -81,10 +72,7 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     Logger,
     CidadaoService,
     CidadaoRepository,
-    PapelCidadaoService,
-    VerificacaoPapelService,
-    HistoricoConversaoPapelService,
-    RegraConflitoPapelRepository,
+    createScopedRepositoryProvider(Cidadao),
     InfoBancariaService,
     InfoBancariaRepository,
     DadosSociaisService,
@@ -92,15 +80,12 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     SituacaoMoradiaService,
     ContatoService,
     EnderecoService,
+    EnhancedCacheService,
   ],
   exports: [
     TypeOrmModule,
     CidadaoService,
     CidadaoRepository,
-    PapelCidadaoService,
-    VerificacaoPapelService,
-    HistoricoConversaoPapelService,
-    RegraConflitoPapelRepository,
     InfoBancariaService,
     InfoBancariaRepository,
     DadosSociaisService,

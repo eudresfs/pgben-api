@@ -33,58 +33,69 @@ export class GetPagamentosHandler {
 
       // Gerar chave de cache baseada nos filtros
       const cacheKey = this.generateCacheKey('pagamentos', query);
-      
+
       // Tentar buscar no cache primeiro
       const cachedResult = await this.cacheService.get(cacheKey);
-      if (cachedResult && typeof cachedResult === 'object' && 'data' in cachedResult) {
+      if (
+        cachedResult &&
+        typeof cachedResult === 'object' &&
+        'data' in cachedResult
+      ) {
         this.logger.log('Resultado encontrado no cache');
-        return cachedResult as { data: PagamentoResponseDto[]; total: number; page: number; limit: number; };
+        return cachedResult as {
+          data: PagamentoResponseDto[];
+          total: number;
+          page: number;
+          limit: number;
+        };
       }
 
       // Buscar no banco de dados
       const serviceResult = await this.pagamentoService.findAll({
         status: query.filtros.status?.[0], // Pegar apenas o primeiro status se for array
-        solicitacaoId: query.filtros.solicitacaoId,
-        concessaoId: query.filtros.cidadaoId, // Mapear cidadaoId para concessaoId
-        dataInicio: query.filtros.dataInicio?.toISOString(),
-        dataFim: query.filtros.dataFim?.toISOString(),
+        solicitacao_id: query.filtros.solicitacao_id,
+        concessao_id: query.filtros.cidadao_id, // Mapear cidadao_id para concessao_id
+        data_inicio: query.filtros.data_inicio?.toISOString(),
+        data_fim: query.filtros.data_fim?.toISOString(),
         page: query.paginacao?.page,
-        limit: query.paginacao?.limit
+        limit: query.paginacao?.limit,
       });
 
       // Mapear para o formato esperado
       const result = {
-        data: serviceResult.data.map(pagamento => ({
-          id: pagamento.id,
-          valor: pagamento.valor,
-          status: pagamento.status,
-          metodoPagamento: pagamento.metodoPagamento,
-          createdAt: pagamento.created_at,
-           updatedAt: pagamento.updated_at,
-          numeroParcela: pagamento.numeroParcela || 1,
-            totalParcelas: pagamento.totalParcelas || 1,
-           dataPagamento: pagamento.dataPagamento,
-           observacoes: pagamento.observacoes,
-           solicitacaoId: pagamento.solicitacaoId || '',
-            dataLiberacao: pagamento.dataLiberacao || new Date(),
-          responsavelLiberacao: {
-            id: '',
-            nome: '',
-            role: ''
-          },
-          infoBancariaId: '',
-          infoBancaria: {
-            tipo: 'PIX',
-            chavePix: '',
-            banco: '',
-            agencia: '',
-            conta: ''
-          },
-          quantidadeComprovantes: 0
-        } as PagamentoResponseDto)),
-        total: serviceResult.pagination.totalItems,
-        page: serviceResult.pagination.currentPage,
-        limit: serviceResult.pagination.itemsPerPage
+        data: serviceResult.data.map(
+          (pagamento) =>
+            ({
+              id: pagamento.id,
+              valor: pagamento.valor,
+              status: pagamento.status,
+              metodo_pagamento: pagamento.metodo_pagamento,
+              created_at: pagamento.created_at,
+              updated_at: pagamento.updated_at,
+              numero_parcela: pagamento.numero_parcela || 1,
+              total_parcelas: pagamento.total_parcelas || 1,
+              data_pagamento: pagamento.data_pagamento,
+              observacoes: pagamento.observacoes,
+              solicitacao_id: pagamento.solicitacao_id || '',
+              data_liberacao: pagamento.data_liberacao || new Date(),
+              responsavel_liberacao: {
+                id: '',
+                nome: '',
+              },
+              info_bancaria_id: '',
+              info_bancaria: {
+                tipo: 'PIX',
+                chave_pix: '',
+                banco: '',
+                agencia: '',
+                conta: '',
+              },
+              quantidade_comprovantes: 0,
+            }) as unknown as PagamentoResponseDto,
+        ),
+        total: serviceResult.meta.total,
+        page: serviceResult.meta.page,
+        limit: serviceResult.meta.limit,
       };
 
       // Armazenar no cache por 5 minutos
@@ -92,9 +103,11 @@ export class GetPagamentosHandler {
 
       this.logger.log(`Encontrados ${result.total} pagamentos`);
       return result;
-
     } catch (error) {
-      this.logger.error(`Erro ao executar busca de pagamentos: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao executar busca de pagamentos: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -102,16 +115,22 @@ export class GetPagamentosHandler {
   /**
    * Executa query para buscar pagamento por ID
    */
-  async executeGetPagamentoById(query: GetPagamentoByIdQuery): Promise<PagamentoResponseDto> {
+  async executeGetPagamentoById(
+    query: GetPagamentoByIdQuery,
+  ): Promise<PagamentoResponseDto> {
     try {
       this.logger.log(`Executando busca de pagamento por ID: ${query.id}`);
 
       // Gerar chave de cache
       const cacheKey = `pagamento:${query.id}:${JSON.stringify(query.incluirRelacionamentos)}`;
-      
+
       // Tentar buscar no cache primeiro
       const cachedResult = await this.cacheService.get(cacheKey);
-      if (cachedResult && typeof cachedResult === 'object' && 'id' in cachedResult) {
+      if (
+        cachedResult &&
+        typeof cachedResult === 'object' &&
+        'id' in cachedResult
+      ) {
         this.logger.log('Pagamento encontrado no cache');
         return cachedResult as PagamentoResponseDto;
       }
@@ -124,21 +143,23 @@ export class GetPagamentosHandler {
         id: pagamento.id,
         valor: pagamento.valor,
         status: pagamento.status,
-        metodoPagamento: pagamento.metodoPagamento,
-        createdAt: pagamento.created_at,
-        updatedAt: pagamento.updated_at,
-        numeroParcela: pagamento.numeroParcela || 1,
-         totalParcelas: pagamento.totalParcelas || 1,
-        dataPagamento: pagamento.dataPagamento,
+        metodo_pagamento: pagamento.metodo_pagamento,
+        created_at: pagamento.created_at,
+        updated_at: pagamento.updated_at,
+        numero_parcela: pagamento.numero_parcela || 1,
+        total_parcelas: pagamento.total_parcelas || 1,
+        data_pagamento: pagamento.data_pagamento,
         observacoes: pagamento.observacoes,
-        solicitacaoId: pagamento.solicitacaoId || '',
-         dataLiberacao: pagamento.dataLiberacao || new Date(),
-        responsavelLiberacao: {
-          id: pagamento.liberadoPor || '',
+        solicitacao_id: pagamento.solicitacao_id || '',
+        data_liberacao: pagamento.data_liberacao || new Date(),
+        pode_liberar: false,
+        motivo_liberacao: 'Dados insuficientes para análise',
+        responsavel_liberacao: {
+          id: pagamento.liberado_por || '',
           nome: 'Sistema',
-          role: 'SISTEMA'
+          role: 'SISTEMA',
         },
-        quantidadeComprovantes: 0
+        quantidade_comprovantes: 0,
       };
 
       // Armazenar no cache por 10 minutos
@@ -146,9 +167,11 @@ export class GetPagamentosHandler {
 
       this.logger.log(`Pagamento encontrado: ${query.id}`);
       return response;
-
     } catch (error) {
-      this.logger.error(`Erro ao executar busca de pagamento por ID: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao executar busca de pagamento por ID: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -156,13 +179,15 @@ export class GetPagamentosHandler {
   /**
    * Executa query para obter estatísticas de pagamentos
    */
-  async executeGetEstatisticas(query: GetPagamentosEstatisticasQuery): Promise<any> {
+  async executeGetEstatisticas(
+    query: GetPagamentosEstatisticasQuery,
+  ): Promise<any> {
     try {
       this.logger.log('Executando busca de estatísticas de pagamentos');
 
       // Gerar chave de cache
       const cacheKey = this.generateCacheKey('estatisticas', query);
-      
+
       // Tentar buscar no cache primeiro (cache mais longo para estatísticas)
       const cachedResult = await this.cacheService.get(cacheKey);
       if (cachedResult) {
@@ -178,9 +203,11 @@ export class GetPagamentosHandler {
 
       this.logger.log('Estatísticas calculadas com sucesso');
       return estatisticas;
-
     } catch (error) {
-      this.logger.error(`Erro ao executar busca de estatísticas: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao executar busca de estatísticas: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -200,21 +227,58 @@ export class GetPagamentosHandler {
   async invalidateCache(pagamentoId?: string): Promise<void> {
     try {
       if (pagamentoId) {
-        // TODO: Implementar invalidação de cache por padrão
-        // const pattern = `pagamento:${pagamentoId}:*`;
-        // await this.cacheService.deleteByPattern(pattern);
+        // Invalidar cache específico do pagamento
+        const pattern = `pagamento:${pagamentoId}:*`;
+        await this.invalidateCacheByPattern(pattern);
+
+        // Invalidar cache específico por ID
+        await this.cacheService.del(`pagamento:${pagamentoId}`);
       }
 
-      // TODO: Implementar invalidação de cache por padrão
-      // await this.cacheService.deleteByPattern('pagamento:pagamentos:*');
-      // await this.cacheService.deleteByPattern('pagamento:estatisticas:*');
-      
-      // Alternativa temporária: limpar todo o cache
-      // await this.cacheService.clear();
+      // Invalidar cache de listagens e estatísticas
+      await this.invalidateCacheByPattern('pagamento:pagamentos:*');
+      await this.invalidateCacheByPattern('pagamento:estatisticas:*');
+      await this.invalidateCacheByPattern('pagamento:list:*');
 
       this.logger.log('Cache de pagamentos invalidado');
     } catch (error) {
       this.logger.error(`Erro ao invalidar cache: ${error.message}`);
+    }
+  }
+
+  /**
+   * Invalida cache por padrão usando regex
+   */
+  private async invalidateCacheByPattern(pattern: string): Promise<void> {
+    try {
+      // Converter padrão wildcard para regex
+      const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+
+      // Lista de chaves comuns que podem existir
+      const commonKeys = [
+        pattern.replace('*', 'page:1'),
+        pattern.replace('*', 'page:2'),
+        pattern.replace('*', 'page:3'),
+        pattern.replace('*', 'all'),
+        pattern.replace('*', 'count'),
+        pattern.replace('*', 'summary'),
+        pattern.replace('*', ''),
+      ];
+
+      // Tentar deletar chaves comuns
+      for (const key of commonKeys) {
+        try {
+          await this.cacheService.del(key);
+        } catch {
+          // Ignorar erros de chaves que não existem
+        }
+      }
+
+      this.logger.debug(`Cache invalidado por padrão: ${pattern}`);
+    } catch (error) {
+      this.logger.warn(
+        `Erro ao invalidar cache por padrão ${pattern}: ${error.message}`,
+      );
     }
   }
 }

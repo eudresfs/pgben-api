@@ -14,33 +14,42 @@ export class NotificationEmailListener {
     private readonly usuarioService: UsuarioService,
   ) {}
 
-  @OnEvent(NOTIFICATION_CREATED, { async: true })
+  // TEMPORARIAMENTE DESABILITADO - Evitar duplicidade de emails
+  // O NotificationManagerService já envia emails via canal email
+  // @OnEvent(NOTIFICATION_CREATED, { async: true })
   async handleNotificationCreated(event: NotificationCreatedEvent) {
     const n = event.notification;
-    
+
     try {
-      // Buscar o email do usuário pelo ID
-      const usuario = await this.usuarioService.findById(n.destinatario_id);
-      
+      // Buscar o email do usuário pelo ID (sem contexto de escopo para notificações)
+      const usuario = await this.usuarioService.findByIdForNotification(n.destinatario_id);
+
       if (!usuario?.email) {
-        this.logger.warn(`Usuário ${n.destinatario_id} não possui email cadastrado`);
+        this.logger.warn(
+          `Usuário ${n.destinatario_id} não possui email cadastrado`,
+        );
         return;
       }
 
       // Verificar se há template configurado
       if (!n.template) {
-        this.logger.debug(`Notificação ${n.id} não possui template configurado, usando template padrão`);
-        
+        this.logger.debug(
+          `Notificação ${n.id} não possui template configurado, usando template padrão`,
+        );
+
         // Usar template padrão para notificações sem template específico
-         const mensagemPadrao = n.dados_contexto?.mensagem || n.dados_contexto?.titulo || 'Você tem uma nova notificação.';
-         const templatePadrao = {
-           codigo: 'default',
-           assunto: 'Nova Notificação',
-           corpo: mensagemPadrao,
-           corpo_html: `<p>${mensagemPadrao}</p>`,
-           canais_disponiveis: ['email']
-         };
-        
+        const mensagemPadrao =
+          n.dados_contexto?.mensagem ||
+          n.dados_contexto?.titulo ||
+          'Você tem uma nova notificação.';
+        const templatePadrao = {
+          codigo: 'default',
+          assunto: 'Nova Notificação',
+          corpo: mensagemPadrao,
+          corpo_html: `<p>${mensagemPadrao}</p>`,
+          canais_disponiveis: ['email'],
+        };
+
         await this.emailService.sendEmail({
           to: usuario.email,
           subject: templatePadrao.assunto,
@@ -52,14 +61,18 @@ export class NotificationEmailListener {
             email_tecnico: usuario.email,
           },
         });
-        
-        this.logger.log(`E-mail com template padrão enviado para ${usuario.email} (usuário: ${n.destinatario_id})`);
+
+        this.logger.log(
+          `E-mail com template padrão enviado para ${usuario.email} (usuário: ${n.destinatario_id})`,
+        );
         return;
       }
 
       // Verificar se o template suporta email
       if (!n.template.canais_disponiveis?.includes('email')) {
-        this.logger.debug(`Template ${n.template.codigo} não suporta canal de email`);
+        this.logger.debug(
+          `Template ${n.template.codigo} não suporta canal de email`,
+        );
         return;
       }
 
@@ -74,8 +87,10 @@ export class NotificationEmailListener {
           email_tecnico: usuario.email,
         },
       });
-      
-      this.logger.log(`E-mail enviado para ${usuario.email} (usuário: ${n.destinatario_id})`);
+
+      this.logger.log(
+        `E-mail enviado para ${usuario.email} (usuário: ${n.destinatario_id})`,
+      );
     } catch (err) {
       this.logger.error(`Erro ao enviar email: ${err.message}`, err.stack);
     }

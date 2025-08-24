@@ -24,6 +24,7 @@ import {
   ApiHeader,
 } from '@nestjs/swagger';
 import { JwtBlacklistService } from '../services/jwt-blacklist.service';
+import { RefreshTokenService } from '../services/refresh-token.service';
 import {
   AddToBlacklistDto,
   CheckBlacklistDto,
@@ -60,6 +61,7 @@ import { AuditEventType } from '../../modules/auditoria/events/types/audit-event
 export class JwtBlacklistController {
   constructor(
     private readonly jwtBlacklistService: JwtBlacklistService,
+    private readonly refreshTokenService: RefreshTokenService,
     private readonly auditEmitter: AuditEventEmitter,
   ) {}
 
@@ -206,13 +208,32 @@ export class JwtBlacklistController {
       user_agent: userAgent,
     };
 
-    // TODO: Buscar tokens ativos do usuário do RefreshTokenService
-    // Por enquanto, retornamos uma resposta simulada
+    // Buscar tokens ativos do usuário do RefreshTokenService
+    const refreshTokens =
+      await this.refreshTokenService.findActiveTokensByUserId(userId);
+
     const activeTokens: Array<{
       jti: string;
       token_type: 'access' | 'refresh';
       expires_at: Date;
-    }> = [];
+    }> = refreshTokens.map((token) => ({
+      jti: token.id, // Usando o ID do refresh token como JTI
+      token_type: 'refresh' as const,
+      expires_at: token.expires_at,
+    }));
+
+    // Emitir evento de auditoria para invalidação de tokens
+    await this.auditEmitter.emitSecurityEvent(
+      AuditEventType.SECURITY_TOKEN_INVALIDATION,
+      userId,
+      {
+        reason: body.reason,
+        token_type: body.token_type || 'all',
+        tokens_count: activeTokens.length,
+        client_ip: clientIp,
+        user_agent: userAgent,
+      },
+    );
 
     return this.jwtBlacklistService.invalidateUserTokens(
       invalidateDto,
@@ -481,21 +502,17 @@ export class JwtBlacklistController {
     };
 
     // ✅ Auditoria de logout
-    await this.auditEmitter.emitSecurityEvent(
-      AuditEventType.LOGOUT,
-      user.id,
-      {
-        operation: 'logout',
-        riskLevel: 'low',
-        username: user.email,
-        logoutType: 'single_session',
-        clientIp,
-        userAgent,
-        sessionEnd: new Date(),
-        userInitiated: true,
-        tokensInvalidated: 1,
-      }
-    );
+    await this.auditEmitter.emitSecurityEvent(AuditEventType.LOGOUT, user.id, {
+      operation: 'logout',
+      riskLevel: 'low',
+      username: user.email,
+      logoutType: 'single_session',
+      clientIp,
+      userAgent,
+      sessionEnd: new Date(),
+      userInitiated: true,
+      tokensInvalidated: 1,
+    });
 
     return this.jwtBlacklistService.addToBlacklist(addToBlacklistDto);
   }
@@ -590,21 +607,17 @@ export class JwtBlacklistController {
     const activeTokens = []; // Substitua por sua lógica para obter tokens ativos
 
     // ✅ Auditoria de logout global
-    await this.auditEmitter.emitSecurityEvent(
-      AuditEventType.LOGOUT,
-      user.id,
-      {
-        operation: 'logout_all',
-        riskLevel: 'medium',
-        username: user.email,
-        logoutType: 'all_sessions',
-        clientIp,
-        userAgent,
-        sessionEnd: new Date(),
-        userInitiated: true,
-        tokensInvalidated: activeTokens.length,
-      }
-    );
+    await this.auditEmitter.emitSecurityEvent(AuditEventType.LOGOUT, user.id, {
+      operation: 'logout_all',
+      riskLevel: 'medium',
+      username: user.email,
+      logoutType: 'all_sessions',
+      clientIp,
+      userAgent,
+      sessionEnd: new Date(),
+      userInitiated: true,
+      tokensInvalidated: activeTokens.length,
+    });
 
     const result = await this.jwtBlacklistService.invalidateUserTokens(
       invalidateDto,

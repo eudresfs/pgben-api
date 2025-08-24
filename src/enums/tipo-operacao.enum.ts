@@ -15,4 +15,8 @@ export enum TipoOperacao {
   LOGIN = 'login', // Login no sistema
   LOGOUT = 'logout', // Logout do sistema
   FAILED_LOGIN = 'failed_login', // Tentativa de login falha
+  APPROVE = 'approve', // Aprovação de solicitação
+  REJECT = 'reject', // Rejeição de solicitação
+  EXECUTION = 'execution', // Execução de operação
+  CANCEL = 'cancel', // Cancelamento de operação
 }

@@ -27,10 +27,10 @@ export interface BankingInfo {
 
 /**
  * Serviço consolidado para todas as validações do módulo de pagamento.
- * 
+ *
  * Este serviço centraliza todas as validações relacionadas a pagamentos,
  * incluindo validações de criação, transições de status e dados bancários.
- * 
+ *
  * @author Equipe PGBen
  */
 @Injectable()
@@ -43,7 +43,7 @@ export class PagamentoValidationService {
 
   /**
    * Valida os dados para criação de um novo pagamento
-   * 
+   *
    * @param data - Dados do pagamento a ser criado
    * @returns Resultado da validação
    */
@@ -58,16 +58,18 @@ export class PagamentoValidationService {
 
     // Validação de valor máximo (exemplo: R$ 50.000)
     if (data.valor && data.valor > 50000) {
-      warnings.push('Valor do pagamento é superior a R$ 50.000 - requer aprovação especial');
+      warnings.push(
+        'Valor do pagamento é superior a R$ 50.000 - requer aprovação especial',
+      );
     }
 
     // Validação de solicitação
-    if (!data.solicitacaoId) {
+    if (!data.solicitacao_id) {
       errors.push('ID da solicitação é obrigatório');
     }
 
     // Validação de informação bancária
-    if (!data.infoBancariaId) {
+    if (!data.info_bancaria_id) {
       errors.push('Informação bancária é obrigatória');
     }
 
@@ -80,15 +82,18 @@ export class PagamentoValidationService {
 
   /**
    * Valida transição de status de pagamento
-   * 
+   *
    * @param from - Status atual
    * @param to - Status desejado
    * @returns Resultado da validação
    */
-  validateStatusTransition(from: StatusPagamentoEnum, to: StatusPagamentoEnum): ValidationResult {
+  validateStatusTransition(
+    from: StatusPagamentoEnum,
+    to: StatusPagamentoEnum,
+  ): ValidationResult {
     try {
       const isValid = this.statusTransitionValidator.canTransition(from, to);
-      
+
       if (!isValid) {
         return {
           isValid: false,
@@ -110,7 +115,7 @@ export class PagamentoValidationService {
 
   /**
    * Valida dados bancários
-   * 
+   *
    * @param data - Informações bancárias
    * @returns Resultado da validação
    */
@@ -122,17 +127,25 @@ export class PagamentoValidationService {
       // Validação de dados bancários tradicionais
       if (data.banco && data.agencia && data.conta) {
         // Validar cada componente dos dados bancários
-        const bancoValido = this.dadosBancariosValidator.validarCodigoBanco(data.banco);
-        const agenciaValida = this.dadosBancariosValidator.validarAgencia(data.agencia, data.banco);
-        const contaValida = this.dadosBancariosValidator.validarConta(data.conta, data.banco);
-        
+        const bancoValido = this.dadosBancariosValidator.validarCodigoBanco(
+          data.banco,
+        );
+        const agenciaValida = this.dadosBancariosValidator.validarAgencia(
+          data.agencia,
+          data.banco,
+        );
+        const contaValida = this.dadosBancariosValidator.validarConta(
+          data.conta,
+          data.banco,
+        );
+
         const bankValidation = {
           valido: bancoValido && agenciaValida && contaValida,
           erros: [
             ...(!bancoValido ? ['Código do banco inválido'] : []),
             ...(!agenciaValida ? ['Número da agência inválido'] : []),
-            ...(!contaValida ? ['Número da conta inválido'] : [])
-          ]
+            ...(!contaValida ? ['Número da conta inválido'] : []),
+          ],
         };
 
         if (!bankValidation.valido) {
@@ -146,10 +159,10 @@ export class PagamentoValidationService {
           data.chavePix,
           data.tipoChavePix,
         );
-        
+
         const pixResult = {
           valido: pixValidation,
-          erros: pixValidation ? [] : ['Chave PIX inválida']
+          erros: pixValidation ? [] : ['Chave PIX inválida'],
         };
 
         if (!pixResult.valido) {
@@ -162,7 +175,9 @@ export class PagamentoValidationService {
       const hasPixData = data.chavePix && data.tipoChavePix;
 
       if (!hasTraditionalData && !hasPixData) {
-        errors.push('É necessário fornecer dados bancários tradicionais ou chave PIX');
+        errors.push(
+          'É necessário fornecer dados bancários tradicionais ou chave PIX',
+        );
       }
 
       return {
@@ -180,17 +195,23 @@ export class PagamentoValidationService {
 
   /**
    * Valida se um pagamento pode ser liberado
-   * 
+   *
    * @param pagamentoId - ID do pagamento
    * @param currentStatus - Status atual do pagamento
    * @returns Resultado da validação
    */
-  validatePaymentRelease(pagamentoId: string, currentStatus: StatusPagamentoEnum): ValidationResult {
+  validatePaymentRelease(
+    pagamentoId: string,
+    currentStatus: StatusPagamentoEnum,
+  ): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
     // Verificar se o status permite liberação
-    const canRelease = this.validateStatusTransition(currentStatus, StatusPagamentoEnum.LIBERADO);
+    const canRelease = this.validateStatusTransition(
+      currentStatus,
+      StatusPagamentoEnum.LIBERADO,
+    );
     if (!canRelease.isValid) {
       errors.push(...canRelease.errors);
     }
@@ -213,7 +234,7 @@ export class PagamentoValidationService {
 
   /**
    * Valida múltiplas regras de negócio de uma vez
-   * 
+   *
    * @param validations - Array de funções de validação
    * @returns Resultado consolidado
    */
@@ -238,11 +259,14 @@ export class PagamentoValidationService {
 
   /**
    * Lança exceção se a validação falhar
-   * 
+   *
    * @param result - Resultado da validação
    * @param context - Contexto para a mensagem de erro
    */
-  throwIfInvalid(result: ValidationResult, context: string = 'Validação'): void {
+  throwIfInvalid(
+    result: ValidationResult,
+    context: string = 'Validação',
+  ): void {
     if (!result.isValid) {
       throw new BadRequestException({
         message: `${context} falhou`,

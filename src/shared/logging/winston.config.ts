@@ -13,28 +13,40 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 const customFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
   winston.format.errors({ stack: true }),
-  winston.format.printf(({ timestamp, level, message, context, requestId, userId, duration, statusCode, ...meta }) => {
-    // Estrutura base do log
-    const logEntry: any = {
+  winston.format.printf(
+    ({
       timestamp,
-      level: level.toUpperCase(),
-      context: context || 'Application',
+      level,
       message,
-    };
+      context,
+      requestId,
+      userId,
+      duration,
+      statusCode,
+      ...meta
+    }) => {
+      // Estrutura base do log
+      const logEntry: any = {
+        timestamp,
+        level: level.toUpperCase(),
+        context: context || 'Application',
+        message,
+      };
 
-    // Adicionar campos importantes se existirem
-    if (requestId) logEntry.requestId = requestId;
-    if (userId) logEntry.userId = userId;
-    if (duration !== undefined) logEntry.duration = `${duration}ms`;
-    if (statusCode) logEntry.statusCode = statusCode;
+      // Adicionar campos importantes se existirem
+      if (requestId) logEntry.requestId = requestId;
+      if (userId) logEntry.userId = userId;
+      if (duration !== undefined) logEntry.duration = `${duration}ms`;
+      if (statusCode) logEntry.statusCode = statusCode;
 
-    // Adicionar outros metadados
-    if (Object.keys(meta).length > 0) {
-      logEntry.meta = meta;
-    }
+      // Adicionar outros metadados
+      if (Object.keys(meta).length > 0) {
+        logEntry.meta = meta;
+      }
 
-    return JSON.stringify(logEntry);
-  })
+      return JSON.stringify(logEntry);
+    },
+  ),
 );
 
 /**
@@ -43,37 +55,51 @@ const customFormat = winston.format.combine(
 const consoleFormat = winston.format.combine(
   winston.format.timestamp({ format: 'HH:mm:ss.SSS' }),
   winston.format.errors({ stack: true }),
-  winston.format.printf(({ timestamp, level, message, context, requestId, userId, duration, statusCode, stack, ...meta }) => {
-    const contextStr = context ? `[${context}]` : '[App]';
-    const reqStr = requestId ? `[${String(requestId).substring(0, 8)}]` : '';
-    const userStr = userId && userId !== 'anonymous' ? `[${userId}]` : '';
-    const durationStr = duration ? `(${duration}ms)` : '';
-    const statusStr = statusCode ? `${statusCode}` : '';
-    
-    let logLine = `${timestamp} ${level.toUpperCase().padEnd(5)} ${contextStr}${reqStr}${userStr} ${message} ${statusStr}${durationStr}`;
-    
-    // Adicionar metadados importantes
-    if (meta && Object.keys(meta).length > 0) {
-      const importantMeta = Object.entries(meta)
-        .filter(([key, value]) => 
-          !['timestamp', 'level', 'service', 'environment'].includes(key) && 
-          value !== undefined
-        )
-        .map(([key, value]) => `${key}=${value}`)
-        .join(' ');
-      
-      if (importantMeta) {
-        logLine += ` | ${importantMeta}`;
+  winston.format.printf(
+    ({
+      timestamp,
+      level,
+      message,
+      context,
+      requestId,
+      userId,
+      duration,
+      statusCode,
+      stack,
+      ...meta
+    }) => {
+      const contextStr = context ? `[${context}]` : '[App]';
+      const reqStr = requestId ? `[${String(requestId).substring(0, 8)}]` : '';
+      const userStr = userId && userId !== 'anonymous' ? `[${userId}]` : '';
+      const durationStr = duration ? `(${duration}ms)` : '';
+      const statusStr = statusCode ? `${statusCode}` : '';
+
+      let logLine = `${timestamp} ${level.toUpperCase().padEnd(5)} ${contextStr}${reqStr}${userStr} ${message} ${statusStr}${durationStr}`;
+
+      // Adicionar metadados importantes
+      if (meta && Object.keys(meta).length > 0) {
+        const importantMeta = Object.entries(meta)
+          .filter(
+            ([key, value]) =>
+              !['timestamp', 'level', 'service', 'environment'].includes(key) &&
+              value !== undefined,
+          )
+          .map(([key, value]) => `${key}=${value}`)
+          .join(' ');
+
+        if (importantMeta) {
+          logLine += ` | ${importantMeta}`;
+        }
       }
-    }
-    
-    // Adicionar stack trace se for erro
-    if (stack) {
-      logLine += `\n${stack}`;
-    }
-    
-    return logLine;
-  })
+
+      // Adicionar stack trace se for erro
+      if (stack) {
+        logLine += `\n${stack}`;
+      }
+
+      return logLine;
+    },
+  ),
 );
 
 /**
@@ -138,7 +164,7 @@ export const winstonConfig: WinstonModuleOptions = {
       auditFile: path.join(logDir, '.audit-http.json'),
     }),
   ],
-  
+
   // Handlers para exceções não capturadas
   exceptionHandlers: [
     new winston.transports.DailyRotateFile({
@@ -151,7 +177,7 @@ export const winstonConfig: WinstonModuleOptions = {
       format: customFormat,
     }),
   ],
-  
+
   // Handlers para promises rejeitadas
   rejectionHandlers: [
     new winston.transports.DailyRotateFile({

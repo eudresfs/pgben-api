@@ -3,7 +3,8 @@ import { IsOptional, IsUUID, IsString, MaxLength } from 'class-validator';
 
 export class ProrrogarConcessaoDto {
   @ApiProperty({
-    description: 'ID do documento judicial (obrigatório para concessões com determinação judicial)',
+    description:
+      'ID do documento judicial (obrigatório para concessões com determinação judicial)',
     example: 'a1b2c3d4-5e6f-7g8h-9i0j-k1l2m3n4o5p6',
     required: false,
   })
@@ -13,7 +14,8 @@ export class ProrrogarConcessaoDto {
 
   @ApiProperty({
     description: 'Motivo da prorrogação',
-    example: 'Necessidade de continuidade do benefício devido à situação de vulnerabilidade',
+    example:
+      'Necessidade de continuidade do benefício devido à situação de vulnerabilidade',
     required: false,
   })
   @IsOptional()

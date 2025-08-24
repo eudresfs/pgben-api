@@ -9,10 +9,13 @@ import {
   IsUUID,
   MaxLength,
   MinLength,
-  ValidateNested
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { NotificationType, NotificationPriority } from '../interfaces/ably.interface';
+import {
+  NotificationType,
+  NotificationPriority,
+} from '../interfaces/ably.interface';
 
 /**
  * DTO para criação de notificações individuais
@@ -21,7 +24,7 @@ export class CreateNotificationDto {
   @ApiProperty({
     description: 'ID do usuário destinatário',
     example: '123e4567-e89b-12d3-a456-426614174000',
-    format: 'uuid'
+    format: 'uuid',
   })
   @IsNotEmpty({ message: 'ID do usuário é obrigatório' })
   @IsUUID('4', { message: 'ID do usuário deve ser um UUID válido' })
@@ -30,11 +33,11 @@ export class CreateNotificationDto {
   @ApiProperty({
     description: 'Tipo da notificação',
     enum: NotificationType,
-    example: NotificationType.SYSTEM
+    example: NotificationType.SYSTEM,
   })
   @IsNotEmpty({ message: 'Tipo da notificação é obrigatório' })
   @IsEnum(NotificationType, {
-    message: 'Tipo de notificação inválido'
+    message: 'Tipo de notificação inválido',
   })
   type: NotificationType;
 
@@ -42,7 +45,7 @@ export class CreateNotificationDto {
     description: 'Título da notificação',
     example: 'Nova solicitação de benefício',
     minLength: 1,
-    maxLength: 100
+    maxLength: 100,
   })
   @IsNotEmpty({ message: 'Título é obrigatório' })
   @IsString({ message: 'Título deve ser uma string' })
@@ -52,9 +55,10 @@ export class CreateNotificationDto {
 
   @ApiProperty({
     description: 'Mensagem da notificação',
-    example: 'Sua solicitação de auxílio natalidade foi recebida e está em análise.',
+    example:
+      'Sua solicitação de auxílio natalidade foi recebida e está em análise.',
     minLength: 1,
-    maxLength: 500
+    maxLength: 500,
   })
   @IsNotEmpty({ message: 'Mensagem é obrigatória' })
   @IsString({ message: 'Mensagem deve ser uma string' })
@@ -66,11 +70,11 @@ export class CreateNotificationDto {
     description: 'Prioridade da notificação',
     enum: NotificationPriority,
     example: NotificationPriority.NORMAL,
-    default: NotificationPriority.NORMAL
+    default: NotificationPriority.NORMAL,
   })
   @IsOptional()
   @IsEnum(NotificationPriority, {
-    message: 'Prioridade inválida'
+    message: 'Prioridade inválida',
   })
   priority?: NotificationPriority;
 
@@ -79,8 +83,8 @@ export class CreateNotificationDto {
     example: {
       benefitType: 'beneficio-natalidade',
       requestId: '12345',
-      status: 'pending'
-    }
+      status: 'pending',
+    },
   })
   @IsOptional()
   @IsObject({ message: 'Dados devem ser um objeto' })
@@ -88,19 +92,19 @@ export class CreateNotificationDto {
 
   @ApiPropertyOptional({
     description: 'Forçar método de entrega específico',
-    enum: ['ably', 'sse'],
-    example: 'ably'
+    enum: ['ably'],
+    example: 'ably',
   })
   @IsOptional()
-  @IsEnum(['ably', 'sse'], {
-    message: 'Método de entrega inválido'
+  @IsEnum(['ably'], {
+    message: 'Método de entrega inválido',
   })
-  forceMethod?: 'ably' | 'sse';
+  forceMethod?: 'ably';
 
   @ApiPropertyOptional({
     description: 'Tentar novamente em caso de falha',
     example: true,
-    default: true
+    default: true,
   })
   @IsOptional()
   @IsBoolean({ message: 'retryOnFailure deve ser um boolean' })
@@ -110,7 +114,7 @@ export class CreateNotificationDto {
   @ApiPropertyOptional({
     description: 'ID do destinatário (compatibilidade)',
     example: '123e4567-e89b-12d3-a456-426614174000',
-    format: 'uuid'
+    format: 'uuid',
   })
   @IsOptional()
   @IsUUID('4', { message: 'ID do destinatário deve ser um UUID válido' })
@@ -118,7 +122,7 @@ export class CreateNotificationDto {
 
   @ApiPropertyOptional({
     description: 'ID ou código do template de notificação',
-    example: 'usuario-credenciais-acesso'
+    example: 'usuario-credenciais-acesso',
   })
   @IsOptional()
   @IsString({ message: 'Template ID deve ser uma string' })
@@ -126,7 +130,7 @@ export class CreateNotificationDto {
 
   @ApiPropertyOptional({
     description: 'Dados de contexto para o template',
-    example: { nome: 'João Silva', beneficio: 'Auxílio Natalidade' }
+    example: { nome: 'João Silva', beneficio: 'Auxílio Natalidade' },
   })
   @IsOptional()
   @IsObject({ message: 'Dados de contexto devem ser um objeto' })
@@ -134,7 +138,7 @@ export class CreateNotificationDto {
 
   @ApiPropertyOptional({
     description: 'Data de agendamento da notificação',
-    example: '2024-01-15T10:30:00Z'
+    example: '2024-01-15T10:30:00Z',
   })
   @IsOptional()
   @IsString({ message: 'Data de agendamento deve ser uma string' })
@@ -147,7 +151,7 @@ export class CreateNotificationDto {
 export class BenefitNotificationDataDto {
   @ApiProperty({
     description: 'Tipo do benefício',
-    example: 'beneficio-natalidade'
+    example: 'beneficio-natalidade',
   })
   @IsNotEmpty({ message: 'Tipo do benefício é obrigatório' })
   @IsString({ message: 'Tipo do benefício deve ser uma string' })
@@ -155,7 +159,7 @@ export class BenefitNotificationDataDto {
 
   @ApiProperty({
     description: 'ID da solicitação',
-    example: '12345'
+    example: '12345',
   })
   @IsNotEmpty({ message: 'ID da solicitação é obrigatório' })
   @IsString({ message: 'ID da solicitação deve ser uma string' })
@@ -163,7 +167,7 @@ export class BenefitNotificationDataDto {
 
   @ApiPropertyOptional({
     description: 'Status da solicitação',
-    example: 'pending'
+    example: 'pending',
   })
   @IsOptional()
   @IsString({ message: 'Status deve ser uma string' })
@@ -171,7 +175,7 @@ export class BenefitNotificationDataDto {
 
   @ApiPropertyOptional({
     description: 'URL para ação',
-    example: '/benefits/requests/12345'
+    example: '/benefits/requests/12345',
   })
   @IsOptional()
   @IsString({ message: 'URL deve ser uma string' })
@@ -179,7 +183,7 @@ export class BenefitNotificationDataDto {
 
   @ApiPropertyOptional({
     description: 'Texto do botão de ação',
-    example: 'Ver Solicitação'
+    example: 'Ver Solicitação',
   })
   @IsOptional()
   @IsString({ message: 'Texto do botão deve ser uma string' })
@@ -192,7 +196,7 @@ export class BenefitNotificationDataDto {
 export class CreateBenefitNotificationDto extends CreateNotificationDto {
   @ApiProperty({
     description: 'Dados específicos do benefício',
-    type: BenefitNotificationDataDto
+    type: BenefitNotificationDataDto,
   })
   @ValidateNested()
   @Type(() => BenefitNotificationDataDto)
@@ -205,7 +209,7 @@ export class CreateBenefitNotificationDto extends CreateNotificationDto {
 export class SystemNotificationDataDto {
   @ApiPropertyOptional({
     description: 'Código do evento do sistema',
-    example: 'MAINTENANCE_SCHEDULED'
+    example: 'MAINTENANCE_SCHEDULED',
   })
   @IsOptional()
   @IsString({ message: 'Código do evento deve ser uma string' })
@@ -214,17 +218,17 @@ export class SystemNotificationDataDto {
   @ApiPropertyOptional({
     description: 'Severidade do evento',
     enum: ['info', 'warning', 'error', 'critical'],
-    example: 'info'
+    example: 'info',
   })
   @IsOptional()
   @IsEnum(['info', 'warning', 'error', 'critical'], {
-    message: 'Severidade inválida'
+    message: 'Severidade inválida',
   })
   severity?: string;
 
   @ApiPropertyOptional({
     description: 'Timestamp do evento',
-    example: '2024-01-15T10:30:00Z'
+    example: '2024-01-15T10:30:00Z',
   })
   @IsOptional()
   @IsString({ message: 'Timestamp deve ser uma string' })
@@ -232,7 +236,7 @@ export class SystemNotificationDataDto {
 
   @ApiPropertyOptional({
     description: 'Dados adicionais do evento',
-    example: { duration: '2 hours', affectedServices: ['api', 'frontend'] }
+    example: { duration: '2 hours', affectedServices: ['api', 'frontend'] },
   })
   @IsOptional()
   @IsObject({ message: 'Dados do evento devem ser um objeto' })
@@ -245,7 +249,7 @@ export class SystemNotificationDataDto {
 export class CreateSystemNotificationDto extends CreateNotificationDto {
   @ApiProperty({
     description: 'Dados específicos do sistema',
-    type: SystemNotificationDataDto
+    type: SystemNotificationDataDto,
   })
   @ValidateNested()
   @Type(() => SystemNotificationDataDto)
@@ -258,7 +262,7 @@ export class CreateSystemNotificationDto extends CreateNotificationDto {
 export class SecurityNotificationDataDto {
   @ApiProperty({
     description: 'Tipo do evento de segurança',
-    example: 'LOGIN_ATTEMPT'
+    example: 'LOGIN_ATTEMPT',
   })
   @IsNotEmpty({ message: 'Tipo do evento de segurança é obrigatório' })
   @IsString({ message: 'Tipo do evento deve ser uma string' })
@@ -266,7 +270,7 @@ export class SecurityNotificationDataDto {
 
   @ApiPropertyOptional({
     description: 'Endereço IP de origem',
-    example: '192.168.1.100'
+    example: '192.168.1.100',
   })
   @IsOptional()
   @IsString({ message: 'IP deve ser uma string' })
@@ -274,7 +278,7 @@ export class SecurityNotificationDataDto {
 
   @ApiPropertyOptional({
     description: 'User Agent do navegador',
-    example: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    example: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
   })
   @IsOptional()
   @IsString({ message: 'User Agent deve ser uma string' })
@@ -282,7 +286,7 @@ export class SecurityNotificationDataDto {
 
   @ApiPropertyOptional({
     description: 'Localização geográfica',
-    example: 'São Paulo, SP, Brasil'
+    example: 'São Paulo, SP, Brasil',
   })
   @IsOptional()
   @IsString({ message: 'Localização deve ser uma string' })
@@ -291,11 +295,11 @@ export class SecurityNotificationDataDto {
   @ApiPropertyOptional({
     description: 'Nível de risco',
     enum: ['low', 'medium', 'high', 'critical'],
-    example: 'medium'
+    example: 'medium',
   })
   @IsOptional()
   @IsEnum(['low', 'medium', 'high', 'critical'], {
-    message: 'Nível de risco inválido'
+    message: 'Nível de risco inválido',
   })
   riskLevel?: string;
 }
@@ -306,7 +310,7 @@ export class SecurityNotificationDataDto {
 export class CreateSecurityNotificationDto extends CreateNotificationDto {
   @ApiProperty({
     description: 'Dados específicos de segurança',
-    type: SecurityNotificationDataDto
+    type: SecurityNotificationDataDto,
   })
   @ValidateNested()
   @Type(() => SecurityNotificationDataDto)

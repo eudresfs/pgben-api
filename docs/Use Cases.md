@@ -10,11 +10,12 @@ Conforme solicitado, seguem os use cases detalhados por módulo para o Sistema d
 - **Pré-condições**: Usuário cadastrado no sistema e com status ativo
 - **Fluxo Principal**:
     1. Usuário acessa a página de login
-    2. Usuário informa e-mail/CPF e senha
-    3. Sistema valida credenciais
-    4. Sistema gera token JWT
-    5. Sistema registra log de acesso
-    6. Sistema redireciona para dashboard conforme perfil do usuário
+    2. Usuário informa e-mail e senha
+    3. Sistema valida existência do usuário
+    4. Sistema valida senha
+    5. Sistema gera token JWT
+    6. Sistema registra log de acesso
+    7. Sistema redireciona para dashboard conforme perfil do usuário
 - **Fluxos Alternativos**:
     - Credenciais inválidas: Sistema exibe mensagem de erro e permite nova tentativa
     - Conta bloqueada: Sistema informa que a conta está bloqueada e orienta contato com administrador
@@ -27,14 +28,14 @@ Conforme solicitado, seguem os use cases detalhados por módulo para o Sistema d
 - **Pré-condições**: Usuário cadastrado no sistema
 - **Fluxo Principal**:
     1. Usuário acessa função "Esqueci minha senha"
-    2. Usuário informa e-mail/CPF
+    2. Usuário informa e-mail
     3. Sistema valida existência do usuário
     4. Sistema gera token temporário
     5. Sistema envia e-mail com link para redefinição de senha
     6. Usuário acessa o link e define nova senha
     7. Sistema confirma alteração
 - **Fluxos Alternativos**:
-    - E-mail/CPF não encontrado: Sistema exibe mensagem de erro
+    - E-mail não encontrado: Sistema exibe mensagem de erro
     - Link expirado: Sistema solicita novo pedido de recuperação
 - **Pós-condições**: Senha do usuário redefinida
 

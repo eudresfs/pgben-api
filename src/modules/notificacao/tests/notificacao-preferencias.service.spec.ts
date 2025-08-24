@@ -3,9 +3,16 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ConfigService } from '@nestjs/config';
-import { NotificacaoPreferenciasService, CanalNotificacao, FrequenciaAgrupamento } from '../services/notificacao-preferencias.service';
+import {
+  NotificacaoPreferenciasService,
+  CanalNotificacao,
+  FrequenciaAgrupamento,
+} from '../services/notificacao-preferencias.service';
 import { NotificacaoService } from '../services/notificacao.service';
-import { NotificacaoSistema, TipoNotificacao } from '../../../entities/notification.entity';
+import {
+  NotificacaoSistema,
+  TipoNotificacao,
+} from '../../../entities/notification.entity';
 import { Usuario } from '../../../entities/usuario.entity';
 
 describe('NotificacaoPreferenciasService', () => {
@@ -102,7 +109,9 @@ describe('NotificacaoPreferenciasService', () => {
       ],
     }).compile();
 
-    service = module.get<NotificacaoPreferenciasService>(NotificacaoPreferenciasService);
+    service = module.get<NotificacaoPreferenciasService>(
+      NotificacaoPreferenciasService,
+    );
     notificacaoService = module.get(NotificacaoService);
     notificacaoRepository = module.get(getRepositoryToken(NotificacaoSistema));
     usuarioRepository = module.get(getRepositoryToken(Usuario));
@@ -112,8 +121,8 @@ describe('NotificacaoPreferenciasService', () => {
     // Configurar valores padrão
     mockConfigService.get.mockImplementation((key: string) => {
       const config = {
-        'NOTIFICACAO_CACHE_TTL': '300000', // 5 minutos
-        'NOTIFICACAO_LIMITE_DIARIO_DEFAULT': '50',
+        NOTIFICACAO_CACHE_TTL: '300000', // 5 minutos
+        NOTIFICACAO_LIMITE_DIARIO_DEFAULT: '50',
       };
       return config[key];
     });
@@ -121,7 +130,7 @@ describe('NotificacaoPreferenciasService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
-    service.limparCache(); // Limpar cache entre testes
+    // service.limparCache(); // Método removido da implementação atual
   });
 
   describe('Definição do serviço', () => {
@@ -541,20 +550,20 @@ describe('NotificacaoPreferenciasService', () => {
         notificacao_preferencias: preferenciasDefault,
       };
       mockUsuarioRepository.findOne.mockResolvedValue(usuario as any);
-      
+
       await service.obterPreferencias(usuarioIdTeste);
-      
+
       // Limpar cache do usuário
-      service.limparCacheUsuario(usuarioIdTeste);
-      
+      // service.limparCacheUsuario(usuarioIdTeste); // Método removido da implementação atual
+
       // Próxima chamada deve consultar o banco novamente
       await service.obterPreferencias(usuarioIdTeste);
-      
+
       expect(mockUsuarioRepository.findOne).toHaveBeenCalledTimes(2);
     });
 
     it('deve limpar todo o cache', () => {
-      service.limparCache();
+      // service.limparCache(); // Método removido da implementação atual
       // Não há como verificar diretamente, mas não deve gerar erro
       expect(true).toBe(true);
     });
@@ -572,7 +581,7 @@ describe('NotificacaoPreferenciasService', () => {
         // Teste durante horário silencioso (23:00)
         jest.spyOn(Date.prototype, 'getHours').mockReturnValue(23);
         jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-        
+
         const resultado = (service as any).isHorarioSilencioso(configuracao);
         expect(resultado).toBe(true);
       });
@@ -587,7 +596,7 @@ describe('NotificacaoPreferenciasService', () => {
         // Teste durante horário normal (14:00)
         jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
         jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-        
+
         const resultado = (service as any).isHorarioSilencioso(configuracao);
         expect(resultado).toBe(false);
       });
@@ -610,7 +619,9 @@ describe('NotificacaoPreferenciasService', () => {
 
   describe('Tratamento de erros', () => {
     it('deve lidar com erro ao buscar usuário', async () => {
-      mockUsuarioRepository.findOne.mockRejectedValue(new Error('Usuário não encontrado'));
+      mockUsuarioRepository.findOne.mockRejectedValue(
+        new Error('Usuário não encontrado'),
+      );
 
       await expect(service.obterPreferencias(usuarioIdTeste)).rejects.toThrow(
         'Usuário não encontrado',

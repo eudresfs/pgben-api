@@ -1,115 +1,28 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsEmail,
-  IsString,
-  IsOptional,
-  IsEnum,
   IsNotEmpty,
-  IsDate,
-  IsNumber,
-  ValidateNested,
-  Validate,
-  Matches,
-  ValidateIf,
+  IsOptional,
+  IsString,
+  IsDateString,
+  IsEnum,
   IsArray,
-  IsUUID,
-  IsObject,
+  ValidateNested,
   IsBoolean,
+  MaxLength,
+  IsUUID,
+  Validate,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { Sexo } from '../../../enums/sexo.enum';
-import { TipoPapel, PaperType } from '../../../enums/tipo-papel.enum';
+import { Type, Transform } from 'class-transformer';
+import { CreateComposicaoFamiliarBodyDto } from './create-composicao-familiar-body.dto';
+import { ContatoBodyDto } from './contato-body.dto';
+import { EnderecoBodyDto } from './endereco-body.dto';
+import { CreateDadosSociaisDto } from './create-dados-sociais.dto';
+import { CreateSituacaoMoradiaDto } from './create-situacao-moradia.dto';
+import { CreateInfoBancariaBodyDto } from './create-info-bancaria-body.dto';
+import { Sexo, EstadoCivil, TipoDocumentoEnum } from '../../../enums';
 import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
-import { TelefoneValidator } from '../validators/telefone-validator';
-import { CEPValidator } from '../validators/cep-validator';
-import { CreateComposicaoFamiliarDto } from './create-composicao-familiar.dto';
-import { EstadoCivil } from '../../../enums/estado-civil.enum';
-import { ContatoDto } from './contato.dto';
-import { EnderecoDto } from './endereco.dto';
-
-/**
- * DTO para endereço inline do cidadão (estrutura legada)
- *
- * Contém todos os campos necessários para registrar o endereço completo de um cidadão
- * na estrutura legada (embutida no objeto cidadão)
- */
-export class EnderecoInlineDto {
-  @IsString({ message: 'Logradouro deve ser uma string' })
-  @IsNotEmpty({ message: 'Logradouro é obrigatório' })
-  @ApiProperty({
-    example: 'Rua das Flores',
-    description: 'Logradouro do endereço',
-  })
-  logradouro: string;
-
-  @IsString({ message: 'Número deve ser uma string' })
-  @IsNotEmpty({ message: 'Número é obrigatório' })
-  @ApiProperty({
-    example: '123',
-    description: 'Número do endereço',
-  })
-  numero: string;
-
-  @IsString({ message: 'Complemento deve ser uma string' })
-  @IsOptional()
-  @ApiPropertyOptional({
-    example: 'Apto 101',
-    description: 'Complemento do endereço',
-    required: false,
-  })
-  complemento?: string;
-
-  @IsString({ message: 'Bairro deve ser uma string' })
-  @IsNotEmpty({ message: 'Bairro é obrigatório' })
-  @ApiProperty({
-    example: 'Centro',
-    description: 'Bairro do endereço',
-  })
-  bairro: string;
-
-  @IsString({ message: 'Cidade deve ser uma string' })
-  @IsNotEmpty({ message: 'Cidade é obrigatória' })
-  @ApiProperty({
-    example: 'Natal',
-    description: 'Cidade do endereço',
-  })
-  cidade: string;
-
-  @IsString({ message: 'Estado deve ser uma string' })
-  @IsNotEmpty({ message: 'Estado é obrigatório' })
-  @ApiProperty({
-    example: 'RN',
-    description: 'Estado do endereço (sigla)',
-  })
-  estado: string;
-
-  @IsString({ message: 'CEP deve ser uma string' })
-  @IsNotEmpty({ message: 'CEP é obrigatório' })
-  @Validate(CEPValidator, { message: 'CEP inválido' })
-  @ApiProperty({
-    example: '59000-000',
-    description: 'CEP do endereço',
-  })
-  cep: string;
-
-  @IsString({ message: 'Ponto de referência deve ser uma string' })
-  @IsOptional()
-  @ApiPropertyOptional({
-    example: 'Próximo ao Corpo de Bombeiros',
-    description: 'Ponto de referência do endereço',
-    required: false,
-  })
-  ponto_referencia?: string;
-
-  @IsNumber({}, { message: 'Tempo de residência deve ser um número' })
-  @IsNotEmpty({ message: 'Tempo de residência é obrigatório' })
-  @ApiProperty({
-    example: 2,
-    description: 'O tempo de residência do cidadão em anos',
-  })
-  tempo_de_residencia: number;
-}
+import { NacionalidadeValidator } from '../validators/nacionalidade-validator';
 
 /**
  * DTO para criação de cidadão
@@ -117,80 +30,7 @@ export class EnderecoInlineDto {
  * Contém todos os campos necessários para cadastrar um novo cidadão no sistema,
  * incluindo informações pessoais, documentos, endereço e dados socioeconômicos.
  */
-/**
- * DTO para papel do cidadão na criação
- */
-export class PapelCidadaoCreateDto {
-  @IsEnum(TipoPapel, { message: 'Tipo de papel inválido' })
-  @IsNotEmpty({ message: 'Tipo de papel é obrigatório' })
-  @ApiProperty({
-    enum: TipoPapel,
-    example: TipoPapel.BENEFICIARIO,
-    description: 'Tipo de papel do cidadão',
-  })
-  tipo_papel: PaperType;
-
-  @IsOptional()
-  @IsObject({ message: 'Metadados deve ser um objeto' })
-  @ApiPropertyOptional({
-    type: 'object',
-    additionalProperties: true,
-    example: {
-      grau_parentesco: 'Mãe',
-      documento_representacao: '12345',
-      data_validade_representacao: '2026-01-01',
-    },
-    description: 'Metadados específicos do papel (varia conforme o tipo)',
-  })
-  metadados?: {
-    grau_parentesco?: string;
-    documento_representacao?: string;
-    data_validade_representacao?: Date;
-    [key: string]: any;
-  };
-}
-
 export class CreateCidadaoDto {
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => PapelCidadaoCreateDto)
-  @IsOptional()
-  @ApiPropertyOptional({
-    type: [PapelCidadaoCreateDto],
-    description: 'Papéis que o cidadão irá assumir no sistema',
-  })
-  papeis?: PapelCidadaoCreateDto[];
-
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => CreateComposicaoFamiliarDto)
-  @ApiPropertyOptional({
-    type: [CreateComposicaoFamiliarDto],
-    description: 'Composição familiar do cidadão',
-  })
-  composicao_familiar?: CreateComposicaoFamiliarDto[];
-  
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => ContatoDto)
-  @ApiPropertyOptional({
-    type: [ContatoDto],
-    description: 'Contatos do cidadão (nova estrutura normalizada)',
-  })
-  contatos?: ContatoDto[];
-
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => EnderecoDto)
-  @ApiPropertyOptional({
-    type: [EnderecoDto],
-    description: 'Endereços do cidadão (nova estrutura normalizada)',
-  })
-  enderecos?: EnderecoDto[];
-
   @IsString({ message: 'Nome deve ser uma string' })
   @IsNotEmpty({ message: 'Nome é obrigatório' })
   @ApiProperty({
@@ -233,6 +73,18 @@ export class CreateCidadaoDto {
   })
   naturalidade?: string;
 
+  @IsString({ message: 'Nacionalidade deve ser uma string' })
+  @IsOptional()
+  @MaxLength(50, { message: 'Nacionalidade deve ter no máximo 50 caracteres' })
+  @Validate(NacionalidadeValidator, { message: 'Nacionalidade inválida' })
+  @ApiPropertyOptional({
+    example: 'Brasileira',
+    description: 'Nacionalidade do cidadão',
+    default: 'Brasileira',
+    maxLength: 50,
+  })
+  nacionalidade?: string;
+
   @IsOptional()
   @ApiProperty({
     example: '1985-10-15',
@@ -250,9 +102,6 @@ export class CreateCidadaoDto {
   sexo?: Sexo;
 
   @IsString({ message: 'NIS deve ser uma string' })
-  @ValidateIf((o) =>
-    o.papeis?.some((p) => p.tipo_papel === TipoPapel.BENEFICIARIO),
-  )
   @IsOptional()
   @Validate(NISValidator, { message: 'NIS inválido' })
   @ApiPropertyOptional({
@@ -289,53 +138,70 @@ export class CreateCidadaoDto {
   })
   nome_mae?: string;
 
-  @IsString({ message: 'Telefone deve ser uma string' })
-  @IsOptional()
-  @Validate(TelefoneValidator, { message: 'Telefone inválido' })
-  @ApiPropertyOptional({
-    example: '(84) 98765-4321',
-    description: 'Telefone do cidadão para contato (estrutura legada)',
-    required: false,
-    deprecated: true,
-  })
-  telefone?: string;
-  
-  @IsBoolean()
-  @IsOptional()
-  @ApiPropertyOptional({
-    example: true,
-    description: 'Indica se o telefone é WhatsApp (estrutura legada)',
-    required: false,
-    deprecated: true,
-  })
-  is_whatsapp?: boolean;
-
-  @IsEmail({}, { message: 'Email inválido' })
-  @IsOptional()
-  @ApiPropertyOptional({
-    example: 'email@exemplo.com',
-    description: 'Endereço de email do cidadão para contato (estrutura legada)',
-    required: false,
-    deprecated: true,
-  })
-  email?: string;
-
-  @ValidateNested()
-  @IsOptional()
-  @Type(() => EnderecoInlineDto)
-  @ApiProperty({
-    type: EnderecoInlineDto,
-    description: 'Endereço do cidadão (estrutura legada)',
-    deprecated: true,
-  })
-  endereco?: EnderecoInlineDto;
-
   @IsUUID('4', { message: 'ID da unidade deve ser um UUID válido' })
   @IsOptional()
   @ApiPropertyOptional({
     example: '550e8400-e29b-41d4-a716-446655440000',
-    description: 'ID da unidade onde o cidadão será cadastrado. Se não fornecido, será usado o ID da unidade do usuário logado.',
+    description:
+      'ID da unidade onde o cidadão será cadastrado. Se não fornecido, será usado o ID da unidade do usuário logado.',
     required: false,
   })
   unidade_id?: string;
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CreateComposicaoFamiliarBodyDto)
+  @ApiPropertyOptional({
+    type: [CreateComposicaoFamiliarBodyDto],
+    description: 'Composição familiar do cidadão',
+  })
+  composicao_familiar?: CreateComposicaoFamiliarBodyDto[];
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => ContatoBodyDto)
+  @ApiPropertyOptional({
+    type: [ContatoBodyDto],
+    description: 'Contatos do cidadão (nova estrutura normalizada)',
+  })
+  contatos?: ContatoBodyDto[];
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => EnderecoBodyDto)
+  @ApiPropertyOptional({
+    type: [EnderecoBodyDto],
+    description: 'Endereços do cidadão (nova estrutura normalizada)',
+  })
+  enderecos?: EnderecoBodyDto[];
+
+  @ApiPropertyOptional({
+    description: 'Dados sociais do cidadão',
+    type: CreateDadosSociaisDto,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreateDadosSociaisDto)
+  dados_sociais?: CreateDadosSociaisDto;
+
+  @ApiPropertyOptional({
+    description: 'Situação de moradia do cidadão',
+    type: CreateSituacaoMoradiaDto,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreateSituacaoMoradiaDto)
+  situacao_moradia?: CreateSituacaoMoradiaDto;
+
+  @ApiPropertyOptional({
+    description: 'Informações bancárias do cidadão',
+    type: CreateInfoBancariaBodyDto,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreateInfoBancariaBodyDto)
+  info_bancaria?: CreateInfoBancariaBodyDto;
 }

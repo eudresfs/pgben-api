@@ -28,7 +28,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { ScopeType } from '../../../entities/user-permission.entity';
-import { Public } from '@/auth/decorators/public.decorator';
+import { Public } from '../../../auth/decorators/public.decorator';
 
 /**
  * Controlador de Auditoria
@@ -85,8 +85,10 @@ export class AuditoriaController {
     const userId = createLogAuditoriaDto.usuario_id;
     const dadosAnteriores = createLogAuditoriaDto.dados_anteriores;
     const dadosNovos = createLogAuditoriaDto.dados_novos;
-    const descricao = createLogAuditoriaDto.descricao || `${operacao} em ${entidade}`;
-    const camposSensiveis = createLogAuditoriaDto.dados_sensiveis_acessados || [];
+    const descricao =
+      createLogAuditoriaDto.descricao || `${operacao} em ${entidade}`;
+    const camposSensiveis =
+      createLogAuditoriaDto.dados_sensiveis_acessados || [];
 
     // Emite o evento apropriado baseado na operação
     switch (operacao) {
@@ -95,7 +97,7 @@ export class AuditoriaController {
           entidade,
           entidadeId,
           dadosNovos,
-          userId
+          userId,
         );
         break;
       case TipoOperacao.UPDATE:
@@ -103,7 +105,7 @@ export class AuditoriaController {
           entidade,
           entidadeId,
           dadosAnteriores,
-          dadosNovos
+          dadosNovos,
         );
         break;
       case TipoOperacao.DELETE:
@@ -111,20 +113,17 @@ export class AuditoriaController {
           entidade,
           entidadeId,
           dadosAnteriores,
-          userId
+          userId,
         );
         break;
       default:
-        this.auditEventEmitter.emitSystemEvent(
-          AuditEventType.SYSTEM_INFO,
-          { 
-            entidade, 
-            entityId: entidadeId, 
-            dados_anteriores: dadosAnteriores, 
-            dados_novos: dadosNovos, 
-            userId 
-          }
-        );
+        this.auditEventEmitter.emitSystemEvent(AuditEventType.SYSTEM_INFO, {
+          entidade,
+          entityId: entidadeId,
+          dados_anteriores: dadosAnteriores,
+          dados_novos: dadosNovos,
+          userId,
+        });
         break;
     }
 
@@ -145,28 +144,6 @@ export class AuditoriaController {
   @ApiResponse({ status: 403, description: 'Acesso negado' })
   findAll(@Query() queryParams: QueryLogAuditoriaDto) {
     return this.auditoriaService.findAll(queryParams);
-  }
-
-  /**
-   * Endpoint para testar o worker de auditoria diretamente
-   */
-  @Get('/test-worker-direct')
-  @ApiOperation({ summary: 'Testa o worker de auditoria diretamente' })
-  @ApiResponse({
-    status: 200,
-    description: 'Teste do worker executado com sucesso',
-  })
-  @RequiresPermission({
-    permissionName: 'auditoria.teste.executar',
-    scopeType: ScopeType.GLOBAL,
-  })
-  async testWorkerDirect() {
-    try {
-      const result = await this.auditProcessor.testDirectProcessing();
-      return { success: true, result };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
   }
 
   /**
@@ -263,5 +240,4 @@ export class AuditoriaController {
       new Date(dataFinal),
     );
   }
-
 }

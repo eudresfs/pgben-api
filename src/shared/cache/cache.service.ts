@@ -225,7 +225,7 @@ export class CacheService {
     // Primeiro verificar cache local (mais rápido e sem dependência do Redis)
     const localValue = this.getLocalCache<T>(key);
     if (localValue !== null) {
-      this.metricsProvider.registerCacheHit();
+      this.metricsProvider.registerCacheHit('unknown', 0);
       return localValue;
     }
 
@@ -237,7 +237,7 @@ export class CacheService {
       this.logger.debug(
         `Circuit breaker aberto, não tentando Redis para chave: ${key}`,
       );
-      this.metricsProvider.registerCacheMiss();
+      this.metricsProvider.registerCacheMiss('unknown', 0);
       return null;
     }
 
@@ -246,7 +246,7 @@ export class CacheService {
 
       if (!job) {
         // Cache miss
-        this.metricsProvider.registerCacheMiss();
+        this.metricsProvider.registerCacheMiss('unknown', 0);
         this.registerSuccess(); // Operação concluída com sucesso (mesmo que seja um miss)
         return null;
       }
@@ -256,7 +256,7 @@ export class CacheService {
       // Verificar se o job expirou
       if (job.finishedOn && Date.now() > job.finishedOn) {
         await job.remove();
-        this.metricsProvider.registerCacheMiss();
+        this.metricsProvider.registerCacheMiss('unknown', 0);
         this.registerSuccess(); // Operação concluída com sucesso
         return null;
       }
@@ -264,7 +264,7 @@ export class CacheService {
       // Cache hit - armazenar também no cache local
       const value = jobData.value as T;
       this.setLocalCache(key, value);
-      this.metricsProvider.registerCacheHit();
+      this.metricsProvider.registerCacheHit('unknown', 0);
       this.registerSuccess(); // Operação concluída com sucesso
       return value;
     } catch (error) {
@@ -273,7 +273,7 @@ export class CacheService {
         error.stack,
       );
       this.registerFailure(); // Registrar falha para o circuit breaker
-      this.metricsProvider.registerCacheMiss();
+      this.metricsProvider.registerCacheMiss('unknown', 0);
 
       // Se for um erro de timeout, tentar obter o valor do cache local novamente
       // Isso pode acontecer se o valor for adicionado ao cache local por outra thread
@@ -347,7 +347,7 @@ export class CacheService {
       await Promise.race([cachePromise, timeoutPromise]);
 
       // Registrar operação de set no cache
-      this.metricsProvider.registerCacheSet();
+      this.metricsProvider.registerCacheSet('unknown', 0);
       this.registerSuccess(); // Operação concluída com sucesso
     } catch (error) {
       this.logger.error(

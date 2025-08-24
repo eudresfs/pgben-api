@@ -29,6 +29,7 @@ export interface UserAccessTokenClaims {
   permissions?: string[];
   permissionScopes?: Record<string, string>;
   unidade_id?: string;
+  escopo?: string;
 }
 
 export class UserRefreshTokenClaims {

@@ -117,7 +117,8 @@ export class EnderecoDto {
   data_inicio_vigencia: string;
 
   @ApiProperty({
-    description: 'Data de fim da vigência do endereço (null para endereço atual)',
+    description:
+      'Data de fim da vigência do endereço (null para endereço atual)',
     required: false,
     example: null,
   })

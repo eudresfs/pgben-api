@@ -130,10 +130,22 @@ export class HealthService {
     try {
       // Configurações do MinIO a partir das variáveis de ambiente
       const useSSL = this.configService.get('MINIO_USE_SSL') === 'true';
-      const endPoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost');
-      const port = parseInt(this.configService.get<string>('MINIO_PORT', '9000'), 10);
-      const accessKey = this.configService.get<string>('MINIO_ACCESS_KEY', 'minioadmin');
-      const secretKey = this.configService.get<string>('MINIO_SECRET_KEY', 'minioadmin');
+      const endPoint = this.configService.get<string>(
+        'MINIO_ENDPOINT',
+        'localhost',
+      );
+      const port = parseInt(
+        this.configService.get<string>('MINIO_PORT', '9000'),
+        10,
+      );
+      const accessKey = this.configService.get<string>(
+        'MINIO_ACCESS_KEY',
+        'minioadmin',
+      );
+      const secretKey = this.configService.get<string>(
+        'MINIO_SECRET_KEY',
+        'minioadmin',
+      );
       const bucketName =
         this.configService.get<string>('MINIO_BUCKET_NAME') ||
         this.configService.get<string>('MINIO_BUCKET', 'pgben-documentos');
@@ -157,7 +169,9 @@ export class HealthService {
       };
     } catch (error) {
       const responseTime = Date.now() - startTime;
-      this.logger.error(`Erro ao verificar conexão com MinIO: ${error.message}`);
+      this.logger.error(
+        `Erro ao verificar conexão com MinIO: ${error.message}`,
+      );
 
       return {
         status: 'down',

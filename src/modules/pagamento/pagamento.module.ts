@@ -1,15 +1,19 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
+import { HttpModule } from '@nestjs/axios';
 import { LoggingService } from '../../shared/logging/logging.service';
 import { StorageService } from '../../shared/services/storage.service';
+import { createScopedRepositoryProvider } from '../../common/providers/scoped-repository.provider';
 
 // Entidades
 import {
   Pagamento,
-  ComprovantePagamento,
+  Documento,
   ConfirmacaoRecebimento,
   LogAuditoria,
+  TipoBeneficio,
+  Solicitacao,
 } from '../../entities';
 
 // Controllers
@@ -28,9 +32,18 @@ import { ConfirmacaoService } from './services/confirmacao.service';
 
 // Novos serviços de otimização
 import { PagamentoCacheService } from './services/pagamento-cache.service';
+import { PagamentoCacheInvalidationService } from './services/pagamento-cache-invalidation.service';
 import { PagamentoBatchService } from './services/pagamento-batch.service';
 import { PagamentoQueueService } from './services/pagamento-queue.service';
 import { PagamentoQueueProcessor } from './services/pagamento-queue.processor';
+
+// Serviços de cálculo e estratégias
+import { PagamentoCalculatorService } from './services/pagamento-calculator.service';
+import { BeneficioDataService } from './services/beneficio-data.service';
+import { AluguelSocialStrategy } from './strategies/aluguel-social.strategy';
+import { CestaBasicaStrategy } from './strategies/cesta-basica.strategy';
+import { FuneralStrategy } from './strategies/funeral.strategy';
+import { NatalidadeStrategy } from './strategies/natalidade.strategy';
 
 // Command/Query Handlers
 import {
@@ -41,7 +54,6 @@ import {
 
 // Repositórios
 import { PagamentoRepository } from './repositories/pagamento.repository';
-import { ComprovanteRepository } from './repositories/comprovante.repository';
 import { ConfirmacaoRepository } from './repositories/confirmacao.repository';
 
 // Validadores
@@ -55,17 +67,20 @@ import { AuditoriaInterceptor } from './interceptors/auditoria.interceptor';
 import { PagamentoPerformanceInterceptor } from './interceptors/pagamento-performance.interceptor';
 import { Reflector } from '@nestjs/core';
 
+// Mappers
+import { PagamentoUnifiedMapper } from './mappers/pagamento-unified.mapper';
+
 // Módulos
 import { AuthModule } from '../../auth/auth.module';
 import { UsuarioModule } from '../usuario/usuario.module';
 import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
+import { BeneficioModule } from '../beneficio/beneficio.module';
 import { AuditoriaSharedModule } from '../../shared/auditoria/auditoria-shared.module';
 import { DocumentoModule } from '../documento/documento.module';
 import { CidadaoModule } from '../cidadao/cidadao.module';
 import { NotificacaoModule } from '../notificacao/notificacao.module';
 import { SharedModule } from '../../shared/shared.module';
 import { CacheModule } from '../../shared/cache/cache.module';
-
 
 /**
  * Módulo de Pagamento/Liberação
@@ -79,28 +94,26 @@ import { CacheModule } from '../../shared/cache/cache.module';
   imports: [
     TypeOrmModule.forFeature([
       Pagamento,
-      ComprovantePagamento,
+      Documento,
       ConfirmacaoRecebimento,
       LogAuditoria,
+      TipoBeneficio,
+      Solicitacao,
     ]),
     // Configuração da fila BullMQ para pagamentos
     BullModule.registerQueue({
       name: 'pagamentos',
-      defaultJobOptions: {
-        removeOnComplete: 10,
-        removeOnFail: 5,
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 2000,
-        },
-      },
+    }),
+    HttpModule.register({
+      timeout: 5000,
+      maxRedirects: 5,
     }),
     AuthModule,
     SharedModule,
     CacheModule,
     UsuarioModule,
     forwardRef(() => SolicitacaoModule),
+    forwardRef(() => BeneficioModule),
     DocumentoModule,
     CidadaoModule,
     NotificacaoModule,
@@ -113,9 +126,13 @@ import { CacheModule } from '../../shared/cache/cache.module';
     PagamentoBatchController,
   ],
   providers: [
-    // Repositórios
+    // Repositórios com escopo
+    createScopedRepositoryProvider(Pagamento),
+    createScopedRepositoryProvider(Documento),
+    createScopedRepositoryProvider(ConfirmacaoRecebimento),
+
+    // Repositórios customizados
     PagamentoRepository,
-    ComprovanteRepository,
     ConfirmacaoRepository,
 
     // Serviços principais
@@ -125,11 +142,20 @@ import { CacheModule } from '../../shared/cache/cache.module';
     ComprovanteService,
     ConfirmacaoService,
 
-    // Novos serviços de otimização
+    // Serviços de otimização
     PagamentoCacheService,
+    PagamentoCacheInvalidationService,
     PagamentoBatchService,
     PagamentoQueueService,
     PagamentoQueueProcessor,
+
+    // Serviços de cálculo e estratégias
+    PagamentoCalculatorService,
+    BeneficioDataService,
+    AluguelSocialStrategy,
+    CestaBasicaStrategy,
+    FuneralStrategy,
+    NatalidadeStrategy,
 
     // Command/Query Handlers
     CreatePagamentoHandler,
@@ -155,6 +181,9 @@ import { CacheModule } from '../../shared/cache/cache.module';
 
     // Storage
     StorageService,
+
+    // Mappers
+    PagamentoUnifiedMapper,
   ],
   exports: [
     TypeOrmModule,
@@ -162,7 +191,6 @@ import { CacheModule } from '../../shared/cache/cache.module';
 
     // Repositórios
     PagamentoRepository,
-    ComprovanteRepository,
     ConfirmacaoRepository,
 
     // Serviços principais

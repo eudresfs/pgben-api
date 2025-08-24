@@ -18,6 +18,8 @@ import { Usuario } from '../../entities/usuario.entity';
 import { PermissionService } from './permission.service';
 import { AuditEventEmitter } from '../../modules/auditoria/events/emitters/audit-event.emitter';
 import { AuditEventType } from '../../modules/auditoria/events/types/audit-event.types';
+import { SCOPE_CONSTANTS, ScopeType } from '../../common/types/scope.types';
+import { RoleType } from '@/shared/constants/roles.constants';
 
 @Injectable()
 export class AuthService {
@@ -53,9 +55,9 @@ export class AuthService {
 
     this.logger.info(
       `Configuração de tokens - Access Token: ${accessTokenExpiresIn}, ` +
-      `Refresh Token: ${refreshTokenExpiresIn} ` +
-      `(em segundos: ${this.timeToSeconds(refreshTokenExpiresIn)})`,
-      AuthService.name
+        `Refresh Token: ${refreshTokenExpiresIn} ` +
+        `(em segundos: ${this.timeToSeconds(refreshTokenExpiresIn)})`,
+      AuthService.name,
     );
 
     // Debug das variáveis de ambiente
@@ -123,7 +125,7 @@ export class AuthService {
     // Fallback para valores que não conseguimos interpretar
     this.logger.warn(
       `Não foi possível interpretar o formato de tempo: ${timeString}, usando 1 dia como padrão`,
-      AuthService.name
+      AuthService.name,
     );
     return 86400; // 1 dia em segundos
   }
@@ -138,8 +140,8 @@ export class AuthService {
     const clientIp = (ctx as any).req?.ip || 'unknown';
     const userAgent = (ctx as any).req?.headers?.['user-agent'] || 'unknown';
 
-    // Buscar usuário pelo email (username)
-    const usuario = await this.usuarioService.findByEmail(username);
+    // Buscar usuário pelo email (username) - usando método sem escopo para autenticação
+    const usuario = await this.usuarioService.findByEmailForAuth(username);
 
     try {
       if (!usuario) {
@@ -154,37 +156,53 @@ export class AuthService {
             clientIp: clientIp,
             userAgent: userAgent,
             reason: 'user_not_found',
-          }
+          },
         );
         throw new UnauthorizedException('Nome de usuário ou senha inválidos');
       }
 
       // Verificar se a senha está correta
       // Log do hash armazenado para diagnóstico
-      this.logger.info(`Verificando senha para usuário ${username}`, AuthService.name);
-      this.logger.debug(`Hash armazenado: ${usuario.senhaHash.substring(0, 10)}...`, AuthService.name);
-
-      const senhaCorreta = await bcrypt.compare(
-        pass,
-        usuario.senhaHash,
+      this.logger.info(
+        `Verificando senha para usuário ${username}`,
+        AuthService.name,
       );
+      this.logger.debug(
+        `Hash armazenado: ${usuario.senhaHash.substring(0, 10)}...`,
+        AuthService.name,
+      );
+
+      const senhaCorreta = await bcrypt.compare(pass, usuario.senhaHash);
       if (!senhaCorreta) {
+        // Incrementar contador de tentativas de login
+        await this.usuarioService.incrementLoginAttempts(usuario.id);
+
+        // Buscar usuário atualizado para obter o contador atual
+        const usuarioAtualizado = await this.usuarioService.findById(
+          usuario.id,
+        );
+        const consecutiveFailures = usuarioAtualizado?.tentativas_login || 1;
+
         // Auditoria de tentativa de login com senha incorreta
         await this.auditEmitter.emitSecurityEvent(
           AuditEventType.FAILED_LOGIN,
           usuario.id,
           {
             operation: 'login_attempt',
-            riskLevel: 'high',
+            riskLevel: consecutiveFailures >= 3 ? 'critical' : 'high',
             email: usuario.email,
             clientIp: clientIp,
             userAgent: userAgent,
             reason: 'invalid_password',
-            consecutiveFailures: 1, // TODO: implementar contador
-          }
+            consecutiveFailures: consecutiveFailures,
+            accountLocked: consecutiveFailures >= 5,
+          },
         );
         throw new UnauthorizedException('Nome de usuário ou senha inválidos');
       }
+
+      // Login bem-sucedido - resetar contador de tentativas
+      await this.usuarioService.resetLoginAttempts(usuario.id);
 
       // Verificar se o usuário está ativo
       if (usuario.status === 'inativo') {
@@ -199,7 +217,7 @@ export class AuthService {
             clientIp: clientIp,
             userAgent: userAgent,
             reason: 'account_inactive',
-          }
+          },
         );
         throw new UnauthorizedException('Esta conta de usuário foi desativada');
       }
@@ -216,7 +234,7 @@ export class AuthService {
     // Obter os escopos das permissões
     const permissionScopes: Record<string, string> = {};
 
-    // ✅ Auditoria de login bem-sucedido (validação de credenciais)
+    // Auditoria de login bem-sucedido (validação de credenciais)
     await this.auditEmitter.emitSecurityEvent(
       AuditEventType.SUCCESSFUL_LOGIN,
       usuario.id,
@@ -225,12 +243,12 @@ export class AuthService {
         riskLevel: 'LOW',
         username: usuario.nome,
         email: usuario.email,
-        roles: usuario.role ? [usuario.role.nome] : [],
+        roles: usuario.role ? [usuario.role.codigo as RoleType] : [],
         permissions: permissions || [],
         clientIp,
         userAgent,
         loginMethod: 'password',
-      }
+      },
     );
 
     // Converter para o formato esperado incluindo permissões
@@ -262,7 +280,7 @@ export class AuthService {
 
     this.logger.info(
       `Criando refresh token com duração de ${refreshTokenExpiresIn} (${refreshTokenSeconds} segundos)`,
-      AuthService.name
+      AuthService.name,
     );
 
     const refreshToken = await this.refreshTokenService.createToken(
@@ -270,7 +288,7 @@ export class AuthService {
       refreshTokenSeconds, // Converte para segundos para o RefreshTokenService
     );
 
-    // ✅ Auditoria de login completo (geração de tokens)
+    // Auditoria de login completo (geração de tokens)
     await this.auditEmitter.emitSecurityEvent(
       AuditEventType.SUCCESSFUL_LOGIN,
       String(ctx.user!.id),
@@ -286,7 +304,7 @@ export class AuthService {
         tokenGenerated: true,
         refreshTokenId: refreshToken.id,
         sessionStart: new Date().toISOString(),
-      }
+      },
     );
 
     return {
@@ -334,9 +352,21 @@ export class AuthService {
       throw new UnauthorizedException('Usuário não encontrado');
     }
 
-    // Gerar novos tokens
-    const userOutput = UsuarioAdapter.toUserOutput(usuario as any);
-    const tokens = this.getAuthToken(ctx, userOutput);
+    // Obter as permissões do usuário para incluir no novo token
+    const permissions = await this.permissionService.getUserPermissions(
+      usuario.id,
+    );
+
+    // Obter os escopos das permissões
+    const permissionScopes: Record<string, string> = {};
+
+    // Gerar novos tokens com permissões incluídas
+    const userAccessTokenClaims = UsuarioAdapter.toUserAccessTokenClaims(
+      usuario as Usuario,
+      permissions,
+      permissionScopes,
+    );
+    const tokens = this.getAuthToken(ctx, userAccessTokenClaims);
 
     // Obter o tempo de expiração
     const refreshTokenExpiresIn = this.getRefreshTokenExpiresIn();
@@ -344,7 +374,7 @@ export class AuthService {
 
     this.logger.info(
       `Criando novo refresh token com duração de ${refreshTokenExpiresIn} (${refreshTokenSeconds} segundos)`,
-      AuthService.name
+      AuthService.name,
     );
 
     const newRefreshToken = await this.refreshTokenService.createToken(
@@ -368,7 +398,7 @@ export class AuthService {
         clientIp,
         userAgent,
         tokenRenewed: true,
-      }
+      },
     );
 
     return {
@@ -408,6 +438,22 @@ export class AuthService {
       payload['permissionScopes'] = user.permissionScopes;
     }
 
+    // Determinar e adicionar o escopo baseado na role do usuário
+    if ('escopo' in user && user.escopo) {
+      // Usar o escopo diretamente da role do usuário
+      payload['escopo'] = user.escopo;
+    } else if (user.roles && user.roles.length > 0) {
+      // Fallback para o mapeamento padrão se o escopo não estiver disponível
+      const primaryRole = user.roles[0]; // Usar a primeira role como primária
+      const scopeType =
+        SCOPE_CONSTANTS.DEFAULT_ROLE_SCOPE_MAPPING[primaryRole] ||
+        ScopeType.PROPRIO;
+      payload['escopo'] = scopeType;
+    } else {
+      // Fallback para escopo PROPRIO se não houver roles
+      payload['escopo'] = ScopeType.PROPRIO;
+    }
+
     // Garantir que estamos usando o algoritmo RS256 e a chave privada para assinar o token
     const privateKey = Buffer.from(
       this.configService.get<string>('JWT_PRIVATE_KEY_BASE64', ''),
@@ -420,7 +466,7 @@ export class AuthService {
 
     this.logger.info(
       `Gerando tokens - Access token expira em: ${accessTokenExpiresIn}, Refresh token expira em: ${refreshTokenExpiresIn}`,
-      AuthService.name
+      AuthService.name,
     );
 
     const accessToken = this.jwtService.sign(

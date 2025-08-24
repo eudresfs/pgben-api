@@ -41,10 +41,10 @@ export enum UploadSessionStatus {
 
 /**
  * Entidade UploadSession
- * 
+ *
  * Representa uma sessão de upload ativa, controlando
  * o processo de envio de arquivos via token.
- * 
+ *
  * Funcionalidades:
  * - Controle de sessão de upload
  * - Rastreamento de atividade e progresso
@@ -90,7 +90,9 @@ export class UploadSession {
   })
   @IsOptional()
   @IsString({ message: 'Device fingerprint deve ser uma string' })
-  @Length(0, 255, { message: 'Device fingerprint deve ter no máximo 255 caracteres' })
+  @Length(0, 255, {
+    message: 'Device fingerprint deve ter no máximo 255 caracteres',
+  })
   device_fingerprint: string | null;
 
   @Column({ name: 'files_uploaded', type: 'integer', default: 0 })
@@ -306,9 +308,13 @@ export class UploadSession {
    * Calcula a porcentagem de progresso
    */
   getProgressPercentage(): number {
-    if (this.upload_progress?.total_files && this.upload_progress?.current_file) {
+    if (
+      this.upload_progress?.total_files &&
+      this.upload_progress?.current_file
+    ) {
       return Math.round(
-        (this.upload_progress.current_file / this.upload_progress.total_files) * 100
+        (this.upload_progress.current_file / this.upload_progress.total_files) *
+          100,
       );
     }
     return 0;

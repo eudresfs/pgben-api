@@ -12,29 +12,32 @@ export class PagamentoLiberacaoScheduler {
     private readonly logger: LoggingService,
   ) {}
 
-
-
   /**
    * Executa diariamente às 08:00 para processar vencimentos automáticos.
    * Altera o status de pagamentos 'pendente' para 'vencido' quando ultrapassam a data de vencimento.
    */
   @Cron('0 0 8 * * *') // Todos os dias às 08:00
   async processarVencimentoAutomatico(): Promise<void> {
-    this.logger.info('Iniciando processamento de vencimento automático de pagamentos.', PagamentoLiberacaoScheduler.name);
+    this.logger.info(
+      'Iniciando processamento de vencimento automático de pagamentos.',
+      PagamentoLiberacaoScheduler.name,
+    );
 
     try {
-      const resultado = await this.pagamentoWorkflowService.processarVencimentosAutomaticos();
-      
+      const resultado =
+        await this.pagamentoWorkflowService.processarVencimentosAutomaticos();
+
       this.logger.info(
         `Processamento de vencimento concluído. Pagamentos marcados como vencidos: ${resultado.length}`,
-        PagamentoLiberacaoScheduler.name, { vencidos: resultado.length }
+        PagamentoLiberacaoScheduler.name,
+        { vencidos: resultado.length },
       );
     } catch (error) {
       this.logger.error(
         'Erro ao processar vencimento automático de pagamentos',
         error,
         PagamentoLiberacaoScheduler.name,
-        { stack: error.stack }
+        { stack: error.stack },
       );
     }
   }
@@ -45,21 +48,26 @@ export class PagamentoLiberacaoScheduler {
    */
   @Cron('0 0 10 * * *') // Todos os dias às 10:00
   async notificarPrazosVencimento(): Promise<void> {
-    this.logger.info('Iniciando notificação de prazos de vencimento.', PagamentoLiberacaoScheduler.name);
+    this.logger.info(
+      'Iniciando notificação de prazos de vencimento.',
+      PagamentoLiberacaoScheduler.name,
+    );
 
     try {
-      const resultado = await this.pagamentoWorkflowService.notificarPrazosVencimento();
-      
+      const resultado =
+        await this.pagamentoWorkflowService.notificarPrazosVencimento();
+
       this.logger.info(
         `Notificações de prazo enviadas. Total de notificações: ${resultado.length}`,
-        PagamentoLiberacaoScheduler.name, { notificacoes: resultado.length }
+        PagamentoLiberacaoScheduler.name,
+        { notificacoes: resultado.length },
       );
     } catch (error) {
       this.logger.error(
         'Erro ao enviar notificações de prazo de vencimento',
         error,
         PagamentoLiberacaoScheduler.name,
-        { stack: error.stack }
+        { stack: error.stack },
       );
     }
   }

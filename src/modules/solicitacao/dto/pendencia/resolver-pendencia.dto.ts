@@ -1,10 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsNotEmpty,
-  IsString,
-  IsOptional,
-  MaxLength,
-} from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, MaxLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { BaseDto } from '../../../../shared/dtos/base.dto';
 
@@ -14,17 +9,6 @@ import { BaseDto } from '../../../../shared/dtos/base.dto';
  * Utilizado para marcar uma pendência como resolvida
  */
 export class ResolverPendenciaDto extends BaseDto {
-  @ApiProperty({
-    description: 'Descrição da resolução da pendência',
-    example: 'Comprovante de residência atualizado foi apresentado e validado',
-    maxLength: 1000,
-  })
-  @IsNotEmpty({ message: 'Descrição da resolução é obrigatória' })
-  @IsString({ message: 'Resolução deve ser um texto' })
-  @MaxLength(1000, { message: 'Resolução não pode exceder 1000 caracteres' })
-  @Transform(({ value }) => value?.trim())
-  resolucao: string;
-
   @ApiPropertyOptional({
     description: 'Observações adicionais sobre a resolução',
     example: 'Documento validado pelo técnico responsável',

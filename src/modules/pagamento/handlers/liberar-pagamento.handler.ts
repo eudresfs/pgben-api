@@ -38,24 +38,30 @@ export class LiberarPagamentoHandler {
 
       // Se processamento assíncrono, adiciona à fila
       if (async) {
-        const job = await this.pagamentoQueueService.adicionarJobLiberarPagamento(
-          pagamentoId,
-          dadosLiberacao,
-          usuarioId,
-          10 // Prioridade máxima para liberação
-        );
+        const job =
+          await this.pagamentoQueueService.adicionarJobLiberarPagamento(
+            pagamentoId,
+            dadosLiberacao,
+            usuarioId,
+            10, // Prioridade máxima para liberação
+          );
 
         return { jobId: job.id.toString() };
       }
 
       // Processamento síncrono
-      const pagamento = await this.pagamentoWorkflowService.liberarPagamento(pagamentoId, usuarioId);
-      
+      const pagamento = await this.pagamentoWorkflowService.liberarPagamento(
+        pagamentoId,
+        usuarioId,
+      );
+
       this.logger.log(`Pagamento liberado com sucesso: ${pagamentoId}`);
       return pagamento;
-
     } catch (error) {
-      this.logger.error(`Erro ao executar liberação de pagamento: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao executar liberação de pagamento: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }

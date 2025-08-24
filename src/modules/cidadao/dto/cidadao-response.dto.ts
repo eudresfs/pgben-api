@@ -1,9 +1,224 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
 import { Sexo } from '../../../enums/sexo.enum';
-import { PapelCidadaoResponseDto } from './papel-cidadao-response.dto';
 import { ParentescoEnum } from '../../../enums/parentesco.enum';
 import { UnidadeResponseDto } from '@/modules/unidade/dto/unidade-response.dto';
+
+/**
+ * DTO de resposta para contatos do cidadão
+ */
+export class ContatoResponseDto {
+  @ApiProperty({
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'ID único do contato',
+  })
+  @Expose()
+  id: string;
+
+  @ApiProperty({
+    example: '11999998888',
+    description: 'Telefone no formato nacional',
+  })
+  @Expose()
+  telefone?: string;
+
+  @ApiProperty({
+    example: true,
+    description: 'Indica se o telefone é WhatsApp',
+  })
+  @Expose()
+  is_whatsapp?: boolean;
+
+  @ApiProperty({
+    example: true,
+    description: 'Indica se possui smartphone',
+  })
+  @Expose()
+  possui_smartphone?: boolean;
+
+  @ApiProperty({
+    example: 'email@exemplo.com',
+    description: 'Email de contato',
+  })
+  @Expose()
+  email?: string;
+
+  @ApiProperty({
+    example: '@usuario',
+    description: 'Instagram',
+  })
+  @Expose()
+  instagram?: string;
+
+  @ApiProperty({
+    example: 'usuario.facebook',
+    description: 'Facebook',
+  })
+  @Expose()
+  facebook?: string;
+
+  @ApiProperty({
+    example: true,
+    description: 'Se o contato pertence ao próprio beneficiário',
+  })
+  @Expose()
+  proprietario?: boolean;
+
+  @ApiProperty({
+    example: 'Maria Silva',
+    description: 'Nome do contato quando não é o próprio beneficiário',
+  })
+  @Expose()
+  nome_contato?: string;
+
+  @ApiProperty({
+    example: 'Mãe',
+    description: 'Grau de parentesco',
+  })
+  @Expose()
+  grau_parentesco?: string;
+
+  @ApiProperty({
+    example: '2023-01-01T00:00:00.000Z',
+    description: 'Data de criação do registro',
+  })
+  @Expose()
+  @Transform(({ value }) => {
+    if (value instanceof Date) {
+      return value.getTime();
+    }
+    return value;
+  })
+  created_at: string;
+
+  @ApiProperty({
+    example: '2023-01-01T00:00:00.000Z',
+    description: 'Data de atualização do registro',
+  })
+  @Expose()
+  @Transform(({ value }) => {
+    if (value instanceof Date) {
+      return value.getTime();
+    }
+    return value;
+  })
+  updated_at: string;
+}
+
+/**
+ * DTO de resposta para endereços do cidadão
+ */
+export class EnderecoResponseDto {
+  @ApiProperty({
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'ID único do endereço',
+  })
+  @Expose()
+  id: string;
+
+  @ApiProperty({
+    example: 'Rua das Flores',
+    description: 'Logradouro',
+  })
+  @Expose()
+  logradouro: string;
+
+  @ApiProperty({
+    example: '123',
+    description: 'Número',
+  })
+  @Expose()
+  numero: string;
+
+  @ApiProperty({
+    example: 'Apto 101',
+    description: 'Complemento',
+  })
+  @Expose()
+  complemento?: string;
+
+  @ApiProperty({
+    example: 'Centro',
+    description: 'Bairro',
+  })
+  @Expose()
+  bairro: string;
+
+  @ApiProperty({
+    example: 'São Paulo',
+    description: 'Cidade',
+  })
+  @Expose()
+  cidade: string;
+
+  @ApiProperty({
+    example: 'SP',
+    description: 'Estado (UF)',
+  })
+  @Expose()
+  estado: string;
+
+  @ApiProperty({
+    example: '01234567',
+    description: 'CEP',
+  })
+  @Expose()
+  cep: string;
+
+  @ApiProperty({
+    example: 'Próximo ao mercado',
+    description: 'Ponto de referência',
+  })
+  @Expose()
+  ponto_referencia?: string;
+
+  @ApiProperty({
+    example: 24,
+    description: 'Tempo de residência em meses',
+  })
+  @Expose()
+  tempo_de_residencia?: number;
+
+  @ApiProperty({
+    example: '2025-01-01',
+    description: 'Data de início da vigência',
+  })
+  @Expose()
+  data_inicio_vigencia: string;
+
+  @ApiProperty({
+    example: null,
+    description: 'Data de fim da vigência (null para endereço atual)',
+  })
+  @Expose()
+  data_fim_vigencia?: string | null;
+
+  @ApiProperty({
+    example: '2023-01-01T00:00:00.000Z',
+    description: 'Data de criação do registro',
+  })
+  @Expose()
+  @Transform(({ value }) => {
+    if (value instanceof Date) {
+      return value.getTime();
+    }
+    return value;
+  })
+  created_at: string;
+
+  @ApiProperty({
+    example: '2023-01-01T00:00:00.000Z',
+    description: 'Data de atualização do registro',
+  })
+  @Expose()
+  @Transform(({ value }) => {
+    if (value instanceof Date) {
+      return value.getTime();
+    }
+    return value;
+  })
+  updated_at: string;
+}
 
 export class CidadaoComposicaoFamiliarDto {
   @ApiProperty({
@@ -60,99 +275,6 @@ export class CidadaoComposicaoFamiliarDto {
   @ApiProperty({
     example: true,
     description: 'Indica se o membro está ativo',
-  })
-  @Expose()
-  ativo: boolean;
-
-  @ApiProperty({
-    example: '2023-01-01T00:00:00.000Z',
-    description: 'Data de criação do registro',
-  })
-  @Expose()
-  @Transform(({ value, obj }) => {
-    const dateValue = value || obj.created_at;
-    if (dateValue instanceof Date) {
-      return dateValue.getTime();
-    }
-    return dateValue;
-  })
-  created_at: string;
-
-  @ApiProperty({
-    example: '2023-01-01T00:00:00.000Z',
-    description: 'Data de atualização do registro',
-  })
-  @Expose()
-  @Transform(({ value, obj }) => {
-    const dateValue = value || obj.updated_at;
-    if (dateValue instanceof Date) {
-      return dateValue.getTime();
-    }
-    return dateValue;
-  })
-  updated_at: string;
-}
-
-export class EnderecoResponseDto {
-  @ApiProperty({
-    example: '550e8400-e29b-41d4-a716-446655440000',
-    description: 'ID único do endereço',
-  })
-  @Expose()
-  id: string;
-
-  @ApiProperty({
-    example: 'Rua das Flores',
-    description: 'Nome do logradouro',
-  })
-  @Expose()
-  logradouro: string;
-
-  @ApiProperty({
-    example: '123',
-    description: 'Número do endereço',
-  })
-  @Expose()
-  numero: string;
-
-  @ApiPropertyOptional({
-    example: 'Apto 45',
-    description: 'Complemento do endereço',
-  })
-  @Expose()
-  complemento?: string;
-
-  @ApiProperty({
-    example: 'Centro',
-    description: 'Nome do bairro',
-  })
-  @Expose()
-  bairro: string;
-
-  @ApiProperty({
-    example: 'São Paulo',
-    description: 'Nome da cidade',
-  })
-  @Expose()
-  cidade: string;
-
-  @ApiProperty({
-    example: 'SP',
-    description: 'Sigla do estado',
-  })
-  @Expose()
-  estado: string;
-
-  @ApiProperty({
-    example: '01234-567',
-    description: 'CEP do endereço',
-  })
-  @Expose()
-  cep: string;
-
-  @ApiProperty({
-    example: true,
-    description: 'Indica se o endereço está ativo',
   })
   @Expose()
   ativo: boolean;
@@ -347,68 +469,31 @@ export class CidadaoResponseDto {
   observacoes?: string;
 
   @ApiProperty({
-    example: '59000-000',
-    description: 'CEP do endereço',
+    type: [ContatoResponseDto],
+    description: 'Contatos do cidadão',
+    isArray: true,
   })
   @Expose()
-  @Transform(({ obj }) => obj.endereco?.cep || null)
-  cep: string;
-
-  @ApiProperty({
-    example: 'Rua das Flores',
-    description: 'Logradouro do endereço',
-  })
-  @Expose()
-  @Transform(({ obj }) => obj.endereco?.logradouro || null)
-  logradouro: string;
-
-  @ApiProperty({
-    example: '123',
-    description: 'Número do endereço',
-  })
-  @Expose()
-  @Transform(({ obj }) => obj.endereco?.numero || null)
-  numero: string;
-
-  @ApiProperty({
-    example: 'Apto 101',
-    description: 'Complemento do endereço',
-  })
-  @Expose()
-  @Transform(({ obj }) => obj.endereco?.complemento || null)
-  complemento: string;
-
-  @ApiProperty({
-    example: 'Centro',
-    description: 'Bairro do endereço',
-  })
-  @Expose()
-  @Transform(({ obj }) => obj.endereco?.bairro || null)
-  bairro: string;
-
-  @ApiProperty({
-    example: 'Natal',
-    description: 'Cidade do endereço',
-  })
-  @Expose()
-  @Transform(({ obj }) => obj.endereco?.cidade || null)
-  cidade: string;
-
-  @ApiProperty({
-    example: 'RN',
-    description: 'UF do endereço',
-  })
-  @Expose()
-  @Transform(({ obj }) => obj.endereco?.estado || obj.endereco?.uf || null)
-  uf: string;
+  @Type(() => ContatoResponseDto)
+  contatos: ContatoResponseDto[];
 
   @ApiProperty({
     type: EnderecoResponseDto,
-    description: 'Endereço do cidadão',
+    description: 'Endereço mais recente do cidadão',
+    required: false,
   })
-  @Expose()
+  @Expose({ name: 'enderecos' })
   @Type(() => EnderecoResponseDto)
-  endereco: EnderecoResponseDto;
+  @Transform(({ value }) => {
+    // Se value é um array, retorna o primeiro elemento
+    // Se value é um objeto, retorna ele mesmo
+    // Se value é null/undefined, retorna null
+    if (Array.isArray(value)) {
+      return value.length > 0 ? value[0] : null;
+    }
+    return value || null;
+  })
+  endereco?: EnderecoResponseDto;
 
   @ApiProperty({
     example: '550e8400-e29b-41d4-a716-446655440000',
@@ -453,14 +538,6 @@ export class CidadaoResponseDto {
   deleted_at?: Date;
 
   @ApiPropertyOptional({
-    type: [PapelCidadaoResponseDto],
-    description: 'Papéis que o cidadão possui no sistema',
-  })
-  @Expose()
-  @Type(() => PapelCidadaoResponseDto)
-  papeis?: PapelCidadaoResponseDto[];
-
-  @ApiPropertyOptional({
     type: [CidadaoComposicaoFamiliarDto],
     description: 'Composição familiar do cidadão',
   })
@@ -470,11 +547,20 @@ export class CidadaoResponseDto {
 
   @ApiPropertyOptional({
     description: 'Dados da unidade onde o cidadão está cadastrado',
-    type: UnidadeResponseDto
+    type: UnidadeResponseDto,
   })
   @Expose()
   @Type(() => UnidadeResponseDto)
-  unidade?: UnidadeResponseDto; 
+  unidade?: UnidadeResponseDto;
+
+  @ApiPropertyOptional({
+    example: false,
+    description:
+      'Indica se o cidadão foi encontrado através do CPF de um membro da composição familiar',
+    type: 'boolean',
+  })
+  @Expose()
+  encontrado_por_composicao_familiar?: boolean;
 }
 
 export class CidadaoPaginatedResponseDto {

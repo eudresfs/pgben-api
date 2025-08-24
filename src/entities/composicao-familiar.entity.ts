@@ -23,7 +23,7 @@ import { Cidadao } from './cidadao.entity';
 import { EscolaridadeEnum } from '../enums/escolaridade.enum';
 import { CPFValidator } from '../modules/cidadao/validators/cpf-validator';
 import { ParentescoEnum } from '../enums/parentesco.enum';
-import { IsNIS } from '@/shared/validators/br-validators';
+import { IsNIS } from '../shared/validators/br-validators';
 
 @Entity('composicao_familiar')
 @Index(['cidadao_id', 'nome'], { unique: true })
@@ -205,10 +205,18 @@ export class ComposicaoFamiliar {
    * Obtém a faixa etária
    */
   getFaixaEtaria(): string {
-    if (this.isCrianca()) {return 'Criança';}
-    if (this.isAdolescente()) {return 'Adolescente';}
-    if (this.isAdulto()) {return 'Adulto';}
-    if (this.isIdoso()) {return 'Idoso';}
+    if (this.isCrianca()) {
+      return 'Criança';
+    }
+    if (this.isAdolescente()) {
+      return 'Adolescente';
+    }
+    if (this.isAdulto()) {
+      return 'Adulto';
+    }
+    if (this.isIdoso()) {
+      return 'Idoso';
+    }
     return 'Indefinido';
   }
 
@@ -223,7 +231,9 @@ export class ComposicaoFamiliar {
    * Obtém a renda formatada
    */
   getRendaFormatada(): string {
-    if (!this.temRenda()) {return 'Sem renda';}
+    if (!this.temRenda()) {
+      return 'Sem renda';
+    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -347,19 +357,29 @@ export class ComposicaoFamiliar {
    */
   isConsistente(): boolean {
     // Verifica se tem cidadão
-    if (!this.cidadao_id) {return false;}
+    if (!this.cidadao_id) {
+      return false;
+    }
 
     // Verifica se tem nome
-    if (!this.nome || !this.nome.trim()) {return false;}
+    if (!this.nome || !this.nome.trim()) {
+      return false;
+    }
 
     // Verifica se tem CPF
-    if (!this.cpf || !this.cpf.trim()) {return false;}
+    if (!this.cpf || !this.cpf.trim()) {
+      return false;
+    }
 
     // Verifica se a idade é válida
-    if (this.idade < 0 || this.idade > 150) {return false;}
+    if (this.idade < 0 || this.idade > 150) {
+      return false;
+    }
 
     // Verifica se tem ocupação
-    if (!this.ocupacao || !this.ocupacao.trim()) {return false;}
+    if (!this.ocupacao || !this.ocupacao.trim()) {
+      return false;
+    }
 
     // Se tem renda, deve ser positiva
     if (this.renda !== null && this.renda !== undefined && this.renda < 0) {
@@ -374,7 +394,9 @@ export class ComposicaoFamiliar {
    */
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
-    if (this.foiRemovido()) {return false;}
+    if (this.foiRemovido()) {
+      return false;
+    }
 
     // Outras validações específicas podem ser adicionadas
     return true;
@@ -416,7 +438,9 @@ export class ComposicaoFamiliar {
    * Obtém o CPF formatado
    */
   getCpfFormatado(): string {
-    if (!this.cpf) {return '';}
+    if (!this.cpf) {
+      return '';
+    }
     const cpfLimpo = this.cpf.replace(/\D/g, '');
     return cpfLimpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   }

@@ -5,7 +5,7 @@ import * as zlib from 'zlib';
 
 /**
  * Middleware de compressão otimizado
- * 
+ *
  * Este middleware aplica compressão gzip/deflate nas responses HTTP
  * para reduzir o tamanho dos dados transferidos e melhorar a performance.
  */
@@ -19,7 +19,7 @@ export class CompressionMiddleware implements NestMiddleware {
       // Configurações otimizadas de compressão
       level: zlib.constants.Z_BEST_COMPRESSION, // Máxima compressão
       threshold: 1024, // Comprimir apenas responses > 1KB
-      
+
       // Filtro para determinar quais responses comprimir
       filter: (req: Request, res: Response) => {
         // Não comprimir se o cliente não suporta
@@ -44,8 +44,8 @@ export class CompressionMiddleware implements NestMiddleware {
             'application/x-rar',
             'application/pdf',
           ];
-          
-          if (skipTypes.some(type => contentType.includes(type))) {
+
+          if (skipTypes.some((type) => contentType.includes(type))) {
             return false;
           }
         }
@@ -62,7 +62,10 @@ export class CompressionMiddleware implements NestMiddleware {
           'text/plain',
         ];
 
-        return contentType && compressibleTypes.some(type => contentType.includes(type));
+        return (
+          contentType &&
+          compressibleTypes.some((type) => contentType.includes(type))
+        );
       },
 
       // Configurações específicas do gzip
@@ -75,29 +78,33 @@ export class CompressionMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction): void {
     // Adicionar headers de performance
     res.setHeader('X-Compression', 'enabled');
-    
+
     // Interceptar o método end para logging
     const originalEnd = res.end;
     const startTime = Date.now();
     let originalSize = 0;
-    
-    res.end = function(chunk?: any, encoding?: any) {
+
+    res.end = function (chunk?: any, encoding?: any) {
       if (chunk) {
-        originalSize = Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(chunk, encoding);
+        originalSize = Buffer.isBuffer(chunk)
+          ? chunk.length
+          : Buffer.byteLength(chunk, encoding);
       }
-      
+
       const endTime = Date.now();
       const processingTime = endTime - startTime;
-      
+
       // Log de performance
       if (process.env.NODE_ENV === 'development') {
-        const compressionRatio = res.getHeader('content-encoding') ? 
-          `${Math.round((1 - (parseInt(res.getHeader('content-length') as string || '0') / originalSize)) * 100)}%` : 
-          'none';
-        
-        console.log(`[Compression] ${req.method} ${req.path} - ${processingTime}ms - Compression: ${compressionRatio}`);
+        const compressionRatio = res.getHeader('content-encoding')
+          ? `${Math.round((1 - parseInt((res.getHeader('content-length') as string) || '0') / originalSize) * 100)}%`
+          : 'none';
+
+        console.log(
+          `[Compression] ${req.method} ${req.path} - ${processingTime}ms - Compression: ${compressionRatio}`,
+        );
       }
-      
+
       return originalEnd.call(this, chunk, encoding);
     };
 
@@ -118,13 +125,16 @@ export class HttpOptimizationMiddleware implements NestMiddleware {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
-    
+
     // Headers de cache para recursos estáticos
     if (this.isStaticResource(req.path)) {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // 1 ano
-      res.setHeader('Expires', new Date(Date.now() + 31536000000).toUTCString());
+      res.setHeader(
+        'Expires',
+        new Date(Date.now() + 31536000000).toUTCString(),
+      );
     }
-    
+
     // Headers de API
     if (req.path.startsWith('/api/')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -140,8 +150,19 @@ export class HttpOptimizationMiddleware implements NestMiddleware {
   }
 
   private isStaticResource(path: string): boolean {
-    const staticExtensions = ['.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2'];
-    return staticExtensions.some(ext => path.endsWith(ext));
+    const staticExtensions = [
+      '.css',
+      '.js',
+      '.png',
+      '.jpg',
+      '.jpeg',
+      '.gif',
+      '.svg',
+      '.ico',
+      '.woff',
+      '.woff2',
+    ];
+    return staticExtensions.some((ext) => path.endsWith(ext));
   }
 }
 
@@ -159,7 +180,10 @@ export class PerformanceMonitoringMiddleware implements NestMiddleware {
     const endpoint = `${req.method} ${req.route?.path || req.path}`;
 
     // Incrementar contador de requisições
-    this.requestCounts.set(endpoint, (this.requestCounts.get(endpoint) || 0) + 1);
+    this.requestCounts.set(
+      endpoint,
+      (this.requestCounts.get(endpoint) || 0) + 1,
+    );
 
     // Interceptar o fim da response
     const originalEnd = res.end;
@@ -173,15 +197,18 @@ export class PerformanceMonitoringMiddleware implements NestMiddleware {
       }
       const times = this.responseTimes.get(endpoint)!;
       times.push(responseTime);
-      
+
       // Manter apenas os últimos 100 tempos
       if (times.length > 100) {
         times.shift();
       }
 
       // Log de performance para requests lentas
-      if (responseTime > 1000) { // > 1 segundo
-        this.logger.warn(`Slow request detected: ${endpoint} - ${responseTime.toFixed(2)}ms`);
+      if (responseTime > 1000) {
+        // > 1 segundo
+        this.logger.warn(
+          `Slow request detected: ${endpoint} - ${responseTime.toFixed(2)}ms`,
+        );
       }
 
       // Adicionar header de tempo de resposta
@@ -204,7 +231,8 @@ export class PerformanceMonitoringMiddleware implements NestMiddleware {
 
     for (const [endpoint, count] of this.requestCounts.entries()) {
       const times = this.responseTimes.get(endpoint) || [];
-      const avgTime = times.length > 0 ? times.reduce((a, b) => a + b, 0) / times.length : 0;
+      const avgTime =
+        times.length > 0 ? times.reduce((a, b) => a + b, 0) / times.length : 0;
       const maxTime = times.length > 0 ? Math.max(...times) : 0;
       const minTime = times.length > 0 ? Math.min(...times) : 0;
 

@@ -203,7 +203,9 @@ describe('HealthController', () => {
       expect(result).toHaveProperty('status', 'ok');
       expect(result).toHaveProperty('timestamp');
       expect(result).toHaveProperty('version');
-      expect(mockUnifiedLoggerService.debug).toHaveBeenCalledWith('Liveness check');
+      expect(mockUnifiedLoggerService.debug).toHaveBeenCalledWith(
+        'Liveness check',
+      );
     });
 
     it('deve retornar timestamp como Date object', () => {
@@ -228,7 +230,7 @@ describe('HealthController', () => {
 
       mockHealthCheckService.check.mockResolvedValue(mockHealthCheckResult);
       mockAppHealthCheckService.isRedisAvailable.mockResolvedValue(false);
-      
+
       // Mock da variável de ambiente
       process.env.DISABLE_REDIS = 'true';
 
@@ -236,8 +238,10 @@ describe('HealthController', () => {
 
       expect(result).toEqual(mockHealthCheckResult);
       expect(mockHealthCheckService.check).toHaveBeenCalled();
-      expect(mockUnifiedLoggerService.debug).toHaveBeenCalledWith('Readiness check iniciado');
-      
+      expect(mockUnifiedLoggerService.debug).toHaveBeenCalledWith(
+        'Readiness check iniciado',
+      );
+
       // Limpar mock da variável de ambiente
       delete process.env.DISABLE_REDIS;
     });
@@ -279,8 +283,10 @@ describe('HealthController', () => {
 
       expect(result.status).toBe('disabled');
       expect(result.info.redis.status).toBe('disabled');
-      expect(result.info.redis.message).toBe('Redis desabilitado por configuração');
-      
+      expect(result.info.redis.message).toBe(
+        'Redis desabilitado por configuração',
+      );
+
       delete process.env.DISABLE_REDIS;
     });
   });

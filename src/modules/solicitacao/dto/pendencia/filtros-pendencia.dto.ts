@@ -7,12 +7,15 @@ import {
   IsString,
   IsArray,
   ArrayNotEmpty,
-  IsBoolean
+  IsBoolean,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { StatusPendencia } from '../../../../entities/pendencia.entity';
 import { BaseFilterDto } from '../../../../shared/dtos/base-filter.dto';
-import { TransformEmptyUuid, TransformEmptyString } from '../../../../shared/decorators/transform-empty-string.decorator';
+import {
+  TransformEmptyUuid,
+  TransformEmptyString,
+} from '../../../../shared/decorators/transform-empty-string.decorator';
 
 /**
  * DTO para filtros de busca de pendências
@@ -47,13 +50,19 @@ export class FiltrosPendenciaDto extends BaseFilterDto {
   @IsOptional()
   @Transform(({ value }) => {
     if (typeof value === 'string') {
-      return value.split(',').map(item => item.trim()).filter(item => item.length > 0);
+      return value
+        .split(',')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0);
     }
     return Array.isArray(value) ? value : [];
   })
   @IsArray({ message: 'Status deve ser um array' })
   @ArrayNotEmpty({ message: 'Array de status não pode estar vazio' })
-  @IsEnum(StatusPendencia, { each: true, message: 'Cada status deve ser um valor válido' })
+  @IsEnum(StatusPendencia, {
+    each: true,
+    message: 'Cada status deve ser um valor válido',
+  })
   status_list?: StatusPendencia[];
 
   @ApiPropertyOptional({
@@ -81,7 +90,10 @@ export class FiltrosPendenciaDto extends BaseFilterDto {
     format: 'date',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Data inicial deve ser uma data válida no formato ISO 8601' })
+  @IsDateString(
+    {},
+    { message: 'Data inicial deve ser uma data válida no formato ISO 8601' },
+  )
   data_criacao_inicio?: string;
 
   @ApiPropertyOptional({
@@ -91,7 +103,10 @@ export class FiltrosPendenciaDto extends BaseFilterDto {
     format: 'date',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Data final deve ser uma data válida no formato ISO 8601' })
+  @IsDateString(
+    {},
+    { message: 'Data final deve ser uma data válida no formato ISO 8601' },
+  )
   data_criacao_fim?: string;
 
   @ApiPropertyOptional({
@@ -101,7 +116,10 @@ export class FiltrosPendenciaDto extends BaseFilterDto {
     format: 'date',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Data inicial deve ser uma data válida no formato ISO 8601' })
+  @IsDateString(
+    {},
+    { message: 'Data inicial deve ser uma data válida no formato ISO 8601' },
+  )
   data_resolucao_inicio?: string;
 
   @ApiPropertyOptional({
@@ -111,7 +129,10 @@ export class FiltrosPendenciaDto extends BaseFilterDto {
     format: 'date',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Data final deve ser uma data válida no formato ISO 8601' })
+  @IsDateString(
+    {},
+    { message: 'Data final deve ser uma data válida no formato ISO 8601' },
+  )
   data_resolucao_fim?: string;
 
   @ApiPropertyOptional({
@@ -121,7 +142,10 @@ export class FiltrosPendenciaDto extends BaseFilterDto {
     format: 'date',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Data inicial deve ser uma data válida no formato ISO 8601' })
+  @IsDateString(
+    {},
+    { message: 'Data inicial deve ser uma data válida no formato ISO 8601' },
+  )
   prazo_resolucao_inicio?: string;
 
   @ApiPropertyOptional({
@@ -131,7 +155,10 @@ export class FiltrosPendenciaDto extends BaseFilterDto {
     format: 'date',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Data final deve ser uma data válida no formato ISO 8601' })
+  @IsDateString(
+    {},
+    { message: 'Data final deve ser uma data válida no formato ISO 8601' },
+  )
   prazo_resolucao_fim?: string;
 
   @ApiPropertyOptional({
@@ -158,7 +185,8 @@ export class FiltrosPendenciaDto extends BaseFilterDto {
   apenas_vencidas?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Filtrar apenas pendências próximas do vencimento (próximos 7 dias)',
+    description:
+      'Filtrar apenas pendências próximas do vencimento (próximos 7 dias)',
     example: true,
   })
   @IsOptional()

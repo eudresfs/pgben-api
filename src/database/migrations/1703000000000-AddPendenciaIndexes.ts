@@ -6,15 +6,15 @@ export class AddPendenciaIndexes1749330812428 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Adicionar índices para otimizar consultas de pendências
     await queryRunner.query(
-      `CREATE INDEX "IDX_pendencia_status_prazo" ON "pendencias" ("status", "prazo_resolucao")`
+      `CREATE INDEX "IDX_pendencia_status_prazo" ON "pendencias" ("status", "prazo_resolucao")`,
     );
-    
+
     await queryRunner.query(
-      `CREATE INDEX "IDX_pendencia_registrado_por" ON "pendencias" ("registrado_por_id")`
+      `CREATE INDEX "IDX_pendencia_registrado_por" ON "pendencias" ("registrado_por_id")`,
     );
-    
+
     await queryRunner.query(
-      `CREATE INDEX "IDX_pendencia_status_created" ON "pendencias" ("status", "created_at")`
+      `CREATE INDEX "IDX_pendencia_status_created" ON "pendencias" ("status", "created_at")`,
     );
   }
 

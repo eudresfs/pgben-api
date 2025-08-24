@@ -50,11 +50,11 @@ export class DadosSociaisController {
       cidadaoId,
       createDadosSociaisDto,
     );
-    
+
     if (!dadosSociais) {
       return null; // Retorna null para 204 No Content (cidadão não existe)
     }
-    
+
     return plainToInstance(DadosSociaisResponseDto, dadosSociais, {
       excludeExtraneousValues: true,
     });
@@ -69,12 +69,13 @@ export class DadosSociaisController {
   async findByCidadaoId(
     @Param('id', ParseUUIDPipe) cidadaoId: string,
   ): Promise<DadosSociaisResponseDto | null> {
-    const dadosSociais = await this.dadosSociaisService.findByCidadaoId(cidadaoId);
-    
+    const dadosSociais =
+      await this.dadosSociaisService.findByCidadaoId(cidadaoId);
+
     if (!dadosSociais) {
       return null; // Retorna null para 204 No Content
     }
-    
+
     return plainToInstance(DadosSociaisResponseDto, dadosSociais, {
       excludeExtraneousValues: true,
     });
@@ -95,11 +96,11 @@ export class DadosSociaisController {
       cidadaoId,
       updateDadosSociaisDto,
     );
-    
+
     if (!dadosSociais) {
       return null; // Retorna null para 204 No Content
     }
-    
+
     return plainToInstance(DadosSociaisResponseDto, dadosSociais, {
       excludeExtraneousValues: true,
     });
@@ -110,7 +111,10 @@ export class DadosSociaisController {
   @RequiresPermission({ permissionName: 'cidadao:dados-sociais:delete' })
   @ApiOperation({ summary: 'Remover dados sociais de um cidadão' })
   @ApiParam({ name: 'id', description: 'ID do cidadão' })
-  @ApiResponse({ status: 204, description: 'Dados sociais removidos ou não existiam' })
+  @ApiResponse({
+    status: 204,
+    description: 'Dados sociais removidos ou não existiam',
+  })
   async remove(@Param('id', ParseUUIDPipe) cidadaoId: string): Promise<void> {
     await this.dadosSociaisService.remove(cidadaoId);
     // Sempre retorna 204, independente se encontrou ou não

@@ -21,7 +21,19 @@ import { QueryLogAuditoriaDto } from '../dto/query-log-auditoria.dto';
  */
 @Injectable()
 export class AuditoriaService {
-  registrarAuditoria(arg0: { usuario_id: null; acao: string; recurso: string; recurso_id: any; detalhes: { token_value: string; is_valid: boolean; validation_errors: any; }; ip_address: string | undefined; user_agent: string | undefined; }) {
+  registrarAuditoria(arg0: {
+    usuario_id: null;
+    acao: string;
+    recurso: string;
+    recurso_id: any;
+    detalhes: {
+      token_value: string;
+      is_valid: boolean;
+      validation_errors: any;
+    };
+    ip_address: string | undefined;
+    user_agent: string | undefined;
+  }) {
     throw new Error('Method not implemented.');
   }
   constructor(
@@ -41,6 +53,19 @@ export class AuditoriaService {
       createLogAuditoriaDto,
     );
     return this.logAuditoriaRepository.save(logAuditoria);
+  }
+
+  /**
+   * Alias para o método create para compatibilidade
+   * @param data Dados para criação do log (objeto literal ou DTO)
+   * @returns Promise com o log criado
+   */
+  async registrar(data: Partial<CreateLogAuditoriaDto>): Promise<LogAuditoria> {
+    // Cria uma instância do DTO a partir dos dados fornecidos
+    const dto = new CreateLogAuditoriaDto();
+    Object.assign(dto, data);
+    
+    return this.create(dto);
   }
 
   /**

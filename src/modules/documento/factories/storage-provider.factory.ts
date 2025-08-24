@@ -7,6 +7,7 @@ import {
 import { S3StorageAdapter } from '../adapters/s3-storage.adapter';
 import { LocalStorageAdapter } from '../adapters/local-storage.adapter';
 import { MinioService } from '../../../shared/services/minio.service';
+import { normalizeEnumValue } from '../../../shared/utils/enum-normalizer.util';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -27,10 +28,26 @@ export class StorageProviderFactory {
     private readonly localStorageAdapter: LocalStorageAdapter,
     private readonly minioService: MinioService,
   ) {
-    this.defaultProvider = this.configService.get<TipoStorageProvider>(
+    // Obter e normalizar o valor do provedor de armazenamento
+    const storageProviderValue = this.configService.get<string>(
       'STORAGE_PROVIDER',
-      TipoStorageProvider.MINIO,
+      'minio',
     );
+
+    // Normalizar o valor para lowercase para compatibilidade com o enum
+    const normalizedValue = normalizeEnumValue(
+      storageProviderValue,
+    ) as TipoStorageProvider;
+
+    // Validar se o valor normalizado é um valor válido do enum
+    if (Object.values(TipoStorageProvider).includes(normalizedValue)) {
+      this.defaultProvider = normalizedValue;
+    } else {
+      this.logger.warn(
+        `Valor de STORAGE_PROVIDER inválido: ${storageProviderValue}. Usando padrão: ${TipoStorageProvider.MINIO}`,
+      );
+      this.defaultProvider = TipoStorageProvider.MINIO;
+    }
 
     this.logger.log(
       `Provedor de armazenamento padrão: ${this.defaultProvider}`,
@@ -119,25 +136,39 @@ export class StorageProviderFactory {
         mimetype: string,
         metadados?: Record<string, any>,
       ): Promise<string> => {
-        // Extrair solicitação ID e tipo de documento dos metadados, se disponíveis
-        const solicitacaoId = metadados?.solicitacaoId || 'default';
+        // Usar o novo método uploadArquivoHierarquico do MinioService
+        const nomeOriginal = nomeArquivo.split('/').pop() || nomeArquivo;
         const tipoDocumento = metadados?.tipoDocumento || 'OUTRO';
 
-        // Fazer upload usando o MinioService
-        const resultado = await this.minioService.uploadArquivo(
+        return await this.minioService.uploadArquivoHierarquico(
           buffer,
           nomeArquivo,
-          solicitacaoId,
+          nomeOriginal,
+          mimetype,
           tipoDocumento,
         );
-
-        return resultado.nomeArquivo;
       },
 
       obterArquivo: async (caminho: string): Promise<Buffer> => {
         // Fazer download usando o MinioService
         const resultado = await this.minioService.downloadArquivo(caminho);
         return resultado.arquivo;
+      },
+
+      obterArquivoStream: async (caminho: string): Promise<any> => {
+        // Obter stream diretamente do MinIO sem carregar na memória
+        try {
+          const stream = await this.minioService.getObjectStream(caminho);
+          return stream;
+        } catch (error) {
+          // Fallback para o método tradicional se getObjectStream não existir
+          this.logger.warn(
+            `Método getObjectStream não disponível, usando fallback para: ${caminho}`,
+          );
+          const resultado = await this.minioService.downloadArquivo(caminho);
+          const { Readable } = require('stream');
+          return Readable.from(resultado.arquivo);
+        }
       },
 
       removerArquivo: async (caminho: string): Promise<void> => {

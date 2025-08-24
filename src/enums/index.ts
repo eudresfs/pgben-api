@@ -15,6 +15,7 @@ export { SituacaoTrabalhoEnum } from './situacao-trabalho.enum';
 export { TipoBeneficio } from './tipo-beneficio.enum';
 export { StatusSolicitacao } from './status-solicitacao.enum';
 export { TipoUrnaEnum } from './tipo-urna.enum';
+export { TransladoEnum } from './translado.enum';
 export { PublicoPrioritarioAluguel } from './publico-prioritario-aluguel.enum';
 export { EspecificacaoAluguel } from './especificacao-aluguel.enum';
 export { OrigemAtendimentoEnum } from './origem-atendimento.enum';
@@ -48,11 +49,16 @@ export { IntegracaoTipoEnum } from './integracao-tipo.enum';
 
 // Enums de dados e tipos
 export { TipoDado } from './tipo-dado.enum';
-export { TipoPapel, type PaperType, ALL_PAPERS } from './tipo-papel.enum';
-
-// Enums de documentos
+export { TipoArquivo } from './tipo-arquivo.enum';
 export { TipoDocumentoEnum } from './tipo-documento.enum';
+export { TipoContextoNatalidade } from './tipo-contexto-natalidade.enum';
 
-// Enums de usuário e permissões
+// Enums de monitoramento e visitas domiciliares
+export { StatusAgendamento, STATUS_AGENDAMENTO_LABELS, STATUS_AGENDAMENTO_ATIVOS, STATUS_AGENDAMENTO_FINALIZADOS, isStatusAgendamentoAtivo, isStatusAgendamentoFinalizado, getStatusAgendamentoLabel } from './status-agendamento.enum';
+export { TipoVisita, TIPO_VISITA_LABELS, TIPO_VISITA_DESCRICOES, TIPOS_VISITA_PRIORITARIOS, TIPOS_VISITA_OBRIGATORIOS, isTipoVisitaPrioritario, isTipoVisitaObrigatorio, getTipoVisitaLabel } from './tipo-visita.enum';
+export { ResultadoVisita, RESULTADO_VISITA_LABELS, RESULTADO_VISITA_DESCRICOES, RESULTADOS_CONFORMES, RESULTADOS_NAO_CONFORMES, RESULTADOS_VISITA_NAO_REALIZADA, RESULTADOS_REQUEREM_REAGENDAMENTO, isResultadoConforme, isResultadoNaoConforme, isVisitaNaoRealizada, requerReagendamento } from './resultado-visita.enum';
+export { PrioridadeVisita, PRIORIDADE_VISITA_LABELS, PRIORIDADE_VISITA_DESCRICOES, PRIORIDADE_VISITA_VALORES, PRIORIDADE_VISITA_CORES, PRIORIDADE_VISITA_PRAZOS, PRIORIDADES_NOTIFICACAO_IMEDIATA, getValorPrioridade, getPrazoPrioridade, requerNotificacaoImediata, compararPrioridades, getCorPrioridade, getPrioridadeVisitaLabel, getPrioridadeVisitaCor, getPrioridadeVisitaPrazo } from './prioridade-visita.enum';
+
+// Enums de segurança e usuários
 export { Role } from './role.enum';
 export { Role as UserRole } from './role.enum';

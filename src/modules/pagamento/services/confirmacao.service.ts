@@ -45,24 +45,31 @@ export class ConfirmacaoService {
 
     const pagamento = await this.pagamentoRepository.findById(pagamentoId);
     PagamentoValidationUtil.validarExistencia(pagamento, pagamentoId);
-    
+
     if (!pagamento) {
-      throw new NotFoundException(`Pagamento com ID ${pagamentoId} não encontrado`);
+      throw new NotFoundException(
+        `Pagamento com ID ${pagamentoId} não encontrado`,
+      );
     }
-    
+
     PagamentoValidationUtil.validarParaConfirmacao(pagamento);
     await this.verificarConfirmacaoExistente(pagamentoId);
 
     // Preparar dados
-    const dadosConfirmacao = ConfirmacaoMapper.fromCreateDto(createDto, pagamentoId, usuarioId);
+    const dadosConfirmacao = ConfirmacaoMapper.fromCreateDto(
+      createDto,
+      pagamentoId,
+      usuarioId,
+    );
 
     // Transação mínima - apenas inserção
-    const confirmacao = await this.confirmacaoRepository.create(dadosConfirmacao);
+    const confirmacao =
+      await this.confirmacaoRepository.create(dadosConfirmacao);
 
     // Atualizar status do pagamento para confirmado (reutilizando pagamento já buscado)
     await this.pagamentoRepository.update(pagamento.id, {
       status: StatusPagamentoEnum.CONFIRMADO,
-      dataConclusao: new Date(),
+      data_conclusao: new Date(),
     });
 
     this.logger.log(`Confirmação ${confirmacao.id} criada com sucesso`);
@@ -74,11 +81,11 @@ export class ConfirmacaoService {
    */
   async findById(id: string): Promise<ConfirmacaoRecebimento> {
     const confirmacao = await this.confirmacaoRepository.findById(id);
-    
+
     if (!confirmacao) {
       throw new NotFoundException('Confirmação não encontrada');
     }
-    
+
     return confirmacao;
   }
 
@@ -86,25 +93,30 @@ export class ConfirmacaoService {
    * Busca confirmação por ID com relacionamentos
    */
   async findByIdWithRelations(id: string): Promise<ConfirmacaoRecebimento> {
-    const confirmacao = await this.confirmacaoRepository.findByIdWithRelations(id, [
-      'pagamento',
-      'pagamento.solicitacao',
-      'pagamento.solicitacao.beneficiario',
-      'usuario',
-      'destinatario'
-    ]);
-    
+    const confirmacao = await this.confirmacaoRepository.findByIdWithRelations(
+      id,
+      [
+        'pagamento',
+        'pagamento.solicitacao',
+        'pagamento.solicitacao.beneficiario',
+        'usuario',
+        'destinatario',
+      ],
+    );
+
     if (!confirmacao) {
       throw new NotFoundException('Confirmação não encontrada');
     }
-    
+
     return confirmacao;
   }
 
   /**
    * Busca confirmações de um pagamento
    */
-  async findByPagamento(pagamentoId: string): Promise<ConfirmacaoRecebimento[]> {
+  async findByPagamento(
+    pagamentoId: string,
+  ): Promise<ConfirmacaoRecebimento[]> {
     // Validar se pagamento existe
     const pagamento = await this.pagamentoRepository.findById(pagamentoId);
     if (!pagamento) {
@@ -148,13 +160,15 @@ export class ConfirmacaoService {
     dataLimite.setDate(dataLimite.getDate() - diasLimite);
 
     if (confirmacao.created_at < dataLimite) {
-      throw new BadRequestException(`Não é possível remover confirmação criada há mais de ${diasLimite} dias`);
+      throw new BadRequestException(
+        `Não é possível remover confirmação criada há mais de ${diasLimite} dias`,
+      );
     }
 
     // Reverter status do pagamento
     await this.pagamentoRepository.update(confirmacao.pagamento_id, {
       status: StatusPagamentoEnum.LIBERADO,
-      dataConclusao: undefined,
+      data_conclusao: undefined,
     });
 
     // Adicionar observação sobre remoção
@@ -170,11 +184,16 @@ export class ConfirmacaoService {
   /**
    * Verifica se já existe confirmação para o pagamento
    */
-  private async verificarConfirmacaoExistente(pagamentoId: string): Promise<void> {
-    const existeConfirmacao = await this.confirmacaoRepository.hasConfirmacao(pagamentoId);
-    
+  private async verificarConfirmacaoExistente(
+    pagamentoId: string,
+  ): Promise<void> {
+    const existeConfirmacao =
+      await this.confirmacaoRepository.hasConfirmacao(pagamentoId);
+
     if (existeConfirmacao) {
-      throw new ConflictException('Este pagamento já possui confirmação de recebimento');
+      throw new ConflictException(
+        'Este pagamento já possui confirmação de recebimento',
+      );
     }
   }
 }

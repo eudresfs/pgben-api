@@ -25,7 +25,9 @@ export class AddParcelasPagamento1750293026058 implements MigrationInterface {
     // Verificar se as colunas já existem antes de adicionar
     const tableExists = await queryRunner.hasTable('pagamento');
     if (!tableExists) {
-      throw new Error('Tabela pagamento não encontrada. Execute as migrations anteriores primeiro.');
+      throw new Error(
+        'Tabela pagamento não encontrada. Execute as migrations anteriores primeiro.',
+      );
     }
 
     // Adicionar as novas colunas à tabela pagamento

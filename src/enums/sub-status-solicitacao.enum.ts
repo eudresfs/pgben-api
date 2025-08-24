@@ -1,7 +1,7 @@
 /**
  * Enum que define os possíveis sub-status de uma solicitação de benefício
  * Sub-status detalha o ponto exato dentro do fluxo do estado principal
- * 
+ *
  * Sub-status por estado:
  * - ABERTA: aguardando_dados, aguardando_parecer_tecnico
  * - PENDENTE: aguardando_solucao, pendencias_resolvidas

@@ -19,6 +19,7 @@ import {
   ApiConsumes,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -32,6 +33,7 @@ import { Usuario } from '../../../entities';
 import { ComprovanteService } from '../services/comprovante.service';
 import { ComprovanteUploadDto } from '../dtos/comprovante-upload.dto';
 import { ComprovanteResponseDto } from '../dtos/comprovante-response.dto';
+import { GerarComprovanteDto, ComprovanteGeradoDto } from '../dtos/gerar-comprovante.dto';
 import { DataMaskingResponseInterceptor } from '../interceptors/data-masking-response.interceptor';
 
 /**
@@ -61,11 +63,11 @@ export class ComprovanteController {
     type: [ComprovanteResponseDto],
   })
   @RequiresPermission({
-    permissionName: 'pagamento.visualizar',
-    scopeType: TipoEscopo.UNIDADE
+    permissionName: 'pagamento.visualizar'
   })
   async findAll(@Param('pagamentoId', ParseUUIDPipe) pagamentoId: string) {
-    const comprovantes = await this.comprovanteService.findByPagamento(pagamentoId);
+    const comprovantes =
+      await this.comprovanteService.findByPagamento(pagamentoId);
 
     return {
       data: comprovantes.map(this.mapToResponseDto),
@@ -94,8 +96,7 @@ export class ComprovanteController {
     type: ComprovanteResponseDto,
   })
   @RequiresPermission({
-    permissionName: 'pagamento.editar',
-    scopeType: TipoEscopo.UNIDADE
+    permissionName: 'pagamento.comprovante.upload',
   })
   async upload(
     @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string,
@@ -104,9 +105,9 @@ export class ComprovanteController {
     @GetUser() usuario: Usuario,
   ) {
     const comprovante = await this.comprovanteService.upload(
-      arquivo,
       pagamentoId,
-      uploadDto.tipoDocumento,
+      arquivo,
+      uploadDto,
       usuario.id,
     );
 
@@ -114,6 +115,77 @@ export class ComprovanteController {
       data: this.mapToResponseDto(comprovante),
       message: 'Comprovante enviado com sucesso',
     };
+  }
+
+  /**
+   * Gera comprovante em PDF pré-preenchido
+   */
+  @Get('gerar-comprovante')
+  @ApiOperation({ 
+    summary: 'Gera comprovante em PDF pré-preenchido',
+    description: 'Gera um comprovante em PDF com dados pré-preenchidos do pagamento para assinatura. Quando formato=pdf, retorna o arquivo para download direto.'
+  })
+  @ApiParam({
+    name: 'pagamentoId',
+    type: 'string',
+    description: 'ID do pagamento',
+  })
+  @ApiQuery({
+    name: 'formato',
+    enum: ['pdf', 'base64'],
+    description: 'Formato de retorno do comprovante. pdf=download direto, base64=metadados com conteúdo codificado',
+    required: false,
+    example: 'pdf',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Comprovante PDF gerado com sucesso',
+    content: {
+      'application/pdf': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+      'application/json': {
+        schema: {
+          $ref: '#/components/schemas/ComprovanteGeradoDto',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Pagamento não encontrado',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dados obrigatórios ausentes ou inválidos',
+  })
+  @RequiresPermission({
+    permissionName: 'pagamento.visualizar',
+  })
+  async gerarComprovante(
+    @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string,
+    @Query() query: GerarComprovanteDto,
+    @Res() res?: Response,
+  ): Promise<ComprovanteGeradoDto | void> {
+    const resultado = await this.comprovanteService.gerarComprovantePdf(pagamentoId, query);
+    
+    // Se formato for 'pdf' (padrão), retorna arquivo para download
+    if (!query.formato || query.formato === 'pdf') {
+      // Buscar o buffer do PDF novamente para download
+      const pdfBuffer = await this.comprovanteService.gerarPdfBuffer(pagamentoId, query);
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${resultado.nomeArquivo}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      res.send(pdfBuffer);
+      return;
+    }
+    
+    // Se formato for 'base64', retorna metadados com conteúdo
+    return resultado;
   }
 
   /**
@@ -137,8 +209,7 @@ export class ComprovanteController {
     type: ComprovanteResponseDto,
   })
   @RequiresPermission({
-    permissionName: 'pagamento.visualizar',
-    scopeType: TipoEscopo.UNIDADE
+    permissionName: 'pagamento.visualizar'
   })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const comprovante = await this.comprovanteService.findById(id);
@@ -152,11 +223,9 @@ export class ComprovanteController {
    * Download de comprovante
    */
   @Get(':id/download')
-  @ApiOperation({ summary: 'Download de comprovante' })
-  @ApiParam({
-    name: 'pagamentoId',
-    type: 'string',
-    description: 'ID do pagamento',
+  @ApiOperation({ summary: 'Faz download de comprovante' })
+  @RequiresPermission({
+    permissionName: 'pagamento.comprovante.download',
   })
   @ApiParam({
     name: 'id',
@@ -166,25 +235,26 @@ export class ComprovanteController {
   @ApiResponse({
     status: 200,
     description: 'Arquivo do comprovante',
+    content: {
+      'application/octet-stream': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
   })
-  @RequiresPermission({
-    permissionName: 'pagamento.visualizar',
-    scopeType: TipoEscopo.UNIDADE
-  })
-  async download(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Res() res: Response,
-  ) {
-    const { buffer, fileName, mimeType } = await this.comprovanteService.getContent(id);
+  async download(@Param('id') id: string, @Res() res: Response): Promise<void> {
+    const { buffer, mimetype, nomeOriginal } =
+      await this.comprovanteService.download(id);
 
     res.set({
-      'Content-Type': mimeType,
-      'Content-Disposition': `attachment; filename="${encodeURIComponent(fileName)}"`,
+      'Content-Type': mimetype,
+      'Content-Disposition': `attachment; filename="${nomeOriginal}"`,
       'Content-Length': buffer.length.toString(),
-      'Cache-Control': 'no-cache',
     });
 
-    res.end(buffer);
+    res.send(buffer);
   }
 
   /**
@@ -207,14 +277,13 @@ export class ComprovanteController {
     description: 'Comprovante removido com sucesso',
   })
   @RequiresPermission({
-    permissionName: 'pagamento.editar',
-    scopeType: TipoEscopo.UNIDADE
+    permissionName: 'pagamento.comprovante.excluir'
   })
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
     @GetUser() usuario: Usuario,
   ) {
-    await this.comprovanteService.remove(id);
+    await this.comprovanteService.remove(id, usuario.id);
 
     return {
       message: 'Comprovante removido com sucesso',
@@ -229,19 +298,13 @@ export class ComprovanteController {
   private mapToResponseDto(comprovante: any): ComprovanteResponseDto {
     return {
       id: comprovante.id,
-      pagamentoId: comprovante.pagamento_id,
-      tipoDocumento: comprovante.tipo_documento,
-      nomeArquivo: comprovante.nome_arquivo,
-      url: comprovante.url || '',
+      pagamento_id: comprovante.pagamento_id,
+      nome_original: comprovante.nome_original,
       tamanho: comprovante.tamanho,
-      mimeType: comprovante.mime_type,
-      dataUpload: comprovante.data_upload,
-      responsavelUpload: {
-        id: comprovante.responsavel_upload_id || '',
-        nome: comprovante.responsavel_upload_nome || ''
-      },
-      createdAt: comprovante.created_at,
-      updatedAt: comprovante.updated_at
+      mimetype: comprovante.mimetype,
+      data_upload: comprovante.data_upload,
+      observacoes: comprovante.observacoes,
+      usuario_upload_id: comprovante.usuario_upload_id,
     };
   }
 }

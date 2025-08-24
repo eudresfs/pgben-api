@@ -8,6 +8,6 @@ export class ConfirmarRecebimentoCommand {
     public readonly pagamentoId: string,
     public readonly confirmacaoData: ConfirmacaoRecebimentoDto,
     public readonly usuarioId: string,
-    public readonly async: boolean = false
+    public readonly async: boolean = false,
   ) {}
 }

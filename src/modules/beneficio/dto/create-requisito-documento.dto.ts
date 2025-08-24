@@ -6,6 +6,7 @@ import {
   IsOptional,
   MaxLength,
   IsEnum,
+  IsUrl,
 } from 'class-validator';
 import { TipoDocumentoEnum } from '@/enums';
 
@@ -58,4 +59,33 @@ export class CreateRequisitoDocumentoDto {
   @IsOptional()
   @IsString({ message: 'Observações devem ser um texto' })
   observacoes?: string;
+
+  @ApiPropertyOptional({
+    description: 'URL do template/modelo do documento para download',
+    example: 'https://storage.exemplo.com/templates/comprovante-residencia.pdf',
+  })
+  @IsOptional()
+  @IsUrl({}, { message: 'URL do template deve ser uma URL válida' })
+  template_url?: string;
+
+  @ApiPropertyOptional({
+    description: 'Nome do arquivo template para identificação',
+    example: 'modelo-comprovante-residencia.pdf',
+    maxLength: 255,
+  })
+  @IsOptional()
+  @IsString({ message: 'Nome do template deve ser um texto' })
+  @MaxLength(255, {
+    message: 'Nome do template deve ter no máximo 255 caracteres',
+  })
+  template_nome?: string;
+
+  @ApiPropertyOptional({
+    description: 'Descrição ou instruções sobre o template',
+    example:
+      'Template padrão para comprovante de residência. Preencher com dados atualizados.',
+  })
+  @IsOptional()
+  @IsString({ message: 'Descrição do template deve ser um texto' })
+  template_descricao?: string;
 }

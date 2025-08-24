@@ -12,7 +12,7 @@ import { BaseDto } from '../../../shared/dtos/base.dto';
 
 /**
  * DTO para upload de arquivos através do EasyUpload
- * 
+ *
  * Define a estrutura de dados necessária para o upload de arquivos
  * via feature EasyUpload, incluindo metadados opcionais.
  */

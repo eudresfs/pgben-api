@@ -1,6 +1,6 @@
 /**
  * Enum que define os possíveis status de uma solicitação de benefício
- * 
+ *
  * Ciclo de vida simplificado:
  * - RASCUNHO: Solicitação criada apenas com beneficiario_id e beneficio_id
  * - ABERTA: Dados específicos do benefício não preenchidos ou documentos não enviados

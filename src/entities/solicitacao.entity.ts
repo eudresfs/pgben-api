@@ -47,16 +47,42 @@ export class Solicitacao {
   @IsNotEmpty({ message: 'Protocolo é obrigatório' })
   protocolo: string;
 
-  @BeforeInsert()
-  generateProtocol() {
+  /**
+   * Gera o protocolo da solicitação no novo formato: Benefício-Ano-Código
+   * Este método deve ser chamado pelo serviço antes da criação da solicitação
+   * @param codigoBeneficio Código do tipo de benefício (3 caracteres)
+   * @param uniqueId ID único gerado previamente para usar como código
+   */
+  generateProtocol(codigoBeneficio?: string, uniqueId?: string) {
     const date = new Date();
-    const random = Math.floor(Math.random() * 10000)
-      .toString()
-      .padStart(4, '0');
-    this.protocolo = `SOL${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${random}`;
+    const ano = date.getFullYear();
+    
+    if (codigoBeneficio && codigoBeneficio.length >= 3 && uniqueId) {
+      // Usar os 3 primeiros caracteres do código do benefício
+      const prefixoBeneficio = codigoBeneficio.substring(0, 3).toUpperCase();
+      
+      // Usar os primeiros 8 caracteres do ID único como código
+      const codigo = uniqueId.substring(0, 8).toUpperCase();
+      
+      this.protocolo = `${prefixoBeneficio}-${ano}-${codigo}`;
+    } else {
+      // Fallback para formato padrão se não houver código do benefício ou ID
+      const random = Math.floor(Math.random() * 10000)
+        .toString()
+        .padStart(4, '0');
+      this.protocolo = `SOL-${ano}${(date.getMonth() + 1).toString().padStart(2, '0')}-${random}`;
+    }
   }
 
-  @Column({ select: false, insert: false, update: false })
+  @Column({ 
+    type: 'enum',
+    enum: StatusSolicitacao,
+    enumName: 'status_solicitacao',
+    nullable: true,
+    select: false,
+    insert: false,
+    update: false
+  })
   private statusAnterior: StatusSolicitacao;
 
   @Column({ select: false, insert: false, update: false })
@@ -184,6 +210,9 @@ export class Solicitacao {
   @Column('jsonb', { nullable: true })
   dados_complementares: Record<string, any>;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, comment: 'Valor de referência do benefício' })
+  valor: number;
+
   @OneToMany(() => Documento, (documento) => documento.solicitacao, {
     cascade: ['insert', 'update'],
     onDelete: 'RESTRICT',
@@ -199,7 +228,7 @@ export class Solicitacao {
   })
   historico: HistoricoSolicitacao[];
 
-   /**
+  /**
    * Relação com histórico de status da solicitação
    */
   @OneToMany(() => Pendencia, (pendencia) => pendencia.solicitacao, {
@@ -217,21 +246,21 @@ export class Solicitacao {
   })
   pagamentos: Pagamento[];
 
-   /**
+  /**
    * Relação com histórico de status da solicitação
    */
-    @OneToMany(() => InfoBancaria, (infoBancaria) => infoBancaria.cidadao, {
-      cascade: ['insert'],
-      onDelete: 'CASCADE',
-    })
-    info_bancaria: InfoBancaria[];
+  @OneToMany(() => InfoBancaria, (infoBancaria) => infoBancaria.cidadao, {
+    cascade: ['insert'],
+    onDelete: 'CASCADE',
+  })
+  info_bancaria: InfoBancaria[];
 
-   /**
+  /**
    * Relação com histórico de status da solicitação
    */
-   @OneToMany(() => Concessao, concessao => concessao.solicitacao)
-   @JoinColumn({ name: 'id', referencedColumnName: 'solicitacao_id' })
-   concessao: Concessao;
+  @OneToMany(() => Concessao, (concessao) => concessao.solicitacao)
+  @JoinColumn({ name: 'id', referencedColumnName: 'solicitacao_id' })
+  concessao: Concessao;
 
   /**
    * Controle de versão para detectar e prevenir atualizações concorrentes

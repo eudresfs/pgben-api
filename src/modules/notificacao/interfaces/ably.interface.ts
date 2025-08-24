@@ -69,7 +69,10 @@ export enum NotificationType {
   USUARIO_CRIADO = 'usuario_criado',
   PERFIL_ALTERADO = 'perfil_alterado',
   MANUTENCAO_SISTEMA = 'manutencao_sistema',
-  AUDITORIA = 'auditoria'
+  AUDITORIA = 'auditoria',
+  INFO = 'informativa',
+  SUCCESS = 'success',
+  ERROR = 'error',
 }
 
 /**
@@ -79,7 +82,8 @@ export enum NotificationPriority {
   LOW = 'low',
   NORMAL = 'normal',
   HIGH = 'high',
-  URGENT = 'urgent'
+  CRITICAL = 'critical',
+  URGENT = 'urgent',
 }
 
 /**

@@ -1,6 +1,6 @@
 /**
  * AuthGuardsModule
- * 
+ *
  * Módulo separado para guards de autenticação.
  * Criado para evitar dependência circular entre AuthModule e AuditoriaModule.
  */
@@ -25,33 +25,33 @@ import { PermissionGuard } from '../../auth/guards/permission.guard';
 // Strategies
 import { JwtAuthStrategy } from '../../auth/strategies/jwt-auth.strategy';
 
+// Config
+import { createJwtConfig } from '../../config/jwt.config';
+
 @Module({
   imports: [
     // Passport para estratégias de autenticação
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    
+
     // JWT Module
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '1d' },
-      }),
       inject: [ConfigService],
+      useFactory: createJwtConfig,
     }),
-    
+
     // TypeORM para JwtBlacklist
     TypeOrmModule.forFeature([JwtBlacklist]),
   ],
   providers: [
     // Services
     JwtBlacklistService,
-    
+
     // Guards
     JwtAuthGuard,
     RolesGuard,
     PermissionGuard,
-    
+
     // Strategies
     JwtAuthStrategy,
   ],
@@ -60,13 +60,13 @@ import { JwtAuthStrategy } from '../../auth/strategies/jwt-auth.strategy';
     JwtAuthGuard,
     RolesGuard,
     PermissionGuard,
-    
+
     // Services
     JwtBlacklistService,
-    
+
     // Strategies
     JwtAuthStrategy,
-    
+
     // Modules
     JwtModule,
     PassportModule,

@@ -26,7 +26,8 @@ export class CreatePendenciaDto extends BaseDto {
 
   @ApiProperty({
     description: 'Descrição detalhada da pendência',
-    example: 'Comprovante de residência desatualizado - necessário documento com data dos últimos 3 meses',
+    example:
+      'Comprovante de residência desatualizado - necessário documento com data dos últimos 3 meses',
     maxLength: 1000,
   })
   @IsNotEmpty({ message: 'Descrição da pendência é obrigatória' })
@@ -42,7 +43,10 @@ export class CreatePendenciaDto extends BaseDto {
     format: 'date',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Prazo deve ser uma data válida no formato ISO 8601' })
+  @IsDateString(
+    {},
+    { message: 'Prazo deve ser uma data válida no formato ISO 8601' },
+  )
   prazo_resolucao?: string;
 
   @ApiPropertyOptional({

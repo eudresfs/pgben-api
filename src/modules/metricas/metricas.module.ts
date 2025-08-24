@@ -38,10 +38,17 @@ import {
   TipoBeneficio,
   Unidade,
   Usuario,
+  ComposicaoFamiliar,
+  Concessao,
+  Pagamento,
+  Pendencia,
 } from '../../entities';
 
 // Módulos externos
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+
+// Serviços compartilhados
+import { RequestContextHolder } from '../../common/services/request-context-holder.service';
 
 /**
  * Módulo responsável pelo monitoramento, observabilidade e análise de métricas do sistema
@@ -77,6 +84,10 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
       MetricaConfiguracao,
       // Entidades para dashboard
       Solicitacao,
+      Concessao,
+      ComposicaoFamiliar,
+      Pagamento,
+      Pendencia,
       Recurso,
       TipoBeneficio,
       Unidade,
@@ -114,6 +125,9 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
     // Serviço de health check compartilhado
     HealthCheckService,
+
+    // Serviços compartilhados para escopo
+    RequestContextHolder,
   ],
 
   // Serviços exportados para outros módulos

@@ -23,9 +23,11 @@ export class NotificationTemplateSeed {
           codigo: 'usuario-credenciais-acesso',
           nome: 'Credenciais de Acesso - Novo Usuário',
           tipo: 'sistema',
-          descricao: 'Template para envio de credenciais de acesso para novos usuários',
+          descricao:
+            'Template para envio de credenciais de acesso para novos usuários',
           assunto: 'Credenciais de Acesso - PGBen',
-          corpo: 'Credenciais de acesso criadas. Email: {{email}}, Senha: {{senha}}, Matrícula: {{matricula}}',
+          corpo:
+            'Credenciais de acesso criadas. Email: {{email}}, Senha: {{senha}}, Matrícula: {{matricula}}',
           corpo_html: `
             <h2>Credenciais de Acesso - Sistema PGBen</h2>
             <p>Olá <strong>{{nome}}</strong>,</p>
@@ -41,7 +43,15 @@ export class NotificationTemplateSeed {
             <p><small>Suporte: {{supportEmail}}</small></p>
           `,
           canais_disponiveis: ['email'],
-          variaveis_requeridas: JSON.stringify(['nome', 'email', 'senha', 'matricula', 'sistema_url', 'data_criacao', 'supportEmail']),
+          variaveis_requeridas: JSON.stringify([
+            'nome',
+            'email',
+            'senha',
+            'matricula',
+            'sistema_url',
+            'data_criacao',
+            'supportEmail',
+          ]),
           ativo: true,
           categoria: 'autenticacao',
           prioridade: 'alta',
@@ -52,7 +62,8 @@ export class NotificationTemplateSeed {
           tipo: 'sistema',
           descricao: 'Template para envio de link de recuperação de senha',
           assunto: 'Recuperação de Senha - PGBen',
-          corpo: 'Link para redefinir senha: {{resetUrl}}. Expira em {{expiresInMinutes}} minutos.',
+          corpo:
+            'Link para redefinir senha: {{resetUrl}}. Expira em {{expiresInMinutes}} minutos.',
           corpo_html: `
             <h2>Recuperação de Senha - Sistema PGBen</h2>
             <p>Olá <strong>{{name}}</strong>,</p>
@@ -63,7 +74,13 @@ export class NotificationTemplateSeed {
             <p><small>Para suporte técnico: {{supportEmail}}</small></p>
           `,
           canais_disponiveis: ['email'],
-          variaveis_requeridas: JSON.stringify(['name', 'resetUrl', 'expiresInMinutes', 'expiresAt', 'supportEmail']),
+          variaveis_requeridas: JSON.stringify([
+            'name',
+            'resetUrl',
+            'expiresInMinutes',
+            'expiresAt',
+            'supportEmail',
+          ]),
           ativo: true,
           categoria: 'autenticacao',
           prioridade: 'alta',
@@ -74,7 +91,8 @@ export class NotificationTemplateSeed {
           tipo: 'sistema',
           descricao: 'Template de confirmação após alteração de senha',
           assunto: 'Senha Alterada com Sucesso - PGBEN',
-          corpo: 'Sua senha foi alterada com sucesso em {{changedAt}} pelo IP {{ipAddress}}.',
+          corpo:
+            'Sua senha foi alterada com sucesso em {{changedAt}} pelo IP {{ipAddress}}.',
           corpo_html: `
             <h2>✅ Senha Alterada com Sucesso!</h2>
             <p>Olá <strong>{{name}}</strong>,</p>
@@ -90,7 +108,14 @@ export class NotificationTemplateSeed {
             <p><small>Para suporte técnico: {{supportEmail}}</small></p>
           `,
           canais_disponiveis: ['email'],
-          variaveis_requeridas: JSON.stringify(['name', 'changedAt', 'ipAddress', 'userAgent', 'loginUrl', 'supportEmail']),
+          variaveis_requeridas: JSON.stringify([
+            'name',
+            'changedAt',
+            'ipAddress',
+            'userAgent',
+            'loginUrl',
+            'supportEmail',
+          ]),
           ativo: true,
           categoria: 'seguranca',
           prioridade: 'normal',
@@ -99,9 +124,11 @@ export class NotificationTemplateSeed {
           codigo: 'atividade-suspeita',
           nome: 'Notificação de Atividade Suspeita',
           tipo: 'sistema',
-          descricao: 'Template para notificação de atividades suspeitas na conta',
+          descricao:
+            'Template para notificação de atividades suspeitas na conta',
           assunto: '⚠️ Atividade Suspeita Detectada - PGBen',
-          corpo: 'Atividade suspeita detectada: {{activityType}} em {{detectedAt}} do IP {{ipAddress}}.',
+          corpo:
+            'Atividade suspeita detectada: {{activityType}} em {{detectedAt}} do IP {{ipAddress}}.',
           corpo_html: `
             <h2>🚨 Atividade Suspeita Detectada</h2>
             <p>Olá <strong>{{name}}</strong>,</p>
@@ -125,7 +152,20 @@ export class NotificationTemplateSeed {
             <p><small>Para suporte técnico urgente: {{supportEmail}}</small></p>
           `,
           canais_disponiveis: ['email'],
-          variaveis_requeridas: JSON.stringify(['name', 'activityType', 'severity', 'detectedAt', 'ipAddress', 'location', 'userAgent', 'action', 'description', 'changePasswordUrl', 'reviewActivityUrl', 'supportEmail']),
+          variaveis_requeridas: JSON.stringify([
+            'name',
+            'activityType',
+            'severity',
+            'detectedAt',
+            'ipAddress',
+            'location',
+            'userAgent',
+            'action',
+            'description',
+            'changePasswordUrl',
+            'reviewActivityUrl',
+            'supportEmail',
+          ]),
           ativo: true,
           categoria: 'seguranca',
           prioridade: 'critica',

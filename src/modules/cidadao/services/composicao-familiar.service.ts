@@ -9,6 +9,7 @@ import { Repository, IsNull, Not } from 'typeorm';
 import { plainToInstance } from 'class-transformer';
 import { ComposicaoFamiliar } from '../../../entities/composicao-familiar.entity';
 import { Cidadao } from '../../../entities/cidadao.entity';
+import { Solicitacao } from '../../../entities/solicitacao.entity';
 import { CreateComposicaoFamiliarDto } from '../dto/create-composicao-familiar.dto';
 import { UpdateComposicaoFamiliarDto } from '../dto/update-composicao-familiar.dto';
 import {
@@ -23,9 +24,18 @@ export class ComposicaoFamiliarService {
     private readonly composicaoFamiliarRepository: Repository<ComposicaoFamiliar>,
     @InjectRepository(Cidadao)
     private readonly cidadaoRepository: Repository<Cidadao>,
+    @InjectRepository(Solicitacao)
+    private readonly solicitacaoRepository: Repository<Solicitacao>,
   ) {}
 
   async create(
+    createComposicaoFamiliarDto: CreateComposicaoFamiliarDto,
+    userId: string,
+  ): Promise<ComposicaoFamiliarResponseDto> {
+    return this.upsert(createComposicaoFamiliarDto, userId);
+  }
+
+  async upsert(
     createComposicaoFamiliarDto: CreateComposicaoFamiliarDto,
     userId: string,
   ): Promise<ComposicaoFamiliarResponseDto> {
@@ -44,54 +54,143 @@ export class ComposicaoFamiliarService {
       throw new BadRequestException('CPF deve ter 11 dígitos');
     }
 
-    // Verificar duplicatas
+    // Verificar se CPF não é igual ao do cidadão responsável
+    if (cidadao.cpf === cpfLimpo) {
+      throw new ConflictException(
+        'O CPF do membro não pode ser igual ao CPF do cidadão responsável',
+      );
+    }
+
+    // Validar se o CPF não possui solicitação como beneficiário
+    await this.validarCpfNaoPossuiSolicitacaoComoBeneficiario(cpfLimpo);
+
+    // Buscar membro existente por cidadao_id + nome (índice único)
     const membroExistente = await this.composicaoFamiliarRepository.findOne({
       where: {
         cidadao_id: createComposicaoFamiliarDto.cidadao_id,
-        cpf: cpfLimpo,
+        nome: createComposicaoFamiliarDto.nome,
         removed_at: IsNull(),
       },
     });
 
     if (membroExistente) {
-      throw new ConflictException('Já existe um membro com este CPF na composição familiar');
-    }
-
-    // Verificar se CPF não é igual ao do cidadão responsável
-    if (cidadao.cpf === cpfLimpo) {
-      throw new ConflictException('O CPF do membro não pode ser igual ao CPF do cidadão responsável');
-    }
-
-    // Criar membro
-    const novoMembro = this.composicaoFamiliarRepository.create({
-      ...createComposicaoFamiliarDto,
-      cpf: cpfLimpo,
-    });
-
-    try {
-      const membroSalvo = await this.composicaoFamiliarRepository.save(novoMembro);
-
-      return plainToInstance(ComposicaoFamiliarResponseDto, membroSalvo, {
-        excludeExtraneousValues: true,
-      });
-    } catch (error) {
-      // Capturar erro específico do constraint de exclusividade de papéis
-      if (error.message?.includes('Cidadão não pode ser adicionado à composição familiar, pois já é beneficiário')) {
-        throw new ConflictException({
-          code: 'VAL_2004',
-          message: 'Conflito de papéis: O cidadão já possui papel de beneficiário ativo no sistema',
-          details: {
+      // Verificar se o CPF é diferente e se já existe outro membro com este CPF
+      if (membroExistente.cpf !== cpfLimpo) {
+        const cpfDuplicado = await this.composicaoFamiliarRepository.findOne({
+          where: {
+            cidadao_id: createComposicaoFamiliarDto.cidadao_id,
             cpf: cpfLimpo,
-            reason: 'O cidadão já possui papel de beneficiário ativo no sistema',
-            action: 'Remova o papel de beneficiário antes de adicionar à composição familiar',
+            id: Not(membroExistente.id),
+            removed_at: IsNull(),
           },
-          localizedMessage: 'Cidadão não pode ser beneficiário principal e membro da composição familiar simultaneamente',
         });
+
+        if (cpfDuplicado) {
+          throw new ConflictException(
+            'Já existe um membro com este CPF na composição familiar',
+          );
+        }
       }
 
-      // Re-lançar outros erros não tratados
-      throw error;
+      // Atualizar dados existentes, "limpando" campos não enviados
+      const dadosAtualizados = {
+        ...membroExistente,
+        // Campos obrigatórios sempre atualizados
+        nome: createComposicaoFamiliarDto.nome,
+        cpf: cpfLimpo,
+        idade: createComposicaoFamiliarDto.idade,
+        ocupacao: createComposicaoFamiliarDto.ocupacao,
+        escolaridade: createComposicaoFamiliarDto.escolaridade,
+        parentesco: createComposicaoFamiliarDto.parentesco,
+
+        // Campos opcionais - limpar se não enviados
+        nis: createComposicaoFamiliarDto.nis ?? null,
+        renda: createComposicaoFamiliarDto.renda ?? null,
+        observacoes: createComposicaoFamiliarDto.observacoes ?? null,
+        updated_at: new Date(),
+      };
+
+      const membroAtualizado =
+        await this.composicaoFamiliarRepository.save(dadosAtualizados);
+
+      return plainToInstance(ComposicaoFamiliarResponseDto, membroAtualizado, {
+        excludeExtraneousValues: true,
+      });
+    } else {
+      // Verificar se já existe membro com este CPF
+      const cpfExistente = await this.composicaoFamiliarRepository.findOne({
+        where: {
+          cidadao_id: createComposicaoFamiliarDto.cidadao_id,
+          cpf: cpfLimpo,
+          removed_at: IsNull(),
+        },
+      });
+
+      if (cpfExistente) {
+        throw new ConflictException(
+          'Já existe um membro com este CPF na composição familiar',
+        );
+      }
+
+      // Criar novo membro
+      const novoMembro = this.composicaoFamiliarRepository.create({
+        ...createComposicaoFamiliarDto,
+        cpf: cpfLimpo,
+      });
+
+      try {
+        const membroSalvo =
+          await this.composicaoFamiliarRepository.save(novoMembro);
+
+        return plainToInstance(ComposicaoFamiliarResponseDto, membroSalvo, {
+          excludeExtraneousValues: true,
+        });
+      } catch (error) {
+        // Re-lançar outros erros não tratados
+        throw error;
+      }
     }
+  }
+
+  async upsertMany(
+    cidadaoId: string,
+    membros: CreateComposicaoFamiliarDto[],
+    userId: string,
+  ): Promise<ComposicaoFamiliarResponseDto[]> {
+    // Validar se o cidadão existe
+    const cidadao = await this.cidadaoRepository.findOne({
+      where: { id: cidadaoId },
+    });
+
+    if (!cidadao) {
+      throw new NotFoundException('Cidadão não encontrado');
+    }
+
+    const resultados: ComposicaoFamiliarResponseDto[] = [];
+
+    // Processar cada membro
+    for (const membroDto of membros) {
+      const membroComCidadaoId = { ...membroDto, cidadao_id: cidadaoId };
+      const resultado = await this.upsert(membroComCidadaoId, userId);
+      resultados.push(resultado);
+    }
+
+    // Remover membros que não estão na lista enviada
+    const nomesEnviados = membros.map((m) => m.nome);
+    const membrosExistentes = await this.composicaoFamiliarRepository.find({
+      where: {
+        cidadao_id: cidadaoId,
+        removed_at: IsNull(),
+      },
+    });
+
+    for (const membroExistente of membrosExistentes) {
+      if (!nomesEnviados.includes(membroExistente.nome)) {
+        await this.remove(membroExistente.id, userId);
+      }
+    }
+
+    return resultados;
   }
 
   async findByCidadao(
@@ -111,26 +210,27 @@ export class ComposicaoFamiliarService {
     }
 
     // Buscar membros
-    const [membros, total] = await this.composicaoFamiliarRepository.findAndCount({
-      where: {
-        cidadao_id: cidadaoId,
-        removed_at: IsNull(),
-      },
-      order: {
-        created_at: 'DESC',
-      },
-      skip: offset,
-      take: Math.min(limit, 100),
-    });
+    const [membros, total] =
+      await this.composicaoFamiliarRepository.findAndCount({
+        where: {
+          cidadao_id: cidadaoId,
+          removed_at: IsNull(),
+        },
+        order: {
+          created_at: 'DESC',
+        },
+        skip: offset,
+        take: Math.min(limit, 100),
+      });
 
     const data = membros.map((membro) =>
       plainToInstance(ComposicaoFamiliarResponseDto, membro, {
         excludeExtraneousValues: true,
-      })
+      }),
     );
 
     const totalPages = Math.ceil(total / limit);
-    
+
     return {
       data,
       meta: {
@@ -154,7 +254,9 @@ export class ComposicaoFamiliarService {
     });
 
     if (!membro) {
-      throw new NotFoundException('Membro da composição familiar não encontrado');
+      throw new NotFoundException(
+        'Membro da composição familiar não encontrado',
+      );
     }
 
     return plainToInstance(ComposicaoFamiliarResponseDto, membro, {
@@ -176,7 +278,9 @@ export class ComposicaoFamiliarService {
     });
 
     if (!membro) {
-      throw new NotFoundException('Membro da composição familiar não encontrado');
+      throw new NotFoundException(
+        'Membro da composição familiar não encontrado',
+      );
     }
 
     // Validar CPF se foi alterado
@@ -197,13 +301,20 @@ export class ComposicaoFamiliarService {
       });
 
       if (membroExistente) {
-        throw new ConflictException('Já existe um membro com este CPF na composição familiar');
+        throw new ConflictException(
+          'Já existe um membro com este CPF na composição familiar',
+        );
       }
 
       // Verificar se CPF não é igual ao do cidadão responsável
       if (membro.cidadao.cpf === cpfLimpo) {
-        throw new ConflictException('O CPF do membro não pode ser igual ao CPF do cidadão responsável');
+        throw new ConflictException(
+          'O CPF do membro não pode ser igual ao CPF do cidadão responsável',
+        );
       }
+
+      // Validar se o CPF não possui solicitação como beneficiário
+      await this.validarCpfNaoPossuiSolicitacaoComoBeneficiario(cpfLimpo);
 
       updateComposicaoFamiliarDto.cpf = cpfLimpo;
     }
@@ -220,7 +331,9 @@ export class ComposicaoFamiliarService {
       });
 
       if (nomeExistente) {
-        throw new ConflictException('Já existe um membro com este nome na composição familiar');
+        throw new ConflictException(
+          'Já existe um membro com este nome na composição familiar',
+        );
       }
     }
 
@@ -228,7 +341,8 @@ export class ComposicaoFamiliarService {
     Object.assign(membro, updateComposicaoFamiliarDto);
     membro.updated_at = new Date();
 
-    const membroAtualizado = await this.composicaoFamiliarRepository.save(membro);
+    const membroAtualizado =
+      await this.composicaoFamiliarRepository.save(membro);
 
     return plainToInstance(ComposicaoFamiliarResponseDto, membroAtualizado, {
       excludeExtraneousValues: true,
@@ -244,7 +358,9 @@ export class ComposicaoFamiliarService {
     });
 
     if (!membro) {
-      throw new NotFoundException('Membro da composição familiar não encontrado');
+      throw new NotFoundException(
+        'Membro da composição familiar não encontrado',
+      );
     }
 
     // Soft delete
@@ -273,7 +389,34 @@ export class ComposicaoFamiliarService {
     return membros.map((membro) =>
       plainToInstance(ComposicaoFamiliarResponseDto, membro, {
         excludeExtraneousValues: true,
-      })
+      }),
     );
+  }
+
+  /**
+   * Valida se o CPF não pertence a um cidadão que já possui solicitação como beneficiário
+   * @param cpf CPF do membro da composição familiar
+   * @throws ConflictException se o CPF já possui solicitação como beneficiário
+   */
+  private async validarCpfNaoPossuiSolicitacaoComoBeneficiario(
+    cpf: string,
+  ): Promise<void> {
+    // Buscar cidadão pelo CPF
+    const cidadaoComCpf = await this.cidadaoRepository.findOne({
+      where: { cpf },
+    });
+
+    if (cidadaoComCpf) {
+      // Verificar se este cidadão possui alguma solicitação como beneficiário
+      const solicitacaoExistente = await this.solicitacaoRepository.findOne({
+        where: { beneficiario_id: cidadaoComCpf.id },
+      });
+
+      if (solicitacaoExistente) {
+        throw new ConflictException(
+          `Não é possível cadastrar membro com CPF ${cpf}, pois este cidadão já possui uma solicitação como beneficiário.`,
+        );
+      }
+    }
   }
 }

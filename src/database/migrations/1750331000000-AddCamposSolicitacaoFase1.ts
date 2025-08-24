@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddCamposSolicitacaoFase11750331000000 implements MigrationInterface {
+export class AddCamposSolicitacaoFase11750331000000
+  implements MigrationInterface
+{
   private readonly table = 'solicitacao';
   private readonly subStatusEnum = 'sub_status_solicitacao_enum';
 

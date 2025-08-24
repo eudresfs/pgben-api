@@ -1,7 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
-import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
-import { PagamentoResponseBaseDto, ResponsavelInfo, SolicitacaoResumo } from './base/pagamento-base.dto';
+import { ApiProperty } from '@nestjs/swagger';
+import { PagamentoResponseBaseDto } from './base/pagamento-base.dto';
 
 /**
  * DTO para resposta contendo dados de um pagamento
@@ -20,7 +18,7 @@ export class PagamentoResponseDto extends PagamentoResponseBaseDto {
     description: 'ID da solicitação que originou o pagamento',
     example: 'uuid',
   })
-  solicitacaoId: string;
+  solicitacao_id: string;
 
   /**
    * Informações sobre a solicitação (quando incluídas)
@@ -28,17 +26,38 @@ export class PagamentoResponseDto extends PagamentoResponseBaseDto {
   @ApiProperty({
     description: 'Dados resumidos da solicitação',
     example: {
-      numeroProcesso: 'string',
-      cidadaoNome: 'string',
-      tipoBeneficio: 'string',
-      unidade: 'string',
+      id: 'uuid',
+      beneficiario: 'João Silva',
+      tipo_beneficio: {
+        id: 'uuid',
+        nome: 'Auxílio Emergencial',
+      },
+      unidade: {
+        id: 'uuid',
+        nome: 'CRAS Centro',
+      },
+      tecnico: {
+        id: 'uuid',
+        nome: 'Maria Santos',
+      },
     },
     required: false,
   })
   solicitacao?: {
     id: string;
     beneficiario: string;
-    tipoBeneficio: any;
+    tipo_beneficio: {
+      id: string;
+      nome: string;
+    };
+    unidade: {
+      id: string;
+      nome: string;
+    };
+    tecnico: {
+      id: string;
+      nome: string;
+    };
   };
 
   /**
@@ -49,7 +68,7 @@ export class PagamentoResponseDto extends PagamentoResponseBaseDto {
     example: 'uuid',
     required: false,
   })
-  infoBancariaId?: string;
+  info_bancaria_id?: string;
 
   /**
    * Informações bancárias (mascaramento aplicado via interceptor)
@@ -58,17 +77,18 @@ export class PagamentoResponseDto extends PagamentoResponseBaseDto {
     description: 'Dados bancários utilizados',
     example: {
       tipo: 'POUPANCA_SOCIAL',
-      chavePix: 'user@domain.com',
+      chave_pix: 'user@domain.com',
+      pix_tipo: 'EMAIL',
       banco: '001',
       agencia: '12345',
-      conta: '123456789'
+      conta: '123456789',
     },
     required: false,
   })
-  infoBancaria?: {
+  info_bancaria?: {
     tipo: string;
-    chavePix?: string;
-    pixTipo?: 'CPF' | 'CNPJ' | 'EMAIL' | 'TELEFONE' | 'ALEATORIA';
+    chave_pix?: string;
+    pix_tipo?: 'CPF' | 'CNPJ' | 'EMAIL' | 'TELEFONE' | 'ALEATORIA';
     banco?: string;
     agencia?: string;
     conta?: string;
@@ -81,7 +101,7 @@ export class PagamentoResponseDto extends PagamentoResponseBaseDto {
     description: 'Data em que o pagamento foi liberado',
     example: '2025-05-18T10:00:00.000Z',
   })
-  dataLiberacao: Date;
+  data_liberacao: Date;
 
   /**
    * Informações sobre o responsável pela liberação
@@ -94,7 +114,7 @@ export class PagamentoResponseDto extends PagamentoResponseBaseDto {
       role: 'string',
     },
   })
-  responsavelLiberacao: {
+  responsavel_liberacao: {
     id: string;
     nome: string;
     role: string;
@@ -107,7 +127,25 @@ export class PagamentoResponseDto extends PagamentoResponseBaseDto {
     description: 'Quantidade de comprovantes anexados',
     example: 2,
   })
-  quantidadeComprovantes: number;
+  quantidade_comprovantes: number;
+
+  /**
+   * Indica se o pagamento pode ser liberado
+   */
+  @ApiProperty({
+    description: 'Indica se o pagamento pode ser liberado baseado nos critérios de negócio',
+    example: true,
+  })
+  pode_liberar: boolean;
+
+  /**
+   * Motivo pelo qual o pagamento pode ou não ser liberado
+   */
+  @ApiProperty({
+    description: 'Motivo detalhado sobre a possibilidade de liberação do pagamento',
+    example: 'Pagamento anterior confirmado com comprovante e concessão ativa',
+  })
+  motivo_liberacao: string;
 
   /**
    * Informações sobre confirmação de recebimento (quando existente)
@@ -116,8 +154,8 @@ export class PagamentoResponseDto extends PagamentoResponseBaseDto {
     description: 'Dados da confirmação de recebimento',
     example: {
       id: 'uuid',
-      dataConfirmacao: 'ISO 8601 date string',
-      metodoConfirmacao: 'string',
+      data_confirmacao: 'ISO 8601 date string',
+      metodo_confirmacao: 'string',
       responsavel: {
         id: 'uuid',
         nome: 'string',
@@ -125,10 +163,10 @@ export class PagamentoResponseDto extends PagamentoResponseBaseDto {
     },
     required: false,
   })
-  confirmacaoRecebimento?: {
+  confirmacao_recebimento?: {
     id: string;
-    dataConfirmacao: Date;
-    metodoConfirmacao: string;
+    data_confirmacao: Date;
+    metodo_confirmacao: string;
     responsavel: {
       id: string;
       nome: string;

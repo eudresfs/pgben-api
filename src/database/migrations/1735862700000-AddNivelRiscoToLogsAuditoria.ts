@@ -9,7 +9,9 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * @author Sistema de Auditoria
  * @date 02/01/2025
  */
-export class AddNivelRiscoToLogsAuditoria1735862700000 implements MigrationInterface {
+export class AddNivelRiscoToLogsAuditoria1735862700000
+  implements MigrationInterface
+{
   name = 'AddNivelRiscoToLogsAuditoria1735862700000';
 
   /**
@@ -62,7 +64,9 @@ export class AddNivelRiscoToLogsAuditoria1735862700000 implements MigrationInter
       ON "logs_auditoria" ("nivel_risco");
     `);
 
-    console.log('Migration AddNivelRiscoToLogsAuditoria executada com sucesso.');
+    console.log(
+      'Migration AddNivelRiscoToLogsAuditoria executada com sucesso.',
+    );
   }
 
   /**
@@ -82,6 +86,8 @@ export class AddNivelRiscoToLogsAuditoria1735862700000 implements MigrationInter
       DROP COLUMN IF EXISTS "nivel_risco";
     `);
 
-    console.log('Migration AddNivelRiscoToLogsAuditoria revertida com sucesso.');
+    console.log(
+      'Migration AddNivelRiscoToLogsAuditoria revertida com sucesso.',
+    );
   }
 }

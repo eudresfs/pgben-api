@@ -1,6 +1,6 @@
 /**
  * Índice de exportações dos mappers do módulo de pagamento
- * 
+ *
  * Centraliza todas as exportações dos mappers para facilitar importações
  * e manter organização do código.
  */
@@ -14,6 +14,5 @@ export { PagamentoUnifiedMapper as ComprovanteMapper } from './pagamento-unified
 export { PagamentoUnifiedMapper as ConfirmacaoMapper } from './pagamento-unified.mapper';
 
 // Tipos e interfaces relacionadas
-export type {
-  // Tipos serão adicionados conforme necessário
-} from './pagamento-unified.mapper';
+export type {} from // Tipos serão adicionados conforme necessário
+'./pagamento-unified.mapper';

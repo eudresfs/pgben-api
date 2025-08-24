@@ -80,21 +80,21 @@ export class CreateDadosAluguelSocialDto {
   })
   possui_imovel_interditado: boolean;
 
-  @ApiProperty({
-    description:
-      'Indica se é caso judicializado pela Lei Maria da Penha (Art. 23, inciso VI)',
-    example: false,
+  @ApiPropertyOptional({
+    description: 'Tipo de processo judicializado',
+    example: 'Lei Maria da Penha',
   })
-  @IsBoolean({
-    message: 'Caso judicializado Lei Maria da Penha deve ser um booleano',
+  @IsOptional()
+  @IsString({ message: 'Processo judicializado deve ser uma string' })
+  processo_judicializado?: string;
+
+  @ApiPropertyOptional({
+    description: 'Número do processo judicial',
+    example: '1234567-89.2024.8.26.0001',
   })
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      return value.toLowerCase() === 'true';
-    }
-    return value;
-  })
-  caso_judicializado_maria_penha: boolean;
+  @IsOptional()
+  @IsString({ message: 'Número do processo deve ser uma string' })
+  numero_processo?: string;
 
   @ApiPropertyOptional({
     description: 'Observações adicionais sobre o caso',
@@ -160,20 +160,20 @@ export class UpdateDadosAluguelSocialDto {
   possui_imovel_interditado?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Indica se é caso judicializado pela Lei Maria da Penha',
-    example: false,
+    description: 'Tipo de processo judicializado',
+    example: 'Lei Maria da Penha',
   })
   @IsOptional()
-  @IsBoolean({
-    message: 'Caso judicializado Lei Maria da Penha deve ser um booleano',
+  @IsString({ message: 'Processo judicializado deve ser uma string' })
+  processo_judicializado?: string;
+
+  @ApiPropertyOptional({
+    description: 'Número do processo judicial',
+    example: '1234567-89.2024.8.26.0001',
   })
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      return value.toLowerCase() === 'true';
-    }
-    return value;
-  })
-  caso_judicializado_maria_penha?: boolean;
+  @IsOptional()
+  @IsString({ message: 'Número do processo deve ser uma string' })
+  numero_processo?: string;
 
   @ApiPropertyOptional({
     description: 'Observações adicionais sobre o caso',

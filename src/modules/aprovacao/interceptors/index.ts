@@ -1,0 +1,1 @@
+export { AprovacaoInterceptor } from './aprovacao.interceptor';

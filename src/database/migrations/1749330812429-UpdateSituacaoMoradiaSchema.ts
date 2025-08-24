@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class UpdateSituacaoMoradiaSchema1749330812429 implements MigrationInterface {
+export class UpdateSituacaoMoradiaSchema1749330812429
+  implements MigrationInterface
+{
   name = 'UpdateSituacaoMoradiaSchema1749330812429';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -130,13 +132,27 @@ export class UpdateSituacaoMoradiaSchema1749330812429 implements MigrationInterf
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Remover índices
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_situacao_moradia_despesas_mensais_gin";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_situacao_moradia_reside_2_anos";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_situacao_moradia_inscrito_programa";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_situacao_moradia_moradia_invadida";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_situacao_moradia_moradia_cedida";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_situacao_moradia_tipo_desastre";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_situacao_moradia_programa_habitacional";`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_situacao_moradia_despesas_mensais_gin";`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_situacao_moradia_reside_2_anos";`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_situacao_moradia_inscrito_programa";`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_situacao_moradia_moradia_invadida";`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_situacao_moradia_moradia_cedida";`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_situacao_moradia_tipo_desastre";`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_situacao_moradia_programa_habitacional";`,
+    );
 
     // Remover colunas
     await queryRunner.query(`

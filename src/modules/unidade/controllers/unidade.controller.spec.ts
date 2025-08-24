@@ -3,7 +3,11 @@ import { UnidadeController } from './unidade.controller';
 import { UnidadeService } from '../services/unidade.service';
 import { CreateUnidadeDto } from '../dto/create-unidade.dto';
 import { UpdateUnidadeDto } from '../dto/update-unidade.dto';
-import { Unidade, TipoUnidade, StatusUnidade } from '../../../entities/unidade.entity';
+import {
+  Unidade,
+  TipoUnidade,
+  StatusUnidade,
+} from '../../../entities/unidade.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { ExecutionContext } from '@nestjs/common';
@@ -229,9 +233,7 @@ describe('UnidadeController', () => {
     });
 
     it('deve propagar erro quando sigla não encontrada', async () => {
-      service.findBySigla.mockRejectedValue(
-        new Error('Sigla não encontrada'),
-      );
+      service.findBySigla.mockRejectedValue(new Error('Sigla não encontrada'));
 
       await expect(controller.findBySigla('XX')).rejects.toThrow(
         'Sigla não encontrada',
@@ -264,9 +266,7 @@ describe('UnidadeController', () => {
     });
 
     it('deve propagar erro de código duplicado', async () => {
-      service.create.mockRejectedValue(
-        new Error('Código já existe'),
-      );
+      service.create.mockRejectedValue(new Error('Código já existe'));
 
       await expect(controller.create(mockCreateUnidadeDto)).rejects.toThrow(
         'Código já existe',
@@ -306,9 +306,7 @@ describe('UnidadeController', () => {
     });
 
     it('deve propagar erro quando unidade não encontrada', async () => {
-      service.update.mockRejectedValue(
-        new Error('Unidade não encontrada'),
-      );
+      service.update.mockRejectedValue(new Error('Unidade não encontrada'));
 
       await expect(
         controller.update('invalid-id', mockUpdateUnidadeDto),
@@ -396,9 +394,7 @@ describe('UnidadeController', () => {
     });
 
     it('deve propagar erro quando unidade não encontrada', async () => {
-      service.remove.mockRejectedValue(
-        new Error('Unidade não encontrada'),
-      );
+      service.remove.mockRejectedValue(new Error('Unidade não encontrada'));
 
       await expect(controller.remove('invalid-id')).rejects.toThrow(
         'Unidade não encontrada',
@@ -475,9 +471,7 @@ describe('UnidadeController', () => {
 
   describe('tratamento de erros HTTP', () => {
     it('deve retornar 404 para unidade não encontrada', async () => {
-      service.findById.mockRejectedValue(
-        new Error('Unidade não encontrada'),
-      );
+      service.findById.mockRejectedValue(new Error('Unidade não encontrada'));
 
       await expect(controller.findById('invalid-id')).rejects.toThrow(
         'Unidade não encontrada',
@@ -485,9 +479,7 @@ describe('UnidadeController', () => {
     });
 
     it('deve retornar 400 para dados inválidos', async () => {
-      service.create.mockRejectedValue(
-        new Error('Dados de entrada inválidos'),
-      );
+      service.create.mockRejectedValue(new Error('Dados de entrada inválidos'));
 
       await expect(controller.create(mockCreateUnidadeDto)).rejects.toThrow(
         'Dados de entrada inválidos',
@@ -495,9 +487,7 @@ describe('UnidadeController', () => {
     });
 
     it('deve retornar 409 para conflito de código', async () => {
-      service.create.mockRejectedValue(
-        new Error('Código já existe'),
-      );
+      service.create.mockRejectedValue(new Error('Código já existe'));
 
       await expect(controller.create(mockCreateUnidadeDto)).rejects.toThrow(
         'Código já existe',
@@ -505,13 +495,11 @@ describe('UnidadeController', () => {
     });
 
     it('deve retornar 500 para erro interno', async () => {
-      service.findAll.mockRejectedValue(
-        new Error('Erro interno do servidor'),
-      );
+      service.findAll.mockRejectedValue(new Error('Erro interno do servidor'));
 
-      await expect(
-        controller.findAll({ page: 1, limit: 10 }),
-      ).rejects.toThrow('Erro interno do servidor');
+      await expect(controller.findAll({ page: 1, limit: 10 })).rejects.toThrow(
+        'Erro interno do servidor',
+      );
     });
   });
 

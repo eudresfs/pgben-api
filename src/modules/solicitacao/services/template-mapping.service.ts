@@ -16,7 +16,7 @@ export enum TipoNotificacaoTemplate {
 
 /**
  * Serviço helper para mapear tipos de notificação para templates
- * 
+ *
  * Centraliza a lógica de associação entre tipos de notificação e templates,
  * facilitando a manutenção e garantindo consistência.
  */
@@ -24,9 +24,7 @@ export enum TipoNotificacaoTemplate {
 export class TemplateMappingService {
   private readonly logger = new Logger(TemplateMappingService.name);
 
-  constructor(
-    private readonly templateRepository: TemplateRepository,
-  ) {}
+  constructor(private readonly templateRepository: TemplateRepository) {}
 
   /**
    * Mapeia tipos de notificação para códigos de template
@@ -49,28 +47,45 @@ export class TemplateMappingService {
    * @param tipoNotificacao Tipo da notificação
    * @returns Template encontrado ou null
    */
-  async buscarTemplatePorTipo(tipoNotificacao: keyof typeof TipoNotificacaoTemplate): Promise<NotificationTemplate | null> {
+  async buscarTemplatePorTipo(
+    tipoNotificacao: keyof typeof TipoNotificacaoTemplate,
+  ): Promise<NotificationTemplate | null> {
     try {
       this.logger.debug(`Buscando template para tipo: '${tipoNotificacao}'`);
-      this.logger.debug(`Enum TipoNotificacaoTemplate:`, TipoNotificacaoTemplate);
-      
-      const codigoTemplate = this.obterCodigoTemplate(tipoNotificacao as TipoNotificacaoTemplate);
+      this.logger.debug(
+        `Enum TipoNotificacaoTemplate:`,
+        TipoNotificacaoTemplate,
+      );
+
+      const codigoTemplate = this.obterCodigoTemplate(
+        tipoNotificacao as TipoNotificacaoTemplate,
+      );
       this.logger.debug(`Código do template mapeado: '${codigoTemplate}'`);
-      
+
       if (!codigoTemplate) {
-        this.logger.warn(`Tipo de notificação '${tipoNotificacao}' não mapeado para nenhum template`);
+        this.logger.warn(
+          `Tipo de notificação '${tipoNotificacao}' não mapeado para nenhum template`,
+        );
         return null;
       }
 
-      const template = await this.templateRepository.findByCodigo(codigoTemplate);
-      this.logger.debug(`Template encontrado no banco:`, template ? `ID: ${template.id}, Código: ${template.codigo}` : 'null');
-      
+      const template =
+        await this.templateRepository.findByCodigo(codigoTemplate);
+      this.logger.debug(
+        `Template encontrado no banco:`,
+        template ? `ID: ${template.id}, Código: ${template.codigo}` : 'null',
+      );
+
       if (!template) {
-        this.logger.warn(`Template com código '${codigoTemplate}' não encontrado no banco de dados`);
+        this.logger.warn(
+          `Template com código '${codigoTemplate}' não encontrado no banco de dados`,
+        );
         return null;
       }
 
-      this.logger.debug(`Template '${codigoTemplate}' encontrado para tipo '${tipoNotificacao}'`);
+      this.logger.debug(
+        `Template '${codigoTemplate}' encontrado para tipo '${tipoNotificacao}'`,
+      );
       return template;
     } catch (error) {
       this.logger.error(
@@ -103,13 +118,15 @@ export class TemplateMappingService {
    * @param tipoNotificacao Tipo da notificação
    * @returns Objeto com template_id e informações de log
    */
-  async prepararDadosTemplate(tipoNotificacao: keyof typeof TipoNotificacaoTemplate): Promise<{
+  async prepararDadosTemplate(
+    tipoNotificacao: keyof typeof TipoNotificacaoTemplate,
+  ): Promise<{
     template_id?: string;
     templateEncontrado: boolean;
     codigoTemplate?: string;
   }> {
     const template = await this.buscarTemplatePorTipo(tipoNotificacao);
-    
+
     return {
       template_id: template?.id,
       templateEncontrado: !!template,

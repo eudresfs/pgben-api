@@ -43,7 +43,7 @@ import { RequestContext } from '../../../shared/request-context/request-context.
  */
 @ApiTags('Usuários')
 @Controller('usuario')
-@UseGuards(JwtAuthGuard, PrimeiroAcessoGuard, PermissionGuard) 
+@UseGuards(JwtAuthGuard, PrimeiroAcessoGuard, PermissionGuard)
 @ApiBearerAuth()
 export class UsuarioController {
   constructor(
@@ -58,15 +58,22 @@ export class UsuarioController {
   @Get()
   @RequiresPermission({
     permissionName: 'usuario.listar',
-    scopeType: ScopeType.UNIT
+    scopeType: ScopeType.UNIT,
   })
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Listar usuários',
-    description: 'Lista usuários com filtros dinâmicos. Aceita qualquer campo da entidade como filtro: nome, email, cpf, telefone, matricula, role_id, unidade_id, setor_id, status, primeiro_acesso, tentativas_login'
+    description:
+      'Lista usuários com filtros dinâmicos. Aceita qualquer campo da entidade como filtro: nome, email, cpf, telefone, matricula, role_id, unidade_id, setor_id, status, primeiro_acesso, tentativas_login',
   })
   @ApiResponse({
     status: 200,
     description: 'Lista de usuários retornada com sucesso',
+  })
+  @ApiQuery({
+    name: 'includeRelations',
+    required: false,
+    type: Boolean,
+    description: 'Incluir relações com outras entidades (padrão: false)',
   })
   @ApiQuery({
     name: 'page',
@@ -152,13 +159,12 @@ export class UsuarioController {
     type: Number,
     description: 'Filtro por número de tentativas de login',
   })
-  async findAll(
-    @Query() query: any,
-  ) {
+  async findAll(@Query() query: any) {
     // Extrair page e limit, convertendo para números
-    const { page, limit, ...filters } = query;
-    
+    const { includeRelations, page, limit, ...filters } = query;
+
     return this.usuarioService.findAll({
+      relations: includeRelations ? +includeRelations : true,
       page: page ? +page : undefined,
       limit: limit ? +limit : undefined,
       ...filters,
@@ -166,20 +172,25 @@ export class UsuarioController {
   }
 
   /**
-   * Retorna todas as roles (papéis) disponíveis no sistema
+   * Retorna todas as roles (papéis) disponíveis no sistema baseado na hierarquia do usuário
+   * Cada usuário só pode ver as roles abaixo da sua na hierarquia:
+   * SUPER_ADMIN > ADMIN > GESTOR > COORDENADOR
    */
   @Get('roles')
   @RequiresPermission({
-    permissionName: 'usuario.listar',
-    scopeType: ScopeType.GLOBAL,
+    permissionName: 'usuario.listar'
   })
-  @ApiOperation({ summary: 'Listar todas as roles disponíveis' })
+  @ApiOperation({ 
+    summary: 'Listar roles disponíveis baseado na hierarquia do usuário',
+    description: 'Retorna apenas as roles que o usuário atual pode atribuir a outros usuários, baseado na hierarquia: SUPER_ADMIN > ADMIN > GESTOR > COORDENADOR'
+  })
   @ApiResponse({
     status: 200,
-    description: 'Lista de roles retornada com sucesso',
+    description: 'Lista de roles retornada com sucesso baseada na hierarquia',
   })
-  async findAllRoles() {
-    return this.usuarioService.findAllRoles();
+  async findAllRoles(@Request() req) {
+    const usuarioAtual = req.user;
+    return this.usuarioService.findAllRoles(usuarioAtual);
   }
 
   /**
@@ -233,7 +244,7 @@ export class UsuarioController {
     @ReqContext() context: RequestContext,
   ) {
     const result = await this.usuarioService.create(createUsuarioDto);
-    
+
     // Auditoria da criação de usuário
     await this.auditEventEmitter.emitEntityCreated(
       'Usuario',
@@ -244,7 +255,7 @@ export class UsuarioController {
         synchronous: false,
       },
     );
-    
+
     return result;
   }
 
@@ -272,9 +283,9 @@ export class UsuarioController {
   ) {
     // Buscar dados anteriores para auditoria
     const previousData = await this.usuarioService.findById(id);
-    
+
     const result = await this.usuarioService.update(id, updateUsuarioDto);
-    
+
     // Auditoria da atualização de usuário
     await this.auditEventEmitter.emitEntityUpdated(
       'Usuario',
@@ -286,7 +297,7 @@ export class UsuarioController {
         synchronous: false,
       },
     );
-    
+
     return result;
   }
 
@@ -309,9 +320,12 @@ export class UsuarioController {
   ) {
     // Buscar dados anteriores para auditoria
     const previousData = await this.usuarioService.findById(id);
-    
-    const result = await this.usuarioService.updateStatus(id, updateStatusUsuarioDto);
-    
+
+    const result = await this.usuarioService.updateStatus(
+      id,
+      updateStatusUsuarioDto,
+    );
+
     // Auditoria da alteração de status
     await this.auditEventEmitter.emitEntityUpdated(
       'Usuario',
@@ -323,7 +337,7 @@ export class UsuarioController {
         synchronous: false,
       },
     );
-    
+
     return result;
   }
 
@@ -352,9 +366,9 @@ export class UsuarioController {
   ) {
     // A verificação agora é feita pelo sistema de permissões granulares
     const userData = await this.usuarioService.findById(id);
-    
+
     const result = await this.usuarioService.updateSenha(id, updateSenhaDto);
-    
+
     // Auditoria da alteração de senha (dados sensíveis não são logados)
     await this.auditEventEmitter.emitEntityUpdated(
       'Usuario',
@@ -374,7 +388,7 @@ export class UsuarioController {
         synchronous: true,
       },
     );
-    
+
     return result;
   }
 
@@ -397,12 +411,12 @@ export class UsuarioController {
   ) {
     const userId = req.user.id;
     const userData = await this.usuarioService.findById(userId);
-    
+
     const result = await this.usuarioService.alterarSenhaPrimeiroAcesso(
       userId,
       alterarSenhaDto,
     );
-    
+
     // Auditoria da alteração de senha no primeiro acesso
     await this.auditEventEmitter.emitEntityUpdated(
       'Usuario',
@@ -422,7 +436,59 @@ export class UsuarioController {
         synchronous: true,
       },
     );
-    
+
+    return result;
+  }
+
+  /**
+   * Reenvia credenciais de acesso para um usuário
+   */
+  @Post(':usuario_id/reenviar-credenciais')
+  @RequiresPermission({
+    permissionName: 'usuario.credenciais.reenviar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'usuario.unidade_id',
+  })
+  @ApiOperation({
+    summary: 'Reenviar credenciais de acesso',
+    description:
+      'Gera nova senha, atualiza no banco de dados e envia por email',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Credenciais reenviadas com sucesso',
+  })
+  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
+  async reenviarCredenciais(
+    @Param('usuario_id', ParseUUIDPipe) id: string,
+    @ReqContext() context: RequestContext,
+  ) {
+    // Buscar dados do usuário para auditoria
+    const userData = await this.usuarioService.findById(id);
+
+    const result = await this.usuarioService.reenviarCredenciais(id);
+
+    // Auditoria do reenvio de credenciais
+    await this.auditEventEmitter.emitEntityUpdated(
+      'Usuario',
+      id,
+      {
+        nome: userData.nome,
+        email: userData.email,
+        credenciaisReenviadas: false,
+      },
+      {
+        nome: userData.nome,
+        email: userData.email,
+        credenciaisReenviadas: true,
+      },
+      context.user?.id?.toString(),
+      {
+        synchronous: true,
+      },
+    );
+
     return result;
   }
 
@@ -431,17 +497,20 @@ export class UsuarioController {
    */
   @Post('/recuperar-senha')
   @UseGuards() // Remove guards de autenticação para endpoint público
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Solicitar recuperação de senha',
-    description: 'Envia email com nova senha temporária para o usuário'
+    description: 'Envia email com nova senha temporária para o usuário',
   })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Solicitação processada. Se o email estiver cadastrado, instruções serão enviadas.' 
+  @ApiResponse({
+    status: 200,
+    description:
+      'Solicitação processada. Se o email estiver cadastrado, instruções serão enviadas.',
   })
   @ApiResponse({ status: 400, description: 'Email inválido' })
   async recuperarSenha(@Body() recuperarSenhaDto: RecuperarSenhaDto) {
-    return this.usuarioService.solicitarRecuperacaoSenha(recuperarSenhaDto.email);
+    return this.usuarioService.solicitarRecuperacaoSenha(
+      recuperarSenhaDto.email,
+    );
   }
 
   /**
@@ -462,9 +531,9 @@ export class UsuarioController {
   ) {
     // Buscar dados do usuário antes da remoção
     const userData = await this.usuarioService.findById(id);
-    
+
     const result = await this.usuarioService.remove(id);
-    
+
     // Auditoria da remoção de usuário
     await this.auditEventEmitter.emitEntityDeleted(
       'Usuario',
@@ -484,7 +553,7 @@ export class UsuarioController {
         synchronous: true,
       },
     );
-    
+
     return result;
   }
 }

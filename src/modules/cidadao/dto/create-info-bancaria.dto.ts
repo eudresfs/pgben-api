@@ -80,17 +80,17 @@ export class CreateInfoBancariaDto {
     example: '12345678901',
     maxLength: 255,
   })
-  @IsNotEmpty({ message: 'Chave PIX é obrigatória' })
+  @IsOptional()
   @IsString({ message: 'Chave PIX deve ser uma string' })
   @MaxLength(255, { message: 'Chave PIX deve ter no máximo 255 caracteres' })
-  chave_pix: string;
+  chave_pix?: string;
 
   @ApiPropertyOptional({
     description: 'Tipo da chave PIX',
     enum: TipoChavePix,
     example: TipoChavePix.CPF,
   })
-  @IsNotEmpty({ message: 'Tipo da chave PIX é obrigatório' })
+  @IsOptional()
   @IsEnum(TipoChavePix, { message: 'Tipo de chave PIX inválido' })
   tipo_chave_pix?: TipoChavePix;
 

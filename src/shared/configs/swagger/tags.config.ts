@@ -356,7 +356,8 @@ export const SWAGGER_TAG_METADATA = {
       description: 'Endpoints utilizados pelos probes do Kubernetes',
       probes: {
         liveness: '/health - Verifica se a aplicação está viva',
-        readiness: '/health/ready - Verifica se a aplicação está pronta para receber tráfego',
+        readiness:
+          '/health/ready - Verifica se a aplicação está pronta para receber tráfego',
         startup: '/health - Verifica se a aplicação iniciou corretamente',
       },
     },

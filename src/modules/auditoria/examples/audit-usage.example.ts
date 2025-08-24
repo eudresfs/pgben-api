@@ -7,8 +7,6 @@ import { AuditoriaModule } from '../auditoria.module';
 
 // Exemplo simples de configuração do módulo
 @Module({
-  imports: [
-    AuditoriaModule,
-  ],
+  imports: [AuditoriaModule],
 })
 export class ExampleAppModule {}

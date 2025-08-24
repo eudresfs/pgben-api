@@ -46,25 +46,25 @@ export class IsStrongPassword implements ValidatorConstraintInterface {
     }
 
     // 1. Verificar regras de complexidade de senha
-    
+
     // Verificar se tem pelo menos uma letra minúscula
     if (!/[a-z]/.test(password)) {
       this.failReason = 'A senha deve conter pelo menos uma letra minúscula';
       return false;
     }
-    
+
     // Verificar se tem pelo menos uma letra maiúscula
     if (!/[A-Z]/.test(password)) {
       this.failReason = 'A senha deve conter pelo menos uma letra maiúscula';
       return false;
     }
-    
+
     // Verificar se tem pelo menos um número
     if (!/\d/.test(password)) {
       this.failReason = 'A senha deve conter pelo menos um número';
       return false;
     }
-    
+
     // Verificar se tem pelo menos um caractere especial
     if (!/[^A-Za-z0-9]/.test(password)) {
       this.failReason = 'A senha deve conter pelo menos um caractere especial';

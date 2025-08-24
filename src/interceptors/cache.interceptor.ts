@@ -37,7 +37,11 @@ export class CacheInterceptor implements NestInterceptor {
         try {
           // Para operações que modificam dados, invalida cache relacionado
           if (['create', 'update', 'delete'].includes(methodName)) {
-            await this.invalidateRelatedCache(controllerName, methodName, result);
+            await this.invalidateRelatedCache(
+              controllerName,
+              methodName,
+              result,
+            );
           }
         } catch (error) {
           // Log do erro mas não falha a operação principal
@@ -65,7 +69,7 @@ export class CacheInterceptor implements NestInterceptor {
         // Para cache-manager, precisamos deletar chaves específicas
         // Como não temos pattern matching nativo, deletamos chaves conhecidas
         await this.deleteCacheByPattern(pattern);
-        
+
         this.logger.debug(`Cache invalidado para padrão: ${pattern}`);
       } catch (error) {
         this.logger.warn(`Erro ao invalidar cache ${pattern}:`, error.message);
@@ -108,11 +112,11 @@ export class CacheInterceptor implements NestInterceptor {
    */
   private getBaseKeyFromController(controllerName: string): string | null {
     const mapping: Record<string, string> = {
-      'DadosBeneficioController': 'dados-beneficio',
-      'DadosAluguelSocialController': 'dados-aluguel-social',
-      'DadosCestaBasicaController': 'dados-cesta-basica',
-      'DadosFuneralController': 'dados-funeral',
-      'DadosNatalidadeController': 'dados-natalidade',
+      DadosBeneficioController: 'dados-beneficio',
+      DadosAluguelSocialController: 'dados-aluguel-social',
+      DadosCestaBasicaController: 'dados-cesta-basica',
+      DadosFuneralController: 'dados-funeral',
+      DadosNatalidadeController: 'dados-natalidade',
     };
 
     return mapping[controllerName] || null;
@@ -125,14 +129,14 @@ export class CacheInterceptor implements NestInterceptor {
   private async deleteCacheByPattern(pattern: string): Promise<void> {
     // Para cache-manager básico, deletamos chaves conhecidas
     // Em ambiente com Redis, poderia usar SCAN + DEL com patterns
-    
+
     if (pattern.includes('*')) {
       // Para padrões com wildcard, tentamos algumas chaves comuns
       const basePattern = pattern.replace(':*', '');
-      
+
       // Tenta deletar algumas variações comuns
       const commonSuffixes = ['', ':page:1', ':page:2', ':page:3'];
-      
+
       for (const suffix of commonSuffixes) {
         try {
           await this.cacheManager.del(`${basePattern}${suffix}`);
@@ -156,7 +160,7 @@ export class CacheInterceptor implements NestInterceptor {
   ): string {
     const sortedParams = Object.keys(params)
       .sort()
-      .map(key => `${key}:${params[key]}`)
+      .map((key) => `${key}:${params[key]}`)
       .join(':');
 
     return sortedParams

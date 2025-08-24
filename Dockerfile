@@ -35,10 +35,21 @@ LABEL maintainer="PGBen DevOps Team"
 LABEL version="1.0.0"
 LABEL description="Plataforma de Gestão de Benefícios Eventuais - PGBen"
 
-# Install security updates and required packages
+# Install security updates and required packages + dependencies for pdf2pic and sharp
 RUN apk update && apk upgrade && \
-    apk add --no-cache curl wget dumb-init && \
-    rm -rf /var/cache/apk/*
+    apk add --no-cache \
+    curl \
+    wget \
+    dumb-init \
+    # Dependências para pdf2pic
+    imagemagick \
+    ghostscript \
+    fontconfig \
+    ttf-liberation \
+    ttf-dejavu \
+    # Dependências para sharp (caso necessário)
+    vips-dev \
+    && rm -rf /var/cache/apk/*
 
 # Update npm to latest version to ensure compatibility with lockfileVersion 3
 RUN npm install -g npm@11.4.2
@@ -60,12 +71,17 @@ RUN npm ci --omit=dev --no-audit --no-fund && \
 # Copy built application from build stage
 COPY --from=build --chown=nextjs:nodejs /app/dist ./dist
 
+# Copy templates directory for email service
+COPY --from=build --chown=nextjs:nodejs /app/src/templates ./templates
+
 # Copy docker entrypoint script
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
 
-# Create logs, uploads and keys directories with proper permissions
-RUN mkdir -p /app/logs /app/uploads /app/keys && chown -R nextjs:nodejs /app/logs /app/uploads /app/keys
+# Create directories with proper permissions (including exports/auditoria for AuditoriaExportacaoService)
+RUN mkdir -p /app/logs /app/uploads /app/keys /app/exports/auditoria /app/temp/download-lote && \
+    chown -R nextjs:nodejs /app/logs /app/uploads /app/keys /app/exports /app/temp && \
+    chmod -R 755 /app/exports /app/temp
 
 # Switch to non-root user
 USER nextjs

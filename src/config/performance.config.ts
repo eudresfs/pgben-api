@@ -42,7 +42,7 @@ export const getPerformanceConfig = (
           limit: 5, // Máximo 5 tentativas de login por 15 min
         },
       ],
-      storage: configService.get('REDIS_HOST') 
+      storage: configService.get('REDIS_HOST')
         ? new ThrottlerStorageRedisService(createRedisInstance(configService))
         : undefined, // Usa storage padrão em memória quando Redis não está disponível
       ignoreUserAgents: [
@@ -114,9 +114,9 @@ export const getTimeoutConfig = (configService: ConfigService) => {
     // Timeouts para operações de API
     api: {
       default: 10000, // 10s para operações normais
-      upload: 60000,  // 1min para uploads
+      upload: 60000, // 1min para uploads
       report: 120000, // 2min para relatórios
-      auth: 5000,     // 5s para autenticação
+      auth: 5000, // 5s para autenticação
     },
 
     // Timeouts para operações de banco
@@ -128,16 +128,16 @@ export const getTimeoutConfig = (configService: ConfigService) => {
 
     // Timeouts para operações externas
     external: {
-      email: 15000,   // 15s para envio de email
+      email: 15000, // 15s para envio de email
       storage: 30000, // 30s para operações de storage
-      api: 10000,     // 10s para APIs externas
+      api: 10000, // 10s para APIs externas
     },
 
     // Timeouts para cache
     cache: {
-      get: 1000,      // 1s para buscar do cache
-      set: 2000,      // 2s para salvar no cache
-      delete: 1000,   // 1s para deletar do cache
+      get: 1000, // 1s para buscar do cache
+      set: 2000, // 2s para salvar no cache
+      delete: 1000, // 1s para deletar do cache
     },
   };
 };

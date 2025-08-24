@@ -130,7 +130,14 @@ export interface IQRCodeData {
 export interface IUploadAudit {
   tokenId: string;
   sessionId?: string;
-  action: 'token_created' | 'token_used' | 'session_started' | 'file_uploaded' | 'session_completed' | 'token_expired' | 'token_cancelled';
+  action:
+    | 'token_created'
+    | 'token_used'
+    | 'session_started'
+    | 'file_uploaded'
+    | 'session_completed'
+    | 'token_expired'
+    | 'token_cancelled';
   userId?: string;
   ipAddress?: string;
   userAgent?: string;

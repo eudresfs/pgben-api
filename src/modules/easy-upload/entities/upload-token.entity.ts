@@ -38,10 +38,10 @@ export enum UploadTokenStatus {
 
 /**
  * Entidade UploadToken
- * 
+ *
  * Representa um token de upload gerado para permitir
  * o envio de documentos via QR Code de forma segura.
- * 
+ *
  * Funcionalidades:
  * - Controle de acesso temporário para upload
  * - Vinculação com solicitação e cidadão
@@ -184,10 +184,7 @@ export class UploadToken {
    * Verifica se o token está ativo e pode ser usado
    */
   isActive(): boolean {
-    return (
-      this.status === UploadTokenStatus.ATIVO &&
-      !this.isExpired()
-    );
+    return this.status === UploadTokenStatus.ATIVO && !this.isExpired();
   }
 
   /**

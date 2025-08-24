@@ -59,7 +59,11 @@ export class CreateDadosSociaisDto {
   @Transform(({ value }) => value === 'true' || value === true)
   recebe_bpc: boolean = false;
 
-  @ApiProperty({ description: 'Modalidade do BPC', enum: ModalidadeBpcEnum, required: false })
+  @ApiProperty({
+    description: 'Modalidade do BPC',
+    enum: ModalidadeBpcEnum,
+    required: false,
+  })
   @ValidateIf((o) => o.recebe_bpc === true)
   modalidade_bpc?: ModalidadeBpcEnum;
 
@@ -99,7 +103,10 @@ export class CreateDadosSociaisDto {
   @Transform(({ value }) => value === 'true' || value === true)
   outros_beneficios: boolean = false;
 
-  @ApiProperty({ description: 'Descrição de outros benefícios', required: false })
+  @ApiProperty({
+    description: 'Descrição de outros benefícios',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(500)
@@ -111,13 +118,20 @@ export class CreateDadosSociaisDto {
   @MaxLength(255)
   curso_profissionalizante?: string;
 
-  @ApiProperty({ description: 'Interesse em curso profissionalizante', required: false })
+  @ApiProperty({
+    description: 'Interesse em curso profissionalizante',
+    required: false,
+  })
   @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => value === 'true' || value === true)
   interesse_curso_profissionalizante?: boolean;
 
-  @ApiProperty({ description: 'Situação de trabalho', enum: SituacaoTrabalhoEnum, required: false })
+  @ApiProperty({
+    description: 'Situação de trabalho',
+    enum: SituacaoTrabalhoEnum,
+    required: false,
+  })
   @IsOptional()
   situacao_trabalho?: SituacaoTrabalhoEnum;
 
@@ -145,7 +159,11 @@ export class CreateDadosSociaisDto {
   @Transform(({ value }) => value === 'true' || value === true)
   exerce_atividade_remunerada?: boolean;
 
-  @ApiProperty({ description: 'Tipo de inserção do beneficiário', enum: TipoInsercaoEnum, required: false })
+  @ApiProperty({
+    description: 'Tipo de inserção do beneficiário',
+    enum: TipoInsercaoEnum,
+    required: false,
+  })
   @IsOptional()
   tipo_insercao_beneficiario?: TipoInsercaoEnum;
 
@@ -161,13 +179,20 @@ export class CreateDadosSociaisDto {
   @MaxLength(255)
   ocupacao_conjuge?: string;
 
-  @ApiProperty({ description: 'Cônjuge exerce atividade remunerada', required: false })
+  @ApiProperty({
+    description: 'Cônjuge exerce atividade remunerada',
+    required: false,
+  })
   @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => value === 'true' || value === true)
   exerce_atividade_remunerada_conjuge?: boolean;
 
-  @ApiProperty({ description: 'Tipo de inserção do cônjuge', enum: TipoInsercaoEnum, required: false })
+  @ApiProperty({
+    description: 'Tipo de inserção do cônjuge',
+    enum: TipoInsercaoEnum,
+    required: false,
+  })
   @IsOptional()
   tipo_insercao_conjuge?: TipoInsercaoEnum;
 

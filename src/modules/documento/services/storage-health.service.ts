@@ -25,8 +25,7 @@ export class StorageHealthService {
     private readonly storageProviderFactory: StorageProviderFactory,
     private readonly configService: ConfigService,
     private readonly logger: LoggingService,
-  ) {
-  }
+  ) {}
 
   /**
    * Executa verificação completa de saúde do storage
@@ -39,9 +38,13 @@ export class StorageHealthService {
       const storageProvider = this.storageProviderFactory.getProvider();
       const providerName = this.getProviderName();
 
-      this.logger.debug('Iniciando verificação de saúde do storage', StorageHealthService.name, {
-        provider: providerName
-      });
+      this.logger.debug(
+        'Iniciando verificação de saúde do storage',
+        StorageHealthService.name,
+        {
+          provider: providerName,
+        },
+      );
 
       // 1. Verificar configuração
       const configurationCheck = await this.checkConfiguration();
@@ -77,29 +80,42 @@ export class StorageHealthService {
       };
 
       if (healthStatus.isHealthy) {
-        this.logger.info('Verificação de saúde do storage concluída com sucesso', StorageHealthService.name, {
+        this.logger.info(
+          'Verificação de saúde do storage concluída com sucesso',
+          StorageHealthService.name,
+          {
             providerName,
             latency,
-            timestamp
-          }
+            timestamp,
+          },
         );
       } else {
-        this.logger.error('Verificação de saúde do storage falhou', new Error('Falha na verificação de saúde'), StorageHealthService.name, {
-          providerName,
-          latency,
-          timestamp,
-          details: healthStatus.details
-        });
+        this.logger.error(
+          'Verificação de saúde do storage falhou',
+          new Error('Falha na verificação de saúde'),
+          StorageHealthService.name,
+          {
+            providerName,
+            latency,
+            timestamp,
+            details: healthStatus.details,
+          },
+        );
       }
 
       return healthStatus;
     } catch (error) {
       const latency = Date.now() - startTime;
 
-      this.logger.error('Erro na verificação de saúde do storage', error, StorageHealthService.name, {
-        stack: error.stack,
-        latency,
-      });
+      this.logger.error(
+        'Erro na verificação de saúde do storage',
+        error,
+        StorageHealthService.name,
+        {
+          stack: error.stack,
+          latency,
+        },
+      );
 
       return {
         isHealthy: false,
@@ -139,7 +155,11 @@ export class StorageHealthService {
         );
 
         if (missingConfigs.length > 0) {
-          this.logger.warn('Configurações S3 ausentes', StorageHealthService.name, { missingConfigs });
+          this.logger.warn(
+            'Configurações S3 ausentes',
+            StorageHealthService.name,
+            { missingConfigs },
+          );
           return false;
         }
       } else if (storageType === 'minio') {
@@ -155,14 +175,22 @@ export class StorageHealthService {
         );
 
         if (missingConfigs.length > 0) {
-          this.logger.warn('Configurações MinIO ausentes', StorageHealthService.name, { missingConfigs });
+          this.logger.warn(
+            'Configurações MinIO ausentes',
+            StorageHealthService.name,
+            { missingConfigs },
+          );
           return false;
         }
       }
 
       return true;
     } catch (error) {
-      this.logger.error('Erro ao verificar configuração', error, StorageHealthService.name);
+      this.logger.error(
+        'Erro ao verificar configuração',
+        error,
+        StorageHealthService.name,
+      );
       return false;
     }
   }
@@ -178,7 +206,11 @@ export class StorageHealthService {
 
     try {
       // Teste 1: Upload
-      this.logger.debug('Testando upload para storage', StorageHealthService.name, { testKey });
+      this.logger.debug(
+        'Testando upload para storage',
+        StorageHealthService.name,
+        { testKey },
+      );
       storedKey = await storageProvider.salvarArquivo(
         this.testContent,
         testKey,
@@ -189,7 +221,11 @@ export class StorageHealthService {
       const keyToCheck = storedKey ?? testKey;
 
       // Teste 2: Download
-      this.logger.debug('Testando download do storage', StorageHealthService.name, { keyToCheck });
+      this.logger.debug(
+        'Testando download do storage',
+        StorageHealthService.name,
+        { keyToCheck },
+      );
       const downloadedContent = await storageProvider.obterArquivo(keyToCheck);
 
       if (!downloadedContent || !downloadedContent.equals(this.testContent)) {
@@ -197,7 +233,11 @@ export class StorageHealthService {
       }
 
       // Teste 3: Remoção
-      this.logger.debug('Testando remoção do storage', StorageHealthService.name, { keyToCheck });
+      this.logger.debug(
+        'Testando remoção do storage',
+        StorageHealthService.name,
+        { keyToCheck },
+      );
       await storageProvider.removerArquivo(keyToCheck);
 
       return { success: true };
@@ -206,10 +246,14 @@ export class StorageHealthService {
       try {
         await storageProvider.removerArquivo(storedKey ?? testKey);
       } catch (cleanupError) {
-        this.logger.warn('Erro ao limpar arquivo de teste', StorageHealthService.name, {
-          key: storedKey ?? testKey,
-          cleanupError: cleanupError.message
-        });
+        this.logger.warn(
+          'Erro ao limpar arquivo de teste',
+          StorageHealthService.name,
+          {
+            key: storedKey ?? testKey,
+            cleanupError: cleanupError.message,
+          },
+        );
       }
 
       return { success: false, errorMessage: error.message };

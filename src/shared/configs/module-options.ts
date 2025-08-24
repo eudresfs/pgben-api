@@ -25,6 +25,5 @@ export const configModuleOptions: ConfigModuleOptions = {
     JWT_PUBLIC_KEY_PATH: Joi.string().optional(),
     JWT_PRIVATE_KEY_BASE64: Joi.string().optional(),
     JWT_PUBLIC_KEY_BASE64: Joi.string().optional(),
-    DEFAULT_ADMIN_USER_PASSWORD: Joi.string().required(),
   }),
 };

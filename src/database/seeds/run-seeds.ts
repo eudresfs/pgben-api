@@ -17,6 +17,7 @@ import { AppDataSource } from './seed-source';
 import { CoreSeedRunner } from './core/CoreSeedRunner';
 import { ReferenceSeedRunner } from './reference/ReferenceSeedRunner';
 import { SeedTipoBeneficioSchema1733158900000 } from './core/1733158900000-SeedTipoBeneficioSchema';
+// SistemaAprovacaoSeed removido - sistema antigo de aprovação
 
 /**
  * Função para verificar se as seeds foram executadas corretamente
@@ -72,6 +73,13 @@ async function verificarSeeds(): Promise<void> {
       [true],
     );
     console.log(`✓ Categorias de documento ativas: ${categorias[0].total}`);
+
+    // Verificar ações críticas
+    const acoesCriticas = await AppDataSource.query(
+      'SELECT COUNT(*) as total FROM acoes_criticas WHERE ativo = $1',
+      [true],
+    );
+    console.log(`✓ Ações críticas ativas: ${acoesCriticas[0].total}`);
 
     console.log('\n✅ Verificação concluída com sucesso!');
   } catch (error) {

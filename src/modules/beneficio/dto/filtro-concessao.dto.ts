@@ -1,49 +1,105 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional, ApiHideProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
 import { StatusConcessao } from '../../../enums/status-concessao.enum';
 import { PaginationParamsDto } from '@/shared/dtos/pagination-params.dto';
 
 export class FiltroConcessaoDto extends PaginationParamsDto {
-  @ApiPropertyOptional({ description: 'Data de início mínima (YYYY-MM-DD)', type: String, example: '2025-01-01' })
+  @ApiPropertyOptional({
+    description: 'Data de início mínima (YYYY-MM-DD)',
+    type: String,
+    example: '2025-01-01',
+  })
   @IsOptional()
-  @Transform(({ value }) => value === '' ? undefined : value)
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsDateString()
-  dataInicioDe?: string;
+  data_inicio?: string;
 
-  @ApiPropertyOptional({ description: 'Data de início máxima (YYYY-MM-DD)', type: String, example: '2025-12-31' })
+  @ApiPropertyOptional({
+    description: 'Data de início máxima (YYYY-MM-DD)',
+    type: String,
+    example: '2025-12-31',
+  })
   @IsOptional()
-  @Transform(({ value }) => value === '' ? undefined : value)
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsDateString()
-  dataInicioAte?: string;
+  data_fim?: string;
 
   @ApiPropertyOptional({ enum: StatusConcessao })
   @IsOptional()
-  @Transform(({ value }) => value === '' ? undefined : value)
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsEnum(StatusConcessao)
   status?: StatusConcessao;
 
   @ApiPropertyOptional({ description: 'UUID da unidade' })
   @IsOptional()
-  @Transform(({ value }) => value === '' ? undefined : value)
+  @Transform(({ value, obj }) => {
+    // Mapear unidadeId (camelCase) para unidade_id (snake_case)
+    if (obj.unidadeId && !value) {
+      return obj.unidadeId === '' ? undefined : obj.unidadeId;
+    }
+    return value === '' ? undefined : value;
+  })
   @IsUUID()
-  unidadeId?: string;
+  unidade_id?: string;
+
+  @ApiPropertyOptional({ description: 'UUID do usuário' })
+  @IsOptional()
+  @IsUUID()
+  usuario_id?: string;
 
   @ApiPropertyOptional({ description: 'UUID do tipo de benefício' })
   @IsOptional()
-  @Transform(({ value }) => value === '' ? undefined : value)
+  @Transform(({ value, obj }) => {
+    // Mapear tipoBeneficioId (camelCase) para tipo_beneficio_id (snake_case)
+    if (obj.tipoBeneficioId && !value) {
+      return obj.tipoBeneficioId === '' ? undefined : obj.tipoBeneficioId;
+    }
+    return value === '' ? undefined : value;
+  })
+  @IsUUID()
+  tipo_beneficio_id?: string;
+
+  // Propriedade temporária para aceitar unidadeId do interceptor
+  @ApiHideProperty()
+  @IsOptional()
+  @IsUUID()
+  unidadeId?: string;
+
+  @ApiHideProperty()
+  @IsOptional()
+  @IsUUID()
+  usuarioId?: string;
+
+  // Propriedade temporária para aceitar tipoBeneficioId do interceptor
+  @ApiHideProperty()
+  @IsOptional()
   @IsUUID()
   tipoBeneficioId?: string;
 
   @ApiPropertyOptional({ description: 'Flag de determinação judicial' })
   @IsOptional()
-  @Transform(({ value }) => value === '' ? undefined : value)
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsBoolean()
-  determinacaoJudicial?: boolean;
+  determinacao_judicial?: boolean;
 
-  @ApiPropertyOptional({ description: 'Prioridade (inteiro, 1-5)', minimum: 1, maximum: 5 })
+  @ApiPropertyOptional({
+    description: 'Prioridade (inteiro, 1-5)',
+    minimum: 1,
+    maximum: 5,
+  })
   @IsOptional()
-  @Transform(({ value }) => value === '' ? undefined : value)
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsNumber()
   @Min(1)
   @Max(5)
@@ -51,7 +107,7 @@ export class FiltroConcessaoDto extends PaginationParamsDto {
 
   @ApiPropertyOptional({ description: 'Busca por nome, CPF ou protocolo' })
   @IsOptional()
-  @Transform(({ value }) => value === '' ? undefined : value)
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsString()
   search?: string;
 }

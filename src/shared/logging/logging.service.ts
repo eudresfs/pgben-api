@@ -99,7 +99,7 @@ export class LoggingService {
     meta?: LogMetadata,
   ): void {
     const logContext = context || this.context || 'Application';
-    
+
     // Sanitizar metadados removendo valores undefined
     const cleanMeta = this.sanitizeMetadata(meta || {});
 
@@ -114,9 +114,9 @@ export class LoggingService {
    */
   logDatabase(meta: DatabaseLogMetadata): void {
     const { operation, entity, duration, query, params, ...rest } = meta;
-    
+
     const message = `DB ${operation}: ${entity} (${duration}ms)`;
-    
+
     const dbMeta = {
       operation,
       entity,
@@ -135,10 +135,10 @@ export class LoggingService {
    */
   logAuth(meta: AuthLogMetadata): void {
     const { operation, userId, success, reason, ...rest } = meta;
-    
+
     const level: LogLevel = success ? 'info' : 'warn';
     const message = `Auth ${operation}: ${userId} - ${success ? 'SUCCESS' : 'FAILED'}`;
-    
+
     const authMeta = {
       operation,
       userId,
@@ -156,9 +156,9 @@ export class LoggingService {
    */
   logBusiness(meta: BusinessLogMetadata): void {
     const { operation, entity, entityId, userId, details, ...rest } = meta;
-    
+
     const message = `Business ${operation}: ${entity} ${entityId} by ${userId}`;
-    
+
     const businessMeta = {
       operation,
       entity,
@@ -176,9 +176,9 @@ export class LoggingService {
    */
   logHttp(meta: HttpLogMetadata): void {
     const { method, url, statusCode, duration, ...rest } = meta;
-    
+
     const level = this.getHttpLogLevel(statusCode);
-    const message = statusCode 
+    const message = statusCode
       ? `${method} ${url} ${statusCode} (${duration}ms)`
       : `${method} ${url} - Started`;
 
@@ -214,10 +214,14 @@ export class LoggingService {
     meta?: LogMetadata,
   ): void {
     const level: LogLevel = duration > 5000 ? 'warn' : 'debug';
-    const performanceFlag = 
-      duration > 10000 ? 'CRITICAL_SLOW' :
-      duration > 5000 ? 'SLOW' :
-      duration > 1000 ? 'MODERATE' : 'FAST';
+    const performanceFlag =
+      duration > 10000
+        ? 'CRITICAL_SLOW'
+        : duration > 5000
+          ? 'SLOW'
+          : duration > 1000
+            ? 'MODERATE'
+            : 'FAST';
 
     const message = `Performance: ${operation} (${duration}ms)`;
 
@@ -237,8 +241,9 @@ export class LoggingService {
     severity: 'low' | 'medium' | 'high' | 'critical',
     meta?: LogMetadata,
   ): void {
-    const level: LogLevel = severity === 'critical' || severity === 'high' ? 'error' : 'warn';
-    
+    const level: LogLevel =
+      severity === 'critical' || severity === 'high' ? 'error' : 'warn';
+
     this.log(level, `Security: ${event}`, 'Security', {
       securityEvent: true,
       severity,
@@ -257,7 +262,7 @@ export class LoggingService {
     meta?: LogMetadata,
   ): void {
     const message = `Audit: ${action} ${resource} by ${userId} - ${result.toUpperCase()}`;
-    
+
     this.log('info', message, 'Audit', {
       action,
       resource,
@@ -277,7 +282,7 @@ export class LoggingService {
     meta?: LogMetadata,
   ): void {
     const message = `Cache ${operation}: ${key}`;
-    
+
     this.log('debug', message, 'Cache', {
       operation,
       key,
@@ -291,9 +296,26 @@ export class LoggingService {
   private sanitizeMetadata(meta: LogMetadata): LogMetadata {
     // Lista ampliada de campos sensíveis
     const sensitiveFields = [
-      'senha', 'password', 'token', 'secret', 'authorization', 'key',
-      'confirmPassword', 'confirmSenha', 'currentPassword', 'senhaAtual', 'newPassword', 'novaSenha',
-      'cpf', 'rg', 'cnpj', 'cardNumber', 'cartao', 'cvv', 'passaporte', 'biometria'
+      'senha',
+      'password',
+      'token',
+      'secret',
+      'authorization',
+      'key',
+      'confirmPassword',
+      'confirmSenha',
+      'currentPassword',
+      'senhaAtual',
+      'newPassword',
+      'novaSenha',
+      'cpf',
+      'rg',
+      'cnpj',
+      'cardNumber',
+      'cartao',
+      'cvv',
+      'passaporte',
+      'biometria',
     ];
 
     // Função recursiva interna para sanitizar
@@ -302,44 +324,48 @@ export class LoggingService {
       if (value === null || value === undefined) {
         return undefined;
       }
-      
+
       // Verificar se o campo atual é sensível
-      if (sensitiveFields.some(field => keyPath.toLowerCase().includes(field.toLowerCase()))) {
+      if (
+        sensitiveFields.some((field) =>
+          keyPath.toLowerCase().includes(field.toLowerCase()),
+        )
+      ) {
         return '[REDACTED]';
       }
-      
+
       // Caso recursivo: valor é um objeto
       if (typeof value === 'object' && !Array.isArray(value)) {
         const sanitizedObj: any = {};
-        
+
         for (const [childKey, childValue] of Object.entries(value)) {
           const newPath = keyPath ? `${keyPath}.${childKey}` : childKey;
           const sanitized = sanitizeValue(childValue, newPath);
-          
+
           if (sanitized !== undefined) {
             sanitizedObj[childKey] = sanitized;
           }
         }
-        
+
         return Object.keys(sanitizedObj).length > 0 ? sanitizedObj : undefined;
       }
-      
+
       // Caso recursivo: valor é um array
       if (Array.isArray(value)) {
         const sanitizedArray = value
           .map((item, index) => sanitizeValue(item, `${keyPath}[${index}]`))
-          .filter(item => item !== undefined);
-        
+          .filter((item) => item !== undefined);
+
         return sanitizedArray.length > 0 ? sanitizedArray : undefined;
       }
-      
+
       // Caso base: valor simples
       return value;
     };
 
     // Iniciar sanitização recursiva
     const result = sanitizeValue(meta, '');
-    return result === undefined ? {} : result as LogMetadata;
+    return result === undefined ? {} : (result as LogMetadata);
   }
 
   /**

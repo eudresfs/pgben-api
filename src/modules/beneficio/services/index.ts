@@ -3,5 +3,4 @@
  */
 
 export * from './beneficio.service';
-export * from './validacao-dinamica.service';
 export * from '../../solicitacao/services/exportacao.service';

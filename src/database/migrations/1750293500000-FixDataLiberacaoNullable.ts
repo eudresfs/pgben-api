@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class FixDataLiberacaoNullable1750293500000 implements MigrationInterface {
+export class FixDataLiberacaoNullable1750293500000
+  implements MigrationInterface
+{
   name = 'FixDataLiberacaoNullable1750293500000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

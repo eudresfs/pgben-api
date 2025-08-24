@@ -26,7 +26,8 @@ export class PendenciaResponseDto {
 
   @ApiProperty({
     description: 'Descrição da pendência',
-    example: 'Comprovante de residência desatualizado - necessário documento com data dos últimos 3 meses',
+    example:
+      'Comprovante de residência desatualizado - necessário documento com data dos últimos 3 meses',
   })
   @Expose()
   descricao: string;
@@ -60,7 +61,7 @@ export class PendenciaResponseDto {
     example: '2024-01-15T10:30:00.000Z',
   })
   @Expose()
-  @Transform(({ value }) => value ? new Date(value).toISOString() : null)
+  @Transform(({ value }) => (value ? new Date(value).toISOString() : null))
   data_resolucao?: string;
 
   @ApiPropertyOptional({
@@ -75,7 +76,9 @@ export class PendenciaResponseDto {
     example: '2024-12-31',
   })
   @Expose()
-  @Transform(({ value }) => value ? new Date(value).toISOString().split('T')[0] : null)
+  @Transform(({ value }) =>
+    value ? new Date(value).toISOString().split('T')[0] : null,
+  )
   prazo_resolucao?: string;
 
   @ApiProperty({
@@ -110,7 +113,8 @@ export class PendenciaResponseDto {
   }
 
   @ApiPropertyOptional({
-    description: 'Indica se a pendência está próxima do vencimento (próximos 7 dias)',
+    description:
+      'Indica se a pendência está próxima do vencimento (próximos 7 dias)',
     example: true,
   })
   @Expose()
@@ -122,10 +126,10 @@ export class PendenciaResponseDto {
     const hoje = new Date();
     const seteDias = new Date();
     seteDias.setDate(hoje.getDate() + 7);
-    
+
     hoje.setHours(0, 0, 0, 0);
     seteDias.setHours(23, 59, 59, 999);
-    
+
     return prazo >= hoje && prazo <= seteDias;
   }
 
@@ -142,7 +146,7 @@ export class PendenciaResponseDto {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
     prazo.setHours(0, 0, 0, 0);
-    
+
     const diffTime = prazo.getTime() - hoje.getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }

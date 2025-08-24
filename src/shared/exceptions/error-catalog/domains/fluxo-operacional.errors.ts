@@ -47,7 +47,8 @@ export const FLUXO_OPERACIONAL_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.OPERATIONAL_FLOW,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Não é possível alterar o status da solicitação para o estado solicitado',
+      'pt-BR':
+        'Não é possível alterar o status da solicitação para o estado solicitado',
       'en-US': 'Cannot change request status to the requested state',
     },
   },

@@ -31,7 +31,9 @@ export class LoggingInterceptor implements NestInterceptor {
 
         const resData = { method, statusCode, responseTime };
 
-        this.logger.info('Request completed', LoggingInterceptor.name, { resData });
+        this.logger.info('Request completed', LoggingInterceptor.name, {
+          resData,
+        });
       }),
     );
   }

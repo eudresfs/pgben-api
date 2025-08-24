@@ -34,7 +34,20 @@ export default [
       'prefer-const': 'error',
       'no-var': 'error',
       'eqeqeq': ['error', 'always'],
-      'curly': ['error', 'all']
+      'curly': ['error', 'all'],
+      
+      // Regras customizadas para segurança de escopo
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'CallExpression[callee.property.name=/^(findAllGlobal|findByIdGlobal|countGlobal|createScopedQueryBuilder)$/]',
+          message: 'Métodos globais do ScopedRepository devem ser usados apenas com validação adequada de escopo. Considere usar métodos com escopo ou validar explicitamente o contexto.'
+        },
+        {
+          selector: 'NewExpression[callee.name="ScopedRepository"][arguments.1.properties[?(@.key.name="allowGlobalScope" && @.value.value=true)]]',
+          message: 'allowGlobalScope=true deve ser usado apenas em casos específicos e documentados. Verifique se é realmente necessário.'
+        }
+      ]
     }
   },
   {

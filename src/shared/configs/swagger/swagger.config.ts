@@ -148,9 +148,15 @@ export const swaggerSetupOptions: SwaggerCustomOptions = {
       const indexA = SWAGGER_TAG_ORDER.indexOf(a as any);
       const indexB = SWAGGER_TAG_ORDER.indexOf(b as any);
 
-      if (indexA === -1 && indexB === -1) {return a.localeCompare(b);}
-      if (indexA === -1) {return 1;}
-      if (indexB === -1) {return -1;}
+      if (indexA === -1 && indexB === -1) {
+        return a.localeCompare(b);
+      }
+      if (indexA === -1) {
+        return 1;
+      }
+      if (indexB === -1) {
+        return -1;
+      }
 
       return indexA - indexB;
     },
@@ -216,11 +222,6 @@ const INTERNAL_ENDPOINTS_TO_REMOVE = [
   '/api/v1/judicial/processos',
   '/api/v1/judicial/determinacoes',
   '/api/v1/solicitacao/determinacao-judicial',
-
-  // Endpoints de verificação e conflitos internos
-  '/api/cidadao/verificacao-papel',
-  '/api/v1/cidadao/regra-conflito',
-  '/api/v1/cidadao/papel-conflito',
 
   // Endpoints de dados específicos de benefícios (internos)
   '/api/dados-funeral',
@@ -359,7 +360,9 @@ const INTERNAL_ENDPOINTS_TO_REMOVE = [
  * @param document - Documento OpenAPI gerado
  */
 function filterInternalEndpoints(document: any): void {
-  if (!document.paths) {return;}
+  if (!document.paths) {
+    return;
+  }
 
   // Remove endpoints específicos da lista
   INTERNAL_ENDPOINTS_TO_REMOVE.forEach((path) => {

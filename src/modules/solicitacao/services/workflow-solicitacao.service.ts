@@ -2,9 +2,11 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
   ForbiddenException,
   InternalServerErrorException,
-  Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
@@ -14,7 +16,10 @@ import {
   HistoricoSolicitacao,
   Pendencia,
   StatusPendencia,
+  DadosNatalidade,
 } from '../../../entities';
+import { DadosNatalidadeRepository } from '../../beneficio/repositories/dados-natalidade.repository';
+import { TipoDocumentoEnum, TipoContextoNatalidade } from '../../../enums';
 import { TransicaoEstadoService } from './transicao-estado.service';
 import { ValidacaoSolicitacaoService } from './validacao-solicitacao.service';
 import { PrazoSolicitacaoService } from './prazo-solicitacao.service';
@@ -22,6 +27,13 @@ import { NotificacaoService } from '../../notificacao/services/notificacao.servi
 import { TemplateMappingService } from './template-mapping.service';
 import { ConcessaoService } from '../../beneficio/services/concessao.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { DadosBeneficioFactoryService } from '../../beneficio/services/dados-beneficio-factory.service';
+import { BeneficioService } from '../../beneficio/services/beneficio.service';
+import { DocumentoService } from '../../documento/services/documento.service';
+import {
+  throwWorkflowStepRequired,
+  throwSolicitacaoNotFound,
+} from '../../../shared/exceptions/error-catalog/domains/solicitacao.errors';
 
 /**
  * Interface para o resultado da transição de estado
@@ -45,8 +57,6 @@ export interface ResultadoTransicaoEstado {
 export class WorkflowSolicitacaoService {
   private readonly logger = new Logger(WorkflowSolicitacaoService.name);
 
-  // As transições permitidas agora são gerenciadas pelo TransicaoEstadoService
-
   constructor(
     private readonly concessaoService: ConcessaoService,
     @InjectRepository(Solicitacao)
@@ -55,6 +65,7 @@ export class WorkflowSolicitacaoService {
     private readonly historicoRepository: Repository<HistoricoSolicitacao>,
     @InjectRepository(Pendencia)
     private readonly pendenciaRepository: Repository<Pendencia>,
+    private readonly dadosNatalidadeRepository: DadosNatalidadeRepository,
     private readonly dataSource: DataSource,
     private readonly transicaoEstadoService: TransicaoEstadoService,
     private readonly validacaoService: ValidacaoSolicitacaoService,
@@ -62,6 +73,11 @@ export class WorkflowSolicitacaoService {
     private readonly notificacaoService: NotificacaoService,
     private readonly templateMappingService: TemplateMappingService,
     private readonly eventEmitter: EventEmitter2,
+    @Inject(forwardRef(() => DadosBeneficioFactoryService))
+    private readonly dadosBeneficioFactoryService: DadosBeneficioFactoryService,
+    @Inject(forwardRef(() => BeneficioService))
+    private readonly beneficioService: BeneficioService,
+    private readonly documentoService: DocumentoService,
   ) {}
 
   /**
@@ -218,7 +234,8 @@ export class WorkflowSolicitacaoService {
               protocolo: resultado.solicitacao.protocolo,
               statusAnterior: estadoAtual,
               statusAtual: novoEstado,
-              observacao: observacao || `Transição de ${estadoAtual} para ${novoEstado}`,
+              observacao:
+                observacao || `Transição de ${estadoAtual} para ${novoEstado}`,
               prioridade: this.determinarPrioridadeTransicao(novoEstado),
               dataTransicao: new Date(),
             },
@@ -331,46 +348,246 @@ export class WorkflowSolicitacaoService {
   }
 
   /**
-   * Submete um rascunho de solicitação, alterando seu estado para PENDENTE
-   * @param solicitacaoId ID da solicitação
-   * @param usuarioId ID do usuário que está submetendo o rascunho
-   * @returns Resultado da transição
+   * Busca documentos históricos do cidadão (solicitações anteriores + documentos reutilizáveis)
+   * @param cidadaoId ID do cidadão
+   * @param solicitacaoAtualId ID da solicitação atual (para excluir da busca)
+   * @returns Lista de tipos de documentos já apresentados pelo cidadão
+   * @private
    */
-  async submeterRascunho(
-    solicitacaoId: string,
-    usuarioId: string,
-  ): Promise<ResultadoTransicaoEstado> {
-    const resultado = await this.realizarTransicao(
-      solicitacaoId,
-      StatusSolicitacao.ABERTA,
-      usuarioId,
-      'Solicitação submetida',
+  private async buscarDocumentosHistoricosCidadao(
+    cidadaoId: string,
+    solicitacaoAtualId: string,
+  ): Promise<TipoDocumentoEnum[]> {
+    this.logger.debug(
+      `Buscando histórico documental do cidadão ${cidadaoId} (excluindo solicitação ${solicitacaoAtualId})`,
     );
 
-    // Emitir notificação SSE específica para submissão de rascunho
-    if (resultado.sucesso && resultado.solicitacao) {
-      try {
-        this.eventEmitter.emit('sse.notificacao', {
-          userId: resultado.solicitacao.tecnico_id,
-          tipo: 'rascunho_submetido',
-          dados: {
-            solicitacaoId: resultado.solicitacao.id,
-            protocolo: resultado.solicitacao.protocolo,
-            statusAnterior: StatusSolicitacao.RASCUNHO,
-            statusAtual: StatusSolicitacao.ABERTA,
-            prioridade: 'medium',
-            dataSubmissao: new Date(),
-          },
-        });
-      } catch (sseError) {
-        this.logger.error(
-          `Erro ao emitir notificação SSE para submissão de rascunho ${solicitacaoId}: ${sseError.message}`,
-          sseError.stack,
-        );
-      }
+    // 1. Buscar documentos de solicitações anteriores do cidadão
+    const documentosHistoricos =
+      await this.documentoService.findByCidadao(cidadaoId);
+
+    // Filtrar documentos que não sejam da solicitação atual
+    const documentosOutrasSolicitacoes = documentosHistoricos.filter(
+      (doc) => doc.solicitacao_id !== solicitacaoAtualId,
+    );
+
+    // 2. Buscar documentos reutilizáveis válidos do cidadão
+    const documentosReutilizaveis =
+      await this.documentoService.findReutilizaveis(cidadaoId);
+
+    // Combinar todos os documentos e extrair tipos únicos
+    const todosDocumentos = [
+      ...documentosOutrasSolicitacoes,
+      ...documentosReutilizaveis,
+    ];
+
+    // Filtrar apenas documentos válidos (não vencidos)
+    const agora = new Date();
+    const documentosValidos = todosDocumentos.filter((doc) => {
+      // Se não tem data de validade, considera válido
+      if (!doc.data_validade) return true;
+      // Se tem data de validade, verifica se não venceu
+      return new Date(doc.data_validade) >= agora;
+    });
+
+    const tiposDocumentosHistoricos: TipoDocumentoEnum[] = [
+      ...new Set(documentosValidos.map((doc) => doc.tipo)),
+    ];
+
+    this.logger.debug(
+      `Encontrados ${tiposDocumentosHistoricos.length} tipos de documentos no histórico do cidadão: [${tiposDocumentosHistoricos.join(', ')}]`,
+    );
+
+    return tiposDocumentosHistoricos;
+  }
+
+  /**
+   * Valida se uma solicitação pode ser enviada para análise
+   * Verifica se todos os requisitos obrigatórios foram atendidos
+   * Considera documentos já apresentados pelo cidadão em solicitações anteriores
+   * @param solicitacaoId ID da solicitação a ser validada
+   * @throws {AppError} Se algum requisito obrigatório não foi atendido
+   * @private
+   */
+  private async validarEnvioParaAnalise(solicitacaoId: string): Promise<void> {
+    this.logger.debug(
+      `Iniciando validação de envio para análise da solicitação ${solicitacaoId}`,
+    );
+
+    // Buscar a solicitação com suas relações
+    const solicitacao = await this.solicitacaoRepository.findOne({
+      where: { id: solicitacaoId },
+      relations: ['tipo_beneficio', 'beneficiario'],
+    });
+
+    if (!solicitacao) {
+      this.logger.error(
+        `Solicitação ${solicitacaoId} não encontrada durante validação de envio para análise`,
+      );
+      throwSolicitacaoNotFound(solicitacaoId, {
+        data: {
+          context: 'validacao_envio_analise',
+          action: 'enviar_para_analise',
+        },
+      });
     }
 
-    return resultado;
+    const tipoBeneficio = solicitacao.tipo_beneficio;
+    const beneficiario = solicitacao.beneficiario;
+
+    this.logger.debug(
+      `Validando solicitação ${solicitacaoId} do benefício '${tipoBeneficio.nome}' para beneficiário '${beneficiario?.nome}'`,
+    );
+
+    // 1. Validar se existem dados específicos do benefício
+    try {
+      const possuiDadosBeneficio =
+        await this.dadosBeneficioFactoryService.existsBySolicitacao(
+          tipoBeneficio.codigo,
+          solicitacaoId,
+        );
+
+      if (!possuiDadosBeneficio) {
+        this.logger.warn(
+          `Dados específicos do benefício '${tipoBeneficio.nome}' não preenchidos para solicitação ${solicitacaoId}`,
+        );
+
+        throwWorkflowStepRequired('dados_especificos_beneficio', {
+          data: {
+            solicitacaoId,
+            tipoBeneficio: tipoBeneficio.nome,
+            codigoBeneficio: tipoBeneficio.codigo,
+            beneficiario: beneficiario?.nome,
+            context: 'validacao_envio_analise',
+            action: 'preencher_dados_beneficio',
+          },
+        });
+      }
+    } catch (error) {
+      if (error.code === 'SOLICITACAO_WORKFLOW_STEP_REQUIRED') {
+        throw error;
+      }
+      this.logger.error(
+        `Erro ao verificar dados específicos do benefício para solicitação ${solicitacaoId}: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+
+    // 2. Validar se todos os requisitos documentais obrigatórios foram atendidos
+    // Agora considera documentos já apresentados pelo cidadão anteriormente
+    try {
+      const requisitosObrigatorios =
+        await this.beneficioService.findRequisitosByBeneficioId(
+          tipoBeneficio.id,
+        );
+
+      const tiposDocumentosObrigatorios = requisitosObrigatorios
+        .filter((requisito) => requisito.isObrigatorio())
+        .map((requisito) => requisito.tipo_documento);
+
+      this.logger.debug(
+        `Encontrados ${tiposDocumentosObrigatorios.length} tipos de documentos obrigatórios para benefício '${tipoBeneficio.nome}'`,
+      );
+
+      if (tiposDocumentosObrigatorios.length > 0) {
+        // Buscar documentos da solicitação atual
+        const documentosEnviados =
+          await this.documentoService.findBySolicitacao(solicitacaoId);
+        const tiposDocumentosEnviados = documentosEnviados.map(
+          (doc) => doc.tipo,
+        );
+
+        // Buscar documentos históricos do cidadão
+        const tiposDocumentosHistoricos =
+          await this.buscarDocumentosHistoricosCidadao(
+            beneficiario.id,
+            solicitacaoId,
+          );
+
+        // Combinar documentos da solicitação atual + histórico
+        const todosDocumentosDisponiveis = [
+          ...new Set([
+            ...tiposDocumentosEnviados,
+            ...tiposDocumentosHistoricos,
+          ]),
+        ];
+
+        this.logger.debug(
+          `Documentos enviados na solicitação atual ${solicitacaoId}: [${tiposDocumentosEnviados.join(', ')}]`,
+        );
+        this.logger.debug(
+          `Documentos disponíveis no histórico: [${tiposDocumentosHistoricos.join(', ')}]`,
+        );
+        this.logger.debug(
+          `Total de documentos disponíveis (atual + histórico): [${todosDocumentosDisponiveis.join(', ')}]`,
+        );
+
+        // Verificar quais documentos obrigatórios ainda estão faltando
+        let tiposFaltantes = tiposDocumentosObrigatorios.filter(
+          (tipoObrigatorio) =>
+            !todosDocumentosDisponiveis.includes(tipoObrigatorio),
+        );
+
+        // Validação específica para benefício de natalidade
+        if (tipoBeneficio.codigo === 'NATALIDADE') {
+          tiposFaltantes = await this.validarDocumentosNatalidade(
+            solicitacaoId,
+            tiposFaltantes,
+            todosDocumentosDisponiveis,
+          );
+        }
+
+        if (tiposFaltantes.length > 0) {
+          this.logger.warn(
+            `Documentos obrigatórios ainda faltantes para solicitação ${solicitacaoId}: [${tiposFaltantes.join(', ')}]`,
+          );
+
+          throwWorkflowStepRequired('documentos_obrigatorios', {
+            data: {
+              solicitacaoId,
+              tipoBeneficio: tipoBeneficio.nome,
+              codigoBeneficio: tipoBeneficio.codigo,
+              beneficiario: beneficiario?.nome,
+              context: 'validacao_envio_analise',
+              action: 'anexar_documentos_obrigatorios',
+              documentosFaltantes: tiposFaltantes,
+              totalDocumentosFaltantes: tiposFaltantes.length,
+              documentosEnviados: tiposDocumentosEnviados,
+              totalDocumentosEnviados: tiposDocumentosEnviados.length,
+              documentosHistoricos: tiposDocumentosHistoricos,
+              totalDocumentosHistoricos: tiposDocumentosHistoricos.length,
+              todosDocumentosDisponiveis,
+              totalDocumentosDisponiveis: todosDocumentosDisponiveis.length,
+              totalDocumentosObrigatorios: tiposDocumentosObrigatorios.length,
+            },
+          });
+        } else {
+          this.logger.log(
+            `Todos os documentos obrigatórios foram atendidos para solicitação ${solicitacaoId}. ` +
+              `Documentos na solicitação atual: ${tiposDocumentosEnviados.length}, ` +
+              `Documentos do histórico: ${tiposDocumentosHistoricos.length}`,
+          );
+        }
+      } else {
+        this.logger.debug(
+          `Nenhum documento obrigatório configurado para benefício '${tipoBeneficio.nome}'`,
+        );
+      }
+    } catch (error) {
+      if (error.code === 'SOLICITACAO_WORKFLOW_STEP_REQUIRED') {
+        throw error;
+      }
+      this.logger.error(
+        `Erro ao validar documentos obrigatórios para solicitação ${solicitacaoId}: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+
+    this.logger.log(
+      `Validação de envio para análise concluída com sucesso para solicitação ${solicitacaoId} do benefício '${tipoBeneficio.nome}'`,
+    );
   }
 
   /**
@@ -378,17 +595,59 @@ export class WorkflowSolicitacaoService {
    * @param solicitacaoId ID da solicitação
    * @param usuarioId ID do usuário que está enviando a solicitação
    * @returns Resultado da transição
+   * @throws {AppError} Se a validação falhar ou ocorrer erro na transição
    */
   async enviarParaAnalise(
     solicitacaoId: string,
     usuarioId: string,
   ): Promise<ResultadoTransicaoEstado> {
-    return this.realizarTransicao(
-      solicitacaoId,
-      StatusSolicitacao.EM_ANALISE,
-      usuarioId,
-      'Solicitação enviada para análise',
+    this.logger.log(
+      `Iniciando processo de envio para análise da solicitação ${solicitacaoId} pelo usuário ${usuarioId}`,
     );
+
+    try {
+      // Validar se a solicitação pode ser enviada para análise
+      await this.validarEnvioParaAnalise(solicitacaoId);
+
+      this.logger.debug(
+        `Validação concluída com sucesso para solicitação ${solicitacaoId}. Iniciando transição de estado.`,
+      );
+
+      // Se passou na validação, realizar a transição
+      const resultado = await this.realizarTransicao(
+        solicitacaoId,
+        StatusSolicitacao.EM_ANALISE,
+        usuarioId,
+        'Solicitação enviada para análise após validação completa',
+      );
+
+      if (resultado.sucesso) {
+        this.logger.log(
+          `Solicitação ${solicitacaoId} enviada para análise com sucesso. Status alterado de '${resultado.status_anterior}' para '${resultado.status_atual}'`,
+        );
+      } else {
+        this.logger.warn(
+          `Falha ao enviar solicitação ${solicitacaoId} para análise. Motivo: ${resultado.mensagem || 'Não especificado'}`,
+        );
+      }
+
+      return resultado;
+    } catch (error) {
+      // Log detalhado do erro para debugging
+      this.logger.error(
+        `Erro ao enviar solicitação ${solicitacaoId} para análise: ${error.message}`,
+        {
+          solicitacaoId,
+          usuarioId,
+          errorCode: error.code,
+          errorStack: error.stack,
+          context: 'enviarParaAnalise',
+        },
+      );
+
+      // Re-propagar o erro para que seja tratado pelo filtro de exceções
+      throw error;
+    }
   }
 
   /**
@@ -455,11 +714,17 @@ export class WorkflowSolicitacaoService {
     // Criação automática de concessão vinculada à solicitação aprovada
     if (resultado.sucesso) {
       try {
-        const concessao = await this.concessaoService.criarSeNaoExistir(solicitacao);
+        const concessao =
+          await this.concessaoService.criarSeNaoExistir(solicitacao);
         resultado.concessao = concessao; // Incluir dados da concessão no retorno
-        this.logger.debug(`Concessão criada/recuperada para solicitação ${solicitacao.id}`);
+        this.logger.debug(
+          `Concessão criada/recuperada para solicitação ${solicitacao.id}`,
+        );
       } catch (concessaoErr) {
-        this.logger.error(`Erro ao criar concessão automática para solicitação ${solicitacao.id}: ${concessaoErr.message}`, concessaoErr.stack);
+        this.logger.error(
+          `Erro ao criar concessão automática para solicitação ${solicitacao.id}: ${concessaoErr.message}`,
+          concessaoErr.stack,
+        );
       }
     }
 
@@ -467,8 +732,9 @@ export class WorkflowSolicitacaoService {
     if (resultado.sucesso && solicitacao.tecnico_id) {
       try {
         // Buscar o template de aprovação usando o serviço de mapeamento
-        const templateData = await this.templateMappingService.prepararDadosTemplate('APROVACAO');
-        
+        const templateData =
+          await this.templateMappingService.prepararDadosTemplate('APROVACAO');
+
         await this.notificacaoService.criarEBroadcast({
           destinatario_id: solicitacao.tecnico_id,
           titulo: 'Solicitação Aprovada',
@@ -485,14 +751,19 @@ export class WorkflowSolicitacaoService {
             parecer_semtas: parecerSemtas,
             observacao: observacao || 'Nenhuma observação',
             data_aprovacao: new Date().toLocaleDateString('pt-BR'),
-            url_sistema: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
+            url_sistema:
+              process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
           },
         });
-        
+
         if (templateData.templateEncontrado) {
-          this.logger.log(`Notificação de aprovação enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`);
+          this.logger.log(
+            `Notificação de aprovação enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`,
+          );
         } else {
-          this.logger.warn(`Template para APROVACAO não encontrado. Notificação enviada sem template.`);
+          this.logger.warn(
+            `Template para APROVACAO não encontrado. Notificação enviada sem template.`,
+          );
         }
       } catch (notificationError) {
         this.logger.error(
@@ -563,8 +834,11 @@ export class WorkflowSolicitacaoService {
     if (resultado.sucesso && solicitacao.tecnico_id) {
       try {
         // Buscar o template de rejeição usando o serviço de mapeamento
-        const templateData = await this.templateMappingService.prepararDadosTemplate('INDEFERIMENTO');
-        
+        const templateData =
+          await this.templateMappingService.prepararDadosTemplate(
+            'INDEFERIMENTO',
+          );
+
         await this.notificacaoService.criarEBroadcast({
           destinatario_id: solicitacao.tecnico_id,
           titulo: 'Solicitação Rejeitada',
@@ -580,14 +854,19 @@ export class WorkflowSolicitacaoService {
             status_novo: resultado.status_atual,
             motivo: motivo || 'Não informado',
             data_rejeicao: new Date().toLocaleDateString('pt-BR'),
-            url_sistema: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
+            url_sistema:
+              process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
           },
         });
-        
+
         if (templateData.templateEncontrado) {
-          this.logger.log(`Notificação de rejeição enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`);
+          this.logger.log(
+            `Notificação de rejeição enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`,
+          );
         } else {
-          this.logger.warn(`Template para REJEICAO não encontrado. Notificação enviada sem template.`);
+          this.logger.warn(
+            `Template para REJEICAO não encontrado. Notificação enviada sem template.`,
+          );
         }
       } catch (notificationError) {
         this.logger.error(
@@ -658,8 +937,11 @@ export class WorkflowSolicitacaoService {
     if (resultado.sucesso && solicitacao.tecnico_id) {
       try {
         // Buscar o template de cancelamento usando o serviço de mapeamento
-        const templateData = await this.templateMappingService.prepararDadosTemplate('CANCELAMENTO');
-        
+        const templateData =
+          await this.templateMappingService.prepararDadosTemplate(
+            'CANCELAMENTO',
+          );
+
         await this.notificacaoService.criarEBroadcast({
           destinatario_id: solicitacao.tecnico_id,
           titulo: 'Solicitação Cancelada',
@@ -675,14 +957,19 @@ export class WorkflowSolicitacaoService {
             status_novo: resultado.status_atual,
             motivo: motivo || 'Não informado',
             data_cancelamento: new Date().toLocaleDateString('pt-BR'),
-            url_sistema: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
+            url_sistema:
+              process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
           },
         });
-        
+
         if (templateData.templateEncontrado) {
-          this.logger.log(`Notificação de cancelamento enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`);
+          this.logger.log(
+            `Notificação de cancelamento enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`,
+          );
         } else {
-          this.logger.warn(`Template para CANCELAMENTO não encontrado. Notificação enviada sem template.`);
+          this.logger.warn(
+            `Template para CANCELAMENTO não encontrado. Notificação enviada sem template.`,
+          );
         }
       } catch (notificationError) {
         this.logger.error(
@@ -853,6 +1140,79 @@ export class WorkflowSolicitacaoService {
       );
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  /**
+   * Valida documentos específicos para benefício de natalidade
+   * @param solicitacaoId ID da solicitação
+   * @param tiposFaltantes Lista de tipos de documentos faltantes
+   * @param todosDocumentosDisponiveis Lista de todos os documentos disponíveis
+   * @returns Lista atualizada de tipos de documentos faltantes
+   * @private
+   */
+  private async validarDocumentosNatalidade(
+    solicitacaoId: string,
+    tiposFaltantes: TipoDocumentoEnum[],
+    todosDocumentosDisponiveis: TipoDocumentoEnum[],
+  ): Promise<TipoDocumentoEnum[]> {
+    this.logger.debug(
+      `Iniciando validação específica de documentos para natalidade - solicitação ${solicitacaoId}`,
+    );
+
+    try {
+      // Buscar dados de natalidade da solicitação
+      const dadosNatalidade = await this.dadosNatalidadeRepository.findOne({
+        where: { solicitacao_id: solicitacaoId },
+      });
+
+      if (!dadosNatalidade) {
+        this.logger.warn(
+          `Dados de natalidade não encontrados para solicitação ${solicitacaoId}`,
+        );
+        return tiposFaltantes;
+      }
+
+      // Se for contexto pós-natal, certidão de nascimento é obrigatória
+      if (dadosNatalidade.tipo_contexto === TipoContextoNatalidade.POS_NATAL) {
+        const temCertidaoNascimento = todosDocumentosDisponiveis.includes(
+          TipoDocumentoEnum.CERTIDAO_NASCIMENTO,
+        );
+
+        if (!temCertidaoNascimento) {
+          // Adicionar certidão de nascimento aos documentos faltantes se não estiver presente
+          if (!tiposFaltantes.includes(TipoDocumentoEnum.CERTIDAO_NASCIMENTO)) {
+            tiposFaltantes.push(TipoDocumentoEnum.CERTIDAO_NASCIMENTO);
+            this.logger.debug(
+              `Contexto pós-natal detectado para solicitação ${solicitacaoId}. ` +
+                `Adicionando certidão de nascimento como documento obrigatório.`,
+            );
+          }
+        } else {
+          this.logger.debug(
+            `Contexto pós-natal detectado para solicitação ${solicitacaoId}. ` +
+              `Certidão de nascimento já está presente nos documentos.`,
+          );
+        }
+
+        this.logger.debug(
+          `Documentos faltantes após validação pós-natal: [${tiposFaltantes.join(', ')}]`,
+        );
+      } else {
+        this.logger.debug(
+          `Contexto pré-natal detectado para solicitação ${solicitacaoId}. ` +
+            `Mantendo validação padrão de documentos.`,
+        );
+      }
+
+      return tiposFaltantes;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao validar documentos específicos de natalidade para solicitação ${solicitacaoId}: ${error.message}`,
+        error.stack,
+      );
+      // Em caso de erro, retornar a lista original sem modificações
+      return tiposFaltantes;
     }
   }
 

@@ -10,11 +10,12 @@ export interface RedisConfig {
   password?: string;
   db: number;
   retryDelayOnFailover: number;
-  // Removido maxRetriesPerRequest para compatibilidade com Bull
+  maxRetriesPerRequest: number;
   lazyConnect: boolean;
   keepAlive: number;
   family: number;
   keyPrefix?: string;
+  retryStrategy?: (times: number) => number | void | null;
 }
 
 /**
@@ -28,11 +29,18 @@ export const createRedisInstance = (configService: ConfigService): Redis => {
     port: configService.get<number>('REDIS_PORT', 6379),
     db: configService.get<number>('REDIS_DB', 0),
     retryDelayOnFailover: 100,
-    // Removido maxRetriesPerRequest para compatibilidade com Bull
+    maxRetriesPerRequest: configService.get<number>(
+      'REDIS_MAX_RETRIES_PER_REQUEST',
+      3,
+    ),
     lazyConnect: true,
     keepAlive: 30000,
     family: 4,
     keyPrefix: configService.get<string>('REDIS_KEY_PREFIX', 'pgben:'),
+    retryStrategy: (times: number) => {
+      const delay = Math.min(times * 50, 2000);
+      return delay;
+    },
   };
 
   if (password) {
@@ -66,7 +74,7 @@ export const createRedisInstance = (configService: ConfigService): Redis => {
  */
 export const getRedisConfig = (configService: ConfigService) => {
   const environment = configService.get<string>('NODE_ENV', 'development');
-  
+
   const password = configService.get<string>('REDIS_PASSWORD');
 
   const baseConfig: Partial<RedisConfig> = {
@@ -85,31 +93,52 @@ export const getRedisConfig = (configService: ConfigService) => {
         ...baseConfig,
         db: 0,
         retryDelayOnFailover: 100,
-        // Removido maxRetriesPerRequest para compatibilidade com Bull
+        maxRetriesPerRequest: configService.get<number>(
+          'REDIS_MAX_RETRIES_PER_REQUEST',
+          3,
+        ),
         lazyConnect: true,
         keepAlive: 30000,
         connectTimeout: 10000,
         commandTimeout: 5000,
+        retryStrategy: (times: number) => {
+          const delay = Math.min(times * 50, 2000);
+          return delay;
+        },
       };
-    
+
     case 'test':
       return {
         ...baseConfig,
         db: 1,
         retryDelayOnFailover: 50,
-        // Removido maxRetriesPerRequest para compatibilidade com Bull
+        maxRetriesPerRequest: configService.get<number>(
+          'REDIS_MAX_RETRIES_PER_REQUEST',
+          3,
+        ),
         lazyConnect: false,
         keepAlive: 1000,
+        retryStrategy: (times: number) => {
+          const delay = Math.min(times * 25, 1000);
+          return delay;
+        },
       };
-    
+
     default: // development
       return {
         ...baseConfig,
         db: 0,
         retryDelayOnFailover: 100,
-        // Removido maxRetriesPerRequest para compatibilidade com Bull
+        maxRetriesPerRequest: configService.get<number>(
+          'REDIS_MAX_RETRIES_PER_REQUEST',
+          3,
+        ),
         lazyConnect: true,
         keepAlive: 30000,
+        retryStrategy: (times: number) => {
+          const delay = Math.min(times * 50, 2000);
+          return delay;
+        },
       };
   }
 };

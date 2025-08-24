@@ -12,10 +12,17 @@ import { UpdateInfoBancariaDto } from '../dto/update-info-bancaria.dto';
  */
 @Injectable()
 export class InfoBancariaRepository {
-  private repository: Repository<InfoBancaria>;
+  private _repository: Repository<InfoBancaria>;
 
   constructor(private dataSource: DataSource) {
-    this.repository = this.dataSource.getRepository(InfoBancaria);
+    this._repository = this.dataSource.getRepository(InfoBancaria);
+  }
+
+  /**
+   * Getter para acessar o repository diretamente quando necessário
+   */
+  get repository(): Repository<InfoBancaria> {
+    return this._repository;
   }
 
   /**
@@ -26,8 +33,8 @@ export class InfoBancariaRepository {
   async create(
     createInfoBancariaDto: CreateInfoBancariaDto,
   ): Promise<InfoBancaria> {
-    const infoBancaria = this.repository.create(createInfoBancariaDto);
-    return await this.repository.save(infoBancaria);
+    const infoBancaria = this._repository.create(createInfoBancariaDto);
+    return await this._repository.save(infoBancaria);
   }
 
   /**
@@ -50,7 +57,7 @@ export class InfoBancariaRepository {
       includeRelations = false,
     } = options || {};
 
-    const queryBuilder = this.repository.createQueryBuilder('info_bancaria');
+    const queryBuilder = this._repository.createQueryBuilder('info_bancaria');
 
     // Adiciona relações se solicitado
     if (includeRelations) {
@@ -106,7 +113,7 @@ export class InfoBancariaRepository {
     id: string,
     includeRelations = false,
   ): Promise<InfoBancaria | null> {
-    const queryBuilder = this.repository
+    const queryBuilder = this._repository
       .createQueryBuilder('info_bancaria')
       .where('info_bancaria.id = :id', { id });
 
@@ -127,7 +134,7 @@ export class InfoBancariaRepository {
     cidadaoId: string,
     includeRelations = false,
   ): Promise<InfoBancaria | null> {
-    const queryBuilder = this.repository
+    const queryBuilder = this._repository
       .createQueryBuilder('info_bancaria')
       .where('info_bancaria.cidadao_id = :cidadaoId', { cidadaoId })
       .andWhere('info_bancaria.ativo = :ativo', { ativo: true });
@@ -145,7 +152,7 @@ export class InfoBancariaRepository {
    * @returns Lista de informações bancárias
    */
   async findByChavePix(chavePix: string): Promise<InfoBancaria[]> {
-    return await this.repository.find({
+    return await this._repository.find({
       where: {
         chave_pix: chavePix,
         ativo: true,
@@ -164,7 +171,7 @@ export class InfoBancariaRepository {
     id: string,
     updateInfoBancariaDto: UpdateInfoBancariaDto,
   ): Promise<InfoBancaria | null> {
-    await this.repository.update(id, updateInfoBancariaDto);
+    await this._repository.update(id, updateInfoBancariaDto);
     return await this.findById(id);
   }
 
@@ -174,7 +181,7 @@ export class InfoBancariaRepository {
    * @returns Resultado da operação
    */
   async remove(id: string): Promise<boolean> {
-    const result = await this.repository.softDelete(id);
+    const result = await this._repository.softDelete(id);
     return (result.affected ?? 0) > 0;
   }
 
@@ -184,7 +191,7 @@ export class InfoBancariaRepository {
    * @returns Informação bancária atualizada
    */
   async deactivate(id: string): Promise<InfoBancaria | null> {
-    await this.repository.update(id, { ativo: false });
+    await this._repository.update(id, { ativo: false });
     return await this.findById(id);
   }
 
@@ -194,13 +201,35 @@ export class InfoBancariaRepository {
    * @returns True se existe, false caso contrário
    */
   async existsActiveByCidadaoId(cidadaoId: string): Promise<boolean> {
-    const count = await this.repository.count({
+    const count = await this._repository.count({
       where: {
         cidadao_id: cidadaoId,
         ativo: true,
       },
     });
     return count > 0;
+  }
+
+  /**
+   * Busca informação bancária por ID do cidadão (incluindo inativas) - usado para upsert
+   * @param cidadaoId ID do cidadão
+   * @param includeRelations Se deve incluir relações
+   * @returns Informação bancária encontrada ou null
+   */
+  async findByCidadaoIdForUpsert(
+    cidadaoId: string,
+    includeRelations = false,
+  ): Promise<InfoBancaria | null> {
+    const queryBuilder = this._repository
+      .createQueryBuilder('info_bancaria')
+      .where('info_bancaria.cidadao_id = :cidadaoId', { cidadaoId })
+      .orderBy('info_bancaria.created_at', 'DESC'); // Pega o mais recente
+
+    if (includeRelations) {
+      queryBuilder.leftJoinAndSelect('info_bancaria.cidadao', 'cidadao');
+    }
+
+    return await queryBuilder.getOne();
   }
 
   /**
@@ -213,7 +242,7 @@ export class InfoBancariaRepository {
     chavePix: string,
     excludeId?: string,
   ): Promise<boolean> {
-    const queryBuilder = this.repository
+    const queryBuilder = this._repository
       .createQueryBuilder('info_bancaria')
       .where('info_bancaria.chave_pix = :chavePix', { chavePix })
       .andWhere('info_bancaria.ativo = :ativo', { ativo: true });

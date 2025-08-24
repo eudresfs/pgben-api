@@ -28,7 +28,7 @@ import { TipoConta, TipoChavePix } from '../enums/info-bancaria.enum';
  * e informações da chave PIX para facilitar pagamentos de benefícios eventuais.
  */
 @Entity('info_bancaria')
-@Index(['cidadao_id'], { unique: true }) // Um cidadão pode ter apenas uma conta bancária principal
+@Index(['cidadao_id'], { unique: true })
 @Index(['conta', 'agencia', 'banco'])
 @Index(['chave_pix'])
 export class InfoBancaria {
@@ -269,7 +269,9 @@ export class InfoBancaria {
    * Obtém a descrição do tipo de chave PIX
    */
   getDescricaoTipoChavePix(): string {
-    if (!this.tipo_chave_pix) {return 'Não informado';}
+    if (!this.tipo_chave_pix) {
+      return 'Não informado';
+    }
 
     const descricoes = {
       [TipoChavePix.CPF]: 'CPF',
@@ -284,7 +286,9 @@ export class InfoBancaria {
    * Formata a conta bancária
    */
   getContaFormatada(): string {
-    if (!this.temDadosBancariosCompletos()) {return 'Não informado';}
+    if (!this.temDadosBancariosCompletos()) {
+      return 'Não informado';
+    }
     return `${this.banco} - Ag: ${this.agencia} - Conta: ${this.conta}`;
   }
 
@@ -292,7 +296,9 @@ export class InfoBancaria {
    * Obtém o nome do banco formatado
    */
   getBancoFormatado(): string {
-    if (!this.banco) {return 'Não informado';}
+    if (!this.banco) {
+      return 'Não informado';
+    }
     return this.nome_banco ? `${this.nome_banco} (${this.banco})` : this.banco;
   }
 
@@ -300,7 +306,9 @@ export class InfoBancaria {
    * Formata a chave PIX (mascarando dados sensíveis)
    */
   getChavePixFormatada(): string {
-    if (!this.chave_pix) {return 'Não informado';}
+    if (!this.chave_pix) {
+      return 'Não informado';
+    }
 
     switch (this.tipo_chave_pix) {
       case TipoChavePix.CPF:
@@ -351,16 +359,24 @@ export class InfoBancaria {
    */
   isConsistente(): boolean {
     // Verifica se tem cidadão
-    if (!this.cidadao_id) {return false;}
+    if (!this.cidadao_id) {
+      return false;
+    }
 
     // Se tem dados bancários, devem estar completos
     if (this.banco || this.agencia || this.conta) {
-      if (!this.temDadosBancariosCompletos()) {return false;}
+      if (!this.temDadosBancariosCompletos()) {
+        return false;
+      }
     }
 
     // Se tem chave PIX, deve ter tipo
-    if (this.chave_pix && !this.tipo_chave_pix) {return false;}
-    if (this.tipo_chave_pix && !this.chave_pix) {return false;}
+    if (this.chave_pix && !this.tipo_chave_pix) {
+      return false;
+    }
+    if (this.tipo_chave_pix && !this.chave_pix) {
+      return false;
+    }
 
     // Validação específica por tipo de chave PIX
     if (this.temChavePix()) {
@@ -384,7 +400,9 @@ export class InfoBancaria {
    */
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
-    if (this.foiRemovido()) {return false;}
+    if (this.foiRemovido()) {
+      return false;
+    }
 
     // Outras validações específicas podem ser adicionadas
     return true;
@@ -427,9 +445,15 @@ export class InfoBancaria {
    * Obtém o método de pagamento preferido
    */
   getMetodoPagamentoPreferido(): 'CONTA_BANCARIA' | 'PIX' | 'INDEFINIDO' {
-    if (this.isPreferencialPagamentos()) {return 'CONTA_BANCARIA';}
-    if (this.temChavePix()) {return 'PIX';}
-    if (this.temDadosBancariosCompletos()) {return 'CONTA_BANCARIA';}
+    if (this.isPreferencialPagamentos()) {
+      return 'CONTA_BANCARIA';
+    }
+    if (this.temChavePix()) {
+      return 'PIX';
+    }
+    if (this.temDadosBancariosCompletos()) {
+      return 'CONTA_BANCARIA';
+    }
     return 'INDEFINIDO';
   }
 
@@ -438,10 +462,14 @@ export class InfoBancaria {
    */
   precisaValidacao(): boolean {
     // Informações muito antigas precisam de validação
-    if (this.getIdadeRegistroEmDias() > 365) {return true;}
+    if (this.getIdadeRegistroEmDias() > 365) {
+      return true;
+    }
 
     // Informações inconsistentes precisam de validação
-    if (!this.isConsistente()) {return true;}
+    if (!this.isConsistente()) {
+      return true;
+    }
 
     // Contas não preferenciais podem precisar de validação
     if (this.temDadosBancariosCompletos() && !this.isPreferencialPagamentos()) {
@@ -531,7 +559,9 @@ export class InfoBancaria {
    * Obtém o status das informações bancárias
    */
   getStatus(): 'COMPLETO' | 'PARCIAL' | 'INCOMPLETO' | 'INATIVO' {
-    if (!this.isAtivo()) {return 'INATIVO';}
+    if (!this.isAtivo()) {
+      return 'INATIVO';
+    }
 
     if (this.temDadosBancariosCompletos() && this.temChavePix()) {
       return 'COMPLETO';
@@ -550,13 +580,27 @@ export class InfoBancaria {
   getPontuacaoCompletude(): number {
     let pontos = 0;
 
-    if (this.banco) {pontos += 15;}
-    if (this.nome_banco) {pontos += 10;}
-    if (this.agencia) {pontos += 15;}
-    if (this.conta) {pontos += 15;}
-    if (this.tipo_conta) {pontos += 10;}
-    if (this.chave_pix) {pontos += 20;}
-    if (this.tipo_chave_pix) {pontos += 15;}
+    if (this.banco) {
+      pontos += 15;
+    }
+    if (this.nome_banco) {
+      pontos += 10;
+    }
+    if (this.agencia) {
+      pontos += 15;
+    }
+    if (this.conta) {
+      pontos += 15;
+    }
+    if (this.tipo_conta) {
+      pontos += 10;
+    }
+    if (this.chave_pix) {
+      pontos += 20;
+    }
+    if (this.tipo_chave_pix) {
+      pontos += 15;
+    }
 
     return pontos;
   }

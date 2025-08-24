@@ -6,7 +6,7 @@ import {
 
 /**
  * Seed para templates de notificação específicos de solicitações
- * 
+ *
  * Cria templates para eventos relacionados ao workflow de solicitações:
  * - Aprovação/Rejeição de solicitações
  * - Criação e resolução de pendências
@@ -14,7 +14,9 @@ import {
  */
 export class SolicitacaoNotificationTemplateSeed {
   public static async run(dataSource: DataSource): Promise<void> {
-    console.log('Iniciando seed de templates de notificação para solicitações...');
+    console.log(
+      'Iniciando seed de templates de notificação para solicitações...',
+    );
 
     try {
       const templateRepository = dataSource.getRepository(NotificationTemplate);
@@ -25,9 +27,11 @@ export class SolicitacaoNotificationTemplateSeed {
           codigo: 'solicitacao-aprovada',
           nome: 'Solicitação Aprovada',
           tipo: 'solicitacao',
-          descricao: 'Template para notificar quando uma solicitação é aprovada',
+          descricao:
+            'Template para notificar quando uma solicitação é aprovada',
           assunto: 'Solicitação {{numero_protocolo}} - Aprovada',
-          corpo: 'Sua solicitação {{numero_protocolo}} para {{tipo_beneficio}} foi aprovada. Observações: {{observacoes}}',
+          corpo:
+            'Sua solicitação {{numero_protocolo}} para {{tipo_beneficio}} foi aprovada. Observações: {{observacoes}}',
           corpo_html: `
             <h2>✅ Solicitação Aprovada!</h2>
             <p>Olá <strong>{{nome_cidadao}}</strong>,</p>
@@ -49,21 +53,28 @@ export class SolicitacaoNotificationTemplateSeed {
           `,
           canais_disponiveis: ['email', 'in_app'],
           variaveis_requeridas: JSON.stringify([
-            'nome_cidadao', 'numero_protocolo', 'tipo_beneficio', 
-            'data_aprovacao', 'nome_tecnico', 'observacoes', 
-            'link_solicitacao', 'data_envio'
+            'nome_cidadao',
+            'numero_protocolo',
+            'tipo_beneficio',
+            'data_aprovacao',
+            'nome_tecnico',
+            'observacoes',
+            'link_solicitacao',
+            'data_envio',
           ]),
           ativo: true,
           categoria: 'solicitacao',
-          prioridade: 'alta'
+          prioridade: 'alta',
         },
         {
           codigo: 'solicitacao-indeferida',
           nome: 'Solicitação Indeferida',
           tipo: 'solicitacao',
-          descricao: 'Template para notificar quando uma solicitação é indeferida',
+          descricao:
+            'Template para notificar quando uma solicitação é indeferida',
           assunto: 'Solicitação {{numero_protocolo}} - Indeferida',
-          corpo: 'Sua solicitação {{numero_protocolo}} para {{tipo_beneficio}} foi indeferida. Motivo: {{motivo_rejeicao}}',
+          corpo:
+            'Sua solicitação {{numero_protocolo}} para {{tipo_beneficio}} foi indeferida. Motivo: {{motivo_rejeicao}}',
           corpo_html: `
             <h2>❌ Solicitação Indeferida</h2>
             <p>Olá <strong>{{nome_cidadao}}</strong>,</p>
@@ -83,21 +94,27 @@ export class SolicitacaoNotificationTemplateSeed {
           `,
           canais_disponiveis: ['email', 'in_app'],
           variaveis_requeridas: JSON.stringify([
-            'nome_cidadao', 'numero_protocolo', 'tipo_beneficio',
-            'data_rejeicao', 'nome_tecnico', 'motivo_rejeicao',
-            'link_solicitacao'
+            'nome_cidadao',
+            'numero_protocolo',
+            'tipo_beneficio',
+            'data_rejeicao',
+            'nome_tecnico',
+            'motivo_rejeicao',
+            'link_solicitacao',
           ]),
           ativo: true,
           categoria: 'solicitacao',
-          prioridade: 'alta'
+          prioridade: 'alta',
         },
         {
           codigo: 'solicitacao-cancelada',
           nome: 'Solicitação Cancelada',
           tipo: 'solicitacao',
-          descricao: 'Template para notificar quando uma solicitação é cancelada',
+          descricao:
+            'Template para notificar quando uma solicitação é cancelada',
           assunto: 'Solicitação {{numero_protocolo}} - Cancelada',
-          corpo: 'Sua solicitação {{numero_protocolo}} para {{tipo_beneficio}} foi cancelada. Motivo: {{motivo_cancelamento}}',
+          corpo:
+            'Sua solicitação {{numero_protocolo}} para {{tipo_beneficio}} foi cancelada. Motivo: {{motivo_cancelamento}}',
           corpo_html: `
             <h2>🚫 Solicitação Cancelada</h2>
             <p>Olá <strong>{{nome_cidadao}}</strong>,</p>
@@ -115,20 +132,26 @@ export class SolicitacaoNotificationTemplateSeed {
           `,
           canais_disponiveis: ['email', 'in_app'],
           variaveis_requeridas: JSON.stringify([
-            'nome_cidadao', 'numero_protocolo', 'tipo_beneficio',
-            'data_cancelamento', 'motivo_cancelamento', 'link_solicitacao'
+            'nome_cidadao',
+            'numero_protocolo',
+            'tipo_beneficio',
+            'data_cancelamento',
+            'motivo_cancelamento',
+            'link_solicitacao',
           ]),
           ativo: true,
           categoria: 'solicitacao',
-          prioridade: 'normal'
+          prioridade: 'normal',
         },
         {
           codigo: 'solicitacao-suspensa',
           nome: 'Solicitação Suspensa',
           tipo: 'solicitacao',
-          descricao: 'Template para notificar quando uma solicitação é suspensa',
+          descricao:
+            'Template para notificar quando uma solicitação é suspensa',
           assunto: 'Solicitação {{numero_protocolo}} - Suspensa',
-          corpo: 'Sua solicitação {{numero_protocolo}} para {{tipo_beneficio}} foi suspensa. Motivo: {{motivo_suspensao}}',
+          corpo:
+            'Sua solicitação {{numero_protocolo}} para {{tipo_beneficio}} foi suspensa. Motivo: {{motivo_suspensao}}',
           corpo_html: `
             <h2>⏸️ Solicitação Suspensa</h2>
             <p>Olá <strong>{{nome_cidadao}}</strong>,</p>
@@ -147,20 +170,26 @@ export class SolicitacaoNotificationTemplateSeed {
           `,
           canais_disponiveis: ['email', 'in_app'],
           variaveis_requeridas: JSON.stringify([
-            'nome_cidadao', 'numero_protocolo', 'tipo_beneficio',
-            'data_suspensao', 'motivo_suspensao', 'link_solicitacao'
+            'nome_cidadao',
+            'numero_protocolo',
+            'tipo_beneficio',
+            'data_suspensao',
+            'motivo_suspensao',
+            'link_solicitacao',
           ]),
           ativo: true,
           categoria: 'solicitacao',
-          prioridade: 'alta'
+          prioridade: 'alta',
         },
         {
           codigo: 'solicitacao-bloqueada',
           nome: 'Solicitação Bloqueada',
           tipo: 'solicitacao',
-          descricao: 'Template para notificar quando uma solicitação é bloqueada',
+          descricao:
+            'Template para notificar quando uma solicitação é bloqueada',
           assunto: 'Solicitação {{numero_protocolo}} - Bloqueada',
-          corpo: 'Sua solicitação {{numero_protocolo}} para {{tipo_beneficio}} foi bloqueada. Motivo: {{motivo_bloqueio}}',
+          corpo:
+            'Sua solicitação {{numero_protocolo}} para {{tipo_beneficio}} foi bloqueada. Motivo: {{motivo_bloqueio}}',
           corpo_html: `
             <h2>🔒 Solicitação Bloqueada</h2>
             <p>Olá <strong>{{nome_cidadao}}</strong>,</p>
@@ -179,20 +208,26 @@ export class SolicitacaoNotificationTemplateSeed {
           `,
           canais_disponiveis: ['email', 'in_app'],
           variaveis_requeridas: JSON.stringify([
-            'nome_cidadao', 'numero_protocolo', 'tipo_beneficio',
-            'data_bloqueio', 'motivo_bloqueio', 'link_solicitacao'
+            'nome_cidadao',
+            'numero_protocolo',
+            'tipo_beneficio',
+            'data_bloqueio',
+            'motivo_bloqueio',
+            'link_solicitacao',
           ]),
           ativo: true,
           categoria: 'solicitacao',
-          prioridade: 'alta'
+          prioridade: 'alta',
         },
         {
           codigo: 'solicitacao-pendencia',
           nome: 'Pendência em Solicitação',
           tipo: 'solicitacao',
-          descricao: 'Template para notificar quando uma pendência é criada em uma solicitação',
+          descricao:
+            'Template para notificar quando uma pendência é criada em uma solicitação',
           assunto: 'Pendência na Solicitação {{numero_protocolo}}',
-          corpo: 'Foi identificada uma pendência na solicitação {{numero_protocolo}} para {{tipo_beneficio}}. Descrição: {{descricao_pendencia}}',
+          corpo:
+            'Foi identificada uma pendência na solicitação {{numero_protocolo}} para {{tipo_beneficio}}. Descrição: {{descricao_pendencia}}',
           corpo_html: `
             <h2>⚠️ Pendência Identificada</h2>
             <p>Olá <strong>{{nome_cidadao}}</strong>,</p>
@@ -215,13 +250,18 @@ export class SolicitacaoNotificationTemplateSeed {
           `,
           canais_disponiveis: ['email', 'in_app'],
           variaveis_requeridas: JSON.stringify([
-            'nome_cidadao', 'numero_protocolo', 'tipo_beneficio',
-            'data_pendencia', 'nome_tecnico', 'descricao_pendencia',
-            'observacoes', 'link_solicitacao'
+            'nome_cidadao',
+            'numero_protocolo',
+            'tipo_beneficio',
+            'data_pendencia',
+            'nome_tecnico',
+            'descricao_pendencia',
+            'observacoes',
+            'link_solicitacao',
           ]),
           ativo: true,
           categoria: 'solicitacao',
-          prioridade: 'alta'
+          prioridade: 'alta',
         },
         {
           codigo: 'solicitacao-pendencia-resolvida',
@@ -229,7 +269,8 @@ export class SolicitacaoNotificationTemplateSeed {
           tipo: 'solicitacao',
           descricao: 'Template para notificar quando uma pendência é resolvida',
           assunto: 'Pendência Resolvida - Solicitação {{numero_protocolo}}',
-          corpo: 'A pendência da solicitação {{numero_protocolo}} para {{tipo_beneficio}} foi resolvida. Observações: {{observacoes_resolucao}}',
+          corpo:
+            'A pendência da solicitação {{numero_protocolo}} para {{tipo_beneficio}} foi resolvida. Observações: {{observacoes_resolucao}}',
           corpo_html: `
             <h2>✅ Pendência Resolvida</h2>
             <p>Olá <strong>{{nome_cidadao}}</strong>,</p>
@@ -251,43 +292,54 @@ export class SolicitacaoNotificationTemplateSeed {
           `,
           canais_disponiveis: ['email', 'in_app'],
           variaveis_requeridas: JSON.stringify([
-            'nome_cidadao', 'numero_protocolo', 'tipo_beneficio',
-            'data_resolucao', 'nome_tecnico', 'observacoes_resolucao',
-            'link_solicitacao'
+            'nome_cidadao',
+            'numero_protocolo',
+            'tipo_beneficio',
+            'data_resolucao',
+            'nome_tecnico',
+            'observacoes_resolucao',
+            'link_solicitacao',
           ]),
           ativo: true,
           categoria: 'solicitacao',
-          prioridade: 'normal'
-        }
+          prioridade: 'normal',
+        },
       ];
 
       // Processa cada template
       for (const templateData of templates) {
         // Verifica se o template já existe
         const existingTemplate = await templateRepository.findOne({
-          where: { codigo: templateData.codigo }
+          where: { codigo: templateData.codigo },
         });
 
         if (existingTemplate) {
-          console.log(`Template '${templateData.codigo}' já existe, atualizando...`);
-          
+          console.log(
+            `Template '${templateData.codigo}' já existe, atualizando...`,
+          );
+
           // Atualiza o template existente
           await templateRepository.update(
             { id: existingTemplate.id },
-            templateData
+            templateData,
           );
         } else {
           console.log(`Criando template '${templateData.codigo}'...`);
-          
+
           // Cria novo template
           const template = templateRepository.create(templateData);
           await templateRepository.save(template);
         }
       }
 
-      console.log(`✅ Seed de templates de notificação para solicitações concluída! ${templates.length} templates processados.`);
+      console.log(
+        `✅ Seed de templates de notificação para solicitações concluída! ${templates.length} templates processados.`,
+      );
     } catch (error) {
-      console.error('❌ Erro ao executar seed de templates de notificação para solicitações:', error);
+      console.error(
+        '❌ Erro ao executar seed de templates de notificação para solicitações:',
+        error,
+      );
       throw error;
     }
   }

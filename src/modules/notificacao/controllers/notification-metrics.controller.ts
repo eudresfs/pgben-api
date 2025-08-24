@@ -1,23 +1,18 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AblyService } from '../services/ably.service';
-import { SseService } from '../services/sse.service';
 
 @ApiTags('Métricas – Notificações')
 @Controller('notificacao/metricas')
 export class NotificationMetricsController {
-  constructor(
-    private readonly ablyService: AblyService,
-    private readonly sseService: SseService,
-  ) {}
+  constructor(private readonly ablyService: AblyService) {}
 
   @Get('resumo')
-  @ApiOperation({ summary: 'Resumo de métricas de Ably e SSE' })
+  @ApiOperation({ summary: 'Resumo de métricas de Ably' })
   @ApiResponse({ status: 200, description: 'Métricas retornadas com sucesso' })
   getMetrics() {
     return {
       ably: this.ablyService.getMetrics(),
-      sse: this.sseService.getLocalConnectionStats(),
     };
   }
 }

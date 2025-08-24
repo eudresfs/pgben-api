@@ -9,7 +9,10 @@ import { QrCodeService } from './qr-code.service';
 import { UploadTokenService } from './upload-token.service';
 import { UploadSessionService } from './upload-session.service';
 import { UploadToken } from '../entities/upload-token.entity';
-import { UploadSession, UploadSessionStatus } from '../entities/upload-session.entity';
+import {
+  UploadSession,
+  UploadSessionStatus,
+} from '../entities/upload-session.entity';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { NotificacaoService } from '../../notificacao/services/notificacao.service';
 import { DocumentoService } from '../../documento/services/documento.service';
@@ -43,21 +46,34 @@ export class EasyUploadService {
    * @param userId ID do usuário que está criando o token
    * @returns Token criado com QR Code
    */
-  async createUploadToken(tokenData: Partial<UploadToken>, userId: string): Promise<UploadToken> {
+  async createUploadToken(
+    tokenData: Partial<UploadToken>,
+    userId: string,
+  ): Promise<UploadToken> {
     try {
       this.logger.debug('Criando token de upload');
 
       // Criar o token através do serviço especializado
-      const token = await this.uploadTokenService.createUploadToken(tokenData, userId);
+      const token = await this.uploadTokenService.createUploadToken(
+        tokenData,
+        userId,
+      );
 
       // Se aplicável, enviar notificação para o cidadão
-      if (token.cidadao_id && tokenData.metadata && tokenData.metadata.enviar_notificacao) {
+      if (
+        token.cidadao_id &&
+        tokenData.metadata &&
+        tokenData.metadata.enviar_notificacao
+      ) {
         await this.enviarNotificacaoCidadao(token);
       }
 
       return token;
     } catch (error) {
-      this.logger.error(`Erro ao criar token de upload: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao criar token de upload: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -68,11 +84,24 @@ export class EasyUploadService {
    */
   private async enviarNotificacaoCidadao(token: UploadToken): Promise<void> {
     try {
+      // Validar se o cidadao_id é válido antes de enviar notificação
+      if (!token.cidadao_id || token.cidadao_id.trim() === '') {
+        this.logger.error(
+          'Tentativa de enviar notificação sem cidadao_id válido',
+          {
+            token_id: token.id,
+            solicitacao_id: token.solicitacao_id,
+            cidadao_id: token.cidadao_id,
+          },
+        );
+        return;
+      }
+
       const uploadUrl = this.qrCodeService.getUploadUrl(token.token);
-      
+
       await this.notificacaoService.enviarNotificacao({
         tipo: 'UPLOAD_DISPONIVEL',
-        destinatario_id: token.cidadao_id || '',
+        destinatario_id: token.cidadao_id,
         titulo: 'Solicitação de documentos',
         conteudo: 'Foi solicitado o envio de documentos para seu processo',
         link: uploadUrl,
@@ -82,7 +111,7 @@ export class EasyUploadService {
           qr_code: token.metadata?.qr_code || '',
         },
       });
-      
+
       this.logger.debug(`Notificação enviada para cidadão ${token.cidadao_id}`);
     } catch (error) {
       this.logger.warn(`Erro ao enviar notificação: ${error.message}`);
@@ -96,7 +125,10 @@ export class EasyUploadService {
    * @param userId ID do usuário que está consultando
    * @returns Lista paginada de tokens
    */
-  async listUploadTokens(filters: any, userId: string): Promise<{ items: UploadToken[]; total: number }> {
+  async listUploadTokens(
+    filters: any,
+    userId: string,
+  ): Promise<{ items: UploadToken[]; total: number }> {
     return await this.uploadTokenService.listTokens(filters, userId);
   }
 
@@ -116,16 +148,23 @@ export class EasyUploadService {
    * @param userId ID do usuário que está cancelando o token
    * @param motivo Motivo do cancelamento
    */
-  async cancelUploadToken(tokenId: string, userId: string, motivo?: string): Promise<void> {
+  async cancelUploadToken(
+    tokenId: string,
+    userId: string,
+    motivo?: string,
+  ): Promise<void> {
     await this.uploadTokenService.cancelToken(tokenId, userId, motivo);
-    
+
     // Enviar notificação ao cidadão caso necessário
-    const token = await this.uploadTokenService.getTokenDetails(tokenId, userId);
-    if (token.cidadao_id) {
+    const token = await this.uploadTokenService.getTokenDetails(
+      tokenId,
+      userId,
+    );
+    if (token.cidadao_id && token.cidadao_id.trim() !== '') {
       try {
         await this.notificacaoService.enviarNotificacao({
           tipo: 'UPLOAD_CANCELADO',
-          destinatario_id: token.cidadao_id || '',
+          destinatario_id: token.cidadao_id,
           titulo: 'Solicitação de documentos cancelada',
           conteudo: `A solicitação de envio de documentos foi cancelada. ${motivo ? `Motivo: ${motivo}` : ''}`,
           dados: {
@@ -135,10 +174,21 @@ export class EasyUploadService {
           },
         });
       } catch (error) {
-        this.logger.warn(`Erro ao enviar notificação de cancelamento: ${error.message}`);
+        this.logger.warn(
+          `Erro ao enviar notificação de cancelamento: ${error.message}`,
+        );
       }
+    } else {
+      this.logger.warn(
+        'Token sem cidadao_id válido - notificação de cancelamento não enviada',
+        {
+          token_id: tokenId,
+          cidadao_id: token.cidadao_id,
+        },
+      );
     }
   }
+
 
   /**
    * Valida um token de upload
@@ -147,24 +197,28 @@ export class EasyUploadService {
    * @param userAgent User-Agent do cliente
    * @returns Informações do token validado
    */
-  async validateUploadToken(token: string, ipAddress?: string, userAgent?: string): Promise<any> {
+  async validateUploadToken(
+    token: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<any> {
     try {
       // Validar o token
       const uploadToken = await this.uploadTokenService.validateToken(token);
-      
+
       // Registrar na auditoria
       await this.auditEventEmitter.emitEntityUpdated(
         'UploadToken',
         uploadToken.id,
         {},
-        { 
-          status: 'VALIDADO', 
-          ip_address: ipAddress, 
-          user_agent: userAgent?.substring(0, 255) 
+        {
+          status: 'VALIDADO',
+          ip_address: ipAddress,
+          user_agent: userAgent?.substring(0, 255),
         },
-        uploadToken.usuario_id || null
+        uploadToken.usuario_id || null,
       );
-      
+
       // Retornar informações relevantes (sem expor dados sensíveis)
       return {
         valid: true,
@@ -175,21 +229,24 @@ export class EasyUploadService {
         public_metadata: uploadToken.metadata?.public_info || null,
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         // Registrar falha de validação sem revelar detalhes ao cliente
         await this.auditEventEmitter.emitEntityUpdated(
           'UploadToken',
           token || 'unknown',
           {},
-          { 
-            status: 'INVALIDO', 
-            ip_address: ipAddress || '', 
-            user_agent: userAgent?.substring(0, 255) || '', 
-            erro: error.message || 'Erro desconhecido' 
+          {
+            status: 'INVALIDO',
+            ip_address: ipAddress || '',
+            user_agent: userAgent?.substring(0, 255) || '',
+            erro: error.message || 'Erro desconhecido',
           },
-          null
+          null,
         );
-        
+
         return {
           valid: false,
           message: 'Token de upload inválido ou expirado',
@@ -205,11 +262,14 @@ export class EasyUploadService {
    * @param sessionData Dados da sessão (IP, User-Agent, etc.)
    * @returns Informações da sessão iniciada
    */
-  async startUploadSession(token: string, sessionData: Partial<UploadSession>): Promise<any> {
+  async startUploadSession(
+    token: string,
+    sessionData: Partial<UploadSession>,
+  ): Promise<any> {
     try {
       // Validar o token
       const uploadToken = await this.uploadTokenService.validateToken(token);
-      
+
       // Criar nova sessão
       const session = await this.uploadSessionService.createSession(
         uploadToken.id,
@@ -217,7 +277,11 @@ export class EasyUploadService {
       );
 
       // Enviar notificação ao cidadão
-      if (uploadToken.cidadao_id && uploadToken.metadata && uploadToken.metadata.enviar_notificacao) {
+      if (
+        uploadToken.cidadao_id &&
+        uploadToken.metadata &&
+        uploadToken.metadata.enviar_notificacao
+      ) {
         try {
           await this.notificacaoService.enviarNotificacao({
             tipo: 'UPLOAD_SESSION_STARTED',
@@ -231,7 +295,9 @@ export class EasyUploadService {
             },
           });
         } catch (error) {
-          this.logger.warn(`Erro ao enviar notificação de sessão iniciada: ${error.message}`);
+          this.logger.warn(
+            `Erro ao enviar notificação de sessão iniciada: ${error.message}`,
+          );
         }
       }
 
@@ -243,11 +309,19 @@ export class EasyUploadService {
         required_documents: uploadToken.required_documents,
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
-      this.logger.error(`Erro ao iniciar sessão de upload: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Falha ao iniciar sessão de upload');
+      this.logger.error(
+        `Erro ao iniciar sessão de upload: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        'Falha ao iniciar sessão de upload',
+      );
     }
   }
 
@@ -259,9 +333,12 @@ export class EasyUploadService {
   async getSessionStatus(sessionId: string): Promise<any> {
     try {
       const session = await this.uploadSessionService.findById(sessionId);
-      
+
       // Buscar documentos associados à sessão
-      const documentos = await this.documentoService.findByMetadata('upload_session_id', sessionId);
+      const documentos = await this.documentoService.findByMetadata(
+        'upload_session_id',
+        sessionId,
+      );
 
       return {
         id: session.id,
@@ -276,7 +353,7 @@ export class EasyUploadService {
         error_message: session.error_message,
         duration_minutes: session.getDurationInMinutes(),
         progress_percentage: session.getProgressPercentage(),
-        documentos: documentos.map(doc => ({
+        documentos: documentos.map((doc) => ({
           id: doc.id,
           nome: doc.nome_arquivo,
           tamanho: doc.tamanho,
@@ -288,7 +365,10 @@ export class EasyUploadService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      this.logger.error(`Erro ao buscar status da sessão: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao buscar status da sessão: ${error.message}`,
+        error.stack,
+      );
       throw new InternalServerErrorException('Falha ao obter status da sessão');
     }
   }
@@ -318,16 +398,23 @@ export class EasyUploadService {
   ): Promise<void> {
     try {
       // Completar a sessão
-      await this.uploadSessionService.completeSession(sessionId, success, errorMessage);
-      
+      await this.uploadSessionService.completeSession(
+        sessionId,
+        success,
+        errorMessage,
+      );
+
       const session = await this.uploadSessionService.findById(sessionId);
       const token = await this.uploadTokenService.findByToken(session.token_id);
-      
+
       // Se o upload foi bem-sucedido, notificar o usuário dono do token
       if (success && token && token.usuario_id) {
         try {
-          const documentos = await this.documentoService.findByMetadata('upload_session_id', sessionId);
-          
+          const documentos = await this.documentoService.findByMetadata(
+            'upload_session_id',
+            sessionId,
+          );
+
           await this.notificacaoService.enviarNotificacao({
             tipo: 'UPLOAD_CONCLUIDO',
             destinatario_id: token.usuario_id,
@@ -340,25 +427,38 @@ export class EasyUploadService {
             },
           });
         } catch (error) {
-          this.logger.warn(`Erro ao enviar notificação de conclusão: ${error.message}`);
+          this.logger.warn(
+            `Erro ao enviar notificação de conclusão: ${error.message}`,
+          );
         }
       }
-      
+
       // Se foi o primeiro uso do token, marcar como utilizado
       if (token) {
-        const sessions = await this.uploadSessionService.findByTokenId(token.id);
-        const completedSessions = sessions.filter(s => 
-          s.status === UploadSessionStatus.COMPLETADA || 
-          s.status === UploadSessionStatus.CONCLUIDA
+        const sessions = await this.uploadSessionService.findByTokenId(
+          token.id,
         );
-        
-        if (completedSessions.length === 1 && completedSessions[0].id === sessionId) {
+        const completedSessions = sessions.filter(
+          (s) =>
+            s.status === UploadSessionStatus.COMPLETADA ||
+            s.status === UploadSessionStatus.CONCLUIDA,
+        );
+
+        if (
+          completedSessions.length === 1 &&
+          completedSessions[0].id === sessionId
+        ) {
           await this.uploadTokenService.markTokenAsUsed(token.id);
         }
       }
     } catch (error) {
-      this.logger.error(`Erro ao completar sessão: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Falha ao finalizar sessão de upload');
+      this.logger.error(
+        `Erro ao completar sessão: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        'Falha ao finalizar sessão de upload',
+      );
     }
   }
 
@@ -375,7 +475,7 @@ export class EasyUploadService {
         { ...filters, limit: 1000 },
         userId,
       );
-      
+
       // Se não houver tokens, retornar relatório vazio
       if (!tokens.length) {
         return {
@@ -385,44 +485,48 @@ export class EasyUploadService {
           tokens: [],
         };
       }
-      
-      const tokenIds = tokens.map(token => token.id);
-      
+
+      const tokenIds = tokens.map((token) => token.id);
+
       // Buscar todas as sessões associadas a esses tokens
       const allSessions: UploadSession[] = [];
       for (const tokenId of tokenIds) {
         const sessions = await this.uploadSessionService.findByTokenId(tokenId);
         allSessions.push(...sessions);
       }
-      
+
       // Extrair IDs das sessões
-      const sessionIds = allSessions.map(session => session.id);
-      
+      const sessionIds = allSessions.map((session) => session.id);
+
       // Buscar todos os documentos associados às sessões usando o novo método otimizado
-      const allDocumentos = await this.documentoService.findByUploadSessionIds(sessionIds);
-      
+      const allDocumentos =
+        await this.documentoService.findByUploadSessionIds(sessionIds);
+
       // Criar um mapa para contagem rápida de arquivos por sessão
       const fileCountBySession = new Map<string, number>();
-      allDocumentos.forEach(doc => {
+      allDocumentos.forEach((doc) => {
         const sessionId = doc.upload_session_id;
         if (sessionId) {
-          fileCountBySession.set(sessionId, (fileCountBySession.get(sessionId) || 0) + 1);
+          fileCountBySession.set(
+            sessionId,
+            (fileCountBySession.get(sessionId) || 0) + 1,
+          );
         }
       });
-      
+
       // Compilar dados do relatório
       return {
         total_tokens: tokens.length,
         total_sessions: allSessions.length,
         total_files: allDocumentos.length,
-        tokens: tokens.map(token => ({
+        tokens: tokens.map((token) => ({
           id: token.id,
           created_at: token.created_at,
           expires_at: token.expires_at,
           status: token.status,
           sessions: allSessions
-            .filter(session => session.token_id === token.id)
-            .map(session => ({
+            .filter((session) => session.token_id === token.id)
+            .map((session) => ({
               id: session.id,
               status: session.status,
               started_at: session.started_at,
@@ -433,8 +537,13 @@ export class EasyUploadService {
         })),
       };
     } catch (error) {
-      this.logger.error(`Erro ao gerar relatório: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Falha ao gerar relatório de uploads');
+      this.logger.error(
+        `Erro ao gerar relatório: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        'Falha ao gerar relatório de uploads',
+      );
     }
   }
 
@@ -446,15 +555,18 @@ export class EasyUploadService {
   async cleanOldData(days: number = 90): Promise<any> {
     try {
       if (days < 30) {
-        throw new BadRequestException('O período mínimo para retenção de dados é de 30 dias');
+        throw new BadRequestException(
+          'O período mínimo para retenção de dados é de 30 dias',
+        );
       }
 
       // Limpar sessões antigas
-      const sessionsRemoved = await this.uploadSessionService.cleanupOldSessions(days);
-      
+      const sessionsRemoved =
+        await this.uploadSessionService.cleanupOldSessions(days);
+
       // O TypeORM automaticamente limpará os tokens que não têm mais sessões
       // devido à configuração de CASCADE no relacionamento
-      
+
       return {
         success: true,
         days_retained: days,
@@ -464,7 +576,10 @@ export class EasyUploadService {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      this.logger.error(`Erro ao limpar dados antigos: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao limpar dados antigos: ${error.message}`,
+        error.stack,
+      );
       throw new InternalServerErrorException('Falha ao limpar dados antigos');
     }
   }
@@ -476,11 +591,14 @@ export class EasyUploadService {
     try {
       // Processar tokens expirados
       await this.uploadTokenService.processExpiredTokens();
-      
+
       // Processar sessões inativas
       await this.uploadSessionService.processInactiveSessions();
     } catch (error) {
-      this.logger.error(`Erro ao processar tarefas agendadas: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao processar tarefas agendadas: ${error.message}`,
+        error.stack,
+      );
     }
   }
 }

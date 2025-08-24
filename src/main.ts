@@ -1,6 +1,12 @@
 // IMPORTANTE: Carregar as variáveis de ambiente ANTES de qualquer outra importação
 import './config/env';
 
+// Inicializar contexto transacional ANTES de qualquer outra importação do TypeORM
+import {
+  initializeTransactionalContext,
+  StorageDriver,
+} from 'typeorm-transactional';
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import {
@@ -13,6 +19,7 @@ import {
 } from '@nestjs/common';
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor';
 import { RemoveEmptyParamsInterceptor } from './shared/interceptors/remove-empty-params.interceptor';
+import { ErrorHandlingInterceptor } from './shared/interceptors/error-handling.interceptor';
 import { CatalogAwareExceptionFilter } from './shared/exceptions/error-catalog';
 import { setupSwagger } from './shared/configs/swagger/index';
 import { applySecurity } from './config/security.config';
@@ -23,7 +30,6 @@ import { LoggingInterceptor } from './shared/logging/logging.interceptor';
 import { ErrorLoggerFilter } from './shared/logging/filters/error-logger.filter';
 import { ScopedQueryInterceptor } from './auth/interceptors/scoped-query.interceptor';
 import { Reflector } from '@nestjs/core';
-import { isSensitiveField } from './shared/constants/sensitive-fields.constants';
 
 /**
  * Configura e inicializa a aplicação NestJS
@@ -32,6 +38,9 @@ async function bootstrap(): Promise<INestApplication> {
   const logger = new Logger('Bootstrap');
 
   try {
+    // Inicializar contexto transacional
+    initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
+
     logger.log('🚀 Iniciando aplicação PGBEN...');
 
     // Criar a aplicação NestJS com configurações otimizadas
@@ -107,9 +116,12 @@ async function bootstrap(): Promise<INestApplication> {
 
     // ✅ NOVO: Sistema de logging unificado
     const loggingService = app.get(LoggingService);
-    
+
     // Interceptor de logging HTTP (substitui o RedactLogsInterceptor)
     app.useGlobalInterceptors(new LoggingInterceptor(loggingService));
+
+    // ✅ NOVO: Interceptor de tratamento de erros avançado
+    app.useGlobalInterceptors(new ErrorHandlingInterceptor());
 
     // Interceptor para aplicar filtro de unidade automaticamente em GET
     const reflector = app.get(Reflector);
@@ -154,6 +166,7 @@ async function bootstrap(): Promise<INestApplication> {
     if (isDevelopment || configService.get<boolean>('SWAGGER_ENABLED', false)) {
       logger.log('📚 Configurando Swagger...');
       setupSwagger(app);
+      
       logger.log('✅ Swagger configurado');
     } else {
       logger.log('📚 Swagger desabilitado em produção');
@@ -194,40 +207,59 @@ function createValidationException(
 ): BadRequestException {
   // Lista de campos sensíveis que não devem ser incluídos nas respostas de erro
   const sensitiveFields = [
-    'senha', 'password', 'token', 'secret', 'authorization', 'key',
-    'confirmPassword', 'confirmSenha', 'currentPassword', 'senhaAtual', 'newPassword', 'novaSenha',
-    'cpf', 'rg', 'cnpj', 'cardNumber', 'cartao', 'cvv', 'passaporte', 'biometria'
+    'senha',
+    'password',
+    'token',
+    'secret',
+    'authorization',
+    'key',
+    'confirmPassword',
+    'confirmSenha',
+    'currentPassword',
+    'senhaAtual',
+    'newPassword',
+    'novaSenha',
+    'cpf',
+    'rg',
+    'cnpj',
+    'cardNumber',
+    'cartao',
+    'cvv',
+    'passaporte',
+    'biometria',
   ];
-  
+
   // Função para verificar se um campo é sensível
   const isSensitiveField = (field: string): boolean => {
-    return sensitiveFields.some(sensitive => 
-      field.toLowerCase().includes(sensitive.toLowerCase())
+    return sensitiveFields.some((sensitive) =>
+      field.toLowerCase().includes(sensitive.toLowerCase()),
     );
   };
-  
+
   // Sanitizar valor sensível - transformação recursiva
   const sanitizeValidationError = (error: any): any => {
     if (!error) return error;
-    
+
     // Cria uma cópia do objeto para não modificar o original
     const sanitizedError = { ...error };
-    
+
     // Sanitiza o valor se o campo for sensível
     if (sanitizedError.property && isSensitiveField(sanitizedError.property)) {
       sanitizedError.value = '[REDACTED]';
     }
-    
+
     // Sanitiza filhos recursivamente
     if (sanitizedError.children && Array.isArray(sanitizedError.children)) {
-      sanitizedError.children = sanitizedError.children.map(child => sanitizeValidationError(child));
+      sanitizedError.children = sanitizedError.children.map((child) =>
+        sanitizeValidationError(child),
+      );
     }
-    
+
     return sanitizedError;
   };
-  
+
   // Sanitiza todos os erros antes de procesá-los
-  const sanitizedErrors = errors.map(error => sanitizeValidationError(error));
+  const sanitizedErrors = errors.map((error) => sanitizeValidationError(error));
 
   // Formatador de erros para exibição
   const formatError = (error: any, path = ''): any[] => {
@@ -257,12 +289,12 @@ function createValidationException(
   };
 
   const formattedErrors: any[] = [];
-  sanitizedErrors.forEach(error => {
+  sanitizedErrors.forEach((error) => {
     formattedErrors.push(...formatError(error));
   });
 
   const response = {
-    message: 'Dados de entrada inválidos',
+    message: `Dados de entrada inválidos: ${formattedErrors.map((error) => error.messages.join(', ')).join('; ')}`,
     errors: formattedErrors,
     statusCode: 400,
     timestamp: new Date().toISOString(),
@@ -327,10 +359,9 @@ function setupGracefulShutdown(app: INestApplication): void {
 
   const shutdown = async (signal: string): Promise<void> => {
     if (isShuttingDown) {
-      logger.warn(`🔄 Shutdown já em andamento, ignorando sinal ${signal}`);
       return;
     }
-    
+
     isShuttingDown = true;
     logger.log(`📴 Recebido sinal ${signal}. Iniciando graceful shutdown...`);
 
@@ -345,7 +376,7 @@ function setupGracefulShutdown(app: INestApplication): void {
 
       // Aguardar um pouco para requests em andamento
       logger.log('⏳ Aguardando finalização de requests em andamento...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Fechar aplicação
       logger.log('🔄 Finalizando aplicação NestJS...');
@@ -373,6 +404,29 @@ function setupGracefulShutdown(app: INestApplication): void {
       message: error.message,
       stack: error.stack,
     });
+
+    // Verificar se é um erro relacionado ao Redis que pode ser ignorado
+    const redisErrors = [
+      'ECONNREFUSED',
+      'ENOTFOUND',
+      'ETIMEDOUT',
+      'Redis connection',
+      'Bull queue',
+      'ioredis',
+    ];
+
+    const isRedisError = redisErrors.some(
+      (errorType) =>
+        error.message?.includes(errorType) || error.stack?.includes(errorType),
+    );
+
+    if (isRedisError) {
+      logger.warn(
+        'Erro do Redis detectado, mas aplicação continuará funcionando sem filas.',
+      );
+      return; // Não fazer exit para erros de Redis
+    }
+
     shutdown('uncaughtException');
   });
 
@@ -381,6 +435,29 @@ function setupGracefulShutdown(app: INestApplication): void {
       promise,
       reason,
     });
+
+    // Verificar se é um erro relacionado ao Redis
+    const reasonStr = String(reason);
+    const redisErrors = [
+      'ECONNREFUSED',
+      'ENOTFOUND',
+      'ETIMEDOUT',
+      'Redis connection',
+      'Bull queue',
+      'ioredis',
+    ];
+
+    const isRedisError = redisErrors.some((errorType) =>
+      reasonStr.includes(errorType),
+    );
+
+    if (isRedisError) {
+      logger.warn(
+        'Promise rejeitada relacionada ao Redis, mas aplicação continuará funcionando.',
+      );
+      return; // Não fazer exit para erros de Redis
+    }
+
     shutdown('unhandledRejection');
   });
 

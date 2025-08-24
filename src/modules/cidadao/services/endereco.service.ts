@@ -14,20 +14,9 @@ export class EnderecoService {
   ) {}
 
   /**
-   * Verifica se o feature flag para nova estrutura está ativado
-   */
-  private isNovaEstruturaAtiva(): boolean {
-    return this.configService.get<boolean>('READ_NOVA_ESTRUTURA_CONTATO', false);
-  }
-
-  /**
    * Busca todos os endereços de um cidadão
    */
   async findByCidadaoId(cidadaoId: string): Promise<Endereco[]> {
-    if (!this.isNovaEstruturaAtiva()) {
-      return [];
-    }
-
     return this.enderecoRepository.find({
       where: { cidadao_id: cidadaoId },
       order: { data_inicio_vigencia: 'DESC' },
@@ -38,10 +27,6 @@ export class EnderecoService {
    * Busca o endereço atual de um cidadão
    */
   async findEnderecoAtual(cidadaoId: string): Promise<Endereco | null> {
-    if (!this.isNovaEstruturaAtiva()) {
-      return null;
-    }
-
     // Usando QueryBuilder para poder usar IS NULL corretamente
     return this.enderecoRepository
       .createQueryBuilder('endereco')
@@ -54,10 +39,6 @@ export class EnderecoService {
    * Busca um endereço específico pelo ID
    */
   async findById(id: string): Promise<Endereco> {
-    if (!this.isNovaEstruturaAtiva()) {
-      throw new NotFoundException('Endereço não encontrado');
-    }
-
     const endereco = await this.enderecoRepository.findOne({
       where: { id },
     });
@@ -85,8 +66,8 @@ export class EnderecoService {
     // Se for endereço atual, encerra a vigência do endereço atual anterior
     if (isEnderecoAtual) {
       await this.encerrarVigenciaEnderecoAtual(
-        enderecoDto.cidadao_id, 
-        enderecoDto.data_inicio_vigencia
+        enderecoDto.cidadao_id,
+        enderecoDto.data_inicio_vigencia,
       );
     }
 
@@ -100,22 +81,22 @@ export class EnderecoService {
   async update(id: string, enderecoDto: EnderecoDto): Promise<Endereco> {
     const endereco = await this.findById(id);
     const enderecoAnterior = { ...endereco };
-    
+
     // Atualiza apenas os campos fornecidos
     Object.assign(endereco, enderecoDto);
-    
+
     // Se mudou de não-atual para atual, encerra vigência do atual
     if (
-      enderecoAnterior.data_fim_vigencia !== null && 
+      enderecoAnterior.data_fim_vigencia !== null &&
       endereco.data_fim_vigencia === null
     ) {
       await this.encerrarVigenciaEnderecoAtual(
-        endereco.cidadao_id, 
+        endereco.cidadao_id,
         endereco.data_inicio_vigencia,
-        endereco.id
+        endereco.id,
       );
     }
-    
+
     return this.enderecoRepository.save(endereco);
   }
 
@@ -126,22 +107,22 @@ export class EnderecoService {
    * @param excluirEnderecoId ID do endereço a ser excluído da atualização (opcional)
    */
   private async encerrarVigenciaEnderecoAtual(
-    cidadaoId: string, 
+    cidadaoId: string,
     dataFim: string,
-    excluirEnderecoId?: string
+    excluirEnderecoId?: string,
   ): Promise<void> {
-    const query = this.enderecoRepository.createQueryBuilder('endereco')
+    const query = this.enderecoRepository
+      .createQueryBuilder('endereco')
       .where('endereco.cidadao_id = :cidadaoId', { cidadaoId })
       .andWhere('endereco.data_fim_vigencia IS NULL');
-    
+
     if (excluirEnderecoId) {
-      query.andWhere('endereco.id != :excluirEnderecoId', { excluirEnderecoId });
+      query.andWhere('endereco.id != :excluirEnderecoId', {
+        excluirEnderecoId,
+      });
     }
-    
-    await query
-      .update()
-      .set({ data_fim_vigencia: dataFim })
-      .execute();
+
+    await query.update().set({ data_fim_vigencia: dataFim }).execute();
   }
 
   /**
@@ -157,33 +138,34 @@ export class EnderecoService {
    * Usado na migração e na atualização via cidadão
    */
   async criarOuAtualizarEnderecoAtual(
-    cidadaoId: string, 
-    enderecoDto: EnderecoDto
+    cidadaoId: string,
+    enderecoDto: EnderecoDto,
   ): Promise<Endereco> {
     // Configura o DTO
     enderecoDto.cidadao_id = cidadaoId;
-    enderecoDto.data_inicio_vigencia = enderecoDto.data_inicio_vigencia || 
+    enderecoDto.data_inicio_vigencia =
+      enderecoDto.data_inicio_vigencia ||
       new Date().toISOString().split('T')[0];
     enderecoDto.data_fim_vigencia = null; // Endereço atual
-    
+
     // Verifica se já existe um endereço atual
     const enderecoAtual = await this.findEnderecoAtual(cidadaoId);
-    
+
     if (enderecoAtual) {
       // Se os dados são iguais, não faz nada
       if (this.enderecoIgual(enderecoAtual, enderecoDto)) {
         return enderecoAtual;
       }
-      
+
       // Se tem ID no DTO, atualiza esse endereço específico
       if (enderecoDto.id) {
         return this.update(enderecoDto.id, enderecoDto);
       }
-      
+
       // Caso contrário, encerra o atual e cria um novo
       return this.create(enderecoDto);
     }
-    
+
     // Se não existe endereço atual, cria um novo
     return this.create(enderecoDto);
   }
@@ -207,33 +189,45 @@ export class EnderecoService {
    * Cria ou atualiza múltiplos endereços para um cidadão
    * Usado na migração e na atualização via cidadão
    */
-  async upsertMany(cidadaoId: string, enderecos: EnderecoDto[]): Promise<Endereco[]> {
+  async upsertMany(
+    cidadaoId: string,
+    enderecos: EnderecoDto[],
+  ): Promise<Endereco[]> {
     if (!enderecos || enderecos.length === 0) {
       return [];
     }
 
     // Verifica se existe um endereço atual
     const enderecoAtual = await this.findEnderecoAtual(cidadaoId);
-    
+
     // Processa cada endereço da lista
     const enderecosSalvos: Endereco[] = [];
-    
+
     for (const enderecoDto of enderecos) {
       enderecoDto.cidadao_id = cidadaoId;
-      
+
       // Se não tem data de início, usa a data atual
       if (!enderecoDto.data_inicio_vigencia) {
-        enderecoDto.data_inicio_vigencia = new Date().toISOString().split('T')[0];
+        enderecoDto.data_inicio_vigencia = new Date()
+          .toISOString()
+          .split('T')[0];
       }
-      
+
       // Se não tem data fim, é o endereço atual
       const isEnderecoAtual = !enderecoDto.data_fim_vigencia;
-      
+
       if (enderecoDto.id) {
         // Atualiza endereço existente
-        const enderecoAtualizado = await this.update(enderecoDto.id, enderecoDto);
+        const enderecoAtualizado = await this.update(
+          enderecoDto.id,
+          enderecoDto,
+        );
         enderecosSalvos.push(enderecoAtualizado);
-      } else if (isEnderecoAtual && enderecoAtual && this.enderecoIgual(enderecoAtual, enderecoDto)) {
+      } else if (
+        isEnderecoAtual &&
+        enderecoAtual &&
+        this.enderecoIgual(enderecoAtual, enderecoDto)
+      ) {
         // Se é igual ao atual, não faz nada
         enderecosSalvos.push(enderecoAtual);
       } else {
@@ -242,7 +236,7 @@ export class EnderecoService {
         enderecosSalvos.push(novoEndereco);
       }
     }
-    
+
     return enderecosSalvos;
   }
 }

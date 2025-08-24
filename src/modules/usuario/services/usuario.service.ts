@@ -1,7 +1,12 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  Inject,
+  Optional,
+} from '@nestjs/common';
 import { LoggingService } from '../../../shared/logging/logging.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, DeepPartial, ILike } from 'typeorm';
+import { DataSource, Repository, DeepPartial, ILike, Not, In } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as bcrypt from 'bcrypt';
 import { Usuario } from '../../../entities/usuario.entity';
@@ -26,6 +31,10 @@ import {
 } from '../../../shared/exceptions/error-catalog/domains/usuario.errors';
 import { throwDuplicateCpf } from '../../../shared/exceptions/error-catalog/domains/cidadao.errors';
 import { EmailService } from '../../../common/services/email.service';
+import {
+  INotificationManagerService,
+  NOTIFICATION_MANAGER_SERVICE,
+} from '../../notificacao/interfaces/notification-manager.interface';
 
 /**
  * Serviço de usuários
@@ -42,9 +51,9 @@ export class UsuarioService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly usuarioRepository: UsuarioRepository,
-    // private readonly notificationManager: NotificationManagerService,
-    // @InjectRepository(NotificationTemplate)
-    // private readonly templateRepository: Repository<NotificationTemplate>,
+    @Optional()
+    @Inject(NOTIFICATION_MANAGER_SERVICE)
+    private readonly notificationManager: INotificationManagerService,
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
     private readonly emailService: EmailService,
@@ -95,40 +104,26 @@ export class UsuarioService {
     senha: string,
   ): Promise<void> {
     try {
-      // TODO: Buscar template de credenciais quando o módulo de notificação for reimplementado
-      // const template = await this.templateRepository.findOne({
-      //   where: { codigo: 'usuario-credenciais-acesso' },
-      // });
-
       // Enviar email direto usando o serviço de email
       await this.emailService.sendEmail({
         to: usuario.email,
-        subject: 'Credenciais de Acesso - Sistema PGBEN',
         template: 'usuario-credenciais-acesso',
         context: {
           nome: usuario.nome.split(' ')[0],
           email: usuario.email,
           senha: senha,
           matricula: usuario.matricula,
-          sistema_url: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
+          sistema_url:
+            process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
           data_criacao: new Date().toLocaleDateString('pt-BR'),
         },
       });
-
-      // TODO: Reativar notificação quando o módulo for reimplementado
-      // await this.notificationManager.criarNotificacao({
-      //   template_id: template.id,
-      //   destinatario_id: usuario.id,
-      //   dados_contexto: dadosTemplate,
-      //   canal: CanalNotificacao.EMAIL
-      // });
 
       this.logger.info(`Credenciais enviadas por email para: ${usuario.email}`);
     } catch (error) {
       this.logger.error(
         `Erro ao enviar credenciais por email: ${error.message}`,
       );
-      // Não falhar a criação do usuário por erro no envio do email
     }
   }
 
@@ -138,12 +133,14 @@ export class UsuarioService {
    * @returns Lista de usuários paginada
    */
   async findAll(options?: {
+    relations?: boolean;
     page?: number;
     limit?: number;
     search?: string;
     [key: string]: any; // Permite qualquer campo da entidade como filtro
   }) {
     const {
+      relations = true,
       page = 1,
       limit = 10,
       search,
@@ -155,14 +152,27 @@ export class UsuarioService {
 
     // Campos permitidos para filtro (baseados na entidade Usuario)
     const allowedFields = [
-      'nome', 'email', 'cpf', 'telefone', 'matricula',
-      'role_id', 'unidade_id', 'setor_id', 'status',
-      'primeiro_acesso', 'tentativas_login'
+      'nome',
+      'email',
+      'cpf',
+      'telefone',
+      'matricula',
+      'role_id',
+      'unidade_id',
+      'setor_id',
+      'status',
+      'primeiro_acesso',
+      'tentativas_login',
     ];
 
     // Aplicar filtros dinâmicos para campos permitidos
-    Object.keys(filters).forEach(key => {
-      if (allowedFields.includes(key) && filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
+    Object.keys(filters).forEach((key) => {
+      if (
+        allowedFields.includes(key) &&
+        filters[key] !== undefined &&
+        filters[key] !== null &&
+        filters[key] !== ''
+      ) {
         const value = filters[key];
 
         // Para campos de texto, usar busca parcial (ILIKE)
@@ -207,6 +217,7 @@ export class UsuarioService {
 
       // Buscar usuários com condições OR
       const [usuarios, total] = await this.usuarioRepository.findAll({
+        relations,
         skip,
         take: limit,
         where: finalWhere,
@@ -235,6 +246,7 @@ export class UsuarioService {
 
     // Buscar usuários com filtros simples
     const [usuarios, total] = await this.usuarioRepository.findAll({
+      relations,
       skip,
       take: limit,
       where,
@@ -297,10 +309,14 @@ export class UsuarioService {
         throw new BadRequestException('Role é obrigatório');
       }
 
-      const role = await roleRepo.findOne({ where: { id: createUsuarioDto.role_id } });
+      const role = await roleRepo.findOne({
+        where: { id: createUsuarioDto.role_id },
+      });
       if (!role) {
         this.logger.warn(`Role não encontrada: ${createUsuarioDto.role_id}`);
-        throw new BadRequestException(`Role com ID ${createUsuarioDto.role_id} não encontrada`);
+        throw new BadRequestException(
+          `Role com ID ${createUsuarioDto.role_id} não encontrada`,
+        );
       }
 
       // Duplicidades
@@ -308,7 +324,7 @@ export class UsuarioService {
       const [emailExists, cpfExists, matriculaExists] = await Promise.all([
         usuarioRepo.findByEmail(emailLower),
         usuarioRepo.findByCpf(createUsuarioDto.cpf),
-        usuarioRepo.findByMatricula(createUsuarioDto.matricula)
+        usuarioRepo.findByMatricula(createUsuarioDto.matricula),
       ]);
 
       if (emailExists) throwDuplicateEmail(createUsuarioDto.email);
@@ -317,10 +333,16 @@ export class UsuarioService {
 
       // Verificar unidade
       if (createUsuarioDto.unidade_id) {
-        const unidade = await unidadeRepo.findOne({ where: { id: createUsuarioDto.unidade_id } });
+        const unidade = await unidadeRepo.findOne({
+          where: { id: createUsuarioDto.unidade_id },
+        });
         if (!unidade) {
-          this.logger.warn(`Unidade não encontrada: ${createUsuarioDto.unidade_id}`);
-          throw new BadRequestException(`Unidade com ID ${createUsuarioDto.unidade_id} não encontrada`);
+          this.logger.warn(
+            `Unidade não encontrada: ${createUsuarioDto.unidade_id}`,
+          );
+          throw new BadRequestException(
+            `Unidade com ID ${createUsuarioDto.unidade_id} não encontrada`,
+          );
         }
       }
 
@@ -328,14 +350,23 @@ export class UsuarioService {
       if (createUsuarioDto.setor_id) {
         if (!createUsuarioDto.unidade_id) {
           this.logger.warn('Setor informado sem unidade correspondente');
-          throw new BadRequestException('Quando setor é informado, a unidade também deve ser informada');
+          throw new BadRequestException(
+            'Quando setor é informado, a unidade também deve ser informada',
+          );
         }
         const setor = await setorRepo.findOne({
-          where: { id: createUsuarioDto.setor_id, unidade_id: createUsuarioDto.unidade_id },
+          where: {
+            id: createUsuarioDto.setor_id,
+            unidade_id: createUsuarioDto.unidade_id,
+          },
         });
         if (!setor) {
-          this.logger.warn(`Setor não encontrado para a unidade: ${createUsuarioDto.setor_id}`);
-          throw new BadRequestException(`Setor com ID ${createUsuarioDto.setor_id} não encontrado para a unidade ${createUsuarioDto.unidade_id}`);
+          this.logger.warn(
+            `Setor não encontrado para a unidade: ${createUsuarioDto.setor_id}`,
+          );
+          throw new BadRequestException(
+            `Setor com ID ${createUsuarioDto.setor_id} não encontrado para a unidade ${createUsuarioDto.unidade_id}`,
+          );
         }
       }
 
@@ -345,7 +376,9 @@ export class UsuarioService {
       if (!senhaParaUso) {
         senhaParaUso = this.generateRandomPassword();
         senhaGerada = true;
-        this.logger.info(`Senha gerada automaticamente para usuário: ${createUsuarioDto.email}`);
+        this.logger.info(
+          `Senha gerada automaticamente para usuário: ${createUsuarioDto.email}`,
+        );
       }
 
       const senhaHash = await bcrypt.hash(senhaParaUso, this.SALT_ROUNDS);
@@ -366,11 +399,15 @@ export class UsuarioService {
       });
 
       // ------------ Transação mínima (apenas INSERT) ------------
-      const usuarioSalvo = await this.dataSource.transaction(async (manager) => {
-        const repo = manager.getRepository(Usuario);
-        const novoUsuario = repo.create(normalizedData as DeepPartial<Usuario>);
-        return repo.save<Usuario>(novoUsuario);
-      });
+      const usuarioSalvo = await this.dataSource.transaction(
+        async (manager) => {
+          const repo = manager.getRepository(Usuario);
+          const novoUsuario = repo.create(
+            normalizedData as DeepPartial<Usuario>,
+          );
+          return repo.save<Usuario>(novoUsuario);
+        },
+      );
 
       this.logger.info(`Usuário criado com sucesso: ${usuarioSalvo.id}`);
 
@@ -378,13 +415,6 @@ export class UsuarioService {
 
       // ------------ Pós-transação: eventos e e-mail ------------
       if (senhaGerada) {
-        this.eventEmitter.emit('user.created.first-access', {
-          userId: usuarioSalvo.id,
-          email: usuarioSalvo.email,
-          nome: usuarioSalvo.nome,
-          senha: senhaParaUso,
-          timestamp: new Date(),
-        });
         await this.enviarCredenciaisPorEmail(usuarioSalvo, senhaParaUso);
       } else {
         this.eventEmitter.emit('user.created.email-validation', {
@@ -410,8 +440,6 @@ export class UsuarioService {
     }
   }
 
-
-
   /**
    * Atualiza um usuário existente
    * @param id ID do usuário
@@ -425,7 +453,7 @@ export class UsuarioService {
     try {
       // ------------ Validações e leituras fora da transação ------------
       const usuarioRepo = this.usuarioRepository;
-      
+
       // Verificar se usuário existe
       const usuario = await usuarioRepo.findById(id);
       if (!usuario) {
@@ -439,9 +467,9 @@ export class UsuarioService {
         valor: string;
         promessa: Promise<Usuario | null>;
       }
-      
+
       const validacoes: ValidacaoItem[] = [];
-      
+
       // Verificar se email já existe (se fornecido)
       if (
         updateUsuarioDto.email &&
@@ -451,7 +479,7 @@ export class UsuarioService {
         validacoes.push({
           tipo: 'email',
           valor: emailLower,
-          promessa: usuarioRepo.findByEmail(emailLower)
+          promessa: usuarioRepo.findByEmail(emailLower),
         });
         // Normalizar email para minúsculas imediatamente
         updateUsuarioDto.email = emailLower;
@@ -462,7 +490,7 @@ export class UsuarioService {
         validacoes.push({
           tipo: 'cpf',
           valor: updateUsuarioDto.cpf,
-          promessa: usuarioRepo.findByCpf(updateUsuarioDto.cpf)
+          promessa: usuarioRepo.findByCpf(updateUsuarioDto.cpf),
         });
       }
 
@@ -474,19 +502,19 @@ export class UsuarioService {
         validacoes.push({
           tipo: 'matricula',
           valor: updateUsuarioDto.matricula,
-          promessa: usuarioRepo.findByMatricula(updateUsuarioDto.matricula)
+          promessa: usuarioRepo.findByMatricula(updateUsuarioDto.matricula),
         });
       }
-      
+
       // Executar todas as validações em paralelo
       if (validacoes.length > 0) {
-        const resultados = await Promise.all(validacoes.map(v => v.promessa));
-        
+        const resultados = await Promise.all(validacoes.map((v) => v.promessa));
+
         // Verificar resultados das validações
         for (let i = 0; i < validacoes.length; i++) {
           const { tipo, valor } = validacoes[i];
           const resultado = resultados[i];
-          
+
           if (resultado) {
             switch (tipo) {
               case 'email':
@@ -521,11 +549,6 @@ export class UsuarioService {
         throwUserNotFound(id);
       }
 
-      const executionTime = Date.now() - startTime;
-      if (executionTime > 1000) { // Alerta para operações que levam mais de 1 segundo
-        this.logger.warn(`Atualização do usuário ${id} levou ${executionTime}ms`);
-      }
-      
       this.logger.info(`Usuário ${id} atualizado com sucesso`);
 
       // Remover campos sensíveis
@@ -534,7 +557,7 @@ export class UsuarioService {
       return {
         data: usuarioSemSenha,
         meta: null,
-        message: 'Usuário atualizado com sucesso.'
+        message: 'Usuário atualizado com sucesso.',
       };
     } catch (error) {
       this.logger.error(
@@ -642,8 +665,11 @@ export class UsuarioService {
       });
 
       const executionTime = Date.now() - startTime;
-      if (executionTime > 1000) { // Alerta para operações que levam mais de 1 segundo
-        this.logger.warn(`Atualização de senha do usuário ${id} levou ${executionTime}ms`);
+      if (executionTime > 1000) {
+        // Alerta para operações que levam mais de 1 segundo
+        this.logger.warn(
+          `Atualização de senha do usuário ${id} levou ${executionTime}ms`,
+        );
       }
 
       this.logger.info(`Senha do usuário ${id} atualizada com sucesso`);
@@ -651,7 +677,7 @@ export class UsuarioService {
       return {
         data: null,
         meta: null,
-        message: 'Senha atualizada com sucesso'
+        message: 'Senha atualizada com sucesso',
       };
     } catch (error) {
       this.logger.error(
@@ -692,8 +718,8 @@ export class UsuarioService {
         this.logger.info(
           `Tentativa de login para: ${normalizedEmail}`,
           'SECURITY_LOGIN_ATTEMPT',
-          { email: normalizedEmail }
         );
+        return null;
       }
 
       return usuario;
@@ -702,7 +728,67 @@ export class UsuarioService {
         `Erro ao buscar usuário por email: ${error.message}`,
         error.stack,
       );
-      return null;
+      throw error;
+    }
+  }
+
+  /**
+   * Busca usuário por email SEM aplicar escopo (para autenticação)
+   * @param email Email do usuário
+   * @returns Usuário encontrado ou null
+   */
+  async findByEmailForAuth(email: string): Promise<Usuario | null> {
+    this.logger.info(`Buscando usuário por email para autenticação: ${email}`);
+
+    try {
+      // Normalizar email para minúsculas para evitar problemas de case sensitivity
+      const normalizedEmail = email.toLowerCase();
+      const usuario = await this.usuarioRepository.findByEmailGlobal(normalizedEmail);
+
+      if (!usuario) {
+        this.logger.info(
+          `Tentativa de login para: ${normalizedEmail}`,
+          'SECURITY_LOGIN_ATTEMPT',
+          { email: normalizedEmail },
+        );
+        return null;
+      }
+
+      return usuario;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar usuário por email para autenticação: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Busca usuário por ID SEM aplicar escopo (para notificações e operações internas)
+   * @param id ID do usuário
+   * @returns Usuário encontrado ou null
+   */
+  async findByIdForNotification(id: string): Promise<Usuario | null> {
+    this.logger.debug(`Buscando usuário por ID para notificação: ${id}`);
+
+    try {
+      const usuario = await this.usuarioRepository.findByIdGlobal(id);
+
+      if (!usuario) {
+        this.logger.warn(`Usuário não encontrado para notificação: ${id}`);
+        return null;
+      }
+
+      // Remover campos sensíveis mesmo em operações internas
+      const { senhaHash, ...usuarioSemSenha } = usuario;
+      return usuarioSemSenha as Usuario;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar usuário por ID para notificação: ${error.message}`,
+        error.stack,
+      );
+      return null; // Retorna null em caso de erro para não quebrar o fluxo de notificação
     }
   }
 
@@ -729,7 +815,7 @@ export class UsuarioService {
    * Incrementa o contador de tentativas de login
    * @param userId ID do usuário
    */
-  private async incrementLoginAttempts(userId: string): Promise<void> {
+  async incrementLoginAttempts(userId: string): Promise<void> {
     try {
       await this.dataSource.transaction(async (manager) => {
         const usuarioRepo = manager.getRepository(Usuario);
@@ -742,7 +828,7 @@ export class UsuarioService {
       this.logger.warn(
         `Tentativa de login falhada incrementada para usuário: ${userId}`,
         'SECURITY_LOGIN_FAILED',
-        { userId }
+        { userId },
       );
     } catch (error) {
       this.logger.error(
@@ -756,7 +842,7 @@ export class UsuarioService {
    * Reseta o contador de tentativas de login
    * @param userId ID do usuário
    */
-  private async resetLoginAttempts(userId: string): Promise<void> {
+  async resetLoginAttempts(userId: string): Promise<void> {
     try {
       await this.usuarioRepository.updateStatus(userId, Status.ATIVO);
       await this.dataSource.transaction(async (manager) => {
@@ -770,7 +856,7 @@ export class UsuarioService {
       this.logger.info(
         `Login bem-sucedido - tentativas resetadas para usuário: ${userId}`,
         'SECURITY_LOGIN_SUCCESS',
-        { userId }
+        { userId },
       );
     } catch (error) {
       this.logger.error(
@@ -790,7 +876,7 @@ export class UsuarioService {
     email: string,
     senha: string,
   ): Promise<Usuario | null> {
-    const usuario = await this.findByEmail(email);
+    const usuario = await this.findByEmailForAuth(email);
 
     if (!usuario) {
       return null;
@@ -805,7 +891,7 @@ export class UsuarioService {
           userId: usuario.id,
           email: usuario.email,
           attempts: usuario.tentativas_login,
-        }
+        },
       );
       throwAccountBlocked(usuario.id); // Note: Using userId instead of email
     }
@@ -823,9 +909,8 @@ export class UsuarioService {
           userId: usuario.id,
           email: usuario.email,
           attempts: (usuario.tentativas_login || 0) + 1,
-        }
+        },
       );
-
 
       throwInvalidCredentials(email);
     }
@@ -866,33 +951,90 @@ export class UsuarioService {
   }
 
   /**
-   * Altera a senha do usuário no primeiro acesso
-   * @param userId ID do usuário
-   * @param alterarSenhaDto Dados da nova senha
-   * @returns Resultado da operação
+   * Busca todas as roles ativas disponíveis no sistema baseado na hierarquia do usuário
+   * Cada usuário só pode ver as roles abaixo da sua na hierarquia:
+   * SUPER_ADMIN > ADMIN > GESTOR > COORDENADOR
+   * @param usuarioAtualClaims - Claims do usuário autenticado (do JWT)
+   * @returns Lista de roles ativas filtradas pela hierarquia
    */
-  /**
-   * Busca todas as roles disponíveis no sistema
-   * @returns Lista de roles com id, nome e descrição
-   */
-  async findAllRoles() {
-    this.logger.info('Buscando todas as roles disponíveis');
+  async findAllRoles(usuarioAtualClaims?: any) {
+    this.logger.info('Buscando todas as roles ativas com filtro de hierarquia');
 
     try {
-      const roles = await this.roleRepository.find({
-        select: ['id', 'nome', 'descricao', 'status'],
-        where: { status: Status.ATIVO },
-        order: { nome: 'ASC' },
+      // Definir hierarquia de roles (do maior para o menor privilégio)
+      const HIERARQUIA_ROLES = {
+        'SUPER_ADMIN': 4,
+        'ADMIN': 3,
+        'GESTOR': 2,
+        'COORDENADOR': 1,
+        'TECNICO_SEMTAS': 1,
+      };
+
+      const ROLES_IGNORADAS = ['SUPER_ADMIN', 'AUDITOR', 'CIDADAO'];
+      // Buscar todas as roles ativas
+      const todasRoles = await this.roleRepository.find({
+        where: { status: Status.ATIVO, codigo: Not(In(ROLES_IGNORADAS)) },
+        order: { codigo: 'ASC' },
       });
 
-      return roles;
+      // Determinar o nível de hierarquia do usuário atual
+      const nivelUsuario = await this.obterNivelUsuario(usuarioAtualClaims, HIERARQUIA_ROLES);
+
+      // Filtrar roles baseado na hierarquia
+      const rolesPermitidas = todasRoles.filter(role => {
+        const nivelRole = HIERARQUIA_ROLES[role.codigo];
+
+        // Se a role não está na hierarquia, todos podem vê-la
+        if (!nivelRole) {
+          return true;
+        }
+
+        // Se o usuário não tem nível definido, pode ver apenas roles não hierárquicas
+        if (nivelUsuario === null) {
+          return false;
+        }
+
+        // Usuário pode ver roles abaixo da sua na hierarquia
+        return nivelRole < nivelUsuario;
+      });
+
+      this.logger.info(`Encontradas ${rolesPermitidas.length} roles ativas para o usuário`);
+      return rolesPermitidas;
+
     } catch (error) {
       this.logger.error(`Erro ao buscar roles: ${error.message}`, error.stack);
-      // Retorna um array vazio em caso de erro para evitar erros de tipagem
       return [];
     }
   }
 
+  /**
+   * Obtém o nível de hierarquia do usuário atual
+   * @param usuarioAtualClaims - Claims do usuário
+   * @param hierarquiaRoles - Mapa de hierarquia das roles
+   * @returns Nível do usuário ou null se não aplicável
+   */
+  private async obterNivelUsuario(usuarioAtualClaims: any, hierarquiaRoles: Record<string, number>): Promise<number | null> {
+    // Se não há usuário autenticado, retorna null
+    if (!usuarioAtualClaims?.id) {
+      this.logger.warn('Usuário não autenticado');
+      return null;
+    }
+
+    // Buscar o usuário completo com a role
+    const usuarioCompleto = await this.usuarioRepository.findByIdGlobal(usuarioAtualClaims.id);
+
+    if (!usuarioCompleto?.role?.codigo) {
+      this.logger.warn(`Usuário ${usuarioAtualClaims.id} não encontrado ou sem role`);
+      return null;
+    }
+
+    const roleUsuario = usuarioCompleto.role.codigo;
+    const nivelUsuario = hierarquiaRoles[roleUsuario];
+
+    this.logger.info(`Usuário ${usuarioCompleto.nome} tem role: ${roleUsuario} (nível: ${nivelUsuario || 'não hierárquica'})`);
+
+    return nivelUsuario || null;
+  }
 
   /**
    * Altera a senha no primeiro acesso do usuário
@@ -933,12 +1075,15 @@ export class UsuarioService {
       }
 
       // Gerar hash da nova senha
-      const novoHash = await bcrypt.hash(alterarSenhaDto.nova_senha, this.SALT_ROUNDS);
+      const novoHash = await bcrypt.hash(
+        alterarSenhaDto.nova_senha,
+        this.SALT_ROUNDS,
+      );
 
       // ------------ Transação mínima (apenas UPDATE) ------------
       await this.dataSource.transaction(async (manager) => {
         const repo = manager.getRepository(Usuario);
-        
+
         // Atualizar senha e marcar como não sendo mais primeiro acesso
         await repo.update(userId, {
           senhaHash: novoHash,
@@ -948,8 +1093,11 @@ export class UsuarioService {
       });
 
       const executionTime = Date.now() - startTime;
-      if (executionTime > 1000) { // Alerta para operações que levam mais de 1 segundo
-        this.logger.warn(`Alteração de senha no primeiro acesso para usuário ${userId} levou ${executionTime}ms`);
+      if (executionTime > 1000) {
+        // Alerta para operações que levam mais de 1 segundo
+        this.logger.warn(
+          `Alteração de senha no primeiro acesso para usuário ${userId} levou ${executionTime}ms`,
+        );
       }
 
       this.logger.info(
@@ -976,6 +1124,90 @@ export class UsuarioService {
   }
 
   /**
+   * Reenvia credenciais de acesso para um usuário
+   * Gera nova senha, atualiza no banco e envia por email
+   * @param userId ID do usuário
+   * @returns Resultado da operação
+   */
+  async reenviarCredenciais(userId: string) {
+    this.logger.info(
+      `Iniciando reenvio de credenciais para usuário: ${userId}`,
+    );
+    const startTime = Date.now();
+
+    try {
+      // ------------ Validações e leituras fora da transação ------------
+      // Buscar usuário pelo ID (versão completa para uso interno)
+      const usuario = await this.usuarioRepository.findById(userId);
+
+      if (!usuario) {
+        this.logger.warn(`Usuário não encontrado: ${userId}`);
+        throwUserNotFound(userId);
+      }
+
+      // Verificar se usuário está ativo
+      if (usuario.status !== Status.ATIVO) {
+        this.logger.warn(
+          `Tentativa de reenvio de credenciais para usuário inativo: ${userId}`,
+        );
+        throw new BadRequestException(
+          'Usuário deve estar ativo para reenvio de credenciais',
+        );
+      }
+
+      // Gerar nova senha
+      const novaSenha = this.generateRandomPassword();
+      const senhaHash = await bcrypt.hash(novaSenha, this.SALT_ROUNDS);
+
+      // ------------ Transação mínima (apenas UPDATE) ------------
+      await this.dataSource.transaction(async (manager) => {
+        const usuarioRepo = manager.getRepository(Usuario);
+
+        // Atualizar senha e marcar como primeiro acesso
+        await usuarioRepo.update(userId, {
+          senhaHash,
+          primeiro_acesso: true,
+          tentativas_login: 0,
+          updated_at: new Date(),
+        });
+      });
+
+      // ------------ Pós-transação: envio de email ------------
+      // Enviar credenciais por email
+      await this.enviarCredenciaisPorEmail(usuario, novaSenha);
+
+      const executionTime = Date.now() - startTime;
+      if (executionTime > 1000) {
+        // Alerta para operações que levam mais de 1 segundo
+        this.logger.warn(
+          `Reenvio de credenciais para usuário ${userId} levou ${executionTime}ms`,
+        );
+      }
+
+      this.logger.info(
+        `Credenciais reenviadas com sucesso para usuário: ${userId}`,
+      );
+
+      return {
+        data: null,
+        meta: null,
+        message:
+          'Credenciais reenviadas com sucesso. O usuário receberá um email com as novas credenciais.',
+      };
+    } catch (error) {
+      this.logger.error(
+        `Erro ao reenviar credenciais para usuário ${userId}: ${error.message}`,
+        error.stack,
+      );
+      if (error instanceof Error) {
+        throw error;
+      }
+      // Re-throw para garantir que o erro seja tratado adequadamente
+      throw new BadRequestException('Erro ao reenviar credenciais');
+    }
+  }
+
+  /**
    * Solicita recuperação de senha
    * @param email Email do usuário
    * @returns Resultado da operação
@@ -989,26 +1221,32 @@ export class UsuarioService {
       // Normalizar email
       const normalizedEmail = email.toLowerCase();
 
-      // Buscar usuário pelo email
-      const usuario = await this.findByEmail(normalizedEmail);
+      // Buscar usuário pelo email - usando método sem escopo para recuperação de senha
+      const usuario = await this.findByEmailForAuth(normalizedEmail);
 
       if (!usuario) {
         // Por segurança, não revelar se o email existe ou não
-        this.logger.warn(`Tentativa de recuperação de senha para email inexistente: ${normalizedEmail}`);
+        this.logger.warn(
+          `Tentativa de recuperação de senha para email inexistente: ${normalizedEmail}`,
+        );
         return {
           data: null,
           meta: null,
-          message: 'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
+          message:
+            'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
         };
       }
 
       // Verificar se usuário está ativo
       if (usuario.status !== Status.ATIVO) {
-        this.logger.warn(`Tentativa de recuperação de senha para usuário inativo: ${usuario.id}`);
+        this.logger.warn(
+          `Tentativa de recuperação de senha para usuário inativo: ${usuario.id}`,
+        );
         return {
           data: null,
           meta: null,
-          message: 'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
+          message:
+            'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
         };
       }
 
@@ -1040,16 +1278,22 @@ export class UsuarioService {
       });
 
       const executionTime = Date.now() - startTime;
-      if (executionTime > 1000) { // Alerta para operações que levam mais de 1 segundo
-        this.logger.warn(`Recuperação de senha para usuário ${usuario.id} levou ${executionTime}ms`);
+      if (executionTime > 1000) {
+        // Alerta para operações que levam mais de 1 segundo
+        this.logger.warn(
+          `Recuperação de senha para usuário ${usuario.id} levou ${executionTime}ms`,
+        );
       }
 
-      this.logger.info(`Recuperação de senha processada com sucesso para usuário: ${usuario.id}`);
+      this.logger.info(
+        `Recuperação de senha processada com sucesso para usuário: ${usuario.id}`,
+      );
 
       return {
         data: null,
         meta: null,
-        message: 'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
+        message:
+          'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
       };
     } catch (error) {
       this.logger.error(
@@ -1061,8 +1305,91 @@ export class UsuarioService {
       return {
         data: null,
         meta: null,
-        message: 'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
+        message:
+          'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
       };
+    }
+  }
+
+  /**
+   * Busca usuários por permissões específicas
+   * @param permissoes Lista de permissões para filtrar
+   * @returns Lista de usuários com as permissões especificadas
+   */
+  async buscarPorPermissao(
+    permissoes: string[],
+  ): Promise<Array<{ id: string; nome: string; email: string }>> {
+    try {
+      const usuarios = await this.dataSource
+        .createQueryBuilder(Usuario, 'usuario')
+        .innerJoin('usuario.role', 'role')
+        .innerJoin('role.permissoes', 'permissao')
+        .where('permissao.nome IN (:...permissoes)', { permissoes })
+        .andWhere('usuario.status = :status', { status: Status.ATIVO })
+        .select(['usuario.id', 'usuario.nome', 'usuario.email'])
+        .getMany();
+
+      return usuarios.map((usuario) => ({
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+      }));
+    } catch (error) {
+      this.logger.error('Erro ao buscar usuários por permissão', error.stack);
+      return [];
+    }
+  }
+
+  /**
+   * Busca usuários por setores específicos
+   * @param setores Lista de setores para filtrar
+   * @returns Lista de usuários dos setores especificados
+   */
+  async buscarPorSetor(
+    setores: string[],
+  ): Promise<Array<{ id: string; nome: string; email: string }>> {
+    try {
+      const usuarios = await this.dataSource
+        .createQueryBuilder(Usuario, 'usuario')
+        .innerJoin('usuario.setor', 'setor')
+        .where('setor.nome IN (:...setores)', { setores })
+        .andWhere('usuario.status = :status', { status: Status.ATIVO })
+        .select(['usuario.id', 'usuario.nome', 'usuario.email'])
+        .getMany();
+
+      return usuarios.map((usuario) => ({
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+      }));
+    } catch (error) {
+      this.logger.error('Erro ao buscar usuários por setor', error.stack);
+      return [];
+    }
+  }
+
+  /**
+   * Busca todos os usuários ativos do sistema
+   * @returns Lista de todos os usuários ativos
+   */
+  async buscarTodosAtivos(): Promise<
+    Array<{ id: string; nome: string; email: string }>
+  > {
+    try {
+      const usuarios = await this.dataSource
+        .createQueryBuilder(Usuario, 'usuario')
+        .where('usuario.status = :status', { status: Status.ATIVO })
+        .select(['usuario.id', 'usuario.nome', 'usuario.email'])
+        .getMany();
+
+      return usuarios.map((usuario) => ({
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+      }));
+    } catch (error) {
+      this.logger.error('Erro ao buscar todos os usuários ativos', error.stack);
+      return [];
     }
   }
 }

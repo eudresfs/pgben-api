@@ -5,6 +5,7 @@ import { BeneficioModule } from '../beneficio/beneficio.module';
 import { UnidadeModule } from '../unidade/unidade.module';
 import { UsuarioModule } from '../usuario/usuario.module';
 import { CidadaoModule } from '../cidadao/cidadao.module';
+import { SharedModule } from '../../shared/shared.module';
 import {
   ParametroService,
   TemplateService,
@@ -51,6 +52,8 @@ import {
       WorkflowBeneficio,
       ConfiguracaoIntegracao,
     ]),
+    // Importa o módulo compartilhado para acesso ao CriptografiaService
+    SharedModule,
     // Importa o módulo compartilhado de autenticação
     AuthModule,
     // Importa módulos necessários para o controller de referência

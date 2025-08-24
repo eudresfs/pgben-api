@@ -1,0 +1,1 @@
+export { RequerAprovacao, ConfiguracaoAprovacao, APROVACAO_METADATA_KEY } from './requer-aprovacao.decorator';

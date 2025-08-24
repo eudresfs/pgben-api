@@ -6,7 +6,11 @@ import { AblyAuthService } from '../services/ably-auth.service';
 import { AblyChannelService } from '../services/ably-channel.service';
 import { NotificationOrchestratorService } from '../services/notification-orchestrator.service';
 import { SseService } from '../services/sse.service';
-import { NotificationType, NotificationPriority, NotificationData } from '../interfaces/ably.interface';
+import {
+  NotificationType,
+  NotificationPriority,
+  NotificationData,
+} from '../interfaces/ably.interface';
 import { CreateNotificationDto } from '../dto/create-notification.dto';
 import { BroadcastNotificationDto } from '../dto/broadcast-notification.dto';
 
@@ -30,7 +34,7 @@ describe('Ably Integration Tests', () => {
     ABLY_CIRCUIT_BREAKER_THRESHOLD: 5,
     ABLY_CIRCUIT_BREAKER_TIMEOUT: 60000,
     ABLY_RETRY_MAX_ATTEMPTS: 3,
-    ABLY_RETRY_DELAY: 1000
+    ABLY_RETRY_DELAY: 1000,
   };
 
   const mockNotificationData: NotificationData = {
@@ -41,7 +45,7 @@ describe('Ably Integration Tests', () => {
     priority: 'normal' as NotificationPriority,
     senderId: 'sender-integration-123',
     timestamp: new Date(),
-    data: { integrationTest: true }
+    data: { integrationTest: true },
   };
 
   beforeAll(async () => {
@@ -49,9 +53,9 @@ describe('Ably Integration Tests', () => {
       imports: [
         ConfigModule.forRoot({
           isGlobal: true,
-          load: [() => mockConfig]
+          load: [() => mockConfig],
         }),
-        EventEmitterModule.forRoot()
+        EventEmitterModule.forRoot(),
       ],
       providers: [
         AblyService,
@@ -62,11 +66,13 @@ describe('Ably Integration Tests', () => {
           provide: SseService,
           useValue: {
             sendNotification: jest.fn().mockResolvedValue({ success: true }),
-            broadcastNotification: jest.fn().mockResolvedValue({ success: true }),
+            broadcastNotification: jest
+              .fn()
+              .mockResolvedValue({ success: true }),
             isHealthy: jest.fn().mockReturnValue(true),
             getActiveConnections: jest.fn().mockReturnValue(10),
-            getMetrics: jest.fn().mockReturnValue({})
-          }
+            getMetrics: jest.fn().mockReturnValue({}),
+          },
         },
         {
           provide: 'ABLY_CONFIG',
@@ -74,17 +80,19 @@ describe('Ably Integration Tests', () => {
             key: config.get('ABLY_API_KEY'),
             environment: config.get('ABLY_ENVIRONMENT'),
             clientId: config.get('ABLY_CLIENT_ID'),
-            autoConnect: false // Para testes
+            autoConnect: false, // Para testes
           }),
-          inject: [ConfigService]
-        }
-      ]
+          inject: [ConfigService],
+        },
+      ],
     }).compile();
 
     ablyService = module.get<AblyService>(AblyService);
     ablyAuthService = module.get<AblyAuthService>(AblyAuthService);
     ablyChannelService = module.get<AblyChannelService>(AblyChannelService);
-    notificationOrchestrator = module.get<NotificationOrchestratorService>(NotificationOrchestratorService);
+    notificationOrchestrator = module.get<NotificationOrchestratorService>(
+      NotificationOrchestratorService,
+    );
     configService = module.get<ConfigService>(ConfigService);
     eventEmitter = module.get<EventEmitter2>(EventEmitter2);
 
@@ -94,7 +102,7 @@ describe('Ably Integration Tests', () => {
         state: 'connected',
         on: jest.fn(),
         off: jest.fn(),
-        close: jest.fn()
+        close: jest.fn(),
       },
       channels: {
         get: jest.fn().mockReturnValue({
@@ -104,10 +112,10 @@ describe('Ably Integration Tests', () => {
           presence: {
             enter: jest.fn(),
             leave: jest.fn(),
-            get: jest.fn().mockResolvedValue([])
+            get: jest.fn().mockResolvedValue([]),
           },
-          history: jest.fn().mockResolvedValue({ items: [] })
-        })
+          history: jest.fn().mockResolvedValue({ items: [] }),
+        }),
       },
       auth: {
         createTokenRequest: jest.fn().mockResolvedValue({
@@ -115,13 +123,15 @@ describe('Ably Integration Tests', () => {
           ttl: 3600000,
           timestamp: Date.now(),
           nonce: 'test-nonce',
-          mac: 'test-mac'
-        })
+          mac: 'test-mac',
+        }),
       },
-      stats: jest.fn().mockResolvedValue([{
-        inbound: { all: { all: { count: 10 } } },
-        outbound: { all: { all: { count: 15 } } }
-      }])
+      stats: jest.fn().mockResolvedValue([
+        {
+          inbound: { all: { all: { count: 10 } } },
+          outbound: { all: { all: { count: 15 } } },
+        },
+      ]),
     });
   });
 
@@ -163,13 +173,16 @@ describe('Ably Integration Tests', () => {
       const userId = 'integration-user-123';
       const userProfile = 'ADMIN';
 
-      const tokenResult = await ablyAuthService.generateToken(userId, userProfile);
+      const tokenResult = await ablyAuthService.generateToken(
+        userId,
+        userProfile,
+      );
       expect(tokenResult.success).toBe(true);
 
       if (tokenResult.token) {
         const validationResult = await ablyAuthService.validateToken(
           tokenResult.token.token,
-          userId
+          userId,
         );
         expect(validationResult.valid).toBe(true);
       }
@@ -205,7 +218,7 @@ describe('Ably Integration Tests', () => {
       const result = await ablyChannelService.publishToChannel(
         channelName,
         'notification',
-        mockNotificationData
+        mockNotificationData,
       );
 
       expect(result.success).toBe(true);
@@ -219,7 +232,7 @@ describe('Ably Integration Tests', () => {
       await ablyChannelService.publishToChannel(
         channelName,
         'notification',
-        mockNotificationData
+        mockNotificationData,
       );
 
       const stats = ablyChannelService.getChannelStats(channelName);
@@ -235,7 +248,7 @@ describe('Ably Integration Tests', () => {
 
       const result = await notificationOrchestrator.sendNotification(
         userId,
-        mockNotificationData
+        mockNotificationData,
       );
 
       expect(result.success).toBe(true);
@@ -250,12 +263,13 @@ describe('Ably Integration Tests', () => {
         priority: 'normal' as NotificationPriority,
         target: {
           type: 'all',
-          value: undefined
+          value: undefined,
         },
-        data: { integrationBroadcast: true }
+        data: { integrationBroadcast: true },
       };
 
-      const result = await notificationOrchestrator.broadcastNotification(broadcastData);
+      const result =
+        await notificationOrchestrator.broadcastNotification(broadcastData);
 
       expect(result.success).toBe(true);
       expect(result.method).toBe('ably');
@@ -267,7 +281,7 @@ describe('Ably Integration Tests', () => {
       const result = await notificationOrchestrator.forceDeliveryMethod(
         'sse',
         userId,
-        mockNotificationData
+        mockNotificationData,
       );
 
       expect(result.success).toBe(true);
@@ -291,10 +305,13 @@ describe('Ably Integration Tests', () => {
       const userId = 'integration-user-123';
 
       // Enviar algumas notificações para gerar métricas
-      await notificationOrchestrator.sendNotification(userId, mockNotificationData);
+      await notificationOrchestrator.sendNotification(
+        userId,
+        mockNotificationData,
+      );
       await notificationOrchestrator.sendNotification(userId, {
         ...mockNotificationData,
-        id: 'notif-integration-124'
+        id: 'notif-integration-124',
       });
 
       const metrics = notificationOrchestrator.getMetrics();
@@ -327,12 +344,12 @@ describe('Ably Integration Tests', () => {
       jest.spyOn(ablyService, 'publishNotification').mockResolvedValueOnce({
         success: false,
         error: 'Ably connection failed',
-        errorCode: 'CONNECTION_FAILED'
+        errorCode: 'CONNECTION_FAILED',
       });
 
       const result = await notificationOrchestrator.sendNotification(
         userId,
-        mockNotificationData
+        mockNotificationData,
       );
 
       expect(result.success).toBe(true);
@@ -345,12 +362,12 @@ describe('Ably Integration Tests', () => {
         ...mockNotificationData,
         type: '' as NotificationType,
         title: '',
-        message: ''
+        message: '',
       };
 
       const result = await notificationOrchestrator.sendNotification(
         'user-123',
-        invalidNotification
+        invalidNotification,
       );
 
       expect(result.success).toBe(false);
@@ -363,15 +380,18 @@ describe('Ably Integration Tests', () => {
       const userId = 'integration-user-123';
       const eventSpy = jest.spyOn(eventEmitter, 'emit');
 
-      await notificationOrchestrator.sendNotification(userId, mockNotificationData);
+      await notificationOrchestrator.sendNotification(
+        userId,
+        mockNotificationData,
+      );
 
       expect(eventSpy).toHaveBeenCalledWith(
         'notification.sent',
         expect.objectContaining({
           userId,
           method: 'ably',
-          success: true
-        })
+          success: true,
+        }),
       );
     });
 
@@ -382,23 +402,26 @@ describe('Ably Integration Tests', () => {
       // Mock falha em ambos os serviços
       jest.spyOn(ablyService, 'publishNotification').mockResolvedValueOnce({
         success: false,
-        error: 'Ably failed'
+        error: 'Ably failed',
       });
-      
+
       const sseService = module.get<SseService>(SseService);
       jest.spyOn(sseService, 'sendNotification').mockResolvedValueOnce({
         success: false,
-        error: 'SSE failed'
+        error: 'SSE failed',
       });
 
-      await notificationOrchestrator.sendNotification(userId, mockNotificationData);
+      await notificationOrchestrator.sendNotification(
+        userId,
+        mockNotificationData,
+      );
 
       expect(eventSpy).toHaveBeenCalledWith(
         'notification.failed',
         expect.objectContaining({
           userId,
-          error: expect.any(String)
-        })
+          error: expect.any(String),
+        }),
       );
     });
   });
@@ -410,7 +433,10 @@ describe('Ably Integration Tests', () => {
 
       // Criar recursos
       await ablyChannelService.createUserChannel(userId);
-      await notificationOrchestrator.sendNotification(userId, mockNotificationData);
+      await notificationOrchestrator.sendNotification(
+        userId,
+        mockNotificationData,
+      );
 
       // Verificar que recursos existem
       const statsBefore = ablyChannelService.getChannelStats(channelName);
@@ -433,14 +459,14 @@ describe('Ably Integration Tests', () => {
       // Simular múltiplas falhas para ativar circuit breaker
       jest.spyOn(ablyService, 'publishNotification').mockResolvedValue({
         success: false,
-        error: 'Persistent failure'
+        error: 'Persistent failure',
       });
 
       // Enviar várias notificações para atingir threshold
       for (let i = 0; i < 6; i++) {
         await notificationOrchestrator.sendNotification(userId, {
           ...mockNotificationData,
-          id: `notif-${i}`
+          id: `notif-${i}`,
         });
       }
 
@@ -455,14 +481,17 @@ describe('Ably Integration Tests', () => {
       jest.spyOn(ablyService, 'publishNotification').mockImplementation(() => {
         callCount++;
         if (callCount < 3) {
-          return Promise.resolve({ success: false, error: 'Temporary failure' });
+          return Promise.resolve({
+            success: false,
+            error: 'Temporary failure',
+          });
         }
         return Promise.resolve({ success: true, messageId: 'msg-123' });
       });
 
       const result = await notificationOrchestrator.sendNotification(
         userId,
-        mockNotificationData
+        mockNotificationData,
       );
 
       expect(result.success).toBe(true);

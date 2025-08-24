@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Query,
   UseGuards,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,12 +17,13 @@ import {
   ApiBearerAuth,
   ApiQuery,
   ApiBody,
+  ApiParam,
 } from '@nestjs/swagger';
 import { BeneficioService } from '../services/beneficio.service';
 import { CreateTipoBeneficioDto } from '../dto/create-tipo-beneficio.dto';
 import { UpdateTipoBeneficioDto } from '../dto/update-tipo-beneficio.dto';
 import { CreateRequisitoDocumentoDto } from '../dto/create-requisito-documento.dto';
-import { ConfigurarFluxoDto } from '../dto/configurar-fluxo.dto';
+import { UpdateRequisitoDocumentoDto } from '../dto/update-requisito-documento.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
@@ -32,6 +34,7 @@ import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
 import { ReqContext } from '../../../shared/request-context/req-context.decorator';
 import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { Usuario } from '../../../entities/usuario.entity';
+import { Status } from '@/enums';
 
 /**
  * Controlador de benefícios
@@ -56,7 +59,7 @@ export class BeneficioController {
     enablePagination: true,
     maxLimit: 100,
     enableCaching: true,
-    cacheTTL: 300
+    cacheTTL: 300,
   })
   @ApiOperation({
     summary: 'Listar tipos de benefícios',
@@ -100,13 +103,13 @@ export class BeneficioController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
-    @Query('ativo') ativo?: boolean,
+    @Query('status') status?: Status,
   ) {
     return this.beneficioService.findAll({
       page: page ? +page : undefined,
       limit: limit ? +limit : undefined,
       search,
-      ativo: ativo !== undefined ? ativo : undefined,
+      status,
     });
   }
 
@@ -116,7 +119,7 @@ export class BeneficioController {
   @Get(':id')
   @QueryOptimization({
     enableCaching: true,
-    cacheTTL: 600
+    cacheTTL: 600,
   })
   @ApiOperation({
     summary: 'Obter detalhes de um benefício',
@@ -279,8 +282,11 @@ export class BeneficioController {
   ) {
     // Buscar estado anterior para auditoria
     const beneficioAnterior = await this.beneficioService.findById(id);
-    
-    const result = await this.beneficioService.update(id, updateTipoBeneficioDto);
+
+    const result = await this.beneficioService.update(
+      id,
+      updateTipoBeneficioDto,
+    );
 
     // Auditoria: Atualização de tipo de benefício
     await this.auditEventEmitter.emitEntityUpdated(
@@ -331,7 +337,10 @@ export class BeneficioController {
     @GetUser() usuario: Usuario,
     @ReqContext() ctx: any,
   ) {
-    const result = await this.beneficioService.addRequisito(id, createRequisitoDocumentoDto);
+    const result = await this.beneficioService.addRequisito(
+      id,
+      createRequisitoDocumentoDto,
+    );
 
     // Auditoria: Adição de requisito documental
     await this.auditEventEmitter.emitEntityCreated(
@@ -349,38 +358,153 @@ export class BeneficioController {
     return result;
   }
 
-  /**
-   * Configura fluxo de aprovação de um benefício
-   */
-  @Put(':id/fluxo')
-  @RequiresPermission({
-    permissionName: 'beneficio.fluxo.configurar',
-    scopeType: ScopeType.GLOBAL,
+  @Put(':id/requisitos/:requisitoId')
+  @ApiOperation({
+    summary: 'Atualiza requisito documental',
+    description: 'Atualiza um requisito documental de um tipo de benefício',
   })
-  @ApiOperation({ summary: 'Configurar fluxo de aprovação' })
-  @ApiResponse({ status: 200, description: 'Fluxo configurado com sucesso' })
-  @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  @ApiResponse({ status: 404, description: 'Benefício não encontrado' })
-  async configurarFluxo(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() configurarFluxoDto: ConfigurarFluxoDto,
-    @GetUser() usuario: Usuario,
-    @ReqContext() ctx: any,
+  @ApiParam({
+    name: 'id',
+    description: 'ID do tipo de benefício',
+    example: 'uuid-do-beneficio',
+  })
+  @ApiParam({
+    name: 'requisitoId',
+    description: 'ID do requisito documental',
+    example: 'uuid-do-requisito',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Requisito atualizado com sucesso',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Benefício ou requisito não encontrado',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflito - tipo de documento já existe para este benefício',
+  })
+  async updateRequisito(
+    @Param('id') id: string,
+    @Param('requisitoId') requisitoId: string,
+    @Body() updateRequisitoDocumentoDto: UpdateRequisitoDocumentoDto,
   ) {
-    const result = await this.beneficioService.configurarFluxo(id, configurarFluxoDto);
-
-    // Auditoria: Configuração de fluxo de aprovação
-    await this.auditEventEmitter.emitEntityUpdated(
-      'TipoBeneficio',
+    return this.beneficioService.updateRequisito(
       id,
-      {},
-      {
-        action: 'configurar_fluxo',
-        fluxoAprovacao: configurarFluxoDto,
-      },
-      usuario.id,
+      requisitoId,
+      updateRequisitoDocumentoDto,
     );
+  }
 
-    return result;
+  @Delete(':id/requisitos/:requisitoId')
+  @ApiOperation({
+    summary: 'Remove requisito documental',
+    description: 'Remove um requisito documental de um tipo de benefício',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do tipo de benefício',
+    example: 'uuid-do-beneficio',
+  })
+  @ApiParam({
+    name: 'requisitoId',
+    description: 'ID do requisito documental',
+    example: 'uuid-do-requisito',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Requisito removido com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Requisito removido com sucesso',
+        },
+        requisitoId: {
+          type: 'string',
+          example: 'uuid-do-requisito',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Benefício ou requisito não encontrado',
+  })
+  async removeRequisito(
+    @Param('id') id: string,
+    @Param('requisitoId') requisitoId: string,
+  ) {
+    return this.beneficioService.removeRequisito(id, requisitoId);
+  }
+
+  @Get(':id/requisitos/:requisitoId/template')
+  @ApiOperation({
+    summary: 'Obtém informações do template',
+    description:
+      'Retorna as informações do template de um requisito documental',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do tipo de benefício',
+    example: 'uuid-do-beneficio',
+  })
+  @ApiParam({
+    name: 'requisitoId',
+    description: 'ID do requisito documental',
+    example: 'uuid-do-requisito',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Informações do template retornadas com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        temTemplate: {
+          type: 'boolean',
+          example: true,
+        },
+        template_url: {
+          type: 'string',
+          example: 'https://storage.exemplo.com/templates/comprovante.pdf',
+        },
+        template_nome: {
+          type: 'string',
+          example: 'modelo-comprovante.pdf',
+        },
+        template_descricao: {
+          type: 'string',
+          example: 'Template padrão para comprovante de residência',
+        },
+        extensao: {
+          type: 'string',
+          example: 'pdf',
+        },
+        ehPdf: {
+          type: 'boolean',
+          example: true,
+        },
+        ehImagem: {
+          type: 'boolean',
+          example: false,
+        },
+        ehDocumentoOffice: {
+          type: 'boolean',
+          example: false,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Benefício ou requisito não encontrado',
+  })
+  async getTemplateInfo(
+    @Param('id') id: string,
+    @Param('requisitoId') requisitoId: string,
+  ) {
+    return this.beneficioService.getTemplateInfo(id, requisitoId);
   }
 }

@@ -3,6 +3,8 @@ import { Repository, DataSource } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { HistoricoSolicitacao } from '../../../entities/historico-solicitacao.entity';
 import { StatusSolicitacao } from '../../../entities/solicitacao.entity';
+import { ScopedRepository } from '../../../common/repositories/scoped-repository';
+import { InjectScopedRepository } from '../../../common/providers/scoped-repository.provider';
 
 /**
  * Repository customizado para Histórico de Solicitações
@@ -13,8 +15,8 @@ import { StatusSolicitacao } from '../../../entities/solicitacao.entity';
 @Injectable()
 export class HistoricoSolicitacaoRepository {
   constructor(
-    @InjectRepository(HistoricoSolicitacao)
-    private readonly repository: Repository<HistoricoSolicitacao>,
+    @InjectScopedRepository(HistoricoSolicitacao)
+    private readonly scopedRepository: ScopedRepository<HistoricoSolicitacao>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -26,11 +28,13 @@ export class HistoricoSolicitacaoRepository {
   async buscarHistoricoPorSolicitacao(
     solicitacaoId: string,
   ): Promise<HistoricoSolicitacao[]> {
-    return this.repository.find({
-      where: { solicitacao_id: solicitacaoId },
-      relations: ['usuario'],
-      order: { created_at: 'DESC' },
-    });
+    return this.scopedRepository
+      .createScopedQueryBuilder('historico')
+      .leftJoinAndSelect('historico.usuario', 'usuario')
+      .leftJoin('historico.solicitacao', 'solicitacao')
+      .where('historico.solicitacao_id = :solicitacaoId', { solicitacaoId })
+      .orderBy('historico.created_at', 'DESC')
+      .getMany();
   }
 
   /**
@@ -62,7 +66,7 @@ export class HistoricoSolicitacaoRepository {
     historico.dados_alterados = dadosAlterados || null;
     historico.ip_usuario = ipUsuario || null;
 
-    return this.repository.save(historico);
+    return this.scopedRepository.saveWithScope(historico);
   }
 
   /**
@@ -92,7 +96,7 @@ export class HistoricoSolicitacaoRepository {
     historico.dados_alterados = dadosAlterados;
     historico.ip_usuario = ipUsuario || '0.0.0.0'; // IP padrão para alterações sem usuário
 
-    return this.repository.save(historico);
+    return this.scopedRepository.saveWithScope(historico);
   }
 
   /**
@@ -103,10 +107,12 @@ export class HistoricoSolicitacaoRepository {
   async buscarUltimoRegistro(
     solicitacaoId: string,
   ): Promise<HistoricoSolicitacao | null> {
-    return this.repository.findOne({
-      where: { solicitacao_id: solicitacaoId },
-      order: { created_at: 'DESC' },
-    });
+    return this.scopedRepository
+      .createScopedQueryBuilder('historico')
+      .leftJoin('historico.solicitacao', 'solicitacao')
+      .where('historico.solicitacao_id = :solicitacaoId', { solicitacaoId })
+      .orderBy('historico.created_at', 'DESC')
+      .getOne();
   }
 
   /**
@@ -121,8 +127,8 @@ export class HistoricoSolicitacaoRepository {
     unidadeId?: string;
   }): Promise<Record<StatusSolicitacao, number>> {
     // Construir a query para calcular o tempo médio entre status
-    const queryBuilder = this.repository
-      .createQueryBuilder('historico')
+    const queryBuilder = this.scopedRepository
+      .createScopedQueryBuilder('historico')
       .select('historico.status_anterior', 'status')
       .addSelect(
         'AVG(EXTRACT(EPOCH FROM (LEAD(historico.created_at) OVER (PARTITION BY historico.solicitacao_id ORDER BY historico.created_at) - historico.created_at)))/86400',
@@ -191,8 +197,9 @@ export class HistoricoSolicitacaoRepository {
     solicitacaoId: string,
     campo: string,
   ): Promise<HistoricoSolicitacao[]> {
-    return this.repository
-      .createQueryBuilder('historico')
+    return this.scopedRepository
+      .createScopedQueryBuilder('historico')
+      .leftJoin('historico.solicitacao', 'solicitacao')
       .where('historico.solicitacao_id = :solicitacaoId', { solicitacaoId })
       .andWhere(`historico.dados_alterados->>'${campo}' IS NOT NULL`)
       .orderBy('historico.created_at', 'DESC')
@@ -205,6 +212,6 @@ export class HistoricoSolicitacaoRepository {
    * @returns Registro de histórico salvo
    */
   async salvar(historico: HistoricoSolicitacao): Promise<HistoricoSolicitacao> {
-    return this.repository.save(historico);
+    return this.scopedRepository.saveWithScope(historico);
   }
 }

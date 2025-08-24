@@ -1,6 +1,6 @@
 /**
  * Audit Decorators
- * 
+ *
  * Decorators para auditoria automática de métodos e classes.
  * Implementa interceptação transparente para emissão de eventos.
  */
@@ -52,9 +52,9 @@ export interface SecurityAuditConfig {
 
 /**
  * Decorator para auditoria manual de métodos específicos
- * 
+ *
  * @param config Configuração da auditoria
- * 
+ *
  * @example
  * ```typescript
  * @Audit({
@@ -74,9 +74,9 @@ export const Audit = (config: AuditDecoratorConfig) => {
 
 /**
  * Decorator para marcar dados sensíveis (LGPD)
- * 
+ *
  * @param config Configuração de dados sensíveis
- * 
+ *
  * @example
  * ```typescript
  * @SensitiveData({
@@ -95,9 +95,9 @@ export const SensitiveData = (config: SensitiveDataConfig) => {
 
 /**
  * Decorator para auditoria automática de controladores
- * 
+ *
  * @param config Configuração da auditoria automática
- * 
+ *
  * @example
  * ```typescript
  * @AutoAudit({
@@ -118,11 +118,11 @@ export const AutoAudit = (config: AutoAuditConfig) => {
 
 /**
  * Decorator combinado para auditoria de entidades
- * 
+ *
  * @param entity Nome da entidade
  * @param operation Operação realizada
  * @param options Opções adicionais
- * 
+ *
  * @example
  * ```typescript
  * @AuditEntity('User', 'create', { async: true, riskLevel: RiskLevel.HIGH })
@@ -134,7 +134,7 @@ export const AutoAudit = (config: AutoAuditConfig) => {
 export const AuditEntity = (
   entity: string,
   operation: string,
-  options?: Partial<AuditDecoratorConfig>
+  options?: Partial<AuditDecoratorConfig>,
 ) => {
   const config: AuditDecoratorConfig = {
     eventType: AuditEventType.ENTITY_CREATED,
@@ -144,16 +144,16 @@ export const AuditEntity = (
     async: true,
     ...options,
   };
-  
+
   return Audit(config);
 };
 
 /**
  * Decorator para auditoria de acesso a dados sensíveis
- * 
+ *
  * @param fields Campos sensíveis
  * @param options Opções adicionais
- * 
+ *
  * @example
  * ```typescript
  * @SensitiveDataAccess(['cpf', 'rg'], { requiresConsent: true })
@@ -164,7 +164,7 @@ export const AuditEntity = (
  */
 export const SensitiveDataAccess = (
   fields: string[],
-  options?: Partial<SensitiveDataConfig>
+  options?: Partial<SensitiveDataConfig>,
 ) => {
   const config: SensitiveDataConfig = {
     fields,
@@ -173,7 +173,7 @@ export const SensitiveDataAccess = (
     retentionDays: 2555, // 7 anos LGPD
     ...options,
   };
-  
+
   return applyDecorators(
     SensitiveData(config),
     Audit({
@@ -181,16 +181,16 @@ export const SensitiveDataAccess = (
       riskLevel: RiskLevel.HIGH,
       sensitiveFields: fields,
       async: true,
-    })
+    }),
   );
 };
 
 /**
  * Decorator para auditoria de operações de segurança
- * 
+ *
  * @param operation Operação de segurança
  * @param riskLevel Nível de risco
- * 
+ *
  * @example
  * ```typescript
  * @SecurityAudit('login', RiskLevel.HIGH)
@@ -201,7 +201,7 @@ export const SensitiveDataAccess = (
  */
 export const SecurityAudit = (
   operation: string,
-  riskLevel: RiskLevel = RiskLevel.HIGH
+  riskLevel: RiskLevel = RiskLevel.HIGH,
 ) => {
   return Audit({
     eventType: AuditEventType.SUSPICIOUS_ACTIVITY,
@@ -213,10 +213,10 @@ export const SecurityAudit = (
 
 /**
  * Decorator para auditoria de operações do sistema
- * 
+ *
  * @param operation Operação do sistema
  * @param async Se deve ser processado assincronamente
- * 
+ *
  * @example
  * ```typescript
  * @SystemAudit('backup', true)
@@ -225,10 +225,7 @@ export const SecurityAudit = (
  * }
  * ```
  */
-export const SystemAudit = (
-  operation: string,
-  async: boolean = true
-) => {
+export const SystemAudit = (operation: string, async: boolean = true) => {
   return Audit({
     eventType: AuditEventType.SYSTEM_ERROR,
     operation,

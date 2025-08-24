@@ -1,7 +1,15 @@
-import { Module } from '@nestjs/common';
+import {
+  Module,
+  Logger,
+  MiddlewareConsumer,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
+import { SharedBullModule } from './shared/bull/bull.module';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { createThrottlerConfig } from './config/throttler.config';
 import { AppController } from './app.controller';
@@ -19,7 +27,9 @@ import { MetricasModule } from './modules/metricas/metricas.module';
 import { RecursoModule } from './modules/recurso/recurso.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { PagamentoModule } from './modules/pagamento/pagamento.module';
-import { APP_GUARD } from '@nestjs/core';
+import { AprovacaoModule } from './modules/aprovacao/aprovacao.module';
+import { MonitoramentoModule } from './modules/monitoramento/monitoramento.module';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { CatalogAwareExceptionFilter } from './shared/exceptions/error-catalog';
 import { LoggingModule } from './shared/logging/logging.module';
 import { ResilienceModule } from './shared/modules/resilience.module';
@@ -27,8 +37,13 @@ import { EmailModule } from './shared/modules/email.module';
 import { ConfiguracaoModule } from './modules/configuracao/configuracao.module';
 import { NotificacaoModule } from './modules/notificacao/notificacao.module';
 import { EasyUploadModule } from './modules/easy-upload/easy-upload.module';
-import { BullModule } from '@nestjs/bull';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { addTransactionalDataSource } from 'typeorm-transactional';
+import { DataSource } from 'typeorm';
+import { ScopeContextInterceptor } from './common/interceptors/scope-context.interceptor';
+import { AuditContextInterceptor } from './common/interceptors/audit-context.interceptor';
+import { RequestContextHolder } from './common/services/request-context-holder.service';
+
 
 @Module({
   imports: [
@@ -58,27 +73,24 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
       inject: [ConfigService],
       useFactory: createThrottlerConfig,
     }),
-    // Configuração de filas com BullMQ - usando configuração dinâmica
-    BullModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => {
-        const { getBullConfig } = await import('./config/bull.config');
-        return getBullConfig(configService);
-      },
-    }),
+    // Configuração do agendamento de tarefas
+    ScheduleModule.forRoot(),
+    // Bull Queue Module para processamento assíncrono
+    // Configurado com tratamento de erro para evitar crash da aplicação
+    SharedBullModule,
     // Configuração do TypeORM
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
+        type: 'postgres' as const,
         host: configService.get('DB_HOST', 'localhost'),
         port: parseInt(configService.get('DB_PORT', '5432')),
         username: configService.get('DB_USER', 'postgres'),
         password: configService.get('DB_PASS', 'postgres'),
-        database: configService.get('DB_NAME', 'pgben'),
+        database: configService.get('DB_NAME', 'pgben') as string,
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        autoLoadEntities: true,
         synchronize: false,
         logging: configService.get('NODE_ENV') === 'development',
         maxQueryExecutionTime: 10000,
@@ -94,18 +106,38 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
           allowExitOnIdle: false,
         },
       }),
+      async dataSourceFactory(options) {
+        if (!options) {
+          throw new Error('Invalid options passed');
+        }
+
+        const dataSource = new DataSource(options);
+
+        // Verificar se o DataSource já foi adicionado para evitar erro de duplicação
+        try {
+          return addTransactionalDataSource(dataSource);
+        } catch (error) {
+          // Se o DataSource já existe, apenas retornar o DataSource criado
+          if (error.message?.includes('has already added')) {
+            const logger = new Logger('TypeOrmModule');
+            logger.warn('DataSource já existe, reutilizando conexão existente');
+            return dataSource;
+          }
+          throw error;
+        }
+      },
     }),
     // Módulo de documentos (necessário para StorageHealthService)
     DocumentoModule,
-    
+
     // Módulo de monitoramento
     MonitoringModule,
 
     // Módulos compartilhados
-    EmailModule, 
+    EmailModule,
     PermissionSharedModule,
     LoggingModule,
-    
+
     // Módulo de auditoria consolidado
     AuditoriaModule,
     // ResilienceModule, // Temporariamente desabilitado - depende do Redis
@@ -125,9 +157,6 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     // Módulo de benefícios
     BeneficioModule,
 
-    // Módulo de docuentos
-    DocumentoModule,
-
     // Módulo de pagamentos
     PagamentoModule,
 
@@ -145,23 +174,51 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 
     // Módulo de notificações
     NotificacaoModule,
-
+    // Módulo de aprovação
+    AprovacaoModule,
+    // Módulo de monitoramento domiciliar
+    MonitoramentoModule,
     // Módulo de upload facilitado
-    // EasyUploadModule,
+    EasyUploadModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
     CatalogAwareExceptionFilter,
+    RequestContextHolder,
     // Aplicar rate limiting globalmente
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    // Aplicar interceptor de escopo globalmente
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ScopeContextInterceptor,
+    },
+    // Aplicar interceptor de contexto de auditoria globalmente
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditContextInterceptor,
+    },
+
   ],
 })
-export class AppModule {
+export class AppModule implements NestModule {
   constructor() {
-    console.log('✅ AppModule inicializado - com autenticação');
+    console.log(
+      '✅ AppModule inicializado - com autenticação e ScopedRepository',
+    );
   }
-} //
+
+  /**
+   * Configura middlewares globais
+   *
+   * @description
+   * Middlewares removidos em favor do ScopeContextInterceptor
+   * que executa após o processamento do JWT pelo AuthGuard.
+   */
+  configure(consumer: MiddlewareConsumer) {
+    // Middlewares removidos - usando interceptor para contexto de escopo
+  }
+}

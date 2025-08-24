@@ -26,7 +26,11 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { StatusNotificacaoProcessamento } from '../../../entities/notification.entity';
 import { CreateNotificationDto } from '../dto/create-notification.dto';
-import { RequiresPermission } from '@/auth/decorators/requires-permission.decorator';
+import {
+  FiltrosNotificacaoDto,
+  RespostaListagemNotificacaoDto,
+} from '../dto/filtros-notificacao.dto';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { TipoEscopo } from '@/entities/user-permission.entity';
 
 /**
@@ -51,12 +55,10 @@ export class NotificacaoController {
    * Cria e envia uma nova notificação
    */
   @Post()
-  @RequiresPermission(
-    {
-      permissionName: 'notificacao.criar',
-      scopeType: TipoEscopo.GLOBAL
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'notificacao.criar',
+    scopeType: TipoEscopo.GLOBAL,
+  })
   @ApiOperation({ summary: 'Criar e enviar uma nova notificação' })
   @ApiResponse({
     status: 201,
@@ -72,44 +74,96 @@ export class NotificacaoController {
   }
 
   /**
-   * Lista todas as notificações do usuário autenticado
+   * Lista todas as notificações do usuário autenticado com filtros e ordenação avançados
    */
   @Get()
-  @ApiOperation({ summary: 'Listar notificações do usuário' })
+  @ApiOperation({
+    summary: 'Listar notificações do usuário',
+    description: `
+      Lista as notificações do usuário autenticado com suporte a filtros avançados e ordenação.
+      
+      **Filtros disponíveis:**
+      - Status da notificação (pendente, enviada, lida, arquivada, etc.)
+      - Tipo do template (sistema, solicitacao, pendencia, etc.)
+      - Categoria do template
+      - Prioridade (baixa, normal, alta, urgente)
+      - Período de criação (dataInicio e dataFim)
+      - Notificações lidas/não lidas
+      - Incluir/excluir arquivadas
+      - Busca textual no conteúdo
+      
+      **Ordenação:**
+      - Por data de criação, data de leitura, prioridade ou status
+      - Direção ascendente (ASC) ou descendente (DESC)
+      
+      **Paginação:**
+      - Suporte a paginação com limite máximo de 100 itens por página
+    `,
+  })
   @ApiResponse({
     status: 200,
     description: 'Lista de notificações retornada com sucesso',
+    type: RespostaListagemNotificacaoDto,
   })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Página atual',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Itens por página',
-  })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: StatusNotificacaoProcessamento,
-    description: 'Filtro por status',
+  @ApiResponse({
+    status: 400,
+    description: 'Parâmetros de filtro inválidos',
   })
   async findAll(
     @Request() req,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('status') status?: StatusNotificacaoProcessamento,
-  ) {
+    @Query() filtros: FiltrosNotificacaoDto,
+  ): Promise<RespostaListagemNotificacaoDto> {
     const userId = req.user.id;
 
+    // Conversão das datas string para Date
+    let dataInicioDate: Date | undefined;
+    let dataFimDate: Date | undefined;
+
+    if (filtros.dataInicio) {
+      dataInicioDate = new Date(filtros.dataInicio);
+      if (isNaN(dataInicioDate.getTime())) {
+        throw new BadRequestException(
+          'Data de início inválida. Use o formato YYYY-MM-DD',
+        );
+      }
+    }
+
+    if (filtros.dataFim) {
+      dataFimDate = new Date(filtros.dataFim);
+      if (isNaN(dataFimDate.getTime())) {
+        throw new BadRequestException(
+          'Data de fim inválida. Use o formato YYYY-MM-DD',
+        );
+      }
+      // Ajustar para o final do dia
+      dataFimDate.setHours(23, 59, 59, 999);
+    }
+
+    // Validação de período
+    if (dataInicioDate && dataFimDate && dataInicioDate > dataFimDate) {
+      throw new BadRequestException(
+        'Data de início não pode ser posterior à data de fim',
+      );
+    }
+
+    this.logger.log(
+      `Listando notificações para usuário ${userId} com filtros: ${JSON.stringify(filtros)}`,
+    );
+
     return this.notificacaoService.findAll({
-      page: page ? +page : undefined,
-      limit: limit ? +limit : undefined,
-      status,
+      page: filtros.page || 1,
+      limit: filtros.limit || 10,
+      status: filtros.status,
+      tipo: filtros.tipo,
+      categoria: filtros.categoria,
+      prioridade: filtros.prioridade,
+      dataInicio: dataInicioDate,
+      dataFim: dataFimDate,
+      lidas: filtros.lidas,
+      arquivadas: filtros.arquivadas || false,
+      ordenarPor: filtros.ordenarPor || 'created_at',
+      ordem: filtros.ordem || 'DESC',
+      busca: filtros.busca,
       userId,
     });
   }
@@ -118,13 +172,11 @@ export class NotificacaoController {
    * Lista as notificações do usuário logado (rota alternativa)
    */
   @Get('minhas')
-  @RequiresPermission(
-    {
-      permissionName: 'notificacao.ler',
-      scopeType: TipoEscopo.PROPRIO,
-      scopeIdExpression: 'params.id',
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'notificacao.ler',
+    scopeType: TipoEscopo.PROPRIO,
+    scopeIdExpression: 'params.id',
+  })
   @ApiOperation({ summary: 'Listar minhas notificações' })
   @ApiResponse({
     status: 200,
@@ -150,13 +202,11 @@ export class NotificacaoController {
    * Obtém detalhes de uma notificação específica
    */
   @Get(':id/detalhes')
-  @RequiresPermission(
-    {
-      permissionName: 'notificacao.visualizar',
-      scopeType: TipoEscopo.PROPRIO,
-      scopeIdExpression: 'params.id',
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'notificacao.visualizar',
+    scopeType: TipoEscopo.PROPRIO,
+    scopeIdExpression: 'params.id',
+  })
   @ApiOperation({ summary: 'Obter detalhes de uma notificação' })
   @ApiResponse({
     status: 200,
@@ -172,13 +222,11 @@ export class NotificacaoController {
    * Marca uma notificação como lida
    */
   @Put(':id/ler')
-  @RequiresPermission(
-    {
-      permissionName: 'notificacao.ler',
-      scopeType: TipoEscopo.PROPRIO,
-      scopeIdExpression: 'params.id',
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'notificacao.ler',
+    scopeType: TipoEscopo.PROPRIO,
+    scopeIdExpression: 'params.id',
+  })
   @ApiOperation({ summary: 'Marcar notificação como lida' })
   @ApiResponse({
     status: 200,
@@ -197,13 +245,11 @@ export class NotificacaoController {
    * Marca uma notificação como arquivada
    */
   @Put(':id/arquivar')
-  @RequiresPermission(
-    {
-      permissionName: 'notificacao.arquivar',
-      scopeType: TipoEscopo.PROPRIO,
-      scopeIdExpression: 'params.id',
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'notificacao.arquivar',
+    scopeType: TipoEscopo.PROPRIO,
+    scopeIdExpression: 'params.id',
+  })
   @ApiOperation({ summary: 'Arquivar notificação' })
   @ApiResponse({
     status: 200,
@@ -220,13 +266,11 @@ export class NotificacaoController {
    * Marca todas as notificações do usuário como lidas
    */
   @Put('todas/ler')
-  @RequiresPermission(
-    {
-      permissionName: 'notificacao.ler',
-      scopeType: TipoEscopo.PROPRIO,
-      scopeIdExpression: 'params.id',
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'notificacao.ler',
+    scopeType: TipoEscopo.PROPRIO,
+    scopeIdExpression: 'params.id',
+  })
   @ApiOperation({ summary: 'Marcar todas as notificações como lidas' })
   @ApiResponse({
     status: 200,
@@ -244,13 +288,11 @@ export class NotificacaoController {
    * Obtém o contador de notificações não lidas do usuário
    */
   @Get('contador/nao-lidas')
-  @RequiresPermission(
-    {
-      permissionName: 'notificacao.ler',
-      scopeType: TipoEscopo.PROPRIO,
-      scopeIdExpression: 'params.id',
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'notificacao.ler',
+    scopeType: TipoEscopo.PROPRIO,
+    scopeIdExpression: 'params.id',
+  })
   @ApiOperation({ summary: 'Obter contador de notificações não lidas' })
   @ApiResponse({ status: 200, description: 'Contador retornado com sucesso' })
   async contadorNaoLidas(@Request() req) {

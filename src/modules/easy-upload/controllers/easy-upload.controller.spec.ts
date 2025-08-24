@@ -3,7 +3,10 @@ import { EasyUploadController } from './easy-upload.controller';
 import { UploadTokenService } from '../services/upload-token.service';
 import { QrCodeService } from '../services/qr-code.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { UploadToken, UploadTokenStatus } from '../entities/upload-token.entity';
+import {
+  UploadToken,
+  UploadTokenStatus,
+} from '../entities/upload-token.entity';
 import { CreateTokenDto } from '../dto/simplified/create-token.dto';
 import { UploadDto } from '../dto/simplified/upload.dto';
 
@@ -82,14 +85,19 @@ describe('EasyUploadController', () => {
         descricao: 'Upload de documentos pessoais',
         metadata: { origem: 'teste' },
       };
-      
+
       const userId = '123e4567-e89b-12d3-a456-426614174001';
-      const expectedToken = { ...mockToken, metadata: { ...mockToken.metadata } };
-      
+      const expectedToken = {
+        ...mockToken,
+        metadata: { ...mockToken.metadata },
+      };
+
       mockUploadTokenService.createUploadToken.mockResolvedValue(expectedToken);
 
       // Act
-      const result = await controller.createToken(createTokenDto, { user: { id: userId } });
+      const result = await controller.createToken(createTokenDto, {
+        user: { id: userId },
+      });
 
       // Assert
       expect(result).toEqual(expectedToken);
@@ -127,7 +135,9 @@ describe('EasyUploadController', () => {
     it('deve retornar valid: false quando o token não for encontrado', async () => {
       // Arrange
       const token = 'invalid-token';
-      mockUploadTokenService.validateToken.mockRejectedValue(new NotFoundException());
+      mockUploadTokenService.validateToken.mockRejectedValue(
+        new NotFoundException(),
+      );
 
       // Act
       const result = await controller.validateToken(token);
@@ -142,7 +152,9 @@ describe('EasyUploadController', () => {
     it('deve retornar valid: false quando o token estiver expirado', async () => {
       // Arrange
       const token = 'expired-token';
-      mockUploadTokenService.validateToken.mockRejectedValue(new BadRequestException());
+      mockUploadTokenService.validateToken.mockRejectedValue(
+        new BadRequestException(),
+      );
 
       // Act
       const result = await controller.validateToken(token);
@@ -165,7 +177,7 @@ describe('EasyUploadController', () => {
         size: 12345,
         buffer: Buffer.from('test'),
       } as Express.Multer.File;
-      
+
       const uploadDto: UploadDto = {
         tipo: 'rg',
         descricao: 'Documento de identidade',
@@ -214,7 +226,9 @@ describe('EasyUploadController', () => {
       mockUploadTokenService.findByToken.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(controller.uploadFile(token, file, uploadDto)).rejects.toThrow(NotFoundException);
+      await expect(
+        controller.uploadFile(token, file, uploadDto),
+      ).rejects.toThrow(NotFoundException);
       expect(mockUploadTokenService.findByToken).toHaveBeenCalledWith(token);
       expect(mockUploadTokenService.processFileUpload).not.toHaveBeenCalled();
     });
@@ -225,7 +239,7 @@ describe('EasyUploadController', () => {
       // Arrange
       const token = 'abcdef123456';
       const uploadCount = 2;
-      
+
       mockUploadTokenService.findByToken.mockResolvedValue(mockToken);
       mockUploadTokenService.getUploadCount.mockResolvedValue(uploadCount);
 
@@ -249,7 +263,9 @@ describe('EasyUploadController', () => {
       mockUploadTokenService.findByToken.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(controller.getTokenStatus(token)).rejects.toThrow(NotFoundException);
+      await expect(controller.getTokenStatus(token)).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockUploadTokenService.findByToken).toHaveBeenCalledWith(token);
       expect(mockUploadTokenService.getUploadCount).not.toHaveBeenCalled();
     });
@@ -260,15 +276,20 @@ describe('EasyUploadController', () => {
       // Arrange
       const id = '123e4567-e89b-12d3-a456-426614174000';
       const userId = '123e4567-e89b-12d3-a456-426614174001';
-      
+
       mockUploadTokenService.getTokenDetails.mockResolvedValue(mockToken);
 
       // Act
-      const result = await controller.getTokenDetails(id, { user: { id: userId } });
+      const result = await controller.getTokenDetails(id, {
+        user: { id: userId },
+      });
 
       // Assert
       expect(result).toEqual(mockToken);
-      expect(mockUploadTokenService.getTokenDetails).toHaveBeenCalledWith(id, userId);
+      expect(mockUploadTokenService.getTokenDetails).toHaveBeenCalledWith(
+        id,
+        userId,
+      );
     });
   });
 
@@ -277,7 +298,7 @@ describe('EasyUploadController', () => {
       // Arrange
       const id = '123e4567-e89b-12d3-a456-426614174000';
       const userId = '123e4567-e89b-12d3-a456-426614174001';
-      
+
       mockUploadTokenService.cancelToken.mockResolvedValue(undefined);
 
       // Act
@@ -288,7 +309,11 @@ describe('EasyUploadController', () => {
         success: true,
         message: 'Token cancelado com sucesso',
       });
-      expect(mockUploadTokenService.cancelToken).toHaveBeenCalledWith(id, userId, undefined);
+      expect(mockUploadTokenService.cancelToken).toHaveBeenCalledWith(
+        id,
+        userId,
+        undefined,
+      );
     });
   });
 });

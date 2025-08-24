@@ -22,7 +22,7 @@ export class DadosNatalidadeRepository extends Repository<DadosNatalidade> {
       where: { solicitacao_id: solicitacaoId },
       relations: [
         'solicitacao',
-        'solicitacao.cidadao',
+        'solicitacao.beneficiario',
         'solicitacao.tipo_beneficio',
       ],
     });

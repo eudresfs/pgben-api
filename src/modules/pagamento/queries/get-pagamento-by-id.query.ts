@@ -15,6 +15,6 @@ export class GetPagamentoByIdQuery {
       infoBancaria: true,
       comprovantes: true,
       confirmacaoRecebimento: true,
-    }
+    },
   ) {}
 }

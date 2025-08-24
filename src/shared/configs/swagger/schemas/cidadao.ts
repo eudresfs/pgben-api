@@ -228,6 +228,15 @@ export class CreateCidadaoDto {
   nomePai?: string;
 
   @ApiPropertyOptional({
+    description: 'Nacionalidade do cidadão',
+    example: 'Brasileira',
+    type: 'string',
+    maxLength: 50,
+    default: 'Brasileira',
+  })
+  nacionalidade?: string;
+
+  @ApiPropertyOptional({
     description: 'Número do NIS (Número de Identificação Social)',
     example: '12345678901',
     pattern: '^\\d{11}$',

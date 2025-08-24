@@ -1,4 +1,8 @@
-import { SetMetadata, createParamDecorator, ExecutionContext } from '@nestjs/common';
+import {
+  SetMetadata,
+  createParamDecorator,
+  ExecutionContext,
+} from '@nestjs/common';
 import { LoggingService } from '../logging.service';
 
 /**
@@ -8,7 +12,7 @@ export const LOG_METHOD_KEY = 'log_method';
 
 /**
  * Decorator para logging automático de métodos
- * 
+ *
  * @param context - Contexto opcional para o log
  * @param logParams - Se deve logar os parâmetros do método
  * @param logResult - Se deve logar o resultado do método
@@ -19,7 +23,11 @@ export function LogMethod(options?: {
   logResult?: boolean;
   logPerformance?: boolean;
 }) {
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
+  return function (
+    target: any,
+    propertyName: string,
+    descriptor: PropertyDescriptor,
+  ) {
     const originalMethod = descriptor.value;
     const className = target.constructor.name;
     const methodName = propertyName;
@@ -65,12 +73,12 @@ export function LogMethod(options?: {
         return result;
       } catch (error) {
         const duration = Date.now() - startTime;
-        
+
         logger.error(
           `Method failed: ${methodContext}`,
           error as Error,
           undefined,
-          { duration, params: this.sanitizeParams(args) }
+          { duration, params: this.sanitizeParams(args) },
         );
 
         throw error;
@@ -78,7 +86,11 @@ export function LogMethod(options?: {
     };
 
     // Adicionar metadata para possível uso futuro
-    SetMetadata(LOG_METHOD_KEY, { context: methodContext, ...options })(target, propertyName, descriptor);
+    SetMetadata(LOG_METHOD_KEY, { context: methodContext, ...options })(
+      target,
+      propertyName,
+      descriptor,
+    );
   };
 }
 
@@ -98,9 +110,14 @@ export function LogErrors(context?: string) {
  * Decorator para logar performance de métodos
  */
 export function LogPerformance(context?: string, threshold: number = 1000) {
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
+  return function (
+    target: any,
+    propertyName: string,
+    descriptor: PropertyDescriptor,
+  ) {
     const originalMethod = descriptor.value;
-    const methodContext = context || `${target.constructor.name}.${propertyName}`;
+    const methodContext =
+      context || `${target.constructor.name}.${propertyName}`;
 
     descriptor.value = async function (...args: any[]) {
       const logger = new LoggingService(null as any);
@@ -131,19 +148,23 @@ export function LogPerformance(context?: string, threshold: number = 1000) {
  * Decorator para logar operações de auditoria
  */
 export function LogAudit(resource: string) {
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
+  return function (
+    target: any,
+    propertyName: string,
+    descriptor: PropertyDescriptor,
+  ) {
     const originalMethod = descriptor.value;
     const action = propertyName;
 
     descriptor.value = async function (...args: any[]) {
       const logger = new LoggingService(null as any);
-      
+
       // Tentar extrair userId dos argumentos ou contexto
       const userId = this.extractUserId(args) || 'system';
 
       try {
         const result = await originalMethod.apply(this, args);
-        
+
         logger.logAudit(action, resource, userId, 'success', {
           params: this.sanitizeParams(args),
         });
@@ -166,7 +187,7 @@ export function LogAudit(resource: string) {
 export const LogContext = createParamDecorator(
   (data: string, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    
+
     return {
       requestId: request.requestId,
       userId: request.user?.id,
@@ -189,8 +210,8 @@ declare global {
   }
 }
 
-Object.prototype.sanitizeParams = function(params: any[]): any[] {
-  return params.map(param => {
+Object.prototype.sanitizeParams = function (params: any[]): any[] {
+  return params.map((param) => {
     if (typeof param === 'object' && param !== null) {
       const sanitized = { ...param };
       // Remover campos sensíveis
@@ -204,7 +225,7 @@ Object.prototype.sanitizeParams = function(params: any[]): any[] {
   });
 };
 
-Object.prototype.sanitizeResult = function(result: any): any {
+Object.prototype.sanitizeResult = function (result: any): any {
   if (typeof result === 'object' && result !== null) {
     const sanitized = { ...result };
     // Remover campos sensíveis do resultado
@@ -217,7 +238,7 @@ Object.prototype.sanitizeResult = function(result: any): any {
   return result;
 };
 
-Object.prototype.extractUserId = function(args: any[]): string | undefined {
+Object.prototype.extractUserId = function (args: any[]): string | undefined {
   // Tentar encontrar userId nos argumentos
   for (const arg of args) {
     if (typeof arg === 'object' && arg !== null) {

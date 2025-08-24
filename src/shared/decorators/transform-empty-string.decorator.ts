@@ -18,7 +18,10 @@ export function TransformEmptyString() {
  */
 export function TransformEmptyUuid() {
   return Transform(({ value }) => {
-    if (typeof value === 'string' && (value.trim() === '' || value === 'undefined' || value === 'null')) {
+    if (
+      typeof value === 'string' &&
+      (value.trim() === '' || value === 'undefined' || value === 'null')
+    ) {
       return undefined;
     }
     return value;

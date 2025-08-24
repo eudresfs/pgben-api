@@ -24,16 +24,25 @@ export class PermissionMonitoringSeed {
       // Criar permissões granulares
       await this.createGranularPermissions(dataSource);
 
-      this.logger.log('Seed de permissões de monitoring concluído com sucesso!');
+      this.logger.log(
+        'Seed de permissões de monitoring concluído com sucesso!',
+      );
     } catch (error) {
-      this.logger.error(`Erro ao executar seed de monitoring: ${error.message}`);
+      this.logger.error(
+        `Erro ao executar seed de monitoring: ${error.message}`,
+      );
       throw error;
     }
   }
 
   /** Cria a permissão composta `monitoring.*` se não existir. */
-  private static async createCompositePermission(dataSource: DataSource): Promise<void> {
-    const existing = await dataSource.query(`SELECT id FROM permissao WHERE nome = $1`, ['monitoring.*']);
+  private static async createCompositePermission(
+    dataSource: DataSource,
+  ): Promise<void> {
+    const existing = await dataSource.query(
+      `SELECT id FROM permissao WHERE nome = $1`,
+      ['monitoring.*'],
+    );
     if (existing && existing.length > 0) {
       this.logger.log('Permissão monitoring.* já existe, pulando...');
       return;
@@ -41,14 +50,22 @@ export class PermissionMonitoringSeed {
 
     await dataSource.query(
       `INSERT INTO permissao (nome, descricao, modulo, acao, status) VALUES ($1, $2, $3, $4, $5)`,
-      ['monitoring.*', 'Todas as permissões do módulo de monitoring', 'monitoring', '*', Status.ATIVO],
+      [
+        'monitoring.*',
+        'Todas as permissões do módulo de monitoring',
+        'monitoring',
+        '*',
+        Status.ATIVO,
+      ],
     );
 
     this.logger.log('Permissão composta monitoring.* criada.');
   }
 
   /** Cria as permissões granulares usadas pelo PerformanceController. */
-  private static async createGranularPermissions(dataSource: DataSource): Promise<void> {
+  private static async createGranularPermissions(
+    dataSource: DataSource,
+  ): Promise<void> {
     const granular = [
       {
         nome: 'monitoring.performance.stats.visualizar',
@@ -73,7 +90,12 @@ export class PermissionMonitoringSeed {
     ];
 
     for (const perm of granular) {
-      await this.createPermissionIfNotExists(dataSource, perm.nome, perm.descricao, perm.acao);
+      await this.createPermissionIfNotExists(
+        dataSource,
+        perm.nome,
+        perm.descricao,
+        perm.acao,
+      );
     }
   }
 
@@ -84,7 +106,10 @@ export class PermissionMonitoringSeed {
     descricao: string,
     acao: string,
   ): Promise<void> {
-    const existing = await dataSource.query(`SELECT id FROM permissao WHERE nome = $1`, [nome]);
+    const existing = await dataSource.query(
+      `SELECT id FROM permissao WHERE nome = $1`,
+      [nome],
+    );
     if (existing && existing.length > 0) {
       this.logger.log(`Permissão '${nome}' já existe, pulando...`);
       return;

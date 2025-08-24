@@ -42,16 +42,20 @@ export class ErrorContextInterceptor implements NestInterceptor {
     const controller = context.getClass();
 
     // Captura contexto básico da requisição
-    const errorContext = this.captureRequestContext(request, handler, controller);
+    const errorContext = this.captureRequestContext(
+      request,
+      handler,
+      controller,
+    );
 
     return next.handle().pipe(
       catchError((error) => {
         // Enriquece o erro com contexto capturado
         const enrichedError = this.enrichErrorWithContext(error, errorContext);
-        
+
         // Log do erro com contexto completo
         this.logErrorWithContext(enrichedError, errorContext);
-        
+
         // Propaga o erro enriquecido
         return throwError(() => enrichedError);
       }),
@@ -67,7 +71,7 @@ export class ErrorContextInterceptor implements NestInterceptor {
     controller: Function,
   ): ErrorContext {
     const user = (request as any).user; // Assumindo que user vem do JWT guard
-    
+
     return {
       userId: user?.id || user?.sub,
       userEmail: user?.email,
@@ -118,7 +122,7 @@ export class ErrorContextInterceptor implements NestInterceptor {
     ];
 
     const sanitized = { ...data };
-    
+
     for (const field of sensitiveFields) {
       if (sanitized[field]) {
         sanitized[field] = '[REDACTED]';
@@ -139,7 +143,7 @@ export class ErrorContextInterceptor implements NestInterceptor {
 
     // Adiciona contexto ao erro
     error.context = context;
-    
+
     // Para erros HTTP do NestJS, adiciona contexto em metadata
     if (error.getResponse && typeof error.getResponse === 'function') {
       const response = error.getResponse();
@@ -190,7 +194,10 @@ export class ErrorContextInterceptor implements NestInterceptor {
 
     // Log com nível apropriado baseado no tipo de erro
     if (error.status >= 500 || !error.status) {
-      this.logger.error('Erro interno do servidor', JSON.stringify(logData, null, 2));
+      this.logger.error(
+        'Erro interno do servidor',
+        JSON.stringify(logData, null, 2),
+      );
     } else if (error.status >= 400) {
       this.logger.warn('Erro de cliente', JSON.stringify(logData, null, 2));
     } else {
@@ -203,7 +210,11 @@ export class ErrorContextInterceptor implements NestInterceptor {
  * Decorator para aplicar o interceptor de contexto de erro
  */
 export const WithErrorContext = () => {
-  return (target: any, propertyKey?: string, descriptor?: PropertyDescriptor) => {
+  return (
+    target: any,
+    propertyKey?: string,
+    descriptor?: PropertyDescriptor,
+  ) => {
     // Implementação do decorator se necessário
     // Por enquanto, o interceptor será aplicado globalmente ou por controller
   };

@@ -13,6 +13,7 @@ import {
   StatusNotificacaoProcessamento,
   TipoNotificacao,
 } from '../../../entities/notification.entity';
+import { Usuario } from '../../../entities/usuario.entity';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NOTIFICATION_CREATED } from '../events/notification.events';
@@ -29,38 +30,158 @@ export class NotificacaoService {
   constructor(
     @InjectRepository(NotificacaoSistema)
     private notificacaoRepository: Repository<NotificacaoSistema>,
+    @InjectRepository(Usuario)
+    private usuarioRepository: Repository<Usuario>,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
-   * Lista todas as notificações de um usuário com paginação e filtros
+   * Lista todas as notificações de um usuário com paginação e filtros avançados
    */
   async findAll(options: {
     page?: number;
     limit?: number;
     status?: StatusNotificacaoProcessamento;
+    tipo?: string;
+    categoria?: string;
+    prioridade?: string;
+    dataInicio?: Date;
+    dataFim?: Date;
+    lidas?: boolean;
+    arquivadas?: boolean;
+    ordenarPor?: string;
+    ordem?: 'ASC' | 'DESC';
+    busca?: string;
     userId: string;
   }) {
-    const { page = 1, limit = 10, status, userId } = options;
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      tipo,
+      categoria,
+      prioridade,
+      dataInicio,
+      dataFim,
+      lidas,
+      arquivadas = false,
+      ordenarPor = 'created_at',
+      ordem = 'DESC',
+      busca,
+      userId,
+    } = options;
 
     const queryBuilder = this.notificacaoRepository
       .createQueryBuilder('notificacao')
       .leftJoinAndSelect('notificacao.template', 'template')
       .where('notificacao.destinatario_id = :userId', { userId });
 
+    // Filtro por status específico
     if (status) {
       queryBuilder.andWhere('notificacao.status = :status', { status });
+    }
+
+    // Filtro por notificações lidas/não lidas
+    if (lidas !== undefined) {
+      if (lidas) {
+        queryBuilder.andWhere('notificacao.status = :statusLida', {
+          statusLida: StatusNotificacaoProcessamento.LIDA,
+        });
+      } else {
+        queryBuilder.andWhere('notificacao.status = :statusNaoLida', {
+          statusNaoLida: StatusNotificacaoProcessamento.NAO_LIDA,
+        });
+      }
+    }
+
+    // Filtro para incluir/excluir notificações arquivadas
+    if (!arquivadas) {
+      queryBuilder.andWhere('notificacao.status != :statusArquivada', {
+        statusArquivada: StatusNotificacaoProcessamento.ARQUIVADA,
+      });
+    }
+
+    // Filtros relacionados ao template
+    if (tipo) {
+      queryBuilder.andWhere('template.tipo = :tipo', { tipo });
+    }
+
+    if (categoria) {
+      queryBuilder.andWhere('template.categoria = :categoria', { categoria });
+    }
+
+    if (prioridade) {
+      queryBuilder.andWhere('template.prioridade = :prioridade', {
+        prioridade,
+      });
+    }
+
+    // Filtro por período de criação
+    if (dataInicio) {
+      queryBuilder.andWhere('notificacao.created_at >= :dataInicio', {
+        dataInicio,
+      });
+    }
+
+    if (dataFim) {
+      queryBuilder.andWhere('notificacao.created_at <= :dataFim', {
+        dataFim,
+      });
+    }
+
+    // Busca textual no assunto e corpo do template
+    if (busca) {
+      queryBuilder.andWhere(
+        '(template.assunto ILIKE :busca OR template.corpo ILIKE :busca)',
+        { busca: `%${busca}%` },
+      );
     }
 
     // Calcular paginação
     const skip = (page - 1) * limit;
     queryBuilder.skip(skip).take(limit);
 
-    // Ordenação padrão (mais recentes primeiro)
-    queryBuilder.orderBy('notificacao.created_at', 'DESC');
+    // Aplicar ordenação
+    switch (ordenarPor) {
+      case 'data_leitura':
+        queryBuilder.orderBy('notificacao.data_leitura', ordem, 'NULLS LAST');
+        break;
+      case 'prioridade':
+        // Ordenação customizada por prioridade (urgente > alta > normal > baixa)
+        queryBuilder.addOrderBy(
+          `CASE template.prioridade 
+           WHEN 'urgente' THEN 1 
+           WHEN 'alta' THEN 2 
+           WHEN 'normal' THEN 3 
+           WHEN 'baixa' THEN 4 
+           ELSE 5 END`,
+          ordem === 'DESC' ? 'ASC' : 'DESC', // Invertido para que urgente apareça primeiro em DESC
+        );
+        // Ordenação secundária por data de criação
+        queryBuilder.addOrderBy('notificacao.created_at', 'DESC');
+        break;
+      case 'status':
+        queryBuilder.orderBy('notificacao.status', ordem);
+        // Ordenação secundária por data de criação
+        queryBuilder.addOrderBy('notificacao.created_at', 'DESC');
+        break;
+      case 'created_at':
+      default:
+        queryBuilder.orderBy('notificacao.created_at', ordem);
+        break;
+    }
 
     // Executar consulta
     const [items, total] = await queryBuilder.getManyAndCount();
+
+    // Calcular estatísticas adicionais
+    const naoLidas = await this.contadorNaoLidas(userId);
+    const arquivadasCount = await this.notificacaoRepository.count({
+      where: {
+        destinatario_id: userId,
+        status: StatusNotificacaoProcessamento.ARQUIVADA,
+      },
+    });
 
     return {
       items,
@@ -69,6 +190,26 @@ export class NotificacaoService {
         page,
         limit,
         pages: Math.ceil(total / limit),
+        filtros_aplicados: {
+          status,
+          tipo,
+          categoria,
+          prioridade,
+          dataInicio,
+          dataFim,
+          lidas,
+          arquivadas,
+          busca,
+        },
+        estatisticas: {
+          nao_lidas: naoLidas.count,
+          arquivadas: arquivadasCount,
+          total_geral: total,
+        },
+        ordenacao: {
+          campo: ordenarPor,
+          direcao: ordem,
+        },
       },
     };
   }
@@ -185,18 +326,49 @@ export class NotificacaoService {
     link?: string;
     dados_contexto?: Record<string, any>;
     template_id?: string;
+    metadados_adicionais?: Record<string, any>;
   }): Promise<NotificacaoSistema> {
+    // Validar se destinatario_id é válido antes de criar a notificação
+    if (!dados.destinatario_id || dados.destinatario_id.trim() === '') {
+      throw new BadRequestException(
+        'ID do destinatário é obrigatório para criar uma notificação',
+      );
+    }
+
+    // Validar se destinatario_id é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(dados.destinatario_id)) {
+      throw new BadRequestException(
+        `ID do destinatário inválido: ${dados.destinatario_id}. Deve ser um UUID válido.`,
+      );
+    }
+
+    // Verificar se o usuário destinatário existe
+    const destinatarioExiste = await this.usuarioRepository.findOne({
+      where: { id: dados.destinatario_id },
+      select: ['id'],
+    });
+
+    if (!destinatarioExiste) {
+      throw new NotFoundException(
+        `Usuário destinatário não encontrado: ${dados.destinatario_id}`,
+      );
+    }
+
     // Normalizar campos de enum antes de criar a notificação
     const dadosNormalizados = normalizeEnumFields({
       ...dados,
       status: StatusNotificacaoProcessamento.NAO_LIDA,
       dados_contexto: dados.dados_contexto || {},
       template_id: dados.template_id || undefined,
+      metadados_adicionais: dados.metadados_adicionais || {},
     });
 
     const notificacao = this.notificacaoRepository.create(dadosNormalizados);
 
-    const saved = await this.notificacaoRepository.save(notificacao) as unknown as NotificacaoSistema;
+    const saved = (await this.notificacaoRepository.save(
+      notificacao,
+    )) as unknown as NotificacaoSistema;
 
     // Emite evento de criação para tratamento assíncrono (ex.: SSE, e-mail, etc.)
     this.eventEmitter.emit(
@@ -273,6 +445,7 @@ export class NotificacaoService {
     conteudo: string;
     solicitacao_id: string;
     link?: string;
+    metadados_adicionais?: Record<string, any>;
   }) {
     return this.criar({
       destinatario_id: dados.destinatario_id,
@@ -282,6 +455,7 @@ export class NotificacaoService {
       entidade_relacionada_id: dados.solicitacao_id,
       entidade_tipo: 'solicitacao',
       link: dados.link,
+      metadados_adicionais: dados.metadados_adicionais,
     });
   }
 
@@ -370,9 +544,7 @@ export class NotificacaoService {
         case 'ALERTA':
           tipoNotificacao = TipoNotificacao.ALERTA;
           break;
-        case 'CONVERSAO_PAPEL':
-          tipoNotificacao = TipoNotificacao.ALERTA;
-          break;
+
         default:
           tipoNotificacao = TipoNotificacao.SISTEMA;
       }

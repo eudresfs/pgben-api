@@ -8,6 +8,6 @@ export class CreatePagamentoCommand {
   constructor(
     public readonly pagamentoData: PagamentoCreateDto,
     public readonly usuarioId: string,
-    public readonly async: boolean = false
+    public readonly async: boolean = false,
   ) {}
 }

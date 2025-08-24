@@ -148,7 +148,10 @@ export class AuthController {
     @ReqContext() ctx: RequestContext,
     @Body() credential: RefreshTokenInput,
   ): Promise<BaseApiResponse<AuthTokenOutput>> {
-    this.logger.info(`${this.refreshToken.name} was called`, AuthController.name);
+    this.logger.info(
+      `${this.refreshToken.name} was called`,
+      AuthController.name,
+    );
 
     const authToken = await this.authService.refreshToken(ctx, credential);
 

@@ -9,5 +9,5 @@ export enum StatusDocumento {
   REJEITADO = 'rejeitado',
   PROCESSANDO = 'processando',
   ERRO = 'erro',
-  ARQUIVADO = 'arquivado'
+  ARQUIVADO = 'arquivado',
 }

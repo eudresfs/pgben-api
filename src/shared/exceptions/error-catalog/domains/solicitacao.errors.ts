@@ -106,8 +106,14 @@ export const SOLICITACAO_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.OPERATIONAL_FLOW,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Campo obrigatório não preenchido para esta etapa do workflow',
-      'en-US': 'Required field not filled for this workflow step',
+      'pt-BR': 'Etapa obrigatória do processo não foi concluída',
+      'en-US': 'Required workflow step has not been completed',
+    },
+    contextualMessages: {
+      dados_especificos_beneficio:
+        'Complete o formulário de requerimento do benefício antes de enviar para análise',
+      documentos_obrigatorios:
+        'Anexe todos os documentos obrigatórios antes de enviar para análise',
     },
   },
 
@@ -174,8 +180,10 @@ export const SOLICITACAO_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Esta determinação judicial já está vinculada a outra solicitação',
-      'en-US': 'This judicial determination is already linked to another request',
+      'pt-BR':
+        'Esta determinação judicial já está vinculada a outra solicitação',
+      'en-US':
+        'This judicial determination is already linked to another request',
     },
   },
 
@@ -186,7 +194,8 @@ export const SOLICITACAO_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Nenhuma determinação judicial está vinculada a esta solicitação',
+      'pt-BR':
+        'Nenhuma determinação judicial está vinculada a esta solicitação',
       'en-US': 'No judicial determination is linked to this request',
     },
   },
@@ -203,7 +212,8 @@ export const SOLICITACAO_ERRORS: Record<string, ErrorDefinition> = {
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
       'pt-BR': 'Este cidadão já é beneficiário de outra solicitação ativa',
-      'en-US': 'This citizen is already a beneficiary of another active request',
+      'en-US':
+        'This citizen is already a beneficiary of another active request',
     },
   },
 
@@ -214,8 +224,10 @@ export const SOLICITACAO_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Este cidadão já faz parte da composição familiar de outra solicitação ativa',
-      'en-US': 'This citizen is already part of the family composition of another active request',
+      'pt-BR':
+        'Este cidadão já faz parte da composição familiar de outra solicitação ativa',
+      'en-US':
+        'This citizen is already part of the family composition of another active request',
     },
   },
 
@@ -226,8 +238,10 @@ export const SOLICITACAO_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Este cidadão não faz parte da composição familiar desta solicitação',
-      'en-US': 'This citizen is not part of the family composition of this request',
+      'pt-BR':
+        'Este cidadão não faz parte da composição familiar desta solicitação',
+      'en-US':
+        'This citizen is not part of the family composition of this request',
     },
   },
 
@@ -278,8 +292,10 @@ export const SOLICITACAO_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.OPERATIONAL_FLOW,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Existem pendências que devem ser resolvidas antes de prosseguir',
-      'en-US': 'There are pending issues that must be resolved before proceeding',
+      'pt-BR':
+        'Existem pendências que devem ser resolvidas antes de prosseguir',
+      'en-US':
+        'There are pending issues that must be resolved before proceeding',
     },
   },
 
@@ -438,20 +454,87 @@ export function throwApprovalRequired(
 
 /**
  * Lança erro de etapa do workflow obrigatória
+ * @param campo Campo ou etapa que está faltando
+ * @param context Contexto adicional do erro
+ * @param language Idioma da mensagem
  */
 export function throwWorkflowStepRequired(
   campo: string,
   context: SolicitacaoErrorContext = {},
   language: string = 'pt-BR',
 ): never {
+  // Extrair informações do contexto para mensagem mais específica
+  const { data = {} } = context;
+  const {
+    message,
+    userFriendlyMessage,
+    tipoBeneficio,
+    beneficiario,
+    action,
+    documentosFaltantes,
+    totalDocumentosFaltantes,
+    totalDocumentosObrigatorios,
+  } = data;
+
+  // Importar o catálogo para acessar as mensagens contextuais
+  const { ERROR_CATALOG } = require('../catalog');
+  const errorDefinition = ERROR_CATALOG['SOLICITACAO_WORKFLOW_STEP_REQUIRED'];
+
+  // Construir mensagem contextual específica baseada nos dados disponíveis
+  let contextualMessage = message;
+  if (!contextualMessage) {
+    switch (campo) {
+      case 'dados_especificos_beneficio':
+        // Para dados específicos, usar mensagem do catálogo ou construir uma específica
+        const catalogMessageDados =
+          errorDefinition?.contextualMessages?.[campo];
+        contextualMessage =
+          catalogMessageDados ||
+          (tipoBeneficio
+            ? `Complete os dados específicos do benefício '${tipoBeneficio}' antes de enviar para análise.`
+            : 'Complete os dados específicos do benefício antes de enviar para análise.');
+        break;
+      case 'documentos_obrigatorios':
+        // Para documentos, priorizar mensagem específica com lista de documentos
+        if (documentosFaltantes && documentosFaltantes.length > 0) {
+          const documentosFormatados = documentosFaltantes
+            .map((doc: string) => `'${doc}'`)
+            .join(', ');
+          contextualMessage =
+            totalDocumentosFaltantes === 1
+              ? `O documento ${documentosFormatados} é obrigatório e deve ser anexado antes de enviar para análise.`
+              : `Os documentos ${documentosFormatados} são obrigatórios e devem ser anexados antes de enviar para análise.`;
+        } else {
+          // Usar mensagem do catálogo como fallback
+          const catalogMessageDocs =
+            errorDefinition?.contextualMessages?.[campo];
+          contextualMessage =
+            catalogMessageDocs ||
+            'Anexe todos os documentos obrigatórios antes de enviar para análise.';
+        }
+        break;
+      default:
+        contextualMessage = 'Etapa obrigatória do processo não foi concluída.';
+    }
+  }
+
+  // Construir dados enriquecidos para o erro
+  const enrichedData = {
+    campo,
+    contextualMessage,
+    userFriendlyMessage: userFriendlyMessage || contextualMessage,
+    tipoBeneficio,
+    beneficiario,
+    action,
+    timestamp: new Date().toISOString(),
+    ...data,
+  };
+
   throw new AppError(
     'SOLICITACAO_WORKFLOW_STEP_REQUIRED',
     {
       ...context,
-      data: {
-        campo,
-        ...context.data,
-      },
+      data: enrichedData,
     },
     language,
   );

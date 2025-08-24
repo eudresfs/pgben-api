@@ -16,7 +16,7 @@ const ENUM_FIELDS = [
   'status_unidade',
   'tipo_unidade',
   'tipo_moradia',
-  'tipo_papel',
+
   'tipo_documento',
   'metodo_pagamento',
   'status_pagamento',

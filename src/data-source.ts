@@ -29,6 +29,12 @@ import { AuditLog } from './entities/audit-log.entity';
 import { Recurso } from './entities/recurso.entity';
 import { RecursoHistorico } from './entities/recurso-historico.entity';
 
+// Entidades do módulo de aprovação
+import { AcaoAprovacao } from './modules/aprovacao/entities/acao-aprovacao.entity';
+import { SolicitacaoAprovacao } from './modules/aprovacao/entities/solicitacao-aprovacao.entity';
+import { ConfiguracaoAprovador } from './modules/aprovacao/entities/configuracao-aprovador.entity';
+import { SolicitacaoAprovador } from './modules/aprovacao/entities/solicitacao-aprovador.entity';
+
 // Importação centralizada de todas as entidades
 import {
   // Entidades de Alertas e Métricas
@@ -56,7 +62,7 @@ import {
   // Entidades de Dados Específicos de Benefícios
   DadosAluguelSocial,
   DadosCestaBasica,
-  DadosFuneral,
+  DadosAtaude,
   DadosNatalidade,
 
   // Entidades de Cidadão e Família
@@ -64,8 +70,9 @@ import {
   ComposicaoFamiliar,
   DadosSociais,
   InfoBancaria,
-  PapelCidadao,
   SituacaoMoradia,
+  Contato,
+  Endereco,
 
   // Entidades de Configuração
   ConfiguracaoIntegracao,
@@ -75,11 +82,11 @@ import {
 
   // Entidades de Documentos
   Documento,
+  DocumentoBatchJob,
   RequisitoDocumento,
 
   // Entidades de Histórico e Logs
   CategoriaLog,
-  HistoricoConversaoPapel,
   HistoricoSolicitacao,
   LogAuditoria,
 
@@ -95,18 +102,15 @@ import {
   Notificacao,
   Notification,
   NotificationTemplate,
+  NotificacaoSistema,
 
   // Entidades de Ocorrências e Demandas
   DemandaMotivo,
   Ocorrencia,
 
   // Entidades de Pagamento
-  ComprovantePagamento,
   ConfirmacaoRecebimento,
   Pagamento,
-
-  // Entidades de Regras
-  RegraConflitoPapel,
 
   // Entidades de Segurança e Autenticação
   Role,
@@ -120,7 +124,13 @@ import {
 
   // Entidades de Solicitação
   Solicitacao,
+
+  // Entidades de Upload
+  UploadSession,
+  UploadToken,
 } from './entities';
+
+// Entidades do Sistema de Aprovação removidas - sistema antigo de aprovação
 
 /**
  * Configuração do DataSource para carregamento faseado de entidades
@@ -163,13 +173,12 @@ export const AppDataSource = new DataSource({
 
     // Entidades de cidadão
     Cidadao,
-    PapelCidadao,
     ComposicaoFamiliar,
     DadosSociais,
     InfoBancaria,
     SituacaoMoradia,
-    HistoricoConversaoPapel,
-    RegraConflitoPapel,
+    Contato,
+    Endereco,
 
     // Entidades de benefício
     TipoBeneficio,
@@ -178,7 +187,7 @@ export const AppDataSource = new DataSource({
     ConfiguracaoRenovacao,
     DadosAluguelSocial,
     DadosCestaBasica,
-    DadosFuneral,
+    DadosAtaude,
     DadosNatalidade,
     FluxoBeneficio,
     WorkflowBeneficio,
@@ -196,6 +205,7 @@ export const AppDataSource = new DataSource({
 
     // Entidades de documento
     Documento,
+    DocumentoBatchJob,
 
     // Entidades de recurso
     Recurso,
@@ -222,7 +232,6 @@ export const AppDataSource = new DataSource({
 
     // Entidades de pagamento
     Pagamento,
-    ComprovantePagamento,
     ConfirmacaoRecebimento,
 
     // Entidades de métricas
@@ -237,6 +246,16 @@ export const AppDataSource = new DataSource({
     Metrica,
     RegistroMetrica,
     RegraAlerta,
+
+    // Entidades de upload
+    UploadSession,
+    UploadToken,
+
+    // Entidades do Sistema de Aprovação v2
+    AcaoAprovacao,
+    SolicitacaoAprovacao,
+    ConfiguracaoAprovador,
+    SolicitacaoAprovador,
   ],
   migrations: [__dirname + '/database/migrations/**/*{.ts,.js}'],
   migrationsTableName: 'migrations',
@@ -250,6 +269,7 @@ export const AppDataSource = new DataSource({
     max: 30,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,
+    timezone: 'America/Sao_Paulo',
   },
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 });

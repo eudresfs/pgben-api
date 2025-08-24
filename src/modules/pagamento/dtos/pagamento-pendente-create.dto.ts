@@ -33,7 +33,7 @@ export class PagamentoPendenteCreateDto extends PagamentoBaseDto {
   })
   @IsNotEmpty()
   @IsUUID('4')
-  solicitacaoId: string;
+  solicitacao_id: string;
 
   /**
    * Referência à informação bancária utilizada para o pagamento
@@ -59,5 +59,5 @@ export class PagamentoPendenteCreateDto extends PagamentoBaseDto {
   @IsOptional()
   @Type(() => Date)
   @IsDate()
-  dataPrevistaLiberacao?: Date;
+  data_prevista_liberacao?: Date;
 }

@@ -44,6 +44,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
 import { ROLES } from '../../../shared/constants/roles.constants';
+import { SYSTEM_USER_UUID } from '../../../shared/constants/system.constants';
 
 /**
  * Controlador para gerenciamento de métricas
@@ -83,7 +84,7 @@ export class MetricasDefinicaoController {
     @Req() req: Request,
   ) {
     // Obter usuário atual da requisição
-    const usuarioId = req.user?.['sub'] || 'sistema';
+    const usuarioId = req.user?.['sub'] || SYSTEM_USER_UUID;
     const usuarioNome = req.user?.['nome'] || 'Sistema';
 
     return this.metricasService.criarMetrica(dto, usuarioId, usuarioNome);
@@ -119,7 +120,7 @@ export class MetricasDefinicaoController {
     @Req() req: Request,
   ) {
     // Obter usuário atual da requisição
-    const usuarioId = req.user?.['sub'] || 'sistema';
+    const usuarioId = req.user?.['sub'] || SYSTEM_USER_UUID;
     const usuarioNome = req.user?.['nome'] || 'Sistema';
 
     return this.metricasService.atualizarMetrica(
@@ -249,7 +250,7 @@ export class MetricasDefinicaoController {
     @Req() req: Request,
   ) {
     // Obter usuário atual da requisição
-    const usuarioId = req.user?.['sub'] || 'sistema';
+    const usuarioId = req.user?.['sub'] || SYSTEM_USER_UUID;
     const usuarioNome = req.user?.['nome'] || 'Sistema';
 
     return this.metricasService.criarConfiguracao(dto, usuarioId, usuarioNome);
@@ -285,7 +286,7 @@ export class MetricasDefinicaoController {
     @Req() req: Request,
   ) {
     // Obter usuário atual da requisição
-    const usuarioId = req.user?.['sub'] || 'sistema';
+    const usuarioId = req.user?.['sub'] || SYSTEM_USER_UUID;
     const usuarioNome = req.user?.['nome'] || 'Sistema';
 
     return this.metricasService.atualizarConfiguracao(

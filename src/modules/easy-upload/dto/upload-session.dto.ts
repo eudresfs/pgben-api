@@ -1,5 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNumber, IsDate, IsOptional, IsEnum, IsObject, IsBoolean, IsArray, ValidateNested, IsIP, Length } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsDate,
+  IsOptional,
+  IsEnum,
+  IsObject,
+  IsBoolean,
+  IsArray,
+  ValidateNested,
+  IsIP,
+  Length,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { UploadSessionStatus } from '../entities/upload-session.entity';
 import { IUploadProgress } from '../interfaces/easy-upload.interface';
@@ -31,7 +43,9 @@ export class StartUploadSessionDto {
   })
   @IsOptional()
   @IsString({ message: 'Device fingerprint deve ser uma string' })
-  @Length(0, 255, { message: 'Device fingerprint deve ter no máximo 255 caracteres' })
+  @Length(0, 255, {
+    message: 'Device fingerprint deve ter no máximo 255 caracteres',
+  })
   device_fingerprint?: string;
 
   @ApiPropertyOptional({
@@ -156,7 +170,7 @@ export class UpdateSessionProgressDto {
   @ApiPropertyOptional({
     description: 'Objeto completo de progresso do upload',
     type: 'object',
-    additionalProperties: true
+    additionalProperties: true,
   })
   @IsOptional()
   @ValidateNested()
@@ -269,8 +283,6 @@ export class UploadProgressDto implements Partial<IUploadProgress> {
   estimatedTimeRemaining?: number;
 }
 
-
-
 /**
  * DTO de resposta para status da sessão
  */
@@ -338,7 +350,7 @@ export class SessionStatusResponseDto {
   @ApiPropertyOptional({
     description: 'Informações do token associado à sessão',
     type: 'object',
-    additionalProperties: true
+    additionalProperties: true,
   })
   token?: {
     id: string;

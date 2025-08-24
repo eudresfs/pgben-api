@@ -46,7 +46,8 @@ export class ContatoDto {
   })
   @IsBoolean()
   @ValidateIf((o) => o.telefone)
-  is_whatsapp?: boolean;
+  @IsOptional()
+  is_whatsapp: boolean = false;
 
   @ApiProperty({
     description: 'Indica se o proprietário do telefone possui smartphone',
@@ -93,7 +94,9 @@ export class ContatoDto {
     required: false,
   })
   @ValidateIf((o) => o.proprietario === false)
-  @IsNotEmpty({ message: 'Nome do contato é obrigatório se não for o proprietário' })
+  @IsNotEmpty({
+    message: 'Nome do contato é obrigatório se não for o proprietário',
+  })
   @IsString()
   nome_contato?: string;
 

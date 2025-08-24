@@ -1,6 +1,6 @@
 /**
  * AuditConstants
- * 
+ *
  * Constantes centralizadas para o módulo de auditoria.
  * Define valores padrão, configurações e metadados importantes.
  */
@@ -23,36 +23,36 @@ export const AUDIT_QUEUE_NAMES = {
 export const AUDIT_EVENTS = {
   // Eventos genéricos
   AUDIT_EVENT: 'audit.event',
-  
+
   // Eventos de entidade
   ENTITY_CREATED: 'audit.entity.created',
   ENTITY_UPDATED: 'audit.entity.updated',
   ENTITY_DELETED: 'audit.entity.deleted',
   ENTITY_ACCESSED: 'audit.entity.accessed',
-  
+
   // Eventos de segurança
   SECURITY_EVENT: 'audit.security.event',
   LOGIN_SUCCESS: 'audit.security.login.success',
   LOGIN_FAILED: 'audit.security.login.failed',
   LOGOUT: 'audit.security.logout',
   PERMISSION_DENIED: 'audit.security.permission.denied',
-  
+
   // Eventos de dados sensíveis
   SENSITIVE_DATA_ACCESS: 'audit.sensitive.access',
   SENSITIVE_DATA_EXPORT: 'audit.sensitive.export',
   SENSITIVE_DATA_MODIFICATION: 'audit.sensitive.modification',
-  
+
   // Eventos de sistema
   SYSTEM_EVENT: 'audit.system.event',
   SYSTEM_ERROR: 'audit.system.error',
   SYSTEM_WARNING: 'audit.system.warning',
-  
+
   // Eventos de interceptor/middleware
   METHOD_EXECUTION: 'audit.method.execution',
   REQUEST_START: 'audit.request.start',
   REQUEST_END: 'audit.request.end',
   REQUEST_ERROR: 'audit.request.error',
-  
+
   // Eventos configurados
   CONFIGURED_EVENT: 'audit.configured.event',
   AUTO_AUDIT_EVENT: 'audit.auto.event',

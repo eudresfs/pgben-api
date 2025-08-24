@@ -1,8 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { addDays } from 'date-fns';
 import { NotificacaoProativaService } from '../services/notificacao-proativa.service';
 import { NotificacaoPreferenciasService } from '../services/notificacao-preferencias.service';
 import { NotificacaoService } from '../services/notificacao.service';
+import { UsuarioService } from '../../usuario/services/usuario.service';
+import { Usuario } from '../../../entities/usuario.entity';
+import {
+  AgendamentoNotificacao,
+  StatusAgendamento,
+} from '../../../entities/agendamento-notificacao.entity';
 import { TipoNotificacao } from '../../../entities/notification.entity';
 import { CanalNotificacao } from '../services/notificacao-preferencias.service';
 import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
@@ -27,6 +36,7 @@ interface SolicitacaoEvent extends WorkflowEvent {
 
 interface AprovacaoEvent extends WorkflowEvent {
   aprovadorId: string;
+  solicitanteId?: string; // Para compatibilidade com eventos do AprovacaoService
   observacoes?: string;
   documentosAnexados?: string[];
 }
@@ -39,7 +49,7 @@ interface LiberacaoEvent extends WorkflowEvent {
 
 /**
  * Listener para eventos de workflow que dispara notificações proativas
- * 
+ *
  * Este listener integra o sistema de notificações com os eventos do workflow,
  * implementando as funcionalidades das Fases 4 e 5:
  * - Notificações proativas baseadas em eventos
@@ -51,9 +61,14 @@ export class WorkflowProativoListener {
   private readonly logger = new Logger(WorkflowProativoListener.name);
 
   constructor(
+    @InjectRepository(Usuario)
+    private usuarioRepository: Repository<Usuario>,
+    @InjectRepository(AgendamentoNotificacao)
+    private agendamentoRepository: Repository<AgendamentoNotificacao>,
     private readonly notificacaoProativaService: NotificacaoProativaService,
     private readonly preferenciasService: NotificacaoPreferenciasService,
     private readonly notificacaoService: NotificacaoService,
+    private readonly usuarioService: UsuarioService,
   ) {}
 
   // ==========================================
@@ -106,7 +121,9 @@ export class WorkflowProativoListener {
 
   @OnEvent('solicitacao.atualizada')
   async handleSolicitacaoAtualizada(event: SolicitacaoEvent) {
-    this.logger.log(`Processando solicitação atualizada: ${event.solicitacaoId}`);
+    this.logger.log(
+      `Processando solicitação atualizada: ${event.solicitacaoId}`,
+    );
 
     try {
       // Determinar prioridade baseada na mudança de status
@@ -136,7 +153,9 @@ export class WorkflowProativoListener {
 
       // Alertas de prazo são gerenciados automaticamente pelo scheduler
       if (this.isStatusFinal(event.statusNovo)) {
-        this.logger.log(`Solicitação ${event.solicitacaoId} finalizada - alertas serão limpos automaticamente`);
+        this.logger.log(
+          `Solicitação ${event.solicitacaoId} finalizada - alertas serão limpos automaticamente`,
+        );
       }
     } catch (error) {
       this.logger.error(
@@ -155,12 +174,24 @@ export class WorkflowProativoListener {
     this.logger.log(`Processando solicitação aprovada: ${event.solicitacaoId}`);
 
     try {
+      // Determinar o ID do usuário solicitante (compatibilidade com diferentes formatos de evento)
+      const usuarioSolicitanteId = event.usuarioId || event.solicitanteId;
+      
+      if (!usuarioSolicitanteId) {
+        this.logger.error(
+          `Evento de aprovação sem usuarioId ou solicitanteId: ${event.solicitacaoId}`,
+          { event }
+        );
+        return;
+      }
+
       // Notificar usuário sobre aprovação
       await this.enviarNotificacaoComPreferencias({
-        usuarioId: event.usuarioId,
+        usuarioId: usuarioSolicitanteId,
         tipo: TipoNotificacao.APROVACAO,
         titulo: 'Solicitação Aprovada',
-        mensagem: 'Sua solicitação foi aprovada! Aguarde a liberação do benefício.',
+        mensagem:
+          'Sua solicitação foi aprovada! Aguarde a liberação do benefício.',
         prioridade: 'high',
         contexto: {
           solicitacaoId: event.solicitacaoId,
@@ -179,7 +210,7 @@ export class WorkflowProativoListener {
         contexto: {
           solicitacaoId: event.solicitacaoId,
           aprovadorId: event.aprovadorId,
-          usuarioSolicitante: event.usuarioId,
+          usuarioSolicitante: usuarioSolicitanteId,
         },
       });
     } catch (error) {
@@ -192,15 +223,29 @@ export class WorkflowProativoListener {
 
   @OnEvent('solicitacao.indeferida')
   async handleSolicitacaoIndeferida(event: AprovacaoEvent) {
-    this.logger.log(`Processando solicitação indeferida: ${event.solicitacaoId}`);
+    this.logger.log(
+      `Processando solicitação indeferida: ${event.solicitacaoId}`,
+    );
 
     try {
+      // Determinar o ID do usuário solicitante (compatibilidade com diferentes formatos de evento)
+      const usuarioSolicitanteId = event.usuarioId || event.solicitanteId;
+      
+      if (!usuarioSolicitanteId) {
+        this.logger.error(
+          `Evento de indeferimento sem usuarioId ou solicitanteId: ${event.solicitacaoId}`,
+          { event }
+        );
+        return;
+      }
+
       // Notificar usuário sobre indeferimento
       await this.enviarNotificacaoComPreferencias({
-        usuarioId: event.usuarioId,
+        usuarioId: usuarioSolicitanteId,
         tipo: TipoNotificacao.APROVACAO,
         titulo: 'Solicitação Indeferida',
-        mensagem: 'Sua solicitação foi indeferida. Verifique os motivos e documentação necessária.',
+        mensagem:
+          'Sua solicitação foi indeferida. Verifique os motivos e documentação necessária.',
         prioridade: 'high',
         contexto: {
           solicitacaoId: event.solicitacaoId,
@@ -211,7 +256,9 @@ export class WorkflowProativoListener {
       });
 
       // Alertas de prazo são gerenciados automaticamente pelo scheduler
-      this.logger.log(`Solicitação ${event.solicitacaoId} indeferida - alertas serão limpos automaticamente`);
+      this.logger.log(
+        `Solicitação ${event.solicitacaoId} indeferida - alertas serão limpos automaticamente`,
+      );
     } catch (error) {
       this.logger.error(
         `Erro ao processar solicitação indeferida ${event.solicitacaoId}:`,
@@ -260,7 +307,8 @@ export class WorkflowProativoListener {
       await this.notificarTodosUsuarios({
         tipo: TipoNotificacao.SISTEMA,
         titulo: 'Sistema Disponível',
-        mensagem: 'A manutenção foi concluída. O sistema está novamente disponível.',
+        mensagem:
+          'A manutenção foi concluída. O sistema está novamente disponível.',
         prioridade: 'medium',
         contexto: {
           tipo: 'manutencao_finalizada',
@@ -286,12 +334,42 @@ export class WorkflowProativoListener {
     prioridade: 'low' | 'medium' | 'high';
     contexto?: Record<string, any>;
   }) {
+    // Validar se usuarioId é válido antes de prosseguir
+    if (!dados.usuarioId || dados.usuarioId.trim() === '') {
+      this.logger.error(
+        'Tentativa de enviar notificação com usuarioId inválido',
+        {
+          dados: {
+            tipo: dados.tipo,
+            titulo: dados.titulo,
+            usuarioId: dados.usuarioId,
+          },
+        },
+      );
+      return;
+    }
+
+    // Validar se usuarioId é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(dados.usuarioId)) {
+      this.logger.error(
+        `Tentativa de enviar notificação com UUID inválido: ${dados.usuarioId}`,
+        {
+          dados: {
+            tipo: dados.tipo,
+            titulo: dados.titulo,
+            usuarioId: dados.usuarioId,
+          },
+        },
+      );
+      return;
+    }
+
     // Verificar se deve enviar baseado nas preferências
-    const deveEnviar = await this.preferenciasService.deveEnviarNotificacao(
+    const deveEnviar = await this.preferenciasService.deveReceberNotificacao(
       dados.usuarioId,
       dados.tipo,
-      dados.prioridade,
-      CanalNotificacao.SSE,
+      CanalNotificacao.SISTEMA,
     );
 
     if (!deveEnviar) {
@@ -330,15 +408,22 @@ export class WorkflowProativoListener {
     prioridade: 'low' | 'medium' | 'high';
     contexto?: Record<string, any>;
   }) {
-    // TODO: Implementar busca de administradores
-    // const administradores = await this.usuarioService.buscarAdministradores();
-    // for (const admin of administradores) {
-    //   await this.enviarNotificacaoComPreferencias({
-    //     usuarioId: admin.id,
-    //     ...dados,
-    //   });
-    // }
-    this.logger.debug('Notificação para administradores (implementação pendente)');
+    try {
+      const administradores = await this.buscarAdministradores();
+
+      this.logger.log(
+        `Notificando ${administradores.length} administradores: ${dados.titulo}`,
+      );
+
+      for (const admin of administradores) {
+        await this.enviarNotificacaoComPreferencias({
+          usuarioId: admin.id,
+          ...dados,
+        });
+      }
+    } catch (error) {
+      this.logger.error('Erro ao notificar administradores', error.stack);
+    }
   }
 
   /**
@@ -351,8 +436,22 @@ export class WorkflowProativoListener {
     prioridade: 'low' | 'medium' | 'high';
     contexto?: Record<string, any>;
   }) {
-    // TODO: Implementar busca de usuários do setor financeiro
-    this.logger.debug('Notificação para setor financeiro (implementação pendente)');
+    try {
+      const usuariosFinanceiro = await this.buscarUsuariosSetorFinanceiro();
+
+      this.logger.log(
+        `Notificando ${usuariosFinanceiro.length} usuários do setor financeiro: ${dados.titulo}`,
+      );
+
+      for (const usuario of usuariosFinanceiro) {
+        await this.enviarNotificacaoComPreferencias({
+          usuarioId: usuario.id,
+          ...dados,
+        });
+      }
+    } catch (error) {
+      this.logger.error('Erro ao notificar setor financeiro', error.stack);
+    }
   }
 
   /**
@@ -365,29 +464,85 @@ export class WorkflowProativoListener {
     prioridade: 'low' | 'medium' | 'high';
     contexto?: Record<string, any>;
   }) {
-    // TODO: Implementar notificação em massa
-    this.logger.debug('Notificação para todos os usuários (implementação pendente)');
+    try {
+      const usuarios = await this.buscarTodosUsuariosAtivos();
+
+      this.logger.log(
+        `Iniciando notificação em massa para ${usuarios.length} usuários: ${dados.titulo}`,
+      );
+
+      // Processar em lotes para evitar sobrecarga
+      const loteSize = 50;
+      for (let i = 0; i < usuarios.length; i += loteSize) {
+        const lote = usuarios.slice(i, i + loteSize);
+
+        await Promise.all(
+          lote.map(async (usuario) => {
+            try {
+              await this.enviarNotificacaoComPreferencias({
+                usuarioId: usuario.id,
+                ...dados,
+              });
+            } catch (error) {
+              this.logger.warn(
+                `Erro ao notificar usuário ${usuario.id}: ${error.message}`,
+              );
+            }
+          }),
+        );
+
+        // Pequeno delay entre lotes
+        if (i + loteSize < usuarios.length) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+      }
+
+      this.logger.log(
+        `Notificação em massa concluída para ${usuarios.length} usuários`,
+      );
+    } catch (error) {
+      this.logger.error('Erro na notificação em massa', error.stack);
+    }
   }
 
   /**
    * Agenda acompanhamento pós-liberação
    */
   private async agendarAcompanhamentoPosLiberacao(event: LiberacaoEvent) {
-    // Agendar notificação de acompanhamento em 7 dias
-    const dataAcompanhamento = new Date();
-    dataAcompanhamento.setDate(dataAcompanhamento.getDate() + 7);
+    try {
+      // Agendar notificação de acompanhamento em 7 dias
+      const dataAcompanhamento = new Date();
+      dataAcompanhamento.setDate(dataAcompanhamento.getDate() + 7);
 
-    // TODO: Implementar agendamento de notificação de acompanhamento
-    // Por enquanto, apenas logamos a intenção
-    this.logger.log(
-      `Agendamento de acompanhamento pós-liberação para usuário ${event.usuarioId} em 7 dias`,
-      {
+      // Criar agendamento de notificação
+      await this.criarAgendamentoNotificacao({
         usuarioId: event.usuarioId,
-        solicitacaoId: event.solicitacaoId,
-        dataAcompanhamento: dataAcompanhamento.toISOString(),
-        tipo: 'acompanhamento_pos_liberacao',
-      },
-    );
+        tipo: TipoNotificacao.ACOMPANHAMENTO,
+        titulo: 'Acompanhamento do seu benefício',
+        mensagem:
+          'Como está sendo a utilização do seu benefício? Gostaríamos de saber sua experiência.',
+        dataAgendamento: dataAcompanhamento,
+        contexto: {
+          solicitacaoId: event.solicitacaoId,
+          tipoAcompanhamento: 'pos_liberacao',
+          valorLiberado: event.valorLiberado,
+        },
+      });
+
+      this.logger.log(
+        `Acompanhamento pós-liberação agendado para usuário ${event.usuarioId} em ${dataAcompanhamento.toISOString()}`,
+        {
+          usuarioId: event.usuarioId,
+          solicitacaoId: event.solicitacaoId,
+          dataAcompanhamento: dataAcompanhamento.toISOString(),
+        },
+      );
+    } catch (error) {
+      this.logger.error(
+        'Erro ao agendar acompanhamento pós-liberação',
+        error.stack,
+      );
+    }
   }
 
   /**
@@ -448,7 +603,10 @@ export class WorkflowProativoListener {
       [StatusSolicitacao.CANCELADA]: `Sua solicitação de ${tipoBeneficio} foi cancelada.`,
     };
 
-    return mensagens[statusNovo] || `Status da solicitação atualizado para ${statusNovo}.`;
+    return (
+      mensagens[statusNovo] ||
+      `Status da solicitação atualizado para ${statusNovo}.`
+    );
   }
 
   /**
@@ -489,5 +647,186 @@ export class WorkflowProativoListener {
       high: 'ALTA',
     };
     return mapeamento[prioridade] as any;
+  }
+
+  // ==========================================
+  // MÉTODOS AUXILIARES DE BUSCA
+  // ==========================================
+
+  /**
+   * Busca todos os administradores do sistema
+   */
+  private async buscarAdministradores(): Promise<
+    Array<{ id: string; nome: string }>
+  > {
+    try {
+      // Implementação usando repository pattern
+      const administradores = await this.usuarioService.buscarPorPermissao([
+        'admin:full_access',
+        'admin:sistema',
+        'coordenador:geral',
+      ]);
+
+      return administradores.map((admin) => ({
+        id: admin.id,
+        nome: admin.nome,
+      }));
+    } catch (error) {
+      this.logger.error('Erro ao buscar administradores', error.stack);
+      return [];
+    }
+  }
+
+  /**
+   * Busca usuários do setor financeiro
+   */
+  private async buscarUsuariosSetorFinanceiro(): Promise<
+    Array<{ id: string; nome: string }>
+  > {
+    try {
+      const usuariosFinanceiro = await this.usuarioService.buscarPorSetor([
+        'financeiro',
+        'contabilidade',
+        'tesouraria',
+        'pagamentos',
+      ]);
+
+      return usuariosFinanceiro.map((usuario) => ({
+        id: usuario.id,
+        nome: usuario.nome,
+      }));
+    } catch (error) {
+      this.logger.error(
+        'Erro ao buscar usuários do setor financeiro',
+        error.stack,
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Busca todos os usuários ativos do sistema
+   */
+  private async buscarTodosUsuariosAtivos(): Promise<
+    Array<{ id: string; nome: string }>
+  > {
+    try {
+      const usuarios = await this.usuarioService.buscarTodosAtivos();
+
+      return usuarios.map((usuario) => ({
+        id: usuario.id,
+        nome: usuario.nome,
+      }));
+    } catch (error) {
+      this.logger.error('Erro ao buscar todos os usuários ativos', error.stack);
+      return [];
+    }
+  }
+
+  /**
+   * Cria agendamento de notificação
+   */
+  private async criarAgendamentoNotificacao(dados: {
+    usuarioId: string;
+    tipo: TipoNotificacao;
+    titulo: string;
+    mensagem: string;
+    dataAgendamento: Date;
+    contexto?: Record<string, any>;
+  }): Promise<void> {
+    try {
+      // Criar registro de agendamento
+      const agendamento = {
+        usuario_id: dados.usuarioId,
+        tipo_notificacao: dados.tipo,
+        titulo: dados.titulo,
+        conteudo: dados.mensagem,
+        data_agendamento: dados.dataAgendamento,
+        dados_contexto: dados.contexto,
+        status: 'AGENDADA',
+        tentativas: 0,
+        created_at: new Date(),
+      };
+
+      // Salvar no banco de dados (implementação simplificada)
+      await this.salvarAgendamentoNotificacao(agendamento);
+
+      this.logger.log(
+        `Agendamento de notificação criado para usuário ${dados.usuarioId} em ${dados.dataAgendamento.toISOString()}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        'Erro ao criar agendamento de notificação',
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Salva agendamento de notificação no banco
+   */
+  private async salvarAgendamentoNotificacao(dadosAgendamento: {
+    usuario_id: string;
+    tipo_notificacao: TipoNotificacao;
+    titulo: string;
+    conteudo: string;
+    data_agendamento: Date;
+    dados_contexto?: Record<string, any>;
+    status: string;
+    tentativas: number;
+    created_at: Date;
+  }): Promise<AgendamentoNotificacao> {
+    try {
+      // Criar entidade de agendamento
+      const agendamento = this.agendamentoRepository.create({
+        usuario_id: dadosAgendamento.usuario_id,
+        tipo_notificacao: dadosAgendamento.tipo_notificacao,
+        titulo: dadosAgendamento.titulo,
+        conteudo: dadosAgendamento.conteudo,
+        data_agendamento: dadosAgendamento.data_agendamento,
+        status: StatusAgendamento.AGENDADA,
+        tentativas: 0,
+        max_tentativas: 3,
+        dados_contexto: dadosAgendamento.dados_contexto || {},
+        configuracoes: AgendamentoNotificacao.criarConfiguracoesPadrao(),
+        data_expiracao: addDays(dadosAgendamento.data_agendamento, 7), // Expira em 7 dias
+        metadados: {
+          origem: 'workflow-proativo',
+          categoria: 'acompanhamento',
+          tags: ['pos-liberacao', 'automatico'],
+        },
+      });
+
+      // Salvar no banco de dados
+      const agendamentoSalvo = await this.agendamentoRepository.save(agendamento);
+
+      this.logger.log(
+        `Agendamento de notificação salvo com ID ${agendamentoSalvo.id} para usuário ${dadosAgendamento.usuario_id}`,
+        {
+          agendamento_id: agendamentoSalvo.id,
+          usuario_id: dadosAgendamento.usuario_id,
+          tipo: dadosAgendamento.tipo_notificacao,
+          data_agendamento: dadosAgendamento.data_agendamento.toISOString(),
+          titulo: dadosAgendamento.titulo,
+        },
+      );
+
+      return agendamentoSalvo;
+    } catch (error) {
+      this.logger.error(
+        'Erro ao salvar agendamento de notificação no banco de dados',
+        {
+          error: error.message,
+          stack: error.stack,
+          dados: {
+            usuario_id: dadosAgendamento.usuario_id,
+            tipo: dadosAgendamento.tipo_notificacao,
+            data_agendamento: dadosAgendamento.data_agendamento,
+          },
+        },
+      );
+      throw error;
+    }
   }
 }

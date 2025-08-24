@@ -1,6 +1,6 @@
 /**
  * AuditCoreModule
- * 
+ *
  * Módulo core isolado para auditoria.
  * Contém apenas as funcionalidades essenciais sem dependências externas.
  */
@@ -16,17 +16,11 @@ import { AuditCoreService } from './services/audit-core.service';
   imports: [
     // TypeORM para persistência
     TypeOrmModule.forFeature([LogAuditoria]),
-    
+
     // EventEmitter para eventos síncronos
     EventEmitterModule,
   ],
-  providers: [
-    AuditCoreRepository,
-    AuditCoreService,
-  ],
-  exports: [
-    AuditCoreRepository,
-    AuditCoreService,
-  ],
+  providers: [AuditCoreRepository, AuditCoreService],
+  exports: [AuditCoreRepository, AuditCoreService],
 })
 export class AuditCoreModule {}

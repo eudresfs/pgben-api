@@ -9,12 +9,12 @@ import {
   IAblyOperationResult,
   IAblyFallbackConfig,
   NotificationType,
-  NotificationPriority
+  NotificationPriority,
 } from '../interfaces/ably.interface';
 
 /**
  * Orquestrador de notificações que integra Ably com o sistema SSE existente
- * 
+ *
  * Este serviço é responsável por:
  * - Coordenar entre Ably e SSE baseado na disponibilidade
  * - Implementar fallback automático
@@ -40,7 +40,7 @@ export class NotificationOrchestratorService implements OnModuleInit {
     private readonly ablyChannelService: AblyChannelService,
     private readonly ablyAuthService: AblyAuthService,
     private readonly configService: ConfigService,
-    private readonly eventEmitter: EventEmitter2
+    private readonly eventEmitter: EventEmitter2,
   ) {
     this.initializeFallbackConfig();
   }
@@ -50,19 +50,19 @@ export class NotificationOrchestratorService implements OnModuleInit {
    */
   async onModuleInit(): Promise<void> {
     this.logger.log('Inicializando orquestrador de notificações...');
-    
+
     // Inicialização assíncrona sem bloqueio
     setImmediate(async () => {
       try {
         // Verifica saúde inicial dos sistemas
         await this.checkSystemsHealth();
-        
+
         // Inicia monitoramento contínuo
         this.startHealthMonitoring();
-        
+
         // Configura listeners de eventos
         this.setupEventListeners();
-        
+
         this.logger.log('Orquestrador de notificações inicializado');
       } catch (error) {
         this.logger.error('Erro ao inicializar orquestrador:', error);
@@ -76,10 +76,15 @@ export class NotificationOrchestratorService implements OnModuleInit {
    */
   private initializeFallbackConfig(): void {
     this.fallbackConfig = {
-      enabled: (this.configService.get<string>('ABLY_ENABLE_FALLBACK', 'true') === 'true'),
+      enabled:
+        this.configService.get<string>('ABLY_ENABLE_FALLBACK', 'true') ===
+        'true',
       type: 'sse',
       timeout: this.configService.get<number>('ABLY_FALLBACK_TIMEOUT', 5000),
-      maxRetries: this.configService.get<number>('ABLY_FALLBACK_MAX_RETRIES', 3)
+      maxRetries: this.configService.get<number>(
+        'ABLY_FALLBACK_MAX_RETRIES',
+        3,
+      ),
     };
   }
 
@@ -93,56 +98,64 @@ export class NotificationOrchestratorService implements OnModuleInit {
       forceMethod?: 'ably' | 'sse';
       retryOnFailure?: boolean;
       priority?: 'high' | 'normal' | 'low';
-    }
+    },
   ): Promise<IAblyOperationResult> {
     const startTime = Date.now();
-    
+
     try {
-      this.logger.debug(`Publicando notificação para usuário ${userId}:`, notification.id);
-      
+      this.logger.debug(
+        `Publicando notificação para usuário ${userId}:`,
+        notification.id,
+      );
+
       // Determina método de entrega
       const deliveryMethod = this.determineDeliveryMethod(options?.forceMethod);
-      
+
       let result: IAblyOperationResult;
-      
+
       if (deliveryMethod === 'ably') {
         result = await this.publishViaAbly(userId, notification);
       } else {
         result = await this.publishViaSSE(userId, notification);
       }
-      
+
       // Se falhou e retry está habilitado, tenta método alternativo
       if (!result.success && options?.retryOnFailure !== false) {
-        this.logger.warn(`Falha na entrega via ${deliveryMethod}, tentando método alternativo`);
-        
+        this.logger.warn(
+          `Falha na entrega via ${deliveryMethod}, tentando método alternativo`,
+        );
+
         if (deliveryMethod === 'ably') {
           result = await this.publishViaSSE(userId, notification);
         } else {
           result = await this.publishViaAbly(userId, notification);
         }
       }
-      
+
       // Atualiza circuit breaker
       this.updateCircuitBreaker(result.success);
-      
+
       // Emite evento de resultado
       this.emitDeliveryEvent(userId, notification, result, deliveryMethod);
-      
+
       const executionTime = Date.now() - startTime;
       result.executionTime = executionTime;
-      
+
       return result;
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      
-      this.logger.error(`Erro ao publicar notificação para usuário ${userId}:`, error);
-      
+
+      this.logger.error(
+        `Erro ao publicar notificação para usuário ${userId}:`,
+        error,
+      );
+
       return {
         success: false,
         error: error.message,
         errorCode: 'NOTIFICATION_DELIVERY_FAILED',
         timestamp: new Date(),
-        executionTime
+        executionTime,
       };
     }
   }
@@ -152,30 +165,97 @@ export class NotificationOrchestratorService implements OnModuleInit {
    */
   private async publishViaAbly(
     userId: string,
-    notification: IAblyNotificationData
+    notification: IAblyNotificationData,
   ): Promise<IAblyOperationResult> {
-    try {
-      if (!this.isAblyHealthy || this.circuitBreakerState === 'open') {
-        throw new Error('Ably não está disponível');
+    const maxRetries = 2;
+    let attempt = 0;
+    let lastError: Error | null = null;
+
+    while (attempt <= maxRetries) {
+      attempt++;
+      
+      try {
+        this.logger.debug(`Tentativa ${attempt}/${maxRetries + 1} de entrega via Ably para usuário ${userId}`);
+
+        // Verificar se Ably está disponível
+        if (!this.isAblyHealthy || this.circuitBreakerState === 'open') {
+          throw new Error(`Ably não está disponível (healthy: ${this.isAblyHealthy}, circuit: ${this.circuitBreakerState})`);
+        }
+
+        // Verificar conexão antes de tentar publicar
+        const isConnected = await this.ablyService.isConnected();
+        if (!isConnected) {
+          this.logger.warn(`Ably não está conectado na tentativa ${attempt}, tentando reconectar...`);
+          
+          // Tentar reconectar apenas na primeira tentativa
+          if (attempt === 1) {
+            const reconnected = await this.ablyService.reconnect();
+            if (!reconnected) {
+              throw new Error('Falha na reconexão com Ably');
+            }
+            this.logger.log('Reconexão com Ably bem-sucedida');
+          } else {
+            throw new Error('Ably não está conectado e reconexão já foi tentada');
+          }
+        }
+
+        // Tentar publicar a mensagem
+        const result = await this.ablyChannelService.publishToUserChannel(
+          userId,
+          notification,
+        );
+
+        if (result.success) {
+          this.logger.debug(
+            `Notificação entregue via Ably para usuário ${userId} na tentativa ${attempt}`,
+          );
+          
+          // Reset do circuit breaker em caso de sucesso
+          this.updateCircuitBreaker(true);
+          
+          return result;
+        } else {
+          // Se o resultado não foi sucesso, mas não houve exceção
+          lastError = new Error(result.error || 'Falha na publicação via Ably');
+          this.logger.warn(`Tentativa ${attempt} falhou: ${lastError.message}`);
+          
+          if (attempt <= maxRetries) {
+            // Aguardar antes da próxima tentativa
+            const delay = Math.min(1000 * attempt, 3000); // Max 3 segundos
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+
+      } catch (error) {
+        lastError = error;
+        this.logger.error(
+          `Erro na tentativa ${attempt} de entrega via Ably para usuário ${userId}:`,
+          error,
+        );
+
+        // Se não é a última tentativa, aguardar antes de tentar novamente
+        if (attempt <= maxRetries) {
+          const delay = Math.min(1000 * attempt, 3000);
+          this.logger.debug(`Aguardando ${delay}ms antes da próxima tentativa`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
       }
-      
-      const result = await this.ablyChannelService.publishToUserChannel(userId, notification);
-      
-      if (result.success) {
-        this.logger.debug(`Notificação entregue via Ably para usuário ${userId}`);
-      }
-      
-      return result;
-    } catch (error) {
-      this.logger.error(`Erro ao entregar via Ably para usuário ${userId}:`, error);
-      
-      return {
-        success: false,
-        error: error.message,
-        errorCode: 'ABLY_DELIVERY_FAILED',
-        timestamp: new Date()
-      };
     }
+
+    // Todas as tentativas falharam
+    this.updateCircuitBreaker(false);
+    
+    const errorMessage = lastError?.message || 'Falha desconhecida na entrega via Ably';
+    this.logger.error(
+      `Falha em todas as ${maxRetries + 1} tentativas de entrega via Ably para usuário ${userId}: ${errorMessage}`,
+    );
+
+    return {
+      success: false,
+      error: errorMessage,
+      errorCode: 'ABLY_DELIVERY_FAILED',
+      timestamp: new Date(),
+    };
   }
 
   /**
@@ -183,35 +263,38 @@ export class NotificationOrchestratorService implements OnModuleInit {
    */
   private async publishViaSSE(
     userId: string,
-    notification: IAblyNotificationData
+    notification: IAblyNotificationData,
   ): Promise<IAblyOperationResult> {
     try {
       if (!this.isSseHealthy) {
         throw new Error('SSE não está disponível');
       }
-      
+
       // Emite evento para o sistema SSE existente
       this.eventEmitter.emit('notification.send', {
         userId,
         notification,
-        method: 'sse'
+        method: 'sse',
       });
-      
+
       this.logger.debug(`Notificação entregue via SSE para usuário ${userId}`);
-      
+
       return {
         success: true,
         data: notification,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     } catch (error) {
-      this.logger.error(`Erro ao entregar via SSE para usuário ${userId}:`, error);
-      
+      this.logger.error(
+        `Erro ao entregar via SSE para usuário ${userId}:`,
+        error,
+      );
+
       return {
         success: false,
         error: error.message,
         errorCode: 'SSE_DELIVERY_FAILED',
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     }
   }
@@ -228,34 +311,44 @@ export class NotificationOrchestratorService implements OnModuleInit {
     options?: {
       forceMethod?: 'ably' | 'sse';
       excludeUsers?: string[];
-    }
+    },
   ): Promise<IAblyOperationResult> {
     try {
       this.logger.debug(`Publicando broadcast:`, notification.id);
-      
+
       const deliveryMethod = this.determineDeliveryMethod(options?.forceMethod);
-      
+
       if (deliveryMethod === 'ably') {
         const result = await this.publishBroadcastViaAbly(notification, target);
-        
+
         // Fallback automático se falhar
         if (!result.success && this.fallbackConfig.enabled) {
-          this.logger.warn('Broadcast via Ably falhou, executando fallback para SSE');
-          return await this.publishBroadcastViaSSE(notification, target, options?.excludeUsers);
+          this.logger.warn(
+            'Broadcast via Ably falhou, executando fallback para SSE',
+          );
+          return await this.publishBroadcastViaSSE(
+            notification,
+            target,
+            options?.excludeUsers,
+          );
         }
         return result;
       }
 
       // Método determinado foi SSE ou fallback já está habilitado
-      return await this.publishBroadcastViaSSE(notification, target, options?.excludeUsers);
+      return await this.publishBroadcastViaSSE(
+        notification,
+        target,
+        options?.excludeUsers,
+      );
     } catch (error) {
       this.logger.error('Erro ao publicar broadcast:', error);
-      
+
       return {
         success: false,
         error: error.message,
         errorCode: 'BROADCAST_DELIVERY_FAILED',
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     }
   }
@@ -265,18 +358,21 @@ export class NotificationOrchestratorService implements OnModuleInit {
    */
   private async publishBroadcastViaAbly(
     notification: IAblyNotificationData,
-    target: { type: string; value?: string }
+    target: { type: string; value?: string },
   ): Promise<IAblyOperationResult> {
     try {
       if (target.type === 'all') {
         // Publica no canal geral
-        return await this.ablyService.publishNotification('notifications', notification);
+        return await this.ablyService.publishNotification(
+          'notifications',
+          notification,
+        );
       } else {
         // Publica no canal específico do grupo
         return await this.ablyChannelService.publishToBroadcastChannel(
           target.value || 'default',
           notification,
-          target.type as any
+          target.type as any,
         );
       }
     } catch (error) {
@@ -285,7 +381,7 @@ export class NotificationOrchestratorService implements OnModuleInit {
         success: false,
         error: error.message,
         errorCode: 'ABLY_BROADCAST_FAILED',
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     }
   }
@@ -296,7 +392,7 @@ export class NotificationOrchestratorService implements OnModuleInit {
   private async publishBroadcastViaSSE(
     notification: IAblyNotificationData,
     target: { type: string; value?: string },
-    excludeUsers?: string[]
+    excludeUsers?: string[],
   ): Promise<IAblyOperationResult> {
     try {
       // Emite evento para o sistema SSE
@@ -304,13 +400,13 @@ export class NotificationOrchestratorService implements OnModuleInit {
         notification,
         target,
         excludeUsers,
-        method: 'sse'
+        method: 'sse',
       });
-      
+
       return {
         success: true,
         data: notification,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     } catch (error) {
       this.logger.error('Erro no broadcast via SSE:', error);
@@ -318,7 +414,7 @@ export class NotificationOrchestratorService implements OnModuleInit {
         success: false,
         error: error.message,
         errorCode: 'SSE_BROADCAST_FAILED',
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     }
   }
@@ -326,40 +422,88 @@ export class NotificationOrchestratorService implements OnModuleInit {
   /**
    * Determina o melhor método de entrega
    */
-  private determineDeliveryMethod(forceMethod?: 'ably' | 'sse'): 'ably' | 'sse' {
+  private determineDeliveryMethod(
+    forceMethod?: 'ably' | 'sse',
+  ): 'ably' | 'sse' {
     if (forceMethod) {
       return forceMethod;
     }
-    
+
     // Se circuit breaker está aberto, usa SSE
     if (this.circuitBreakerState === 'open') {
       return 'sse';
     }
-    
+
     // Se Ably está saudável, usa Ably
     if (this.isAblyHealthy) {
       return 'ably';
     }
-    
+
     // Fallback para SSE
     return 'sse';
   }
 
   /**
-   * Verifica saúde dos sistemas
+   * Verifica a saúde dos sistemas de notificação
    */
   private async checkSystemsHealth(): Promise<void> {
     try {
-      // Verifica Ably
-      this.isAblyHealthy = this.ablyService.isHealthy();
+      this.logger.debug('Verificando saúde dos sistemas de notificação');
       
-      // Verifica SSE (assume saudável por padrão)
-      // Aqui você pode implementar verificação real do SSE
+      // Verificar saúde do Ably
+      const previousAblyHealth = this.isAblyHealthy;
+      
+      try {
+        // Verificação mais robusta do Ably
+        const ablyHealthy = await this.ablyService.isHealthy();
+        const ablyConnected = await this.ablyService.isConnected();
+        
+        this.isAblyHealthy = ablyHealthy && ablyConnected;
+        
+        if (this.isAblyHealthy !== previousAblyHealth) {
+          this.logger.log(
+            `Status do Ably alterado: ${previousAblyHealth ? 'saudável' : 'não saudável'} → ${this.isAblyHealthy ? 'saudável' : 'não saudável'}`
+          );
+          
+          if (!this.isAblyHealthy) {
+            const lastError = this.ablyService.getLastError();
+            this.logger.warn(`Ably não está saudável. Último erro: ${lastError || 'Nenhum erro registrado'}`);
+          }
+        }
+        
+        this.logger.debug(`Ably - Healthy: ${ablyHealthy}, Connected: ${ablyConnected}, Final: ${this.isAblyHealthy}`);
+        
+      } catch (error) {
+        this.isAblyHealthy = false;
+        this.logger.error('Erro ao verificar saúde do Ably:', error);
+      }
+
+      // SSE é assumido como sempre saudável por enquanto
+      // TODO: Implementar verificação real do SSE quando necessário
       this.isSseHealthy = true;
-      
-      this.logger.debug(`Status dos sistemas - Ably: ${this.isAblyHealthy}, SSE: ${this.isSseHealthy}`);
+
+      // Atualizar circuit breaker baseado na saúde
+      if (!this.isAblyHealthy && this.circuitBreakerState === 'closed') {
+        this.logger.warn('Ably não está saudável, considerando abrir circuit breaker');
+      }
+
+      // Verificar se o circuit breaker deve mudar de estado
+      this.checkCircuitBreaker();
+
+      // Log do status geral
+      this.logger.debug(
+        `Status dos sistemas - Ably: ${this.isAblyHealthy ? 'OK' : 'FALHA'}, ` +
+        `SSE: ${this.isSseHealthy ? 'OK' : 'FALHA'}, ` +
+        `Circuit Breaker: ${this.circuitBreakerState.toUpperCase()}, ` +
+        `Falhas: ${this.failureCount}`
+      );
+
     } catch (error) {
-      this.logger.error('Erro ao verificar saúde dos sistemas:', error);
+      this.logger.error('Erro durante verificação de saúde dos sistemas:', error);
+      
+      // Em caso de erro na verificação, assumir que os sistemas não estão saudáveis
+      this.isAblyHealthy = false;
+      this.isSseHealthy = true; // Manter SSE como saudável
     }
   }
 
@@ -367,8 +511,11 @@ export class NotificationOrchestratorService implements OnModuleInit {
    * Inicia monitoramento contínuo de saúde
    */
   private startHealthMonitoring(): void {
-    const interval = this.configService.get<number>('NOTIFICATION_HEALTH_CHECK_INTERVAL', 30000);
-    
+    const interval = this.configService.get<number>(
+      'NOTIFICATION_HEALTH_CHECK_INTERVAL',
+      30000,
+    );
+
     this.healthCheckInterval = setInterval(async () => {
       await this.checkSystemsHealth();
       this.checkCircuitBreaker();
@@ -388,8 +535,11 @@ export class NotificationOrchestratorService implements OnModuleInit {
     } else {
       this.failureCount++;
       this.lastFailureTime = Date.now();
-      
-      if (this.failureCount >= this.CIRCUIT_BREAKER_THRESHOLD && this.circuitBreakerState === 'closed') {
+
+      if (
+        this.failureCount >= this.CIRCUIT_BREAKER_THRESHOLD &&
+        this.circuitBreakerState === 'closed'
+      ) {
         this.circuitBreakerState = 'open';
         this.logger.warn('Circuit breaker aberto - muitas falhas detectadas');
       }
@@ -402,7 +552,7 @@ export class NotificationOrchestratorService implements OnModuleInit {
   private checkCircuitBreaker(): void {
     if (this.circuitBreakerState === 'open') {
       const timeSinceLastFailure = Date.now() - this.lastFailureTime;
-      
+
       if (timeSinceLastFailure >= this.CIRCUIT_BREAKER_TIMEOUT) {
         this.circuitBreakerState = 'half-open';
         this.logger.log('Circuit breaker em half-open - testando recuperação');
@@ -418,16 +568,16 @@ export class NotificationOrchestratorService implements OnModuleInit {
     this.eventEmitter.on('sse.connection.established', (data) => {
       this.logger.debug('Conexão SSE estabelecida:', data.userId);
     });
-    
+
     this.eventEmitter.on('sse.connection.lost', (data) => {
       this.logger.debug('Conexão SSE perdida:', data.userId);
     });
-    
+
     // Escuta eventos do Ably
     this.eventEmitter.on('ably.connection.established', (data) => {
       this.logger.debug('Conexão Ably estabelecida:', data.clientId);
     });
-    
+
     this.eventEmitter.on('ably.connection.lost', (data) => {
       this.logger.debug('Conexão Ably perdida:', data.clientId);
     });
@@ -440,7 +590,7 @@ export class NotificationOrchestratorService implements OnModuleInit {
     userId: string,
     notification: IAblyNotificationData,
     result: IAblyOperationResult,
-    method: 'ably' | 'sse'
+    method: 'ably' | 'sse',
   ): void {
     this.eventEmitter.emit('notification.delivered', {
       userId,
@@ -448,7 +598,7 @@ export class NotificationOrchestratorService implements OnModuleInit {
       success: result.success,
       method,
       timestamp: new Date(),
-      executionTime: result.executionTime
+      executionTime: result.executionTime,
     });
   }
 
@@ -457,7 +607,7 @@ export class NotificationOrchestratorService implements OnModuleInit {
    */
   async generateClientToken(
     userId: string,
-    isAdmin: boolean = false
+    isAdmin: boolean = false,
   ): Promise<IAblyOperationResult<any>> {
     try {
       if (isAdmin) {
@@ -467,12 +617,12 @@ export class NotificationOrchestratorService implements OnModuleInit {
       }
     } catch (error) {
       this.logger.error(`Erro ao gerar token para usuário ${userId}:`, error);
-      
+
       return {
         success: false,
         error: error.message,
         errorCode: 'TOKEN_GENERATION_FAILED',
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     }
   }
@@ -489,16 +639,21 @@ export class NotificationOrchestratorService implements OnModuleInit {
       lastFailureTime: this.lastFailureTime,
       fallbackEnabled: this.fallbackConfig.enabled,
       ablyMetrics: this.ablyService.getMetrics(),
-      channelStats: this.ablyChannelService.getAllChannelStats()
+      channelStats: this.ablyChannelService.getAllChannelStats(),
     };
   }
 
   /**
    * Força mudança de método de entrega
    */
-  async switchDeliveryMethod(method: 'ably' | 'sse', reason?: string): Promise<void> {
-    this.logger.log(`Forçando mudança para método ${method}. Motivo: ${reason || 'Manual'}`);
-    
+  async switchDeliveryMethod(
+    method: 'ably' | 'sse',
+    reason?: string,
+  ): Promise<void> {
+    this.logger.log(
+      `Forçando mudança para método ${method}. Motivo: ${reason || 'Manual'}`,
+    );
+
     if (method === 'sse') {
       this.isAblyHealthy = false;
       this.circuitBreakerState = 'open';
@@ -515,21 +670,26 @@ export class NotificationOrchestratorService implements OnModuleInit {
    */
   async onModuleDestroy(): Promise<void> {
     try {
-      this.logger.log('Iniciando finalização do orquestrador de notificações...');
-      
+      this.logger.log(
+        'Iniciando finalização do orquestrador de notificações...',
+      );
+
       // Para monitoramento de saúde
       if (this.healthCheckInterval) {
         clearInterval(this.healthCheckInterval);
         this.healthCheckInterval = null;
         this.logger.debug('Health check interval finalizado');
       }
-      
+
       // Aguarda um pouco para finalizar operações pendentes
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       this.logger.log('✅ Orquestrador de notificações finalizado com sucesso');
     } catch (error) {
-      this.logger.error('❌ Erro ao finalizar orquestrador de notificações:', error);
+      this.logger.error(
+        '❌ Erro ao finalizar orquestrador de notificações:',
+        error,
+      );
       throw error;
     }
   }

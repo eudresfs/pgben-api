@@ -1,14 +1,11 @@
-import {
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   throwUnidadeNotFound,
   throwSetorNotFound,
   throwSetorAlreadyExists,
   throwSetorOperationFailed,
 } from '../../../shared/exceptions/error-catalog/domains/unidade.errors';
-import { DataSource } from 'typeorm';
+import { DataSource, Not } from 'typeorm';
 import { SetorRepository } from '../repositories/setor.repository';
 import { UnidadeRepository } from '../repositories/unidade.repository';
 import { CreateSetorDto } from '../dto/create-setor.dto';
@@ -193,7 +190,7 @@ export class SetorService {
             where: {
               nome: updateSetorDto.nome,
               unidade_id: novaUnidadeId,
-              id: { $ne: id }, // Excluir o próprio setor da busca
+              id: Not(id), // Excluir o próprio setor da busca
             },
           });
 
@@ -214,7 +211,7 @@ export class SetorService {
             where: {
               sigla: updateSetorDto.sigla,
               unidade_id: novaUnidadeId,
-              id: { $ne: id }, // Excluir o próprio setor da busca
+              id: Not(id), // Excluir o próprio setor da busca
             },
           });
 

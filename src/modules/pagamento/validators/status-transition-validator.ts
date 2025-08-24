@@ -62,7 +62,8 @@ export class StatusTransitionValidator {
       from: StatusPagamentoEnum.AGENDADO,
       to: StatusPagamentoEnum.CONFIRMADO,
       allowed: false,
-      reasonIfBlocked: 'Não é possível confirmar um pagamento que ainda não foi liberado',
+      reasonIfBlocked:
+        'Não é possível confirmar um pagamento que ainda não foi liberado',
     },
 
     // De LIBERADO para...
@@ -85,7 +86,8 @@ export class StatusTransitionValidator {
       from: StatusPagamentoEnum.LIBERADO,
       to: StatusPagamentoEnum.AGENDADO,
       allowed: false,
-      reasonIfBlocked: 'Não é possível retornar um pagamento liberado para o status agendado',
+      reasonIfBlocked:
+        'Não é possível retornar um pagamento liberado para o status agendado',
     },
 
     // De PAGO para...
@@ -104,7 +106,8 @@ export class StatusTransitionValidator {
       from: StatusPagamentoEnum.PAGO,
       to: StatusPagamentoEnum.LIBERADO,
       allowed: false,
-      reasonIfBlocked: 'Não é possível retornar um pagamento pago para o status liberado',
+      reasonIfBlocked:
+        'Não é possível retornar um pagamento pago para o status liberado',
     },
 
     // De CONFIRMADO para...
@@ -118,7 +121,8 @@ export class StatusTransitionValidator {
       from: StatusPagamentoEnum.CONFIRMADO,
       to: StatusPagamentoEnum.PAGO,
       allowed: false,
-      reasonIfBlocked: 'Não é possível retornar um pagamento concluído para o status pago',
+      reasonIfBlocked:
+        'Não é possível retornar um pagamento concluído para o status pago',
     },
 
     // De CONFIRMADO para... (mantido para compatibilidade)
@@ -131,19 +135,22 @@ export class StatusTransitionValidator {
       from: StatusPagamentoEnum.CONFIRMADO,
       to: StatusPagamentoEnum.AGENDADO,
       allowed: false,
-      reasonIfBlocked: 'Não é possível retornar um pagamento confirmado para o status agendado',
+      reasonIfBlocked:
+        'Não é possível retornar um pagamento confirmado para o status agendado',
     },
     {
       from: StatusPagamentoEnum.CONFIRMADO,
       to: StatusPagamentoEnum.LIBERADO,
       allowed: false,
-      reasonIfBlocked: 'Não é possível retornar um pagamento confirmado para o status liberado',
+      reasonIfBlocked:
+        'Não é possível retornar um pagamento confirmado para o status liberado',
     },
     {
       from: StatusPagamentoEnum.CONFIRMADO,
       to: StatusPagamentoEnum.CANCELADO,
       allowed: false,
-      reasonIfBlocked: 'Não é possível cancelar um pagamento que já foi confirmado',
+      reasonIfBlocked:
+        'Não é possível cancelar um pagamento que já foi confirmado',
     },
 
     // De CANCELADO para...
@@ -321,8 +328,7 @@ export class StatusTransitionValidator {
    * @returns true se o pagamento pode ser pago, false caso contrário
    */
   canBePaid(currentStatus: StatusPagamentoEnum): boolean {
-    return this.canTransition(currentStatus, StatusPagamentoEnum.PAGO)
-      .allowed;
+    return this.canTransition(currentStatus, StatusPagamentoEnum.PAGO).allowed;
   }
 
   /**

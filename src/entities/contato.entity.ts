@@ -80,7 +80,9 @@ export class Contato {
   /** Nome do contato quando não é o próprio beneficiário */
   @Column({ nullable: true })
   @ValidateIf((o) => !o.proprietario)
-  @IsNotEmpty({ message: 'Nome do contato é obrigatório se não for o proprietário' })
+  @IsNotEmpty({
+    message: 'Nome do contato é obrigatório se não for o proprietário',
+  })
   @IsString()
   nome_contato: string;
 

@@ -26,7 +26,7 @@ export const UNIDADE_ERROR_CODES = {
   UNIDADE_INVALID_STATUS: 'UNIDADE_INVALID_STATUS' as DomainErrorCode,
   UNIDADE_INVALID_TYPE: 'UNIDADE_INVALID_TYPE' as DomainErrorCode,
   UNIDADE_HAS_DEPENDENCIES: 'UNIDADE_HAS_DEPENDENCIES' as DomainErrorCode,
-  
+
   // Erros de Setor
   SETOR_NOT_FOUND: 'SETOR_NOT_FOUND' as DomainErrorCode,
   SETOR_ALREADY_EXISTS: 'SETOR_ALREADY_EXISTS' as DomainErrorCode,
@@ -39,17 +39,25 @@ export const UNIDADE_ERROR_CODES = {
  * Mensagens técnicas para logs e debugging
  */
 export const UNIDADE_TECH_MESSAGES = {
-  [UNIDADE_ERROR_CODES.UNIDADE_NOT_FOUND]: 'Unidade não encontrada no banco de dados',
-  [UNIDADE_ERROR_CODES.UNIDADE_ALREADY_EXISTS]: 'Unidade já existe com os dados fornecidos',
-  [UNIDADE_ERROR_CODES.UNIDADE_OPERATION_FAILED]: 'Falha na operação da unidade',
+  [UNIDADE_ERROR_CODES.UNIDADE_NOT_FOUND]:
+    'Unidade não encontrada no banco de dados',
+  [UNIDADE_ERROR_CODES.UNIDADE_ALREADY_EXISTS]:
+    'Unidade já existe com os dados fornecidos',
+  [UNIDADE_ERROR_CODES.UNIDADE_OPERATION_FAILED]:
+    'Falha na operação da unidade',
   [UNIDADE_ERROR_CODES.UNIDADE_INVALID_STATUS]: 'Status da unidade inválido',
   [UNIDADE_ERROR_CODES.UNIDADE_INVALID_TYPE]: 'Tipo da unidade inválido',
-  [UNIDADE_ERROR_CODES.UNIDADE_HAS_DEPENDENCIES]: 'Unidade possui dependências e não pode ser removida',
-  [UNIDADE_ERROR_CODES.SETOR_NOT_FOUND]: 'Setor não encontrado no banco de dados',
-  [UNIDADE_ERROR_CODES.SETOR_ALREADY_EXISTS]: 'Setor já existe com os dados fornecidos',
+  [UNIDADE_ERROR_CODES.UNIDADE_HAS_DEPENDENCIES]:
+    'Unidade possui dependências e não pode ser removida',
+  [UNIDADE_ERROR_CODES.SETOR_NOT_FOUND]:
+    'Setor não encontrado no banco de dados',
+  [UNIDADE_ERROR_CODES.SETOR_ALREADY_EXISTS]:
+    'Setor já existe com os dados fornecidos',
   [UNIDADE_ERROR_CODES.SETOR_OPERATION_FAILED]: 'Falha na operação do setor',
-  [UNIDADE_ERROR_CODES.SETOR_INVALID_UNIDADE]: 'Unidade associada ao setor é inválida',
-  [UNIDADE_ERROR_CODES.SETOR_HAS_DEPENDENCIES]: 'Setor possui dependências e não pode ser removido',
+  [UNIDADE_ERROR_CODES.SETOR_INVALID_UNIDADE]:
+    'Unidade associada ao setor é inválida',
+  [UNIDADE_ERROR_CODES.SETOR_HAS_DEPENDENCIES]:
+    'Setor possui dependências e não pode ser removido',
 } as const;
 
 /**
@@ -57,16 +65,23 @@ export const UNIDADE_TECH_MESSAGES = {
  */
 export const UNIDADE_USER_MESSAGES = {
   [UNIDADE_ERROR_CODES.UNIDADE_NOT_FOUND]: 'Unidade não encontrada',
-  [UNIDADE_ERROR_CODES.UNIDADE_ALREADY_EXISTS]: 'Já existe uma unidade com estes dados',
-  [UNIDADE_ERROR_CODES.UNIDADE_OPERATION_FAILED]: 'Erro ao processar operação da unidade',
+  [UNIDADE_ERROR_CODES.UNIDADE_ALREADY_EXISTS]:
+    'Já existe uma unidade com estes dados',
+  [UNIDADE_ERROR_CODES.UNIDADE_OPERATION_FAILED]:
+    'Erro ao processar operação da unidade',
   [UNIDADE_ERROR_CODES.UNIDADE_INVALID_STATUS]: 'Status da unidade é inválido',
   [UNIDADE_ERROR_CODES.UNIDADE_INVALID_TYPE]: 'Tipo da unidade é inválido',
-  [UNIDADE_ERROR_CODES.UNIDADE_HAS_DEPENDENCIES]: 'Não é possível remover a unidade pois ela possui setores associados',
+  [UNIDADE_ERROR_CODES.UNIDADE_HAS_DEPENDENCIES]:
+    'Não é possível remover a unidade pois ela possui setores associados',
   [UNIDADE_ERROR_CODES.SETOR_NOT_FOUND]: 'Setor não encontrado',
-  [UNIDADE_ERROR_CODES.SETOR_ALREADY_EXISTS]: 'Já existe um setor com estes dados',
-  [UNIDADE_ERROR_CODES.SETOR_OPERATION_FAILED]: 'Erro ao processar operação do setor',
-  [UNIDADE_ERROR_CODES.SETOR_INVALID_UNIDADE]: 'A unidade selecionada é inválida',
-  [UNIDADE_ERROR_CODES.SETOR_HAS_DEPENDENCIES]: 'Não é possível remover o setor pois ele possui dependências',
+  [UNIDADE_ERROR_CODES.SETOR_ALREADY_EXISTS]:
+    'Já existe um setor com estes dados',
+  [UNIDADE_ERROR_CODES.SETOR_OPERATION_FAILED]:
+    'Erro ao processar operação do setor',
+  [UNIDADE_ERROR_CODES.SETOR_INVALID_UNIDADE]:
+    'A unidade selecionada é inválida',
+  [UNIDADE_ERROR_CODES.SETOR_HAS_DEPENDENCIES]:
+    'Não é possível remover o setor pois ele possui dependências',
 } as const;
 
 // ========================================
@@ -164,10 +179,7 @@ export class UnidadeValidationErrorBuilder {
   }
 
   build(errorCode: DomainErrorCode): AppError {
-    return new AppError(
-      errorCode,
-      this.context
-    );
+    return new AppError(errorCode, this.context);
   }
 }
 
@@ -198,10 +210,7 @@ export class SetorValidationErrorBuilder {
   }
 
   build(errorCode: DomainErrorCode): AppError {
-    return new AppError(
-      errorCode,
-      this.context
-    );
+    return new AppError(errorCode, this.context);
   }
 }
 
@@ -223,19 +232,29 @@ export function throwUnidadeNotFound(unidadeId?: string): never {
 /**
  * Lança erro de unidade já existente
  */
-export function throwUnidadeAlreadyExists(context?: Partial<UnidadeErrorContext>): never {
+export function throwUnidadeAlreadyExists(
+  context?: Partial<UnidadeErrorContext>,
+): never {
   const builder = new UnidadeValidationErrorBuilder();
-  if (context?.codigo) {builder.withCodigo(context.codigo);}
-  if (context?.nome) {builder.withNome(context.nome);}
+  if (context?.codigo) {
+    builder.withCodigo(context.codigo);
+  }
+  if (context?.nome) {
+    builder.withNome(context.nome);
+  }
   throw builder.build(UNIDADE_ERROR_CODES.UNIDADE_ALREADY_EXISTS);
 }
 
 /**
  * Lança erro de operação de unidade falhada
  */
-export function throwUnidadeOperationFailed(context?: Partial<UnidadeErrorContext>): never {
+export function throwUnidadeOperationFailed(
+  context?: Partial<UnidadeErrorContext>,
+): never {
   const builder = new UnidadeValidationErrorBuilder();
-  if (context?.unidadeId) {builder.withUnidadeId(context.unidadeId);}
+  if (context?.unidadeId) {
+    builder.withUnidadeId(context.unidadeId);
+  }
   throw builder.build(UNIDADE_ERROR_CODES.UNIDADE_OPERATION_FAILED);
 }
 
@@ -253,21 +272,35 @@ export function throwSetorNotFound(setorId?: string): never {
 /**
  * Lança erro de setor já existente
  */
-export function throwSetorAlreadyExists(context?: Partial<SetorErrorContext>): never {
+export function throwSetorAlreadyExists(
+  context?: Partial<SetorErrorContext>,
+): never {
   const builder = new SetorValidationErrorBuilder();
-  if (context?.nome) {builder.withNome(context.nome);}
-  if (context?.sigla) {builder.withSigla(context.sigla);}
-  if (context?.unidadeId) {builder.withUnidadeId(context.unidadeId);}
+  if (context?.nome) {
+    builder.withNome(context.nome);
+  }
+  if (context?.sigla) {
+    builder.withSigla(context.sigla);
+  }
+  if (context?.unidadeId) {
+    builder.withUnidadeId(context.unidadeId);
+  }
   throw builder.build(UNIDADE_ERROR_CODES.SETOR_ALREADY_EXISTS);
 }
 
 /**
  * Lança erro de operação de setor falhada
  */
-export function throwSetorOperationFailed(context?: Partial<SetorErrorContext>): never {
+export function throwSetorOperationFailed(
+  context?: Partial<SetorErrorContext>,
+): never {
   const builder = new SetorValidationErrorBuilder();
-  if (context?.setorId) {builder.withSetorId(context.setorId);}
-  if (context?.unidadeId) {builder.withUnidadeId(context.unidadeId);}
+  if (context?.setorId) {
+    builder.withSetorId(context.setorId);
+  }
+  if (context?.unidadeId) {
+    builder.withUnidadeId(context.unidadeId);
+  }
   throw builder.build(UNIDADE_ERROR_CODES.SETOR_OPERATION_FAILED);
 }
 
@@ -300,18 +333,21 @@ export const UNIDADE_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.BUSINESS,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': UNIDADE_USER_MESSAGES[UNIDADE_ERROR_CODES.UNIDADE_ALREADY_EXISTS],
+      'pt-BR':
+        UNIDADE_USER_MESSAGES[UNIDADE_ERROR_CODES.UNIDADE_ALREADY_EXISTS],
       'en-US': 'Unit already exists with this data',
     },
   },
   [UNIDADE_ERROR_CODES.UNIDADE_OPERATION_FAILED]: {
     code: UNIDADE_ERROR_CODES.UNIDADE_OPERATION_FAILED,
-    message: UNIDADE_USER_MESSAGES[UNIDADE_ERROR_CODES.UNIDADE_OPERATION_FAILED],
+    message:
+      UNIDADE_USER_MESSAGES[UNIDADE_ERROR_CODES.UNIDADE_OPERATION_FAILED],
     httpStatus: HttpStatus.INTERNAL_SERVER_ERROR,
     category: ErrorCategory.SYSTEM,
     severity: ErrorSeverity.HIGH,
     localizedMessages: {
-      'pt-BR': UNIDADE_USER_MESSAGES[UNIDADE_ERROR_CODES.UNIDADE_OPERATION_FAILED],
+      'pt-BR':
+        UNIDADE_USER_MESSAGES[UNIDADE_ERROR_CODES.UNIDADE_OPERATION_FAILED],
       'en-US': 'Error processing unit operation',
     },
   },
@@ -322,7 +358,8 @@ export const UNIDADE_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': UNIDADE_USER_MESSAGES[UNIDADE_ERROR_CODES.UNIDADE_INVALID_STATUS],
+      'pt-BR':
+        UNIDADE_USER_MESSAGES[UNIDADE_ERROR_CODES.UNIDADE_INVALID_STATUS],
       'en-US': 'Unit status is invalid',
     },
   },
@@ -339,12 +376,14 @@ export const UNIDADE_ERRORS: Record<string, ErrorDefinition> = {
   },
   [UNIDADE_ERROR_CODES.UNIDADE_HAS_DEPENDENCIES]: {
     code: UNIDADE_ERROR_CODES.UNIDADE_HAS_DEPENDENCIES,
-    message: UNIDADE_USER_MESSAGES[UNIDADE_ERROR_CODES.UNIDADE_HAS_DEPENDENCIES],
+    message:
+      UNIDADE_USER_MESSAGES[UNIDADE_ERROR_CODES.UNIDADE_HAS_DEPENDENCIES],
     httpStatus: HttpStatus.CONFLICT,
     category: ErrorCategory.BUSINESS,
     severity: ErrorSeverity.HIGH,
     localizedMessages: {
-      'pt-BR': UNIDADE_USER_MESSAGES[UNIDADE_ERROR_CODES.UNIDADE_HAS_DEPENDENCIES],
+      'pt-BR':
+        UNIDADE_USER_MESSAGES[UNIDADE_ERROR_CODES.UNIDADE_HAS_DEPENDENCIES],
       'en-US': 'Cannot remove unit as it has associated sectors',
     },
   },
@@ -377,7 +416,8 @@ export const UNIDADE_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.SYSTEM,
     severity: ErrorSeverity.HIGH,
     localizedMessages: {
-      'pt-BR': UNIDADE_USER_MESSAGES[UNIDADE_ERROR_CODES.SETOR_OPERATION_FAILED],
+      'pt-BR':
+        UNIDADE_USER_MESSAGES[UNIDADE_ERROR_CODES.SETOR_OPERATION_FAILED],
       'en-US': 'Error processing sector operation',
     },
   },
@@ -399,7 +439,8 @@ export const UNIDADE_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.BUSINESS,
     severity: ErrorSeverity.HIGH,
     localizedMessages: {
-      'pt-BR': UNIDADE_USER_MESSAGES[UNIDADE_ERROR_CODES.SETOR_HAS_DEPENDENCIES],
+      'pt-BR':
+        UNIDADE_USER_MESSAGES[UNIDADE_ERROR_CODES.SETOR_HAS_DEPENDENCIES],
       'en-US': 'Cannot remove sector as it has dependencies',
     },
   },

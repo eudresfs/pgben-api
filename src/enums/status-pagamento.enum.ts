@@ -29,6 +29,11 @@ export enum StatusPagamentoEnum {
   CONFIRMADO = 'confirmado',
 
   /**
+   * Pagamento recebido pelo beneficiário.
+   */
+  RECEBIDO = 'recebido',
+
+  /**
    * Pagamento cancelado por algum motivo específico.
    */
   CANCELADO = 'cancelado',
@@ -43,4 +48,9 @@ export enum StatusPagamentoEnum {
    * Pode ser regularizado retroativamente em até 30 dias.
    */
   VENCIDO = 'vencido',
+
+  /**
+   * Pagamento vencido que foi regularizado.
+   */
+  REGULARIZADO = 'regularizado',
 }

@@ -55,6 +55,18 @@ export class RequisitoDocumento {
     validade_maxima?: number;
   };
 
+  @Column('text', { nullable: true })
+  observacoes: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  template_url: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  template_nome: string;
+
+  @Column('text', { nullable: true })
+  template_descricao: string;
+
   @CreateDateColumn()
   created_at: Date;
 
@@ -320,7 +332,9 @@ export class RequisitoDocumento {
    * Obtém os formatos aceitos
    */
   getFormatosAceitos(): string[] {
-    if (!this.temValidacaoFormato()) {return [];}
+    if (!this.temValidacaoFormato()) {
+      return [];
+    }
     return this.validacoes.formato || [];
   }
 
@@ -328,7 +342,9 @@ export class RequisitoDocumento {
    * Obtém o tamanho máximo em MB
    */
   getTamanhoMaximo(): number | null {
-    if (!this.temValidacaoTamanho()) {return null;}
+    if (!this.temValidacaoTamanho()) {
+      return null;
+    }
     return this.validacoes.tamanho_maximo ?? null;
   }
 
@@ -336,7 +352,9 @@ export class RequisitoDocumento {
    * Obtém a validade máxima em dias
    */
   getValidadeMaxima(): number | null {
-    if (!this.temValidacaoValidade()) {return null;}
+    if (!this.temValidacaoValidade()) {
+      return null;
+    }
     return this.validacoes.validade_maxima ?? null;
   }
 
@@ -345,7 +363,9 @@ export class RequisitoDocumento {
    */
   getTamanhoMaximoFormatado(): string {
     const tamanho = this.getTamanhoMaximo();
-    if (!tamanho) {return 'Sem limite de tamanho';}
+    if (!tamanho) {
+      return 'Sem limite de tamanho';
+    }
 
     if (tamanho < 1) {
       return `${(tamanho * 1024).toFixed(0)} KB`;
@@ -359,7 +379,9 @@ export class RequisitoDocumento {
    */
   getValidadeMaximaFormatada(): string {
     const validade = this.getValidadeMaxima();
-    if (!validade) {return 'Sem limite de validade';}
+    if (!validade) {
+      return 'Sem limite de validade';
+    }
 
     if (validade < 30) {
       return `${validade} dia(s)`;
@@ -376,7 +398,9 @@ export class RequisitoDocumento {
    * Verifica se um formato é aceito
    */
   formatoEhAceito(formato: string): boolean {
-    if (!this.temValidacaoFormato()) {return true;}
+    if (!this.temValidacaoFormato()) {
+      return true;
+    }
     return this.getFormatosAceitos().includes(formato.toLowerCase());
   }
 
@@ -385,7 +409,9 @@ export class RequisitoDocumento {
    */
   tamanhoEhValido(tamanhoBytes: number): boolean {
     const tamanhoMaximo = this.getTamanhoMaximo();
-    if (!tamanhoMaximo) {return true;}
+    if (!tamanhoMaximo) {
+      return true;
+    }
 
     const tamanhoMaximoBytes = tamanhoMaximo * 1024 * 1024; // Converte MB para bytes
     return tamanhoBytes <= tamanhoMaximoBytes;
@@ -396,7 +422,9 @@ export class RequisitoDocumento {
    */
   dataEmissaoEhValida(dataEmissao: Date): boolean {
     const validadeMaxima = this.getValidadeMaxima();
-    if (!validadeMaxima) {return true;}
+    if (!validadeMaxima) {
+      return true;
+    }
 
     const agora = new Date();
     const diffTime = Math.abs(agora.getTime() - dataEmissao.getTime());
@@ -433,11 +461,14 @@ export class RequisitoDocumento {
    */
   isConsistente(): boolean {
     // Verifica se tem tipo de benefício
-    if (!this.tipo_beneficio_id) {return false;}
+    if (!this.tipo_beneficio_id) {
+      return false;
+    }
 
     // Verifica se tem tipo de documento válido
-    if (!Object.values(TipoDocumentoEnum).includes(this.tipo_documento))
-      {return false;}
+    if (!Object.values(TipoDocumentoEnum).includes(this.tipo_documento)) {
+      return false;
+    }
 
     // Verifica validações se existirem
     if (this.temValidacoes()) {
@@ -466,7 +497,9 @@ export class RequisitoDocumento {
    */
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
-    if (this.foiRemovido()) {return false;}
+    if (this.foiRemovido()) {
+      return false;
+    }
 
     // Pode implementar lógica adicional aqui
     // Por exemplo, verificar se tem documentos associados
@@ -494,10 +527,14 @@ export class RequisitoDocumento {
    */
   isCritico(): boolean {
     // Documentos de identificação são sempre críticos
-    if (this.isDocumentoIdentificacao()) {return true;}
+    if (this.isDocumentoIdentificacao()) {
+      return true;
+    }
 
     // Documentos obrigatórios são críticos
-    if (this.isObrigatorio()) {return true;}
+    if (this.isObrigatorio()) {
+      return true;
+    }
 
     return false;
   }
@@ -512,11 +549,21 @@ export class RequisitoDocumento {
     | 'MEDICO'
     | 'MORADIA'
     | 'OUTRO' {
-    if (this.isDocumentoIdentificacao()) {return 'IDENTIFICACAO';}
-    if (this.isDocumentoComprovacao()) {return 'COMPROVACAO';}
-    if (this.isCertidao()) {return 'CERTIDAO';}
-    if (this.isDocumentoMedico()) {return 'MEDICO';}
-    if (this.isDocumentoMoradia()) {return 'MORADIA';}
+    if (this.isDocumentoIdentificacao()) {
+      return 'IDENTIFICACAO';
+    }
+    if (this.isDocumentoComprovacao()) {
+      return 'COMPROVACAO';
+    }
+    if (this.isCertidao()) {
+      return 'CERTIDAO';
+    }
+    if (this.isDocumentoMedico()) {
+      return 'MEDICO';
+    }
+    if (this.isDocumentoMoradia()) {
+      return 'MORADIA';
+    }
     return 'OUTRO';
   }
 
@@ -524,8 +571,12 @@ export class RequisitoDocumento {
    * Obtém a prioridade do documento (1 = mais prioritário)
    */
   getPrioridade(): number {
-    if (this.isDocumentoIdentificacao()) {return 1;}
-    if (this.isObrigatorio()) {return 2;}
+    if (this.isDocumentoIdentificacao()) {
+      return 1;
+    }
+    if (this.isObrigatorio()) {
+      return 2;
+    }
     return 3;
   }
 
@@ -602,6 +653,7 @@ export class RequisitoDocumento {
     formatosAceitos: number;
     tamanhoMaximo: string;
     validadeMaxima: string;
+    temTemplate: boolean;
   } {
     return {
       categoria: this.getCategoria(),
@@ -611,6 +663,218 @@ export class RequisitoDocumento {
       formatosAceitos: this.getFormatosAceitos().length,
       tamanhoMaximo: this.getTamanhoMaximoFormatado(),
       validadeMaxima: this.getValidadeMaximaFormatada(),
+      temTemplate: this.temTemplate(),
+    };
+  }
+
+  // Métodos para Template
+
+  /**
+   * Verifica se possui template disponível
+   */
+  temTemplate(): boolean {
+    return !!this.template_url && this.template_url.trim().length > 0;
+  }
+
+  /**
+   * Verifica se o template possui nome definido
+   */
+  temNomeTemplate(): boolean {
+    return !!this.template_nome && this.template_nome.trim().length > 0;
+  }
+
+  /**
+   * Verifica se o template possui descrição
+   */
+  temDescricaoTemplate(): boolean {
+    return (
+      !!this.template_descricao && this.template_descricao.trim().length > 0
+    );
+  }
+
+  /**
+   * Obtém o nome do template ou um nome padrão
+   */
+  getNomeTemplate(): string {
+    if (this.temNomeTemplate()) {
+      return this.template_nome;
+    }
+    return `template-${this.tipo_documento.toLowerCase().replace(/_/g, '-')}`;
+  }
+
+  /**
+   * Obtém a descrição do template ou uma descrição padrão
+   */
+  getDescricaoTemplate(): string {
+    if (this.temDescricaoTemplate()) {
+      return this.template_descricao;
+    }
+    return `Template para ${this.getDescricaoTipoDocumento()}`;
+  }
+
+  /**
+   * Verifica se a URL do template é válida (formato básico)
+   */
+  templateUrlEhValida(): boolean {
+    if (!this.temTemplate()) {
+      return false;
+    }
+    try {
+      new URL(this.template_url);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Obtém a extensão do arquivo template baseada na URL
+   */
+  getExtensaoTemplate(): string | null {
+    if (!this.temTemplate()) {
+      return null;
+    }
+    try {
+      const url = new URL(this.template_url);
+      const pathname = url.pathname;
+      const lastDot = pathname.lastIndexOf('.');
+      if (lastDot === -1) {
+        return null;
+      }
+      return pathname.substring(lastDot + 1).toLowerCase();
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Verifica se o template é um PDF
+   */
+  templateEhPdf(): boolean {
+    const extensao = this.getExtensaoTemplate();
+    return extensao === 'pdf';
+  }
+
+  /**
+   * Verifica se o template é uma imagem
+   */
+  templateEhImagem(): boolean {
+    const extensao = this.getExtensaoTemplate();
+    return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(
+      extensao || '',
+    );
+  }
+
+  /**
+   * Verifica se o template é um documento do Office
+   */
+  templateEhDocumentoOffice(): boolean {
+    const extensao = this.getExtensaoTemplate();
+    return ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(
+      extensao || '',
+    );
+  }
+
+  /**
+   * Obtém informações completas do template
+   */
+  getInfoTemplate(): {
+    temTemplate: boolean;
+    url: string | null;
+    nome: string;
+    descricao: string;
+    extensao: string | null;
+    ehPdf: boolean;
+    ehImagem: boolean;
+    ehDocumentoOffice: boolean;
+    urlValida: boolean;
+  } {
+    return {
+      temTemplate: this.temTemplate(),
+      url: this.template_url || null,
+      nome: this.getNomeTemplate(),
+      descricao: this.getDescricaoTemplate(),
+      extensao: this.getExtensaoTemplate(),
+      ehPdf: this.templateEhPdf(),
+      ehImagem: this.templateEhImagem(),
+      ehDocumentoOffice: this.templateEhDocumentoOffice(),
+      urlValida: this.templateUrlEhValida(),
+    };
+  }
+
+  /**
+   * Atualiza as informações do template
+   */
+  atualizarTemplate(
+    templateUrl?: string,
+    templateNome?: string,
+    templateDescricao?: string,
+  ): void {
+    if (templateUrl !== undefined) {
+      this.template_url = templateUrl;
+    }
+    if (templateNome !== undefined) {
+      this.template_nome = templateNome;
+    }
+    if (templateDescricao !== undefined) {
+      this.template_descricao = templateDescricao;
+    }
+  }
+
+  /**
+   * Remove o template do requisito
+   */
+  removerTemplate(): void {
+    this.template_url = null;
+    this.template_nome = null;
+    this.template_descricao = null;
+  }
+
+  /**
+   * Verifica se o template está completo (tem URL, nome e descrição)
+   */
+  templateEstaCompleto(): boolean {
+    return (
+      this.temTemplate() &&
+      this.temNomeTemplate() &&
+      this.temDescricaoTemplate()
+    );
+  }
+
+  /**
+   * Obtém sugestões de melhoria incluindo template
+   */
+  getSugestoesMelhoriaComTemplate(): string[] {
+    const sugestoes = this.getSugestoesMelhoria();
+
+    if (!this.temTemplate()) {
+      sugestoes.push('Considerar adicionar um template/modelo do documento');
+    } else {
+      if (!this.templateUrlEhValida()) {
+        sugestoes.push('Verificar se a URL do template está válida');
+      }
+      if (!this.temNomeTemplate()) {
+        sugestoes.push('Adicionar nome descritivo para o template');
+      }
+      if (!this.temDescricaoTemplate()) {
+        sugestoes.push('Adicionar descrição ou instruções para o template');
+      }
+    }
+
+    return sugestoes;
+  }
+
+  /**
+   * Clona o requisito incluindo informações de template
+   */
+  cloneComTemplate(): Partial<RequisitoDocumento> {
+    const clone = this.clone();
+    return {
+      ...clone,
+      observacoes: this.observacoes,
+      template_url: this.template_url,
+      template_nome: this.template_nome,
+      template_descricao: this.template_descricao,
     };
   }
 }

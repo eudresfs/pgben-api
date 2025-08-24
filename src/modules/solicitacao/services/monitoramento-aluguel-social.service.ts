@@ -64,9 +64,7 @@ export class MonitoramentoAluguelSocialService {
    */
   requiresMonitoring(solicitacao: Solicitacao): boolean {
     // Solicitações aprovadas requerem monitoramento
-    const statusMonitorados = [
-      StatusSolicitacao.APROVADA,
-    ];
+    const statusMonitorados = [StatusSolicitacao.APROVADA];
 
     return statusMonitorados.includes(solicitacao.status);
   }
@@ -173,9 +171,7 @@ export class MonitoramentoAluguelSocialService {
       .createQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .where('solicitacao.status IN (:...statusMonitorados)', {
-        statusMonitorados: [
-          StatusSolicitacao.APROVADA,
-        ],
+        statusMonitorados: [StatusSolicitacao.APROVADA],
       })
       .andWhere(
         "(tipo_beneficio.nome = :tipoBeneficio OR solicitacao.dados_complementares->>'tipo_beneficio' = :tipoBeneficioStr)",
@@ -209,9 +205,7 @@ export class MonitoramentoAluguelSocialService {
       .createQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .where('solicitacao.status IN (:...statusMonitorados)', {
-        statusMonitorados: [
-          StatusSolicitacao.APROVADA,
-        ],
+        statusMonitorados: [StatusSolicitacao.APROVADA],
       })
       .andWhere(
         "(tipo_beneficio.nome = :tipoBeneficio OR solicitacao.dados_complementares->>'tipo_beneficio' = :tipoBeneficioStr)",

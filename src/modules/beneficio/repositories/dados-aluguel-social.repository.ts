@@ -23,7 +23,7 @@ export class DadosAluguelSocialRepository extends Repository<DadosAluguelSocial>
       where: { solicitacao_id: solicitacaoId },
       relations: [
         'solicitacao',
-        'solicitacao.cidadao',
+        'solicitacao.beneficiario',
         'solicitacao.tipo_beneficio',
       ],
     });

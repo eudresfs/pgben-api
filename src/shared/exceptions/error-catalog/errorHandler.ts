@@ -39,9 +39,7 @@ export class CatalogAwareExceptionFilter implements ExceptionFilter {
   constructor(
     private readonly config: ConfigService,
     private readonly logger: LoggingService,
-  ) {
-
-  }
+  ) {}
 
   catch(exception: any, host: ArgumentsHost): any {
     const ctx = host.switchToHttp();
@@ -79,12 +77,18 @@ export class CatalogAwareExceptionFilter implements ExceptionFilter {
         statusCode = appError.getStatus();
         errorName = appError.constructor.name;
         errorCode = appError.errorCode;
-        message = appError.message;
-        localizedMessage = appError.localizedMessage;
+
+        // Obter a resposta da API que já inclui a mensagem contextual
+        const apiResponse = appError.getApiResponse(
+          this.shouldIncludeDetails(),
+        );
+        message = apiResponse.message;
+        localizedMessage = apiResponse.message;
+
         category = appError.definition.category;
         severity = appError.definition.severity;
         legalReference = appError.definition.legalReference;
-        details = appError.getApiResponse(this.shouldIncludeDetails());
+        details = apiResponse;
 
         // Log estruturado específico para AppError
         this.logAppError(appError, requestContext, requestId);
@@ -200,7 +204,12 @@ export class CatalogAwareExceptionFilter implements ExceptionFilter {
       };
 
       if (logLevel === 'error') {
-        this.logger.error(logMessage, exception instanceof Error ? exception : undefined, CatalogAwareExceptionFilter.name, logMeta);
+        this.logger.error(
+          logMessage,
+          exception instanceof Error ? exception : undefined,
+          CatalogAwareExceptionFilter.name,
+          logMeta,
+        );
       } else {
         this.logger.warn(logMessage, CatalogAwareExceptionFilter.name, logMeta);
       }
@@ -231,7 +240,17 @@ export class CatalogAwareExceptionFilter implements ExceptionFilter {
       appError.getStatus(),
       appError.definition.severity,
     );
-    const logMessage = `[${appError.errorCode}] ${appError.message}`;
+
+    // Usar contextualMessage se disponível, senão usar localizedMessage ou message padrão
+    const contextualMessage = appError.context.data?.contextualMessage;
+    const userFriendlyMessage = appError.context.data?.userFriendlyMessage;
+    const displayMessage =
+      contextualMessage ||
+      userFriendlyMessage ||
+      appError.localizedMessage ||
+      appError.message;
+
+    const logMessage = `[${appError.errorCode}] ${displayMessage}`;
 
     const logMeta = {
       ...logData,
@@ -243,18 +262,28 @@ export class CatalogAwareExceptionFilter implements ExceptionFilter {
     };
 
     if (logLevel === 'error') {
-      this.logger.error(logMessage, appError, CatalogAwareExceptionFilter.name, logMeta);
+      this.logger.error(
+        logMessage,
+        appError,
+        CatalogAwareExceptionFilter.name,
+        logMeta,
+      );
     } else {
       this.logger.warn(logMessage, CatalogAwareExceptionFilter.name, logMeta);
     }
 
     // Log adicional para erros críticos
     if (appError.isCritical()) {
-      this.logger.error(`CRITICAL ERROR: ${logMessage}`, appError, CatalogAwareExceptionFilter.name, {
-        ...logMeta,
-        alert: true,
-        criticalError: true
-      });
+      this.logger.error(
+        `CRITICAL ERROR: ${logMessage}`,
+        appError,
+        CatalogAwareExceptionFilter.name,
+        {
+          ...logMeta,
+          alert: true,
+          criticalError: true,
+        },
+      );
     }
   }
 
@@ -390,17 +419,35 @@ export class CatalogAwareExceptionFilter implements ExceptionFilter {
   private processValidationErrors(
     validationErrors: string[] | ValidationError[],
   ): Array<{ field: string; messages: string[]; value?: any }> {
-    const result: Array<{ field: string; messages: string[]; value?: any }> = [];
+    const result: Array<{ field: string; messages: string[]; value?: any }> =
+      [];
     // Lista de campos sensíveis que não devem aparecer na resposta
     const sensitiveFields = [
-      'senha', 'password', 'token', 'secret', 'authorization', 'key',
-      'confirmPassword', 'confirmSenha', 'currentPassword', 'senhaAtual', 'newPassword', 'novaSenha',
-      'cpf', 'rg', 'cnpj', 'cardNumber', 'cartao', 'cvv', 'passaporte', 'biometria'
+      'senha',
+      'password',
+      'token',
+      'secret',
+      'authorization',
+      'key',
+      'confirmPassword',
+      'confirmSenha',
+      'currentPassword',
+      'senhaAtual',
+      'newPassword',
+      'novaSenha',
+      'cpf',
+      'rg',
+      'cnpj',
+      'cardNumber',
+      'cartao',
+      'cvv',
+      'passaporte',
+      'biometria',
     ];
 
     const isSensitiveField = (fieldName: string): boolean => {
-      return sensitiveFields.some(field => 
-        fieldName.toLowerCase().includes(field.toLowerCase())
+      return sensitiveFields.some((field) =>
+        fieldName.toLowerCase().includes(field.toLowerCase()),
       );
     };
 
@@ -422,7 +469,10 @@ export class CatalogAwareExceptionFilter implements ExceptionFilter {
         };
 
         // Apenas adiciona o valor se não for um campo sensível
-        if (!isSensitiveField(validationError.property) && validationError.value !== undefined) {
+        if (
+          !isSensitiveField(validationError.property) &&
+          validationError.value !== undefined
+        ) {
           errorItem.value = validationError.value;
         }
 
@@ -435,16 +485,23 @@ export class CatalogAwareExceptionFilter implements ExceptionFilter {
           result.push(
             ...childErrors.map((childError) => {
               const nestedField = `${validationError.property}.${childError.field}`;
-              const newErrorItem: { field: string; messages: string[]; value?: any } = {
+              const newErrorItem: {
+                field: string;
+                messages: string[];
+                value?: any;
+              } = {
                 field: nestedField,
                 messages: childError.messages,
               };
-              
+
               // Apenas adiciona o valor se não for um campo sensível
-              if (!isSensitiveField(nestedField) && childError.value !== undefined) {
+              if (
+                !isSensitiveField(nestedField) &&
+                childError.value !== undefined
+              ) {
                 newErrorItem.value = childError.value;
               }
-              
+
               return newErrorItem;
             }),
           );

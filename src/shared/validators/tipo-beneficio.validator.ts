@@ -23,7 +23,10 @@ export class TipoBeneficioValidator implements ValidatorConstraintInterface {
     private readonly tipoBeneficioRepo: Repository<TipoBeneficio>,
   ) {}
 
-  async validate(solicitacaoId: string, args: ValidationArguments): Promise<boolean> {
+  async validate(
+    solicitacaoId: string,
+    args: ValidationArguments,
+  ): Promise<boolean> {
     if (!solicitacaoId) {
       return false;
     }
@@ -58,10 +61,10 @@ export class TipoBeneficioValidator implements ValidatorConstraintInterface {
 
 /**
  * Decorator para validar se o tipo de benefício da solicitação corresponde ao código esperado
- * 
+ *
  * @param codigo - Código do tipo de benefício esperado (ex: 'aluguel-social', 'natalidade')
  * @returns Decorator de validação
- * 
+ *
  * @example
  * ```typescript
  * class CreateDadosDto {

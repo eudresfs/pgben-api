@@ -35,9 +35,7 @@ export class AllExceptionsFilter<T> implements ExceptionFilter {
   constructor(
     private readonly config: ConfigService,
     private readonly logger: LoggingService,
-  ) {
-
-  }
+  ) {}
 
   catch(exception: T, host: ArgumentsHost): any {
     const ctx = host.switchToHttp();
@@ -139,7 +137,12 @@ export class AllExceptionsFilter<T> implements ExceptionFilter {
     };
 
     if (logLevel === 'error') {
-      this.logger.error(logMessage, exception instanceof Error ? exception : undefined, AllExceptionsFilter.name, logMeta);
+      this.logger.error(
+        logMessage,
+        exception instanceof Error ? exception : undefined,
+        AllExceptionsFilter.name,
+        logMeta,
+      );
     } else {
       this.logger.warn(logMessage, AllExceptionsFilter.name, logMeta);
     }

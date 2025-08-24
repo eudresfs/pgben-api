@@ -1,6 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { MetodoConfirmacaoEnum } from '../../../enums/metodo-confirmacao.enum';
-import { ConfirmacaoBaseDto, ResponsavelConfirmacaoInfo, DestinatarioInfo } from './base/confirmacao-base.dto';
+import {
+  ConfirmacaoBaseDto,
+  ResponsavelConfirmacaoInfo,
+  DestinatarioInfo,
+} from './base/confirmacao-base.dto';
 
 /**
  * DTO para resposta contendo dados de uma confirmação de recebimento
@@ -21,7 +25,7 @@ export class ConfirmacaoResponseDto extends ConfirmacaoBaseDto {
     description: 'ID do pagamento relacionado',
     example: 'uuid',
   })
-  pagamentoId: string;
+  pagamento_id: string;
 
   /**
    * Data em que a confirmação foi registrada
@@ -30,7 +34,7 @@ export class ConfirmacaoResponseDto extends ConfirmacaoBaseDto {
     description: 'Data da confirmação de recebimento',
     example: 'ISO 8601 date string',
   })
-  dataConfirmacao: Date;
+  data_confirmacao: Date;
 
   /**
    * Método utilizado para confirmar o recebimento
@@ -40,7 +44,7 @@ export class ConfirmacaoResponseDto extends ConfirmacaoBaseDto {
     enum: MetodoConfirmacaoEnum,
     example: MetodoConfirmacaoEnum.ASSINATURA,
   })
-  metodoConfirmacao: MetodoConfirmacaoEnum;
+  metodo_confirmacao: MetodoConfirmacaoEnum;
 
   /**
    * Informações sobre o responsável pela confirmação
@@ -53,7 +57,7 @@ export class ConfirmacaoResponseDto extends ConfirmacaoBaseDto {
       role: 'string',
     },
   })
-  responsavelConfirmacao: ResponsavelConfirmacaoInfo;
+  responsavel_confirmacao: ResponsavelConfirmacaoInfo;
 
   /**
    * Informações sobre o destinatário que recebeu (se diferente do beneficiário)
@@ -70,5 +74,5 @@ export class ConfirmacaoResponseDto extends ConfirmacaoBaseDto {
   })
   destinatario?: DestinatarioInfo;
 
-  // Campos 'observacoes', 'createdAt' e 'updatedAt' herdados de ConfirmacaoBaseDto
+  // Campos 'observacoes', 'created_at' e 'updated_at' herdados de ConfirmacaoBaseDto
 }

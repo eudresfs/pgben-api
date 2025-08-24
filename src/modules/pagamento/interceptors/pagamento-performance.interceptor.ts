@@ -51,10 +51,10 @@ export class PagamentoPerformanceInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest<Request>();
     const response = context.switchToHttp().getResponse();
     const { method, url, body, query, params } = request;
-    
+
     const startTime = Date.now();
     const requestId = this.generateRequestId();
-    
+
     // Determinar se deve aplicar otimizações
     const shouldCache = this.shouldApplyCache(method, url);
     const shouldValidate = this.shouldApplyValidation(url);
@@ -72,22 +72,28 @@ export class PagamentoPerformanceInterceptor implements NestInterceptor {
 
     // Aplicar validação otimizada se necessário
     if (shouldValidate && ['POST', 'PUT', 'PATCH'].includes(method)) {
-      return this.handleValidatedRequest(request, next, requestId, startTime, shouldMonitor);
+      return this.handleValidatedRequest(
+        request,
+        next,
+        requestId,
+        startTime,
+        shouldMonitor,
+      );
     }
 
     // Execução normal com monitoramento condicional
     return next.handle().pipe(
       tap((data) => {
         const duration = Date.now() - startTime;
-        
+
         if (shouldMonitor || duration > this.SLOW_QUERY_THRESHOLD) {
           this.logger.log(
-            `[${requestId}] ${method} ${url} - Concluído em ${duration}ms`
+            `[${requestId}] ${method} ${url} - Concluído em ${duration}ms`,
           );
-          
+
           if (duration > this.SLOW_QUERY_THRESHOLD) {
             this.logger.warn(
-              `[${requestId}] Consulta lenta detectada: ${duration}ms`
+              `[${requestId}] Consulta lenta detectada: ${duration}ms`,
             );
           }
         }
@@ -98,18 +104,18 @@ export class PagamentoPerformanceInterceptor implements NestInterceptor {
       }),
       catchError((error) => {
         const duration = Date.now() - startTime;
-        
+
         if (shouldMonitor) {
           this.logger.error(
-            `[${requestId}] ${method} ${url} - Erro em ${duration}ms: ${error.message}`
+            `[${requestId}] ${method} ${url} - Erro em ${duration}ms: ${error.message}`,
           );
         }
-        
+
         response.setHeader('X-Response-Time', `${duration}ms`);
         response.setHeader('X-Request-ID', requestId);
-        
+
         throw error;
-      })
+      }),
     );
   }
 
@@ -120,48 +126,55 @@ export class PagamentoPerformanceInterceptor implements NestInterceptor {
     request: Request,
     next: CallHandler,
     requestId: string,
-    startTime: number
+    startTime: number,
   ): Observable<any> {
     const cacheKey = this.generateCacheKey(request);
-    
+
     return new Observable((observer) => {
-      this.cacheService.get(cacheKey)
+      this.cacheService
+        .get(cacheKey)
         .then((cachedData) => {
           if (cachedData) {
             const duration = Date.now() - startTime;
             this.logger.log(
-              `[${requestId}] Cache hit - Respondido em ${duration}ms`
+              `[${requestId}] Cache hit - Respondido em ${duration}ms`,
             );
-            
+
             observer.next(cachedData);
             observer.complete();
           } else {
             // Cache miss - executar e armazenar
-            next.handle().pipe(
-              tap((data) => {
-                const duration = Date.now() - startTime;
-                
-                // Armazenar no cache apenas se a resposta for bem-sucedida
-                if (data && !data.error) {
-                  this.cacheService.set(cacheKey, data, this.CACHE_TTL)
-                    .catch((error) => {
-                      this.logger.warn(`Erro ao armazenar no cache: ${error.message}`);
-                    });
-                }
-                
-                this.logger.log(
-                  `[${requestId}] Cache miss - Executado em ${duration}ms`
-                );
-              })
-            ).subscribe({
-              next: (data) => {
-                observer.next(data);
-                observer.complete();
-              },
-              error: (error) => {
-                observer.error(error);
-              }
-            });
+            next
+              .handle()
+              .pipe(
+                tap((data) => {
+                  const duration = Date.now() - startTime;
+
+                  // Armazenar no cache apenas se a resposta for bem-sucedida
+                  if (data && !data.error) {
+                    this.cacheService
+                      .set(cacheKey, data, this.CACHE_TTL)
+                      .catch((error) => {
+                        this.logger.warn(
+                          `Erro ao armazenar no cache: ${error.message}`,
+                        );
+                      });
+                  }
+
+                  this.logger.log(
+                    `[${requestId}] Cache miss - Executado em ${duration}ms`,
+                  );
+                }),
+              )
+              .subscribe({
+                next: (data) => {
+                  observer.next(data);
+                  observer.complete();
+                },
+                error: (error) => {
+                  observer.error(error);
+                },
+              });
           }
         })
         .catch((error) => {
@@ -174,7 +187,7 @@ export class PagamentoPerformanceInterceptor implements NestInterceptor {
             },
             error: (error) => {
               observer.error(error);
-            }
+            },
           });
         });
     });
@@ -188,24 +201,25 @@ export class PagamentoPerformanceInterceptor implements NestInterceptor {
     next: CallHandler,
     requestId: string,
     startTime: number,
-    shouldMonitor: boolean
+    shouldMonitor: boolean,
   ): Observable<any> {
     return next.handle().pipe(
       tap((data) => {
         const duration = Date.now() - startTime;
-        
+
         if (shouldMonitor) {
           this.logger.log(
-            `[${requestId}] Validação concluída em ${duration}ms`
+            `[${requestId}] Validação concluída em ${duration}ms`,
           );
         }
-        
+
         // Invalidar cache relacionado após operações de escrita
-        this.invalidateRelatedCache(request.url, request.body)
-          .catch((error) => {
+        this.invalidateRelatedCache(request.url, request.body).catch(
+          (error) => {
             this.logger.warn(`Erro ao invalidar cache: ${error.message}`);
-          });
-      })
+          },
+        );
+      }),
     );
   }
 
@@ -213,21 +227,24 @@ export class PagamentoPerformanceInterceptor implements NestInterceptor {
    * Determina se deve aplicar cache
    */
   private shouldApplyCache(method: string, url: string): boolean {
-    return method === 'GET' && this.CACHEABLE_ROUTES.some(route => url.includes(route));
+    return (
+      method === 'GET' &&
+      this.CACHEABLE_ROUTES.some((route) => url.includes(route))
+    );
   }
 
   /**
    * Determina se deve aplicar validação otimizada
    */
   private shouldApplyValidation(url: string): boolean {
-    return this.VALIDATION_ROUTES.some(route => url.includes(route));
+    return this.VALIDATION_ROUTES.some((route) => url.includes(route));
   }
 
   /**
    * Determina se deve aplicar monitoramento
    */
   private shouldApplyMonitoring(url: string): boolean {
-    return this.MONITORED_ROUTES.some(route => url.includes(route));
+    return this.MONITORED_ROUTES.some((route) => url.includes(route));
   }
 
   /**
@@ -236,7 +253,7 @@ export class PagamentoPerformanceInterceptor implements NestInterceptor {
   private generateCacheKey(request: Request): string {
     const { url, query, params } = request;
     const userId = request.user?.id || 'anonymous';
-    
+
     return `pagamento:${url}:${userId}:${JSON.stringify({ query, params })}`;
   }
 
@@ -253,21 +270,65 @@ export class PagamentoPerformanceInterceptor implements NestInterceptor {
   private async invalidateRelatedCache(url: string, body: any): Promise<void> {
     try {
       if (url.includes('/pagamentos')) {
-        // TODO: Implementar invalidação de cache por padrão
-        // await this.cacheService.clear(); // Alternativa temporária
-        
+        // Invalidar cache de pagamentos por padrão
+        await this.invalidateCacheByPattern('pagamento:*');
+
+        // Invalidar cache específico se houver ID no body
+        if (body?.id) {
+          await this.invalidateCacheByPattern(`pagamento:${body.id}:*`);
+        }
+
         // Invalidar cache de validações se necessário
-        if (body?.status || body?.metodoPagamento) {
+        if (body?.status || body?.metodo_pagamento) {
           await this.pagamentoCacheService.invalidateValidationCache();
         }
       }
-      
+
       if (url.includes('/comprovantes')) {
-        // TODO: Implementar invalidação de cache por padrão
-        // await this.cacheService.clear(); // Alternativa temporária
+        // Invalidar cache de comprovantes por padrão
+        await this.invalidateCacheByPattern('comprovante:*');
+        await this.invalidateCacheByPattern('pagamento:*'); // Comprovantes afetam pagamentos
       }
     } catch (error) {
       this.logger.warn(`Erro ao invalidar cache relacionado: ${error.message}`);
+    }
+  }
+
+  /**
+   * Invalida cache por padrão usando estratégia otimizada
+   */
+  private async invalidateCacheByPattern(pattern: string): Promise<void> {
+    try {
+      // Lista de sufixos comuns para chaves de cache
+      const commonSuffixes = [
+        '',
+        ':page:1',
+        ':page:2',
+        ':page:3',
+        ':all',
+        ':list',
+        ':count',
+        ':stats',
+        ':summary',
+        ':metadata',
+      ];
+
+      // Gerar chaves baseadas no padrão
+      const basePattern = pattern.replace('*', '');
+      const keysToDelete = commonSuffixes.map(
+        (suffix) => `${basePattern}${suffix}`,
+      );
+
+      // Deletar chaves em paralelo para melhor performance
+      await Promise.allSettled(
+        keysToDelete.map((key) => this.cacheService.del(key)),
+      );
+
+      this.logger.debug(`Cache invalidado por padrão: ${pattern}`);
+    } catch (error) {
+      this.logger.warn(
+        `Erro ao invalidar cache por padrão ${pattern}: ${error.message}`,
+      );
     }
   }
 }

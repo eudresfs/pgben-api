@@ -3,15 +3,13 @@ import {
   IsEmail,
   IsString,
   IsOptional,
-  IsEnum,
   IsUUID,
   MinLength,
   MaxLength,
   Matches,
   Validate,
-  IsNotEmpty,
 } from 'class-validator';
-import { ROLES, RoleType } from '../../../shared/constants/roles.constants';
+
 import { IsCPF } from '../../../shared/validators/cpf.validator';
 
 /**
@@ -23,9 +21,6 @@ export class UpdateUsuarioDto {
   @MaxLength(100, { message: 'Nome deve ter no máximo 100 caracteres' })
   @Matches(/^[A-Za-zÀ-ÿ\s]+$/, {
     message: 'Nome deve conter apenas letras e espaços',
-  })
-  @Matches(/^\S+\s+\S+/, {
-    message: 'Nome deve conter pelo menos nome e sobrenome',
   })
   @IsOptional()
   @ApiProperty({
@@ -45,19 +40,19 @@ export class UpdateUsuarioDto {
   email?: string;
 
   @IsString({ message: 'CPF deve ser uma string' })
-  @IsNotEmpty({ message: 'CPF é obrigatório' })
   @Matches(/^\d{3}\.\d{3}\.\d{3}\-\d{2}$/, {
     message: 'CPF deve estar no formato 123.456.789-00',
   })
   @Validate(IsCPF, {
     message: 'CPF inválido',
   })
+  @IsOptional()
   @ApiProperty({
     example: '123.456.789-00',
     description: 'CPF do usuário',
-    required: true,
+    required: false,
   })
-  cpf: string;
+  cpf?: string;
 
   @IsString({ message: 'Telefone deve ser uma string' })
   @Matches(/^\(\d{2}\)\s\d{4,5}-\d{4}$/, {
@@ -83,10 +78,11 @@ export class UpdateUsuarioDto {
   })
   matricula?: string;
 
-  @IsEnum(ROLES, { message: 'Papel inválido' })
+  @IsUUID(undefined, { message: 'ID do papel inválido' })
   @IsOptional()
   @ApiProperty({
-    description: 'Papel do usuário no sistema',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'ID do papel do usuário no sistema',
     required: false,
   })
   role_id?: string;

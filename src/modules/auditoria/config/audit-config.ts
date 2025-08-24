@@ -1,6 +1,6 @@
 /**
  * AuditConfig
- * 
+ *
  * Configurações centralizadas para o módulo de auditoria.
  * Define parâmetros de performance, filas, eventos e compliance.
  */
@@ -13,7 +13,7 @@ export interface AuditConfig {
     batchSize: number;
     maxRetries: number;
   };
-  
+
   // Filas BullMQ
   queues: {
     processing: {
@@ -43,7 +43,7 @@ export interface AuditConfig {
       priority: number;
     };
   };
-  
+
   // EventEmitter
   events: {
     maxListeners: number;
@@ -51,7 +51,7 @@ export interface AuditConfig {
     delimiter: string;
     verboseMemoryLeak: boolean;
   };
-  
+
   // LGPD e Compliance
   compliance: {
     sensitiveFields: string[];
@@ -59,14 +59,14 @@ export interface AuditConfig {
     encryptionEnabled: boolean;
     signatureEnabled: boolean;
   };
-  
+
   // Compressão
   compression: {
     enabled: boolean;
     algorithm: 'gzip' | 'deflate' | 'brotli';
     threshold: number; // bytes
   };
-  
+
   // Monitoramento
   monitoring: {
     metricsEnabled: boolean;
@@ -82,7 +82,7 @@ export const defaultAuditConfig: AuditConfig = {
     batchSize: 100,
     maxRetries: 3,
   },
-  
+
   queues: {
     processing: {
       name: 'auditoria',
@@ -111,14 +111,14 @@ export const defaultAuditConfig: AuditConfig = {
       priority: 8,
     },
   },
-  
+
   events: {
     maxListeners: 20,
     wildcard: false,
     delimiter: '.',
     verboseMemoryLeak: false,
   },
-  
+
   compliance: {
     sensitiveFields: [
       'cpf',
@@ -137,13 +137,13 @@ export const defaultAuditConfig: AuditConfig = {
     encryptionEnabled: true,
     signatureEnabled: true,
   },
-  
+
   compression: {
     enabled: true,
     algorithm: 'gzip',
     threshold: 1024, // 1KB
   },
-  
+
   monitoring: {
     metricsEnabled: true,
     alertsEnabled: true,
@@ -154,7 +154,9 @@ export const defaultAuditConfig: AuditConfig = {
 /**
  * Factory para criar configuração de auditoria
  */
-export function createAuditConfig(overrides?: Partial<AuditConfig>): AuditConfig {
+export function createAuditConfig(
+  overrides?: Partial<AuditConfig>,
+): AuditConfig {
   return {
     ...defaultAuditConfig,
     ...overrides,

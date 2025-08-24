@@ -11,5 +11,6 @@ module.exports = {
   coverageDirectory: '../coverage',
   moduleNameMapper: {
     '^src/(.*)$': '<rootDir>/src/$1',
+    '^@/(.*)$': '<rootDir>/src/$1',
   },
 };

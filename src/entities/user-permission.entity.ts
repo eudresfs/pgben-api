@@ -37,7 +37,7 @@ export enum TipoEscopo {
    * Escopo limitado ao próprio usuário
    */
   PROPRIO = 'proprio',
-  
+
   /**
    * Escopo limitado ao sistema
    */
@@ -304,7 +304,9 @@ export class UserPermission {
    * @returns true se ainda é válida
    */
   isValida(): boolean {
-    if (!this.valido_ate) {return true;}
+    if (!this.valido_ate) {
+      return true;
+    }
     return new Date() <= this.valido_ate;
   }
 
@@ -403,7 +405,9 @@ export class UserPermission {
    * @returns dias até expiração ou null se permanente
    */
   getDiasAteExpiracao(): number | null {
-    if (!this.valido_ate) {return null;}
+    if (!this.valido_ate) {
+      return null;
+    }
     const now = new Date();
     const diffMs = this.valido_ate.getTime() - now.getTime();
     return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));

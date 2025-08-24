@@ -28,6 +28,7 @@ import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { CancelarPagamentoDto } from '../dtos/cancelar-pagamento.dto';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { UserRole } from '../../../enums';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 
 /**
  * Controller para operações em lote de pagamentos
@@ -41,14 +42,14 @@ import { UserRole } from '../../../enums';
 export class PagamentoBatchController {
   private readonly logger = new Logger(PagamentoBatchController.name);
 
-  constructor(
-    private readonly batchService: PagamentoBatchService,
-  ) {}
+  constructor(private readonly batchService: PagamentoBatchService) {}
 
   @Post('create')
+  @RequiresPermission({ permissionName: 'pagamento.criar' })
   @ApiOperation({
     summary: 'Criar múltiplos pagamentos em lote',
-    description: 'Cria vários pagamentos de forma otimizada usando processamento em lote',
+    description:
+      'Cria vários pagamentos de forma otimizada usando processamento em lote',
   })
   @ApiBody({
     description: 'Lista de dados para criação de pagamentos',
@@ -108,23 +109,26 @@ export class PagamentoBatchController {
     @Query('maxConcurrency') maxConcurrency?: number,
     @Query('useTransaction') useTransaction?: boolean,
   ) {
-    this.logger.log(`Iniciando criação em lote de ${pagamentosData.length} pagamentos`);
+    this.logger.log(
+      `Iniciando criação em lote de ${pagamentosData.length} pagamentos`,
+    );
 
     const options = {
       batchSize: batchSize ? Number(batchSize) : undefined,
       maxConcurrency: maxConcurrency ? Number(maxConcurrency) : undefined,
-      useTransaction: useTransaction !== undefined ? Boolean(useTransaction) : undefined,
+      useTransaction:
+        useTransaction !== undefined ? Boolean(useTransaction) : undefined,
       continueOnError: true,
     };
 
     const result = await this.batchService.createPagamentosInBatch(
       pagamentosData,
       userId,
-      options
+      options,
     );
 
     this.logger.log(
-      `Criação em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`
+      `Criação em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`,
     );
 
     return {
@@ -134,9 +138,11 @@ export class PagamentoBatchController {
   }
 
   @Post('liberar')
+  @RequiresPermission({ permissionName: 'pagamento.liberar' })
   @ApiOperation({
     summary: 'Liberar múltiplos pagamentos em lote',
-    description: 'Libera vários pagamentos de forma otimizada usando processamento em lote',
+    description:
+      'Libera vários pagamentos de forma otimizada usando processamento em lote',
   })
   @ApiBody({
     description: 'Lista de liberações de pagamentos',
@@ -179,7 +185,9 @@ export class PagamentoBatchController {
     @Query('batchSize') batchSize?: number,
     @Query('maxConcurrency') maxConcurrency?: number,
   ) {
-    this.logger.log(`Iniciando liberação em lote de ${liberacoes.length} pagamentos`);
+    this.logger.log(
+      `Iniciando liberação em lote de ${liberacoes.length} pagamentos`,
+    );
 
     const options = {
       batchSize: batchSize ? Number(batchSize) : undefined,
@@ -190,11 +198,11 @@ export class PagamentoBatchController {
     const result = await this.batchService.liberarPagamentosInBatch(
       liberacoes,
       userId,
-      options
+      options,
     );
 
     this.logger.log(
-      `Liberação em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`
+      `Liberação em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`,
     );
 
     return {
@@ -204,6 +212,7 @@ export class PagamentoBatchController {
   }
 
   @Post('update-status')
+  @RequiresPermission({ permissionName: 'pagamento.atualizar_status' })
   @ApiOperation({
     summary: 'Atualizar status de múltiplos pagamentos em lote',
     description: 'Atualiza o status de vários pagamentos de forma otimizada',
@@ -248,27 +257,35 @@ export class PagamentoBatchController {
     description: 'Status atualizados com sucesso',
   })
   async updateStatusInBatch(
-    @Body() updates: { pagamentoId: string; novoStatus: StatusPagamentoEnum; observacoes?: string }[],
+    @Body()
+    updates: {
+      pagamentoId: string;
+      novoStatus: StatusPagamentoEnum;
+      observacoes?: string;
+    }[],
     @GetUser('id') userId: string,
     @Query('batchSize') batchSize?: number,
     @Query('useTransaction') useTransaction?: boolean,
   ) {
-    this.logger.log(`Iniciando atualização de status em lote de ${updates.length} pagamentos`);
+    this.logger.log(
+      `Iniciando atualização de status em lote de ${updates.length} pagamentos`,
+    );
 
     const options = {
       batchSize: batchSize ? Number(batchSize) : undefined,
-      useTransaction: useTransaction !== undefined ? Boolean(useTransaction) : undefined,
+      useTransaction:
+        useTransaction !== undefined ? Boolean(useTransaction) : undefined,
       continueOnError: true,
     };
 
     const result = await this.batchService.updateStatusInBatch(
       updates,
       userId,
-      options
+      options,
     );
 
     this.logger.log(
-      `Atualização de status em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`
+      `Atualização de status em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`,
     );
 
     return {
@@ -278,9 +295,11 @@ export class PagamentoBatchController {
   }
 
   @Post('validar-comprovantes')
+  @RequiresPermission({ permissionName: 'pagamento.validar_comprovantes' })
   @ApiOperation({
     summary: 'Validar múltiplos comprovantes em lote',
-    description: 'Valida vários comprovantes de forma otimizada usando processamento em lote',
+    description:
+      'Valida vários comprovantes de forma otimizada usando processamento em lote',
   })
   @ApiBody({
     description: 'Lista de IDs de comprovantes para validação',
@@ -308,12 +327,14 @@ export class PagamentoBatchController {
     description: 'Comprovantes validados com sucesso',
   })
   async validarComprovantesInBatch(
-    @Body() comprovanteIds: string[],
+    @Body() comprovante_ids: string[],
     @GetUser('id') userId: string,
     @Query('batchSize') batchSize?: number,
     @Query('maxConcurrency') maxConcurrency?: number,
   ) {
-    this.logger.log(`Iniciando validação em lote de ${comprovanteIds.length} comprovantes`);
+    this.logger.log(
+      `Iniciando validação em lote de ${comprovante_ids.length} comprovantes`,
+    );
 
     const options = {
       batchSize: batchSize ? Number(batchSize) : undefined,
@@ -322,13 +343,13 @@ export class PagamentoBatchController {
     };
 
     const result = await this.batchService.validarComprovantesInBatch(
-      comprovanteIds,
+      comprovante_ids,
       userId,
-      options
+      options,
     );
 
     this.logger.log(
-      `Validação em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`
+      `Validação em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`,
     );
 
     return {
@@ -338,9 +359,11 @@ export class PagamentoBatchController {
   }
 
   @Get('status')
+  @RequiresPermission({ permissionName: 'pagamento.visualizar_status' })
   @ApiOperation({
     summary: 'Obter status das operações em lote',
-    description: 'Retorna informações sobre o status das filas e processamento em lote',
+    description:
+      'Retorna informações sobre o status das filas e processamento em lote',
   })
   @ApiResponse({
     status: HttpStatus.OK,

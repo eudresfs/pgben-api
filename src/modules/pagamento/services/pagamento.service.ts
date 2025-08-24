@@ -4,15 +4,31 @@ import {
   ConflictException,
   BadRequestException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PagamentoRepository } from '../repositories/pagamento.repository';
 import { Pagamento } from '../../../entities/pagamento.entity';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
+import { StatusConcessao } from '../../../enums/status-concessao.enum';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 import { PagamentoValidationUtil } from '../utils/pagamento-validation.util';
+import { PagamentoCalculatorService } from './pagamento-calculator.service';
+import { PagamentoCacheInvalidationService } from './pagamento-cache-invalidation.service';
+import {
+  DadosPagamento,
+  ResultadoCalculoPagamento,
+} from '../interfaces/pagamento-calculator.interface';
+import { format } from 'date-fns';
+import { AuditoriaService } from '@/modules/auditoria/services/auditoria.service';
+import { ConcessaoService } from '@/modules/beneficio/services/concessao.service';
+import { SolicitacaoService } from '@/modules/solicitacao/services/solicitacao.service';
+import { PagamentoUnifiedMapper } from '../mappers';
+import { PagamentoCacheService } from './pagamento-cache.service';
+import { PagamentoValidationService } from './pagamento-validation.service';
 
 /**
  * Service simplificado para gerenciamento de pagamentos
@@ -24,22 +40,25 @@ export class PagamentoService {
 
   constructor(
     private readonly pagamentoRepository: PagamentoRepository,
+    private readonly validationService: PagamentoValidationService,
+    private readonly cacheService: PagamentoCacheService,
+    private readonly cacheInvalidationService: PagamentoCacheInvalidationService,
+    private readonly auditoriaService: AuditoriaService,
+    private readonly solicitacaoService: SolicitacaoService,
+    @Inject(forwardRef(() => ConcessaoService))
+    private readonly concessaoService: ConcessaoService,
+    private readonly mapper: PagamentoUnifiedMapper,
+    private readonly pagamentoCalculatorService: PagamentoCalculatorService,
   ) {}
 
   /**
    * Cria um novo pagamento
    */
-  async create(createDto: PagamentoCreateDto, usuarioId: string): Promise<Pagamento> {
+  async create(
+    createDto: PagamentoCreateDto,
+    usuarioId: string,
+  ): Promise<Pagamento> {
     this.logger.log(`Criando pagamento`);
-
-    // Verificar se já existe pagamento para a solicitação
-    // const pagamentoExistente = await this.pagamentoRepository.existsBySolicitacao(
-    //   createDto.solicitacaoId
-    // );
-    
-    // if (pagamentoExistente) {
-    //   throw new ConflictException('Já existe um pagamento para esta solicitação');
-    // }
 
     // Validar valor
     PagamentoValidationUtil.validarValor(createDto.valor);
@@ -48,7 +67,7 @@ export class PagamentoService {
     const dadosNormalizados = normalizeEnumFields({
       ...createDto,
       status: StatusPagamentoEnum.PENDENTE,
-      criadoPor: usuarioId,
+      criado_por: usuarioId,
       created_at: new Date(),
       updated_at: new Date(),
     });
@@ -56,7 +75,20 @@ export class PagamentoService {
     // Criar pagamento
     const pagamento = await this.pagamentoRepository.create(dadosNormalizados);
 
-    this.logger.log(`Pagamento ${pagamento.id} criado com sucesso`);
+    // Emitir evento de invalidação de cache
+    this.cacheInvalidationService.emitCacheInvalidationEvent({
+      pagamentoId: pagamento.id,
+      action: 'create',
+      solicitacaoId: pagamento.solicitacao_id,
+      concessaoId: pagamento.concessao_id,
+      metadata: {
+        status: pagamento.status,
+        metodo: pagamento.metodo_pagamento,
+        valor: pagamento.valor,
+      },
+    });
+
+    // Pagamento criado com sucesso
     return pagamento;
   }
 
@@ -65,47 +97,60 @@ export class PagamentoService {
    */
   async findById(id: string): Promise<Pagamento> {
     const pagamento = await this.pagamentoRepository.findById(id);
-    
+
     if (!pagamento) {
       throw new NotFoundException('Pagamento não encontrado');
     }
-    
+
     return pagamento;
+  }
+
+  /**
+   * Busca um pagamento por ID com todas as relações necessárias para o processamento da fila.
+   */
+  async findPagamentoCompleto(id: string): Promise<Pagamento> {
+    return this.pagamentoRepository.findPagamentoComRelacoes(id);
   }
 
   /**
    * Lista pagamentos com filtros
    */
-  async findAll(filtros: {
-    status?: StatusPagamentoEnum;
-    solicitacaoId?: string;
-    concessaoId?: string;
-    dataInicio?: string;
-    dataFim?: string;
-    page?: number;
-    limit?: number;
-  }) {
-    // Converter strings de data para Date objects
-    const filtrosProcessados = {
-      ...filtros,
-      dataInicio: filtros.dataInicio ? new Date(filtros.dataInicio) : undefined,
-      dataFim: filtros.dataFim ? new Date(filtros.dataFim) : undefined,
-    };
-
-    const { items, total } = await this.pagamentoRepository.findWithFilters(filtrosProcessados);
+  async findAll(
+    filtros: {
+      search?: string;
+      status?: StatusPagamentoEnum;
+      unidade_id?: string;
+      solicitacao_id?: string;
+      concessao_id?: string;
+      data_inicio?: string;
+      data_fim?: string;
+      page?: number;
+      limit?: number;
+      sort_by?: string;
+      sort_order?: 'ASC' | 'DESC';
+      usuario_id?: string;
+      pagamento_ids?: string[]; // Novo filtro para múltiplos IDs
+      com_comprovante?: boolean; // Filtro para pagamentos com/sem comprovante
+    },
+  ) {
+    const { items, total } =
+      await this.pagamentoRepository.findWithFilters(filtros);
 
     const page = filtros.page || 1;
     const limit = filtros.limit || 10;
 
+    // Aplicar mapper para converter entidades em DTOs de resposta com contexto de pagamentos anteriores
+    const mappedItems = PagamentoUnifiedMapper.toResponseDtoList(items, false);
+
     return {
-      data: items,
-      pagination: {
-        currentPage: page,
-        itemsPerPage: limit,
-        totalItems: total,
-        totalPages: Math.ceil(total / limit),
-        hasNextPage: page < Math.ceil(total / limit),
-        hasPreviousPage: page > 1,
+      data: mappedItems,
+      meta: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1,
       },
     };
   }
@@ -118,13 +163,22 @@ export class PagamentoService {
     updateDto: PagamentoUpdateStatusDto,
     usuarioId: string,
   ): Promise<Pagamento> {
-    this.logger.log(`Atualizando status do pagamento ${id} para ${updateDto.status}`);
+    this.logger.log(
+      `Atualizando status do pagamento ${id} para ${updateDto.status}`,
+    );
 
-    // Buscar pagamento existente
-    const pagamento = await this.findById(id);
+    // Buscar pagamento existente com relações necessárias
+    const pagamento = await this.pagamentoRepository.findPagamentoComRelacoes(id);
+    
+    if (!pagamento) {
+      throw new NotFoundException('Pagamento não encontrado');
+    }
 
     // Validar transição de status
-    PagamentoValidationUtil.validarTransicaoStatus(pagamento.status, updateDto.status);
+    PagamentoValidationUtil.validarTransicaoStatus(
+      pagamento.status,
+      updateDto.status,
+    );
 
     // Preparar dados de atualização
     const dadosAtualizacao: Partial<Pagamento> = {
@@ -136,36 +190,84 @@ export class PagamentoService {
     // Atualizações específicas por status
     switch (updateDto.status) {
       case StatusPagamentoEnum.LIBERADO:
-        dadosAtualizacao.dataLiberacao = new Date();
-        dadosAtualizacao.liberadoPor = usuarioId;
+        dadosAtualizacao.data_liberacao = new Date();
+        dadosAtualizacao.liberado_por = usuarioId;
         break;
       case StatusPagamentoEnum.PAGO:
-        dadosAtualizacao.dataPagamento = new Date();
+        dadosAtualizacao.data_pagamento = new Date();
         break;
       case StatusPagamentoEnum.CONFIRMADO:
-        dadosAtualizacao.dataConclusao = new Date();
-        if (updateDto.comprovanteId) {
-          dadosAtualizacao.comprovanteId = updateDto.comprovanteId;
+        dadosAtualizacao.data_conclusao = new Date();
+        if (updateDto.comprovante_id) {
+          dadosAtualizacao.comprovante_id = updateDto.comprovante_id;
         }
         break;
       case StatusPagamentoEnum.AGENDADO:
-        if (updateDto.dataAgendamento) {
-          dadosAtualizacao.dataAgendamento = new Date(updateDto.dataAgendamento);
+        if (updateDto.data_agendamento) {
+          dadosAtualizacao.data_agendamento = new Date(
+            updateDto.data_agendamento,
+          );
         }
         break;
     }
 
     // Atualizar pagamento
-    const pagamentoAtualizado = await this.pagamentoRepository.update(id, dadosAtualizacao);
+    const pagamentoAtualizado = await this.pagamentoRepository.update(
+      id,
+      dadosAtualizacao,
+    );
 
-    this.logger.log(`Status do pagamento ${id} atualizado para ${updateDto.status}`);
+    // Se o número da parcela for 1, atualizar status da concessão para ATIVO
+    if (pagamento.numero_parcela === 1 && pagamento.concessao_id) {
+      try {
+        await this.concessaoService.atualizarStatus(
+           pagamento.concessao_id,
+           StatusConcessao.ATIVO,
+           usuarioId,
+           `Ativação automática - Primeira parcela do pagamento ${id} atualizada para ${updateDto.status}`,
+         );
+        
+        this.logger.log(
+          `Status da concessão ${pagamento.concessao_id} atualizado para ATIVO devido à atualização da primeira parcela`,
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Erro ao atualizar status da concessão ${pagamento.concessao_id}: ${error.message}`,
+        );
+        // Não falha a operação principal se houver erro na atualização da concessão
+      }
+    }
+
+    // Emitir evento de invalidação de cache para mudança de status
+    this.cacheInvalidationService.emitCacheInvalidationEvent({
+      pagamentoId: pagamento.id,
+      action: 'status_change',
+      oldStatus: pagamento.status,
+      newStatus: updateDto.status,
+      solicitacaoId: pagamento.solicitacao_id,
+      concessaoId: pagamento.concessao_id,
+      metadata: {
+        previousStatus: pagamento.status,
+        newStatus: updateDto.status,
+        updatedAt: new Date(),
+        isFirstInstallment: pagamento.numero_parcela === 1,
+      },
+    });
+
+    this.logger.log(
+      `Status do pagamento ${id} atualizado para ${updateDto.status}`,
+    );
     return pagamentoAtualizado;
   }
 
   /**
    * Cancela um pagamento
    */
-  async cancelar(id: string, motivo: string, usuarioId: string): Promise<Pagamento> {
+  async cancelar(
+    id: string,
+    motivo: string,
+    usuarioId: string,
+  ): Promise<Pagamento> {
     this.logger.log(`Cancelando pagamento ${id}`);
 
     const pagamento = await this.findById(id);
@@ -176,37 +278,54 @@ export class PagamentoService {
     }
 
     if (pagamento.status === StatusPagamentoEnum.CONFIRMADO) {
-      throw new ConflictException('Não é possível cancelar um pagamento confirmado');
+      throw new ConflictException(
+        'Não é possível cancelar um pagamento confirmado',
+      );
     }
 
     // Atualizar status
     const dadosAtualizacao = {
       status: StatusPagamentoEnum.CANCELADO,
       observacoes: `Cancelado: ${motivo}`,
-      dataCancelamento: new Date(),
-      canceladoPor: usuarioId,
       updated_at: new Date(),
     };
 
-    const pagamentoCancelado = await this.pagamentoRepository.update(id, dadosAtualizacao);
+    const pagamentoCancelado = await this.pagamentoRepository.update(
+      id,
+      dadosAtualizacao,
+    );
 
-    this.logger.log(`Pagamento ${id} cancelado com sucesso`);
+    // Emitir evento de invalidação de cache para cancelamento
+    this.cacheInvalidationService.emitCacheInvalidationEvent({
+      pagamentoId: pagamento.id,
+      action: 'cancelled',
+      oldStatus: pagamento.status,
+      newStatus: StatusPagamentoEnum.CANCELADO,
+      solicitacaoId: pagamento.solicitacao_id,
+      concessaoId: pagamento.concessao_id,
+      metadata: {
+        cancelledAt: new Date(),
+        previousStatus: pagamento.status,
+        reason: 'Manual cancellation',
+      },
+    });
+
+    // Pagamento cancelado com sucesso
     return pagamentoCancelado;
   }
-
 
   /**
    * Busca pagamentos por solicitação
    */
-  async findBySolicitacao(solicitacaoId: string): Promise<Pagamento[]> {
-    return await this.pagamentoRepository.findBySolicitacao(solicitacaoId);
+  async findBySolicitacao(solicitacao_id: string): Promise<Pagamento[]> {
+    return await this.pagamentoRepository.findBySolicitacao(solicitacao_id);
   }
 
   /**
    * Busca pagamentos por concessão
    */
-  async findByConcessao(concessaoId: string): Promise<Pagamento[]> {
-    return await this.pagamentoRepository.findByConcessao(concessaoId);
+  async findByConcessao(concessao_id: string): Promise<Pagamento[]> {
+    return await this.pagamentoRepository.findByConcessao(concessao_id);
   }
 
   /**
@@ -216,83 +335,252 @@ export class PagamentoService {
     return await this.pagamentoRepository.getEstatisticas();
   }
 
-
   /**
    * Gera pagamentos para uma concessão baseado no tipo de benefício
+   *
+   * Este método agora segue os princípios SOLID:
+   * - Single Responsibility: apenas orquestra a criação de pagamentos
+   * - Open/Closed: extensível via estratégias de cálculo
+   * - Dependency Inversion: depende de abstrações (PagamentoCalculatorService)
    */
   async gerarPagamentosParaConcessao(
     concessao: any,
     solicitacao: any,
-    usuarioId: string
+    usuarioId: string,
   ): Promise<Pagamento[]> {
     this.logger.log(`Gerando pagamentos para concessão ${concessao.id}`);
 
-    const tipoBeneficio = solicitacao.tipo_beneficio;
+    try {
+      // 1. Validar e preparar dados de entrada
+      const dadosPagamento = this.prepararDadosPagamento(
+        concessao,
+        solicitacao,
+      );
+
+      // 2. Calcular dados do pagamento usando o serviço especializado
+      const resultadoCalculo =
+        await this.pagamentoCalculatorService.calcularPagamento(dadosPagamento);
+
+      // 3. Gerar as entidades de pagamento
+      const pagamentosGerados = await this.criarPagamentos(
+        concessao,
+        solicitacao,
+        resultadoCalculo,
+        usuarioId,
+      );
+
+      this.logger.log(
+        `${pagamentosGerados.length} pagamentos gerados para concessão ${concessao.id} - ` +
+          `Total: R$ ${dadosPagamento.valor.toFixed(2)}`,
+      );
+
+      // Emitir eventos de invalidação de cache para cada pagamento criado
+      pagamentosGerados.forEach((pagamento) => {
+        this.cacheInvalidationService.emitCacheInvalidationEvent({
+          pagamentoId: pagamento.id,
+          action: 'create',
+          solicitacaoId: pagamento.solicitacao_id,
+          concessaoId: pagamento.concessao_id,
+          metadata: {
+            status: pagamento.status,
+            metodo: pagamento.metodo_pagamento,
+            valor: pagamento.valor,
+            batchCreation: true,
+            batchSize: pagamentosGerados.length,
+          },
+        });
+      });
+
+      return pagamentosGerados;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao gerar pagamentos para concessão ${concessao.id}:`,
+        error.message,
+      );
+      throw new BadRequestException(
+        `Falha ao gerar pagamentos: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Prepara e valida os dados necessários para o cálculo do pagamento
+   */
+  private prepararDadosPagamento(
+    concessao: any,
+    solicitacao: any,
+  ): DadosPagamento {
+    // Validar data de início
+    const dataInicio = concessao.data_inicio
+      ? new Date(concessao.data_inicio)
+      : new Date();
+    if (isNaN(dataInicio.getTime())) {
+      throw new Error(
+        `Data de início da concessão inválida: ${concessao.data_inicio}`,
+      );
+    }
+
+    // Validar valor do benefício
+    const valor = Number(solicitacao.tipo_beneficio?.valor) || 0;
+    if (valor < 0) {
+      throw new Error(
+        `Valor do benefício inválido: ${solicitacao.tipo_beneficio?.valor}`,
+      );
+    }
+
+    // Validar tipo de benefício
+    const tipoBeneficio = solicitacao.tipo_beneficio?.codigo;
+    if (!tipoBeneficio) {
+      throw new Error('Tipo de benefício não informado');
+    }
+
+    return {
+      tipoBeneficio,
+      valor,
+      dataInicio,
+      dadosEspecificos: solicitacao.dados_especificos,
+    };
+  }
+
+  /**
+   * Cria as entidades de pagamento baseadas no resultado do cálculo
+   */
+  private async criarPagamentos(
+    concessao: any,
+    solicitacao: any,
+    resultado: ResultadoCalculoPagamento,
+    usuarioId: string,
+  ): Promise<Pagamento[]> {
     const pagamentosGerados: Pagamento[] = [];
+    const {
+      quantidadeParcelas,
+      valorParcela,
+      dataLiberacao,
+      dataVencimento,
+      intervaloParcelas,
+    } = resultado;
 
-    // Determinar quantidade de parcelas
-    let quantidadeParcelas = 1;
-    let valorParcela = solicitacao.valor_solicitado || 0;
+    this.logger.log(
+      `Criando ${quantidadeParcelas} parcelas de R$ ${valorParcela.toFixed(2)} ` +
+        `para ${solicitacao.tipo_beneficio?.nome}`,
+    );
 
-    if (tipoBeneficio?.especificacoes?.permite_parcelamento) {
-      // Para benefícios que permitem parcelamento
-      if (solicitacao.quantidade_parcelas && solicitacao.quantidade_parcelas > 1) {
-        quantidadeParcelas = Math.min(
-          solicitacao.quantidade_parcelas,
-          tipoBeneficio.especificacoes.quantidade_maxima_parcelas || 12
-        );
-      } else if (tipoBeneficio.especificacoes.duracao_maxima_meses) {
-        // Para benefícios como Aluguel Social (duração em meses)
-        quantidadeParcelas = tipoBeneficio.especificacoes.duracao_maxima_meses;
-      }
-    }
-
-    // Para Cesta Básica, usar quantidade específica
-    if (tipoBeneficio?.codigo === 'cesta-basica' && solicitacao.dados_especificos?.quantidade_cestas_solicitadas) {
-      quantidadeParcelas = solicitacao.dados_especificos.quantidade_cestas_solicitadas;
-    }
-
-    // Calcular valor por parcela
-    if (quantidadeParcelas > 1) {
-      valorParcela = Number((solicitacao.valor_solicitado / quantidadeParcelas).toFixed(2));
-    }
-
-    // Gerar pagamentos
     for (let i = 1; i <= quantidadeParcelas; i++) {
-      const dataLiberacao = new Date(concessao.dataInicio);
-      
-      // Para benefícios mensais, adicionar meses
-      if (quantidadeParcelas > 1 && tipoBeneficio?.especificacoes?.duracao_maxima_meses) {
-        dataLiberacao.setMonth(dataLiberacao.getMonth() + (i - 1));
-      }
+      const dadosPagamento = this.calcularDadosParcela(
+        concessao,
+        solicitacao,
+        resultado,
+        i,
+      );
 
-      // Ajustar valor da última parcela para compensar arredondamentos
-      let valorFinal = valorParcela;
-      if (i === quantidadeParcelas && quantidadeParcelas > 1) {
-        const totalCalculado = valorParcela * (quantidadeParcelas - 1);
-        valorFinal = Number((solicitacao.valor_solicitado - totalCalculado).toFixed(2));
-      }
-
-      const dadosPagamento = {
-        concessaoId: concessao.id,
-        solicitacaoId: solicitacao.id,
-        valor: valorFinal,
-        dataLiberacao: dataLiberacao,
-        metodoPagamento: solicitacao.info_bancaria ? MetodoPagamentoEnum.PIX : MetodoPagamentoEnum.PRESENCIAL,
-        infoBancariaId: solicitacao.info_bancaria?.id || undefined,
-        numeroParcela: i,
-        totalParcelas: quantidadeParcelas,
-        observacoes: `Pagamento ${i}/${quantidadeParcelas} - ${tipoBeneficio.nome}`,
-      };
-
-      const pagamento = await this.create(dadosPagamento, usuarioId);
+      const user =
+        usuarioId || solicitacao.liberador_id || solicitacao.tecnico_id;
+      const pagamento = await this.create(dadosPagamento, user);
       pagamentosGerados.push(pagamento);
     }
 
-    this.logger.log(
-      `${quantidadeParcelas} pagamentos gerados para concessão ${concessao.id} - Total: R$ ${solicitacao.valor_solicitado}`
+    return pagamentosGerados;
+  }
+
+  /**
+   * Calcula os dados específicos de uma parcela
+   */
+  private calcularDadosParcela(
+    concessao: any,
+    solicitacao: any,
+    resultado: ResultadoCalculoPagamento,
+    numeroParcela: number,
+  ): any {
+    const {
+      quantidadeParcelas,
+      valorParcela,
+      dataLiberacao,
+      dataVencimento,
+      intervaloParcelas,
+    } = resultado;
+
+    // Calcular datas da parcela
+    const dataLiberacaoParcela = this.calcularDataParcela(
+      dataLiberacao,
+      numeroParcela - 1,
+      intervaloParcelas,
+    );
+    const dataVencimentoParcela = this.calcularDataParcela(
+      dataVencimento,
+      numeroParcela - 1,
+      intervaloParcelas,
     );
 
-    return pagamentosGerados;
+    // Ajustar valor da última parcela para compensar arredondamentos
+    let valorFinal = valorParcela;
+    if (numeroParcela === quantidadeParcelas && quantidadeParcelas > 1) {
+      const totalCalculado = valorParcela * (quantidadeParcelas - 1);
+      // Usar o valor total correto baseado no cálculo das parcelas
+      const valorTotalCalculado = valorParcela * quantidadeParcelas;
+      valorFinal = Number((valorTotalCalculado - totalCalculado).toFixed(2));
+
+      // Garantir que o valor final seja sempre positivo
+      if (valorFinal <= 0) {
+        this.logger.warn(
+          `Valor da última parcela calculado como ${valorFinal}, usando valor da parcela padrão: ${valorParcela}`,
+        );
+        valorFinal = valorParcela;
+      }
+    }
+
+    return {
+      concessao_id: concessao.id,
+      solicitacao_id: solicitacao.id,
+      valor: valorFinal,
+      data_liberacao: dataLiberacaoParcela,
+      data_vencimento: dataVencimentoParcela,
+      metodo_pagamento: solicitacao.info_bancaria
+        ? MetodoPagamentoEnum.PIX
+        : MetodoPagamentoEnum.DEPOSITO,
+      info_bancaria_id: solicitacao.info_bancaria?.id || undefined,
+      numero_parcela: numeroParcela,
+      total_parcelas: quantidadeParcelas,
+      observacoes: this.gerarObservacoesParcela(
+        numeroParcela,
+        quantidadeParcelas,
+        solicitacao.tipo_beneficio?.nome,
+        dataLiberacaoParcela,
+        dataVencimentoParcela,
+      ),
+    };
+  }
+
+  /**
+   * Calcula a data de uma parcela específica
+   */
+  private calcularDataParcela(
+    dataBase: Date,
+    indiceParcela: number,
+    intervaloDias: number,
+  ): Date {
+    if (intervaloDias === 0 || indiceParcela === 0) {
+      return new Date(dataBase);
+    }
+
+    const novaData = new Date(dataBase);
+    novaData.setDate(novaData.getDate() + indiceParcela * intervaloDias);
+    return novaData;
+  }
+
+  /**
+   * Gera observações padronizadas para uma parcela
+   */
+  private gerarObservacoesParcela(
+    numeroParcela: number,
+    totalParcelas: number,
+    nomeBeneficio: string,
+    dataLiberacao: Date,
+    dataVencimento: Date,
+  ): string {
+    return (
+      `Pagamento ${numeroParcela}/${totalParcelas} - ${nomeBeneficio} - ` +
+      `Liberação: ${format(dataLiberacao, 'dd/MM/yyyy')} - ` +
+      `Vencimento: ${format(dataVencimento, 'dd/MM/yyyy')}`
+    );
   }
 }

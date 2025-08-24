@@ -68,7 +68,9 @@ export class DadosSociais {
   ocupacao_beneficiario: string;
 
   @Column({ default: false })
-  @IsBoolean({ message: 'O campo exerce_atividade_remunerada deve ser um valor booleano' })
+  @IsBoolean({
+    message: 'O campo exerce_atividade_remunerada deve ser um valor booleano',
+  })
   exerce_atividade_remunerada: boolean;
 
   @Column({
@@ -80,7 +82,10 @@ export class DadosSociais {
   @IsOptional()
   @IsEnum(TipoInsercaoEnum, { message: 'Tipo de inserção inválido' })
   @ValidateIf((o) => o.exerce_atividade_remunerada === true)
-  @IsNotEmpty({ message: 'Tipo de inserção é obrigatório quando exerce atividade remunerada' })
+  @IsNotEmpty({
+    message:
+      'Tipo de inserção é obrigatório quando exerce atividade remunerada',
+  })
   tipo_insercao_beneficiario: TipoInsercaoEnum;
 
   @Column({ default: false })
@@ -118,7 +123,9 @@ export class DadosSociais {
   valor_bpc: number;
 
   @Column({ default: false })
-  @IsBoolean({ message: 'O campo recebe_tributo_crianca deve ser um valor booleano' })
+  @IsBoolean({
+    message: 'O campo recebe_tributo_crianca deve ser um valor booleano',
+  })
   recebe_tributo_crianca: boolean;
 
   @Column('decimal', { precision: 10, scale: 2, nullable: true })
@@ -126,7 +133,10 @@ export class DadosSociais {
   @IsNumber({}, { message: 'Valor do tributo criança deve ser um número' })
   @Min(0, { message: 'Valor do tributo criança não pode ser negativo' })
   @ValidateIf((o) => o.recebe_tributo_crianca === true)
-  @IsNotEmpty({ message: 'Valor tributo criança é obrigatório quando recebe tributo criança' })
+  @IsNotEmpty({
+    message:
+      'Valor tributo criança é obrigatório quando recebe tributo criança',
+  })
   valor_tributo_crianca: number;
 
   @Column({ default: false })
@@ -138,14 +148,21 @@ export class DadosSociais {
   aposentadoria: boolean;
 
   @Column({ default: false })
-  @IsBoolean({ message: 'O campo outros_beneficios deve ser um valor booleano' })
+  @IsBoolean({
+    message: 'O campo outros_beneficios deve ser um valor booleano',
+  })
   outros_beneficios: boolean;
 
   @Column({ nullable: true })
   @IsOptional()
-  @IsString({ message: 'O campo descricao_outros_beneficios deve ser um texto' })
+  @IsString({
+    message: 'O campo descricao_outros_beneficios deve ser um texto',
+  })
   @ValidateIf((o) => o.outros_beneficios === true)
-  @IsNotEmpty({ message: 'Descrição outros benefícios é obrigatória quando outros benefícios é verdadeiro' })
+  @IsNotEmpty({
+    message:
+      'Descrição outros benefícios é obrigatória quando outros benefícios é verdadeiro',
+  })
   descricao_outros_beneficios: string;
 
   @Column({ nullable: true })
@@ -204,7 +221,10 @@ export class DadosSociais {
 
   @Column({ nullable: true })
   @IsOptional()
-  @IsBoolean({ message: 'O campo exerce_atividade_remunerada_conjuge deve ser um valor booleano' })
+  @IsBoolean({
+    message:
+      'O campo exerce_atividade_remunerada_conjuge deve ser um valor booleano',
+  })
   exerce_atividade_remunerada_conjuge: boolean;
 
   @Column({
@@ -216,7 +236,10 @@ export class DadosSociais {
   @IsOptional()
   @IsEnum(TipoInsercaoEnum, { message: 'Tipo de inserção do cônjuge inválido' })
   @ValidateIf((o) => o.exerce_atividade_remunerada_conjuge === true)
-  @IsNotEmpty({ message: 'Tipo de inserção do cônjuge é obrigatório quando cônjuge exerce atividade remunerada' })
+  @IsNotEmpty({
+    message:
+      'Tipo de inserção do cônjuge é obrigatório quando cônjuge exerce atividade remunerada',
+  })
   tipo_insercao_conjuge: TipoInsercaoEnum;
 
   @CreateDateColumn()
@@ -301,7 +324,9 @@ export class DadosSociais {
    * Obtém a renda formatada
    */
   getRendaFormatada(): string {
-    if (!this.temRenda()) {return 'Sem renda';}
+    if (!this.temRenda()) {
+      return 'Sem renda';
+    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -319,7 +344,9 @@ export class DadosSociais {
    * Obtém o valor do PBF formatado
    */
   getValorPBFFormatado(): string {
-    if (!this.recebe_pbf || !this.valor_pbf) {return 'Não recebe';}
+    if (!this.recebe_pbf || !this.valor_pbf) {
+      return 'Não recebe';
+    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -337,7 +364,9 @@ export class DadosSociais {
    * Obtém o valor do BPC formatado
    */
   getValorBPCFormatado(): string {
-    if (!this.recebe_bpc || !this.valor_bpc) {return 'Não recebe';}
+    if (!this.recebe_bpc || !this.valor_bpc) {
+      return 'Não recebe';
+    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -348,7 +377,14 @@ export class DadosSociais {
    * Verifica se recebe algum benefício social
    */
   recebeBeneficioSocial(): boolean {
-    return this.recebePBF() || this.recebeBPC() || this.recebe_tributo_crianca || this.pensao_morte || this.aposentadoria || this.outros_beneficios;
+    return (
+      this.recebePBF() ||
+      this.recebeBPC() ||
+      this.recebe_tributo_crianca ||
+      this.pensao_morte ||
+      this.aposentadoria ||
+      this.outros_beneficios
+    );
   }
 
   /**
@@ -356,9 +392,15 @@ export class DadosSociais {
    */
   getTotalBeneficios(): number {
     let total = 0;
-    if (this.recebe_pbf && this.valor_pbf) {total += this.valor_pbf;}
-    if (this.recebe_bpc && this.valor_bpc) {total += this.valor_bpc;}
-    if (this.recebe_tributo_crianca && this.valor_tributo_crianca) {total += this.valor_tributo_crianca;}
+    if (this.recebe_pbf && this.valor_pbf) {
+      total += this.valor_pbf;
+    }
+    if (this.recebe_bpc && this.valor_bpc) {
+      total += this.valor_bpc;
+    }
+    if (this.recebe_tributo_crianca && this.valor_tributo_crianca) {
+      total += this.valor_tributo_crianca;
+    }
     return total;
   }
 
@@ -367,7 +409,9 @@ export class DadosSociais {
    */
   getTotalBeneficiosFormatado(): string {
     const total = this.getTotalBeneficios();
-    if (total === 0) {return 'Nenhum benefício';}
+    if (total === 0) {
+      return 'Nenhum benefício';
+    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -453,7 +497,9 @@ export class DadosSociais {
    * Obtém a descrição da situação de trabalho
    */
   getDescricaoSituacaoTrabalho(): string {
-    if (!this.situacao_trabalho) {return 'Não informado';}
+    if (!this.situacao_trabalho) {
+      return 'Não informado';
+    }
 
     const descricoes = {
       [SituacaoTrabalhoEnum.EMPREGADO_FORMAL]: 'Empregado',
@@ -499,10 +545,14 @@ export class DadosSociais {
    */
   isConsistente(): boolean {
     // Verifica se tem cidadão
-    if (!this.cidadao_id) {return false;}
+    if (!this.cidadao_id) {
+      return false;
+    }
 
     // Verifica se tem escolaridade
-    if (!this.escolaridade) {return false;}
+    if (!this.escolaridade) {
+      return false;
+    }
 
     // Se recebe PBF, deve ter valor
     if (this.recebe_pbf && (!this.valor_pbf || this.valor_pbf <= 0)) {
@@ -530,7 +580,9 @@ export class DadosSociais {
    */
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
-    if (this.foiRemovido()) {return false;}
+    if (this.foiRemovido()) {
+      return false;
+    }
 
     // Outras validações específicas podem ser adicionadas
     return true;
@@ -568,7 +620,8 @@ export class DadosSociais {
       area_interesse_familiar: this.area_interesse_familiar,
       nome_conjuge: this.nome_conjuge,
       ocupacao_conjuge: this.ocupacao_conjuge,
-      exerce_atividade_remunerada_conjuge: this.exerce_atividade_remunerada_conjuge,
+      exerce_atividade_remunerada_conjuge:
+        this.exerce_atividade_remunerada_conjuge,
       tipo_insercao_conjuge: this.tipo_insercao_conjuge,
       observacoes: this.observacoes,
     };
@@ -597,7 +650,9 @@ export class DadosSociais {
    */
   getRendaTotal(): number {
     let total = 0;
-    if (this.renda) {total += this.renda;}
+    if (this.renda) {
+      total += this.renda;
+    }
     total += this.getTotalBeneficios();
     return total;
   }
@@ -607,7 +662,9 @@ export class DadosSociais {
    */
   getRendaTotalFormatada(): string {
     const total = this.getRendaTotal();
-    if (total === 0) {return 'Sem renda';}
+    if (total === 0) {
+      return 'Sem renda';
+    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -699,7 +756,9 @@ export class DadosSociais {
    * Obtém o valor do tributo criança formatado
    */
   getValorTributoCriancaFormatado(): string {
-    if (!this.recebe_tributo_crianca || !this.valor_tributo_crianca) {return 'Não recebe';}
+    if (!this.recebe_tributo_crianca || !this.valor_tributo_crianca) {
+      return 'Não recebe';
+    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -731,8 +790,10 @@ export class DadosSociais {
    * Obtém a descrição da modalidade BPC
    */
   getDescricaoModalidadeBPC(): string {
-    if (!this.modalidade_bpc) {return 'Não informado';}
-    
+    if (!this.modalidade_bpc) {
+      return 'Não informado';
+    }
+
     const descricoes = {
       [ModalidadeBpcEnum.IDOSO]: 'Idoso',
       [ModalidadeBpcEnum.PCD]: 'Pessoa com Deficiência',
@@ -751,13 +812,18 @@ export class DadosSociais {
    * Obtém a descrição do tipo de inserção do beneficiario
    */
   getDescricaoTipoInsercaobeneficiario(): string {
-    if (!this.tipo_insercao_beneficiario) {return 'Não informado';}
-    
+    if (!this.tipo_insercao_beneficiario) {
+      return 'Não informado';
+    }
+
     const descricoes = {
       [TipoInsercaoEnum.FORMAL]: 'Formal',
       [TipoInsercaoEnum.INFORMAL]: 'Informal',
     };
-    return descricoes[this.tipo_insercao_beneficiario] || this.tipo_insercao_beneficiario;
+    return (
+      descricoes[this.tipo_insercao_beneficiario] ||
+      this.tipo_insercao_beneficiario
+    );
   }
 
   /**
@@ -778,8 +844,10 @@ export class DadosSociais {
    * Obtém a descrição do tipo de inserção do cônjuge
    */
   getDescricaoTipoInsercaoConjuge(): string {
-    if (!this.tipo_insercao_conjuge) {return 'Não informado';}
-    
+    if (!this.tipo_insercao_conjuge) {
+      return 'Não informado';
+    }
+
     const descricoes = {
       [TipoInsercaoEnum.FORMAL]: 'Formal',
       [TipoInsercaoEnum.INFORMAL]: 'Informal',
@@ -792,31 +860,37 @@ export class DadosSociais {
    */
   getResumoBeneficios(): string {
     const beneficios: string[] = [];
-    
+
     if (this.recebePBF()) {
       beneficios.push(`PBF: ${this.getValorPBFFormatado()}`);
     }
-    
+
     if (this.recebeBPC()) {
-      beneficios.push(`BPC ${this.getDescricaoModalidadeBPC()}: ${this.getValorBPCFormatado()}`);
+      beneficios.push(
+        `BPC ${this.getDescricaoModalidadeBPC()}: ${this.getValorBPCFormatado()}`,
+      );
     }
-    
+
     if (this.recebeTributoCrianca()) {
-      beneficios.push(`Tributo Criança: ${this.getValorTributoCriancaFormatado()}`);
+      beneficios.push(
+        `Tributo Criança: ${this.getValorTributoCriancaFormatado()}`,
+      );
     }
-    
+
     if (this.recebePensaoMorte()) {
       beneficios.push('Pensão por Morte');
     }
-    
+
     if (this.isAposentadoBeneficio()) {
       beneficios.push('Aposentadoria');
     }
-    
+
     if (this.recebeOutrosBeneficios()) {
-      beneficios.push(`Outros: ${this.descricao_outros_beneficios || 'Não especificado'}`);
+      beneficios.push(
+        `Outros: ${this.descricao_outros_beneficios || 'Não especificado'}`,
+      );
     }
-    
+
     return beneficios.length > 0 ? beneficios.join(', ') : 'Nenhum benefício';
   }
 
@@ -825,21 +899,23 @@ export class DadosSociais {
    */
   getResumoTrabalhoFamilia(): string {
     const situacoes: string[] = [];
-    
+
     if (this.ocupacao_beneficiario) {
-      const tipoInsercao = this.beneficiarioExerceAtividadeRemunerada() 
+      const tipoInsercao = this.beneficiarioExerceAtividadeRemunerada()
         ? ` (${this.getDescricaoTipoInsercaobeneficiario()})`
         : '';
-      situacoes.push(`beneficiario: ${this.ocupacao_beneficiario}${tipoInsercao}`);
+      situacoes.push(
+        `beneficiario: ${this.ocupacao_beneficiario}${tipoInsercao}`,
+      );
     }
-    
+
     if (this.temConjuge() && this.ocupacao_conjuge) {
-      const tipoInsercao = this.conjugeExerceAtividadeRemunerada() 
+      const tipoInsercao = this.conjugeExerceAtividadeRemunerada()
         ? ` (${this.getDescricaoTipoInsercaoConjuge()})`
         : '';
       situacoes.push(`Cônjuge: ${this.ocupacao_conjuge}${tipoInsercao}`);
     }
-    
+
     return situacoes.length > 0 ? situacoes.join(', ') : 'Não informado';
   }
 
@@ -847,7 +923,10 @@ export class DadosSociais {
    * Verifica se a família tem renda do trabalho
    */
   familiaTemRendaTrabalho(): boolean {
-    return this.beneficiarioExerceAtividadeRemunerada() || this.conjugeExerceAtividadeRemunerada();
+    return (
+      this.beneficiarioExerceAtividadeRemunerada() ||
+      this.conjugeExerceAtividadeRemunerada()
+    );
   }
 
   /**
@@ -856,9 +935,10 @@ export class DadosSociais {
   familiaEmVulnerabilidade(): boolean {
     const temRendaBaixa = !this.renda || this.renda < 500; // Valor exemplo
     const dependeBeneficios = this.recebeBeneficioSocial();
-    const semTrabalhoFormal = !this.beneficiarioExerceAtividadeRemunerada() || 
-                             (this.tipo_insercao_beneficiario === TipoInsercaoEnum.INFORMAL);
-    
+    const semTrabalhoFormal =
+      !this.beneficiarioExerceAtividadeRemunerada() ||
+      this.tipo_insercao_beneficiario === TipoInsercaoEnum.INFORMAL;
+
     return temRendaBaixa && (dependeBeneficios || semTrabalhoFormal);
   }
 }

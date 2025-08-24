@@ -29,30 +29,37 @@ export class PagamentoCacheService {
   async validateStatusTransition(
     statusAtual: StatusPagamentoEnum,
     novoStatus: StatusPagamentoEnum,
-    pagamentoId?: string
+    pagamentoId?: string,
   ): Promise<boolean> {
     const cacheKey = `status_transition:${statusAtual}:${novoStatus}`;
-    
+
     try {
       // Buscar no cache primeiro
       let isValid = await this.cacheService.get<boolean>(cacheKey);
-      
+
       if (isValid === null || isValid === undefined) {
         // Se não está no cache, validar usando validateStatusTransition
-        const validationResult = this.validationService.validateStatusTransition(
-          statusAtual,
-          novoStatus
-        );
-        
+        const validationResult =
+          this.validationService.validateStatusTransition(
+            statusAtual,
+            novoStatus,
+          );
+
         isValid = validationResult.isValid;
-        
-        await this.cacheService.set(cacheKey, isValid, this.CACHE_TTL.STATUS_TRANSITION);
-        this.logger.log(`Status transition cached: ${statusAtual} -> ${novoStatus}`);
+
+        await this.cacheService.set(
+          cacheKey,
+          isValid,
+          this.CACHE_TTL.STATUS_TRANSITION,
+        );
+        // Status transition cached
       }
-      
+
       return isValid || false;
     } catch (error) {
-      this.logger.error(`Erro ao validar transição de status: ${error.message}`);
+      this.logger.error(
+        `Erro ao validar transição de status: ${error.message}`,
+      );
       // Fallback para validação direta
       return false;
     }
@@ -61,21 +68,30 @@ export class PagamentoCacheService {
   /**
    * Cache para validação PIX
    */
-  async validatePixData(pixData: any): Promise<{ isValid: boolean; errors: string[] }> {
+  async validatePixData(
+    pixData: any,
+  ): Promise<{ isValid: boolean; errors: string[] }> {
     const cacheKey = `pix_validation:${JSON.stringify(pixData)}`;
-    
+
     try {
       // Buscar no cache primeiro
-      let result = await this.cacheService.get<{ isValid: boolean; errors: string[] }>(cacheKey);
-      
+      let result = await this.cacheService.get<{
+        isValid: boolean;
+        errors: string[];
+      }>(cacheKey);
+
       if (!result) {
         // Se não está no cache, validar usando validateBankingData
         result = this.validationService.validateBankingData(pixData);
-        
-        await this.cacheService.set(cacheKey, result, this.CACHE_TTL.PIX_VALIDATION);
-        this.logger.log('PIX validation cached');
+
+        await this.cacheService.set(
+          cacheKey,
+          result,
+          this.CACHE_TTL.PIX_VALIDATION,
+        );
+        // PIX validation cached
       }
-      
+
       return result || { isValid: false, errors: ['Erro na validação'] };
     } catch (error) {
       this.logger.error(`Erro ao validar dados PIX: ${error.message}`);
@@ -87,67 +103,93 @@ export class PagamentoCacheService {
   /**
    * Cache para validação de dados bancários
    */
-  async validateDadosBancarios(dadosBancarios: any): Promise<{ isValid: boolean; errors: string[] }> {
+  async validateDadosBancarios(
+    dadosBancarios: any,
+  ): Promise<{ isValid: boolean; errors: string[] }> {
     const cacheKey = `dados_bancarios:${JSON.stringify(dadosBancarios)}`;
-    
+
     try {
       // Buscar no cache primeiro
-      let result = await this.cacheService.get<{ isValid: boolean; errors: string[] }>(cacheKey);
-      
+      let result = await this.cacheService.get<{
+        isValid: boolean;
+        errors: string[];
+      }>(cacheKey);
+
       if (!result) {
         // Se não está no cache, validar usando validateBankingData
         result = this.validationService.validateBankingData(dadosBancarios);
-        
-        await this.cacheService.set(cacheKey, result, this.CACHE_TTL.DADOS_BANCARIOS);
-        this.logger.log('Dados bancários validation cached');
+
+        await this.cacheService.set(
+          cacheKey,
+          result,
+          this.CACHE_TTL.DADOS_BANCARIOS,
+        );
+        // Dados bancários validation cached
       }
-      
+
       return result || { isValid: false, errors: ['Erro na validação'] };
     } catch (error) {
       this.logger.error(`Erro ao validar dados bancários: ${error.message}`);
       // Fallback para validação direta
-      return { isValid: false, errors: ['Erro na validação de dados bancários'] };
+      return {
+        isValid: false,
+        errors: ['Erro na validação de dados bancários'],
+      };
     }
   }
 
   /**
    * Cache para validação de método de pagamento
    */
-  async validateMetodoPagamento(
-    metodoPagamento: MetodoPagamentoEnum,
+  async validatemetodo_pagamento(
+    metodo_pagamento: MetodoPagamentoEnum,
     valor: number,
-    dadosAdicionais?: any
+    dadosAdicionais?: any,
   ): Promise<{ isValid: boolean; errors: string[] }> {
-    const cacheKey = `metodo_pagamento:${metodoPagamento}:${valor}:${JSON.stringify(dadosAdicionais || {})}`;
-    
+    const cacheKey = `metodo_pagamento:${metodo_pagamento}:${valor}:${JSON.stringify(dadosAdicionais || {})}`;
+
     try {
       // Buscar no cache primeiro
-      let result = await this.cacheService.get<{ isValid: boolean; errors: string[] }>(cacheKey);
-      
+      let result = await this.cacheService.get<{
+        isValid: boolean;
+        errors: string[];
+      }>(cacheKey);
+
       if (!result) {
         // Se não está no cache, validar usando validatePaymentCreation
-        const validationResult = this.validationService.validatePaymentCreation({
-          valor,
-          metodoPagamento,
-          solicitacaoId: 'temp',
-          infoBancariaId: undefined,
-          dataLiberacao: new Date()
-        });
-        
+        const validationResult = this.validationService.validatePaymentCreation(
+          {
+            valor,
+            metodo_pagamento,
+            solicitacao_id: 'temp',
+            info_bancaria_id: undefined,
+            data_liberacao: new Date(),
+          },
+        );
+
         result = {
           isValid: validationResult.isValid,
-          errors: validationResult.errors
+          errors: validationResult.errors,
         };
-        
-        await this.cacheService.set(cacheKey, result, this.CACHE_TTL.VALIDATION);
-        this.logger.log(`Método pagamento validation cached: ${metodoPagamento}`);
+
+        await this.cacheService.set(
+          cacheKey,
+          result,
+          this.CACHE_TTL.VALIDATION,
+        );
+        // Método pagamento validation cached
       }
-      
+
       return result || { isValid: false, errors: ['Erro na validação'] };
     } catch (error) {
-      this.logger.error(`Erro ao validar método de pagamento: ${error.message}`);
+      this.logger.error(
+        `Erro ao validar método de pagamento: ${error.message}`,
+      );
       // Fallback para validação direta
-      return { isValid: false, errors: ['Erro na validação de método de pagamento'] };
+      return {
+        isValid: false,
+        errors: ['Erro na validação de método de pagamento'],
+      };
     }
   }
 
@@ -156,48 +198,57 @@ export class PagamentoCacheService {
    */
   async validateValorLimites(
     valor: number,
-    metodoPagamento: MetodoPagamentoEnum
+    metodo_pagamento: MetodoPagamentoEnum,
   ): Promise<{ isValid: boolean; errors: string[] }> {
-    const cacheKey = `valor_limites:${valor}:${metodoPagamento}`;
-    
+    const cacheKey = `valor_limites:${valor}:${metodo_pagamento}`;
+
     try {
       // Buscar no cache primeiro
-      let result = await this.cacheService.get<{ isValid: boolean; errors: string[] }>(cacheKey);
-      
+      let result = await this.cacheService.get<{
+        isValid: boolean;
+        errors: string[];
+      }>(cacheKey);
+
       if (!result) {
         // Se não está no cache, validar usando validatePaymentCreation
-        const validationResult = this.validationService.validatePaymentCreation({
-          valor,
-          metodoPagamento,
-          solicitacaoId: 'temp',
-          infoBancariaId: undefined,
-          dataLiberacao: new Date()
-        });
-        
+        const validationResult = this.validationService.validatePaymentCreation(
+          {
+            valor,
+            metodo_pagamento,
+            solicitacao_id: 'temp',
+            info_bancaria_id: undefined,
+            data_liberacao: new Date(),
+          },
+        );
+
         result = {
           isValid: validationResult.isValid,
-          errors: validationResult.errors
+          errors: validationResult.errors,
         };
-        
-        await this.cacheService.set(cacheKey, result, this.CACHE_TTL.VALIDATION);
-        this.logger.log(`Valor limites validation cached: ${valor}`);
+
+        await this.cacheService.set(
+          cacheKey,
+          result,
+          this.CACHE_TTL.VALIDATION,
+        );
+        // Valor limites validation cached
       }
-      
+
       return result || { isValid: false, errors: ['Erro na validação'] };
     } catch (error) {
       this.logger.error(`Erro ao validar limites de valor: ${error.message}`);
       // Fallback para validação direta
       const validationResult = this.validationService.validatePaymentCreation({
         valor,
-        metodoPagamento,
-        solicitacaoId: 'temp',
-        infoBancariaId: undefined,
-        dataLiberacao: new Date()
+        metodo_pagamento,
+        solicitacao_id: 'temp',
+        info_bancaria_id: undefined,
+        data_liberacao: new Date(),
       });
-      
+
       return {
         isValid: validationResult.isValid,
-        errors: validationResult.errors
+        errors: validationResult.errors,
       };
     }
   }
@@ -222,12 +273,14 @@ export class PagamentoCacheService {
         for (const key of keysToDelete) {
           await this.cacheService.del(key);
         }
-        this.logger.log(`Cache invalidation completed for payment: ${pagamentoId}`);
+        // Cache invalidation completed
       }
 
-      this.logger.log('Cache de validações invalidado');
+      // Cache de validações invalidado
     } catch (error) {
-      this.logger.error(`Erro ao invalidar cache de validações: ${error.message}`);
+      this.logger.error(
+        `Erro ao invalidar cache de validações: ${error.message}`,
+      );
     }
   }
 
@@ -246,10 +299,12 @@ export class PagamentoCacheService {
         hits: 0,
         misses: 0,
         hitRate: 0,
-        totalKeys: 0
+        totalKeys: 0,
       };
     } catch (error) {
-      this.logger.error(`Erro ao obter estatísticas do cache: ${error.message}`);
+      this.logger.error(
+        `Erro ao obter estatísticas do cache: ${error.message}`,
+      );
       return {
         hits: 0,
         misses: 0,
@@ -264,7 +319,7 @@ export class PagamentoCacheService {
    */
   async warmupCache(): Promise<void> {
     try {
-      this.logger.log('Iniciando aquecimento do cache de validações');
+      // Iniciando aquecimento do cache de validações
 
       // Aquecer transições de status mais comuns
       const commonTransitions = [
@@ -275,11 +330,18 @@ export class PagamentoCacheService {
       ];
 
       for (const [from, to] of commonTransitions) {
-        await this.validateStatusTransition(from as StatusPagamentoEnum, to as StatusPagamentoEnum);
+        await this.validateStatusTransition(
+          from as StatusPagamentoEnum,
+          to as StatusPagamentoEnum,
+        );
       }
 
       // Aquecer validações de métodos de pagamento
-      const commonMethods = [MetodoPagamentoEnum.PIX, MetodoPagamentoEnum.DEPOSITO, MetodoPagamentoEnum.DOC];
+      const commonMethods = [
+        MetodoPagamentoEnum.PIX,
+        MetodoPagamentoEnum.DEPOSITO,
+        MetodoPagamentoEnum.DOC,
+      ];
       const commonValues = [100, 500, 1000, 5000];
 
       for (const method of commonMethods) {
@@ -288,7 +350,7 @@ export class PagamentoCacheService {
         }
       }
 
-      this.logger.log('Cache aquecido com sucesso');
+      // Cache aquecido com sucesso
     } catch (error) {
       this.logger.error(`Erro ao aquecer cache: ${error.message}`);
     }

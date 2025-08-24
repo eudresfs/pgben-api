@@ -1,6 +1,6 @@
 /**
  * AuditUtils
- * 
+ *
  * Utilitários para o módulo de auditoria.
  * Funções auxiliares para processamento, validação e formatação.
  */
@@ -21,7 +21,10 @@ export class AuditUtils {
    */
   static extractUserInfo(request: Request) {
     return {
-      userId: request.user?.['id'] || request.user?.['userId'] || request.headers['x-user-id'] as string,
+      userId:
+        request.user?.['id'] ||
+        request.user?.['userId'] ||
+        (request.headers['x-user-id'] as string),
       userAgent: request.headers['user-agent'],
       ip: this.extractClientIp(request),
       sessionId: request.headers['x-session-id'] as string,
@@ -34,8 +37,8 @@ export class AuditUtils {
   static extractClientIp(request: Request): string {
     return (
       (request.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-      request.headers['x-real-ip'] as string ||
-      request.headers['x-client-ip'] as string ||
+      (request.headers['x-real-ip'] as string) ||
+      (request.headers['x-client-ip'] as string) ||
       request.connection?.remoteAddress ||
       request.socket?.remoteAddress ||
       'unknown'
@@ -48,7 +51,7 @@ export class AuditUtils {
   static sanitizeSensitiveData(
     data: any,
     sensitiveFields: string[] = [],
-    maskValue: string = '***MASKED***'
+    maskValue: string = '***MASKED***',
   ): any {
     if (!data || typeof data !== 'object') {
       return data;
@@ -56,23 +59,37 @@ export class AuditUtils {
 
     const sanitized = Array.isArray(data) ? [...data] : { ...data };
     const defaultSensitiveFields = [
-      'password', 'senha', 'token', 'secret', 'key', 'cpf', 'rg', 'ssn',
-      'credit_card', 'card_number', 'cvv', 'pin', 'otp', 'api_key'
+      'password',
+      'senha',
+      'token',
+      'secret',
+      'key',
+      'cpf',
+      'rg',
+      'ssn',
+      'credit_card',
+      'card_number',
+      'cvv',
+      'pin',
+      'otp',
+      'api_key',
     ];
 
     const allSensitiveFields = [...defaultSensitiveFields, ...sensitiveFields];
 
     const sanitizeRecursive = (obj: any): any => {
       if (Array.isArray(obj)) {
-        return obj.map(item => sanitizeRecursive(item));
+        return obj.map((item) => sanitizeRecursive(item));
       }
 
       if (obj && typeof obj === 'object') {
         const result: any = {};
         for (const [key, value] of Object.entries(obj)) {
-          if (allSensitiveFields.some(field => 
-            key.toLowerCase().includes(field.toLowerCase())
-          )) {
+          if (
+            allSensitiveFields.some((field) =>
+              key.toLowerCase().includes(field.toLowerCase()),
+            )
+          ) {
             result[key] = maskValue;
           } else {
             result[key] = sanitizeRecursive(value);
@@ -95,7 +112,7 @@ export class AuditUtils {
     operation?: string,
     sensitiveData?: boolean,
     userRole?: string,
-    timeOfDay?: Date
+    timeOfDay?: Date,
   ): RiskLevel {
     let riskScore = 0;
 
@@ -127,10 +144,14 @@ export class AuditUtils {
     if (operation) {
       const highRiskOperations = ['delete', 'remove', 'destroy', 'purge'];
       const mediumRiskOperations = ['update', 'modify', 'change', 'edit'];
-      
-      if (highRiskOperations.some(op => operation.toLowerCase().includes(op))) {
+
+      if (
+        highRiskOperations.some((op) => operation.toLowerCase().includes(op))
+      ) {
         riskScore += 15;
-      } else if (mediumRiskOperations.some(op => operation.toLowerCase().includes(op))) {
+      } else if (
+        mediumRiskOperations.some((op) => operation.toLowerCase().includes(op))
+      ) {
         riskScore += 10;
       }
     }
@@ -171,7 +192,10 @@ export class AuditUtils {
   /**
    * Valida se um evento de auditoria está bem formado
    */
-  static validateAuditEvent(event: BaseAuditEvent): { valid: boolean; errors: string[] } {
+  static validateAuditEvent(event: BaseAuditEvent): {
+    valid: boolean;
+    errors: string[];
+  } {
     const errors: string[] = [];
 
     // Validações obrigatórias
@@ -198,11 +222,17 @@ export class AuditUtils {
     }
 
     // Validar enum values
-    if (event.eventType && !Object.values(AuditEventType).includes(event.eventType)) {
+    if (
+      event.eventType &&
+      !Object.values(AuditEventType).includes(event.eventType)
+    ) {
       errors.push('eventType inválido');
     }
 
-    if (event.riskLevel && !Object.values(RiskLevel).includes(event.riskLevel)) {
+    if (
+      event.riskLevel &&
+      !Object.values(RiskLevel).includes(event.riskLevel)
+    ) {
       errors.push('riskLevel inválido');
     }
 
@@ -217,7 +247,7 @@ export class AuditUtils {
    */
   static formatEventForLog(event: BaseAuditEvent): string {
     const timestamp = event.timestamp.toISOString();
-    const user = event.userId || 'anonymous';
+    const user = event.userId || '00000000-0000-0000-0000-000000000000';
     const ip = event.requestContext?.ip || 'unknown';
     const type = event.eventType;
     const risk = event.riskLevel;
@@ -242,7 +272,7 @@ export class AuditUtils {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash).toString(16);
@@ -253,14 +283,19 @@ export class AuditUtils {
    */
   static shouldProcessAsync(
     event: BaseAuditEvent,
-    config?: { asyncThreshold?: RiskLevel; forceAsync?: boolean }
+    config?: { asyncThreshold?: RiskLevel; forceAsync?: boolean },
   ): boolean {
     if (config?.forceAsync) {
       return true;
     }
 
     const asyncThreshold = config?.asyncThreshold || RiskLevel.MEDIUM;
-    const riskLevels = [RiskLevel.LOW, RiskLevel.MEDIUM, RiskLevel.HIGH, RiskLevel.CRITICAL];
+    const riskLevels = [
+      RiskLevel.LOW,
+      RiskLevel.MEDIUM,
+      RiskLevel.HIGH,
+      RiskLevel.CRITICAL,
+    ];
     const eventRiskIndex = riskLevels.indexOf(event.riskLevel);
     const thresholdIndex = riskLevels.indexOf(asyncThreshold);
 
@@ -344,7 +379,7 @@ export class AuditUtils {
     ];
 
     const dataString = JSON.stringify(data);
-    return sensitivePatterns.some(pattern => pattern.test(dataString));
+    return sensitivePatterns.some((pattern) => pattern.test(dataString));
   }
 
   /**
@@ -357,7 +392,10 @@ export class AuditUtils {
   /**
    * Calcula o tempo de retenção baseado no tipo de evento e conformidade
    */
-  static calculateRetentionDays(eventType: AuditEventType, isLgpdRelevant: boolean = false): number {
+  static calculateRetentionDays(
+    eventType: AuditEventType,
+    isLgpdRelevant: boolean = false,
+  ): number {
     // Conformidade LGPD - dados pessoais
     if (isLgpdRelevant) {
       return 2555; // ~7 anos para dados fiscais/legais
