@@ -225,7 +225,7 @@ jobs:
                     service:
                       name: ${APP_NAME}-svc
                       port:
-                        number: ${PORT}  # Esta é a porta do serviço
+                        number: ${PORT}  # Porta do serviço
                   path: /
                   pathType: Prefix
             tls:
