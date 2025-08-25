@@ -35,6 +35,8 @@ import { ComprovanteUploadDto } from '../dtos/comprovante-upload.dto';
 import { ComprovanteResponseDto } from '../dtos/comprovante-response.dto';
 import { GerarComprovanteDto, ComprovanteGeradoDto } from '../dtos/gerar-comprovante.dto';
 import { DataMaskingResponseInterceptor } from '../interceptors/data-masking-response.interceptor';
+import { AuditoriaInterceptor } from '../interceptors/auditoria.interceptor';
+import { AuditoriaPagamento } from '../decorators/auditoria.decorator';
 
 /**
  * Controller para gerenciamento de comprovantes de pagamento
@@ -43,7 +45,7 @@ import { DataMaskingResponseInterceptor } from '../interceptors/data-masking-res
 @ApiTags('Pagamentos')
 @Controller('pagamentos/:pagamentoId/comprovantes')
 @UseGuards(JwtAuthGuard, PermissionGuard)
-@UseInterceptors(DataMaskingResponseInterceptor)
+@UseInterceptors(DataMaskingResponseInterceptor, AuditoriaInterceptor)
 export class ComprovanteController {
   constructor(private readonly comprovanteService: ComprovanteService) {}
 
@@ -51,6 +53,7 @@ export class ComprovanteController {
    * Lista comprovantes de um pagamento
    */
   @Get()
+  @AuditoriaPagamento.Consulta('Consulta de comprovantes de pagamento')
   @ApiOperation({ summary: 'Lista comprovantes de um pagamento' })
   @ApiParam({
     name: 'pagamentoId',
@@ -82,6 +85,7 @@ export class ComprovanteController {
    * Upload de comprovante
    */
   @Post()
+  @AuditoriaPagamento.Criacao('Upload de comprovante de pagamento')
   @UseInterceptors(FileInterceptor('arquivo'))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Faz upload de comprovante' })
@@ -121,6 +125,7 @@ export class ComprovanteController {
    * Gera comprovante em PDF pré-preenchido
    */
   @Get('gerar-comprovante')
+  @AuditoriaPagamento.Consulta('Geração de comprovante PDF')
   @ApiOperation({ 
     summary: 'Gera comprovante em PDF pré-preenchido',
     description: 'Gera um comprovante em PDF com dados pré-preenchidos do pagamento para assinatura. Quando formato=pdf, retorna o arquivo para download direto.'
@@ -192,6 +197,7 @@ export class ComprovanteController {
    * Busca comprovante por ID
    */
   @Get(':id')
+  @AuditoriaPagamento.Consulta('Consulta de comprovante específico')
   @ApiOperation({ summary: 'Busca comprovante por ID' })
   @ApiParam({
     name: 'pagamentoId',
@@ -223,6 +229,7 @@ export class ComprovanteController {
    * Download de comprovante
    */
   @Get(':id/download')
+  @AuditoriaPagamento.Consulta('Download de comprovante')
   @ApiOperation({ summary: 'Faz download de comprovante' })
   @RequiresPermission({
     permissionName: 'pagamento.comprovante.download',
@@ -261,6 +268,7 @@ export class ComprovanteController {
    * Remove comprovante
    */
   @Delete(':id')
+  @AuditoriaPagamento.Exclusao('Exclusão de comprovante')
   @ApiOperation({ summary: 'Remove comprovante' })
   @ApiParam({
     name: 'pagamentoId',

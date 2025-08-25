@@ -42,6 +42,7 @@ import { addTransactionalDataSource } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 import { ScopeContextInterceptor } from './common/interceptors/scope-context.interceptor';
 import { AuditContextInterceptor } from './common/interceptors/audit-context.interceptor';
+import { GlobalAuditInterceptor } from './modules/auditoria/interceptors/global-audit.interceptor';
 import { RequestContextHolder } from './common/services/request-context-holder.service';
 
 
@@ -200,6 +201,10 @@ import { RequestContextHolder } from './common/services/request-context-holder.s
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditContextInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: GlobalAuditInterceptor,
     },
 
   ],

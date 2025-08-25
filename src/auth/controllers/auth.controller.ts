@@ -27,8 +27,22 @@ import { LocalAuthGuard } from '../guards/local-auth.guard';
 import { AuthService } from '../services/auth.service';
 import { Public } from '../decorators/public.decorator';
 
+// Auditoria
+import { AuthAuditInterceptor } from '../interceptors/auth-audit.interceptor';
+import { AuditLogin } from '../../modules/auditoria/decorators/audit.decorator';
+import {
+  Audit,
+  SensitiveData,
+  SecurityAudit,
+} from '../../modules/auditoria/decorators/audit.decorators';
+import {
+  AuditEventType,
+  RiskLevel,
+} from '../../modules/auditoria/events/types/audit-event.types';
+
 @ApiTags('Autenticação')
 @Controller('auth')
+@UseInterceptors(AuthAuditInterceptor)
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -38,6 +52,13 @@ export class AuthController {
   }
   @Post('login')
   @Public()
+  @AuditLogin('Login de usuário no sistema')
+  @SecurityAudit('user_login', RiskLevel.HIGH)
+  @SensitiveData({
+    fields: ['password'],
+    maskInLogs: true,
+    requiresConsent: false,
+  })
   @ApiOperation({
     summary: 'Fazer login',
     description:
@@ -108,6 +129,18 @@ export class AuthController {
   }
 
   @Post('refresh-token')
+  @Audit({
+    eventType: AuditEventType.TOKEN_REFRESH,
+    operation: 'refresh_token',
+    riskLevel: RiskLevel.MEDIUM,
+    sensitiveFields: ['refreshToken'],
+    async: true,
+  })
+  @SensitiveData({
+    fields: ['refreshToken'],
+    maskInLogs: true,
+    requiresConsent: false,
+  })
   @ApiOperation({
     summary: 'Atualizar token da api',
     description: 'Renova o token de acesso usando um refresh token válido',

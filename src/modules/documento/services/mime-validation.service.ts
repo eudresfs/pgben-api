@@ -14,6 +14,9 @@ import {
   getExpectedMimeType,
   DANGEROUS_MIME_TYPES,
 } from '../config/mime-validation.config';
+import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
+import { AuditContextHolder } from '../../../common/interceptors/audit-context.interceptor';
 
 /**
  * Resultado da validação MIME
@@ -43,6 +46,7 @@ export class MimeValidationService {
   constructor(
     private readonly configService: ConfigService,
     private readonly logger: LoggingService,
+    private readonly auditEventEmitter: AuditEventEmitter,
   ) {
     this.maxRetries = this.configService.get<number>(
       'MIME_VALIDATION_RETRIES',
@@ -64,6 +68,7 @@ export class MimeValidationService {
   ): Promise<MimeValidationResult> {
     const startTime = Date.now();
     const vId = validationId || crypto.randomUUID().substring(0, 8);
+    const auditContext = this.getAuditContext();
 
     this.logger.info(
       'Iniciando validação MIME completa',
@@ -83,6 +88,36 @@ export class MimeValidationService {
 
       const processingTime = Date.now() - startTime;
 
+      // Auditoria de validação MIME
+      await this.auditEventEmitter.emitSecurityEvent(
+        AuditEventType.SUSPICIOUS_ACTIVITY,
+        auditContext.userId,
+        {
+          action: result.isValid ? 'mime_validation_success' : 'mime_validation_failure',
+          severity: result.isValid ? 'INFO' : 'WARN',
+          description: result.isValid 
+            ? 'Validação MIME realizada com sucesso'
+            : 'Validação MIME falhou - arquivo rejeitado',
+          details: {
+            validationId: vId,
+            nomeArquivo: file.originalname,
+            tamanhoBytes: file.size,
+            mimeTypeDetectado: result.detectedMimeType,
+            mimeTypeEsperado: result.expectedMimeType,
+            extensaoArquivo: result.fileExtension,
+            hashArquivo: result.fileHash,
+            tipoBeneficio,
+            validacaoValida: result.isValid,
+            errosValidacao: result.validationErrors,
+            alertasSeguranca: result.securityWarnings,
+            tempoProcessamentoMs: processingTime,
+            timestampValidacao: new Date().toISOString(),
+          },
+          userAgent: auditContext.userAgent,
+           ip: auditContext.ipAddress,
+        },
+      );
+
       this.logger.info('Validação MIME concluída', MimeValidationService.name, {
         validationId: vId,
         isValid: result.isValid,
@@ -94,6 +129,30 @@ export class MimeValidationService {
       return result;
     } catch (error) {
       const processingTime = Date.now() - startTime;
+
+      // Auditoria de erro na validação MIME
+      await this.auditEventEmitter.emitSecurityEvent(
+        AuditEventType.SUSPICIOUS_ACTIVITY,
+        auditContext.userId,
+        {
+          action: 'mime_validation_error',
+          severity: 'ERROR',
+          description: 'Erro crítico durante validação MIME',
+          details: {
+            validationId: vId,
+            nomeArquivo: file.originalname,
+            tamanhoBytes: file.size,
+            mimeTypeDetectado: file.mimetype,
+            tipoBeneficio,
+            erro: error.message,
+            stackTrace: error.stack,
+            tempoProcessamentoMs: processingTime,
+            timestampErro: new Date().toISOString(),
+          },
+          userAgent: auditContext.userAgent,
+           ip: auditContext.ipAddress,
+        },
+      );
 
       this.logger.error(
         'Erro durante validação MIME',
@@ -338,5 +397,18 @@ export class MimeValidationService {
     }
 
     return `${size.toFixed(2)} ${units[unitIndex]}`;
+  }
+
+  /**
+   * Obtém contexto de auditoria para eventos de validação MIME
+   * @returns Contexto de auditoria com informações do usuário e requisição
+   */
+  private getAuditContext() {
+    const context = AuditContextHolder.get();
+    return {
+      userAgent: context?.userAgent || 'unknown',
+      ipAddress: context?.ip || 'unknown',
+      userId: context?.userId || 'system',
+    };
   }
 }

@@ -8,6 +8,9 @@ import {
   IDocumentoReuseService,
   DocumentReusabilityCheck,
 } from './interfaces/documento-reuse.interface';
+import { AuditEventEmitter } from '../../../auditoria/events/emitters/audit-event.emitter';
+import { AuditContextHolder } from '../../../../common/interceptors/audit-context.interceptor';
+import { AuditEventType } from '../../../auditoria/events/types/audit-event.types';
 
 /**
  * Serviço especializado para verificação de reutilização de documentos
@@ -19,6 +22,7 @@ export class DocumentoReuseService implements IDocumentoReuseService {
     @InjectRepository(Documento)
     private readonly documentoRepository: Repository<Documento>,
     private readonly logger: LoggingService,
+    private readonly auditEventEmitter: AuditEventEmitter,
   ) {}
 
   /**
@@ -76,6 +80,44 @@ export class DocumentoReuseService implements IDocumentoReuseService {
         ? 'Documento existente pode ser reutilizado'
         : 'Documento existente não atende aos critérios de reutilização',
     };
+
+    // Auditoria - Verificação de reutilização
+    const auditContext = this.getAuditContext('system');
+    this.auditEventEmitter.emitSecurityEvent(
+      AuditEventType.SUSPICIOUS_ACTIVITY,
+      auditContext.userId,
+      {
+        action: 'VERIFICACAO_REUTILIZACAO_DOCUMENTO',
+        severity: canReuse ? 'info' : 'warning',
+        description: `Verificação de reutilização ${canReuse ? 'bem-sucedida' : 'sem resultado'}`,
+        userAgent: auditContext.userAgent,
+        ip: auditContext.ipAddress,
+        additionalContext: {
+          uploadId,
+          fileHash,
+          canReuse,
+          existingDocumentId: existingDocument?.id,
+          existingDocumentInfo: existingDocument ? {
+            nomeOriginal: existingDocument.nome_original,
+            mimetype: existingDocument.mimetype,
+            tamanho: existingDocument.tamanho,
+            tipo: existingDocument.tipo,
+            verificado: existingDocument.verificado,
+            dataUpload: existingDocument.created_at,
+          } : undefined,
+          cidadaoId: uploadDocumentoDto.cidadao_id,
+          tipoSolicitado: uploadDocumentoDto.tipo,
+          reason: result.reason,
+          criteriosVerificados: {
+            mesmoHash: !!existingDocument,
+            mesmoCidadao: existingDocument?.cidadao_id === uploadDocumentoDto.cidadao_id,
+            mesmoTipo: !uploadDocumentoDto.tipo || existingDocument?.tipo === uploadDocumentoDto.tipo,
+            documentoAtivo: !existingDocument?.removed_at,
+            arquivoIntegro: !!(existingDocument?.caminho && existingDocument?.hash_arquivo),
+          },
+        },
+      }
+    );
 
     this.logger.debug(
       `Verificação de reutilização concluída [${uploadId}]`,
@@ -157,5 +199,19 @@ export class DocumentoReuseService implements IDocumentoReuseService {
     }
 
     return true;
+  }
+
+  /**
+   * Obtém o contexto de auditoria (userAgent, IP, userId)
+   * @param userId ID do usuário
+   * @returns Contexto de auditoria
+   */
+  private getAuditContext(userId: string) {
+    const context = AuditContextHolder.get();
+    return {
+      userAgent: context?.userAgent || 'unknown',
+      ipAddress: context?.ip || 'unknown',
+      userId: userId || context?.userId || 'unknown',
+    };
   }
 }

@@ -4,9 +4,10 @@ import { BullModule } from '@nestjs/bull';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LogAuditoria } from '../../entities';
 import { AuditoriaService } from './services/auditoria.service';
-import { AuditEventEmitter } from './events/emitters/audit-event.emitter';
+// AuditEventEmitter removido - será fornecido pelo AuditoriaModule principal
 import { AuditoriaQueueService } from './services/auditoria-queue.service';
 import { LogAuditoriaRepository } from './repositories/log-auditoria.repository';
+import { AuditMetricsService } from './services/audit-metrics.service';
 
 /**
  * Módulo Core de Auditoria
@@ -23,18 +24,41 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
   imports: [
     // Configuração do TypeORM para entidades do módulo
     TypeOrmModule.forFeature([LogAuditoria]),
+
+    // Configuração do BullModule para a fila de auditoria
+    BullModule.registerQueueAsync({
+      name: 'auditoria',
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        redis: {
+          host: configService.get('REDIS_HOST', 'localhost'),
+          port: configService.get('REDIS_PORT', 6379),
+          password: configService.get('REDIS_PASSWORD'),
+        },
+        defaultJobOptions: {
+          removeOnComplete: 10,
+          removeOnFail: 5,
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 2000,
+          },
+        },
+      }),
+      inject: [ConfigService],
+    }),
   ],
   providers: [
     AuditoriaService,
-    AuditEventEmitter,
     AuditoriaQueueService,
     LogAuditoriaRepository,
+    AuditMetricsService,
   ],
   exports: [
     AuditoriaService,
-    AuditEventEmitter,
     AuditoriaQueueService,
     LogAuditoriaRepository,
+    AuditMetricsService,
   ],
 })
 export class AuditoriaCoreModule {}

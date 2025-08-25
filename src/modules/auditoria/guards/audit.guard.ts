@@ -13,6 +13,7 @@ import {
   UnauthorizedException,
   ForbiddenException,
 } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { AuditEventEmitter } from '../events/emitters/audit-event.emitter';
@@ -27,6 +28,7 @@ import {
   RiskLevel,
   SecurityAuditEvent,
 } from '../events/types/audit-event.types';
+import { ROLES_KEY } from '../../../auth/decorators/role.decorator';
 
 @Injectable()
 export class AuditGuard implements CanActivate {
@@ -180,6 +182,16 @@ export class AuditGuard implements CanActivate {
   }
 
   /**
+   * Obtém as roles necessárias do contexto
+   */
+  private getRequiredRoles(context: ExecutionContext): string[] | undefined {
+    return this.reflector.getAllAndOverride<string[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+  }
+
+  /**
    * Verifica se há consentimento para dados sensíveis
    */
   private hasConsent(
@@ -214,6 +226,7 @@ export class AuditGuard implements CanActivate {
   ) {
     try {
       const securityEvent: SecurityAuditEvent = {
+        eventId: uuidv4(),
         eventType: AuditEventType.SUSPICIOUS_ACTIVITY,
         timestamp: new Date(),
         userId: auditContext.userId,

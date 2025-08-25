@@ -27,6 +27,7 @@ import {
 } from './documento-audit.service';
 import { AuditContextHolder } from '../../../common/interceptors/audit-context.interceptor';
 import { DocumentoPathService } from './documento-path.service';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import {
   DocumentoUploadValidationService,
   DocumentoFileProcessingService,
@@ -34,8 +35,8 @@ import {
   DocumentoStorageService,
   DocumentoMetadataService,
   DocumentoPersistenceService,
-  UploadValidationResult,
 } from './upload';
+import { UploadValidationResult } from './upload/interfaces';
 
 // Interfaces para refatoração do método upload
 
@@ -77,6 +78,7 @@ export class DocumentoService {
     private readonly logger: LoggingService,
     private readonly auditService: DocumentoAuditService,
     private readonly pathService: DocumentoPathService,
+    private readonly auditEventEmitter: AuditEventEmitter,
 
     // Novos serviços especializados para upload
     private readonly uploadValidationService: DocumentoUploadValidationService,
@@ -228,20 +230,14 @@ export class DocumentoService {
       const buffer = await storageProvider.obterArquivo(documento.caminho);
 
       // Auditoria do download com contexto completo
-      await this.auditService.auditAccess(
-        this.getAuditContext(
-          usuarioId || '00000000-0000-0000-0000-000000000000',
-        ),
-        {
-          documentoId: documento.id,
-          filename: documento.nome_original,
-          mimetype: documento.mimetype,
-          fileSize: documento.tamanho,
-          cidadaoId: documento.cidadao_id,
-          solicitacaoId: documento.solicitacao_id,
-          accessType: 'download',
-          success: true,
-        },
+      const auditContext = this.getAuditContext(
+        usuarioId || '00000000-0000-0000-0000-000000000000',
+      );
+      
+      await this.auditEventEmitter.emitEntityAccessed(
+        'Documento',
+        documento.id,
+        usuarioId || '00000000-0000-0000-0000-000000000000',
       );
 
       this.logger.info(
@@ -257,21 +253,14 @@ export class DocumentoService {
       };
     } catch (error) {
       // Auditoria de falha no download
-      await this.auditService.auditAccess(
-        this.getAuditContext(
-          usuarioId || '00000000-0000-0000-0000-000000000000',
-        ),
-        {
-          documentoId: documento.id,
-          filename: documento.nome_original,
-          mimetype: documento.mimetype,
-          fileSize: documento.tamanho,
-          cidadaoId: documento.cidadao_id,
-          solicitacaoId: documento.solicitacao_id,
-          accessType: 'download',
-          success: false,
-          errorReason: error.message,
-        },
+      const auditContext = this.getAuditContext(
+        usuarioId || '00000000-0000-0000-0000-000000000000',
+      );
+      
+      await this.auditEventEmitter.emitEntityAccessed(
+        'DOCUMENTO',
+        documento.id,
+        usuarioId || '00000000-0000-0000-0000-000000000000',
       );
 
       // Log estruturado do erro para rastreabilidade
@@ -545,18 +534,25 @@ export class DocumentoService {
     const documentoAtualizado = await this.documentoRepository.save(documento);
 
     // Auditoria da verificação
-    await this.auditService.auditUpload(this.getAuditContext(usuarioId), {
-      documentoId: documento.id,
-      operationType: 'verify',
-      operationDetails: {
-        fileName: documento.nome_original,
-        fileSize: documento.tamanho,
-        mimetype: documento.mimetype,
-        observacoes: observacoes,
-        dataVerificacao: documento.data_verificacao,
+    const auditContext = this.getAuditContext(usuarioId);
+    
+    await this.auditEventEmitter.emitEntityUpdated(
+      'Documento',
+      documento.id,
+      {
+        verificado: false,
+        data_verificacao: null,
+        usuario_verificacao_id: null,
+        observacoes_verificacao: null,
       },
-      success: true,
-    });
+      {
+        verificado: true,
+        data_verificacao: documento.data_verificacao,
+        usuario_verificacao_id: usuarioId,
+        observacoes_verificacao: observacoes,
+      },
+      usuarioId,
+    );
 
     return this.documentoRepository
       .createQueryBuilder('documento')
@@ -578,19 +574,23 @@ export class DocumentoService {
     const documentoRemovido = await this.documentoRepository.save(documento);
 
     // Auditoria da remoção
-    await this.auditService.auditUpload(this.getAuditContext(usuarioId), {
-      documentoId: documento.id,
-      operationType: 'delete',
-      operationDetails: {
-        fileName: documento.nome_original,
-        fileSize: documento.tamanho,
+    const auditContext = this.getAuditContext(usuarioId);
+    
+    await this.auditEventEmitter.emitEntityDeleted(
+      'DOCUMENTO',
+      documento.id,
+      {
+        nomeOriginal: documento.nome_original,
         mimetype: documento.mimetype,
-        dataRemocao: documento.removed_at,
+        tamanho: documento.tamanho,
         cidadaoId: documento.cidadao_id,
         solicitacaoId: documento.solicitacao_id,
+        tipo: documento.tipo,
+        verificado: documento.verificado,
+        removed_at: documento.removed_at,
       },
-      success: true,
-    });
+      usuarioId,
+    );
 
     return documentoRemovido;
   }

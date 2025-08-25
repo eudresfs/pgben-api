@@ -21,6 +21,7 @@ import {
   AuditEventConfig,
   RiskLevel,
 } from '../types/audit-event.types';
+import { AuditMetricsService } from '../../services/audit-metrics.service';
 
 @Injectable()
 export class AuditEventEmitter {
@@ -30,6 +31,7 @@ export class AuditEventEmitter {
   constructor(
     private readonly eventEmitter: EventEmitter2,
     @InjectQueue('auditoria') private readonly auditQueue: Queue,
+    private readonly auditMetricsService: AuditMetricsService,
   ) {
     // Inicializa o log de fallback para eventos que falharem no Redis
     this.fallbackLog = createWriteStream(
@@ -88,6 +90,9 @@ export class AuditEventEmitter {
             },
           );
 
+          // Registrar métricas de falha na fila
+          this.auditMetricsService.recordQueueEvent('auditoria', 'failed');
+
           // Fallback: salva o evento em arquivo de log
           this.writeToFallbackLog(enrichedEvent, queueError);
         });
@@ -130,6 +135,7 @@ export class AuditEventEmitter {
     config?: AuditEventConfig,
   ): Promise<void> {
     const event: EntityAuditEvent = {
+      eventId: this.generateEventId(),
       eventType: AuditEventType.ENTITY_CREATED,
       entityName,
       entityId,
@@ -159,6 +165,7 @@ export class AuditEventEmitter {
       this.hasSensitiveFieldsChanged(changedFields);
 
     const event: EntityAuditEvent = {
+      eventId: this.generateEventId(),
       eventType: AuditEventType.ENTITY_UPDATED,
       entityName,
       entityId,
@@ -187,6 +194,7 @@ export class AuditEventEmitter {
     config?: AuditEventConfig,
   ): Promise<void> {
     const event: EntityAuditEvent = {
+      eventId: this.generateEventId(),
       eventType: AuditEventType.ENTITY_DELETED,
       entityName,
       entityId,
@@ -210,6 +218,7 @@ export class AuditEventEmitter {
     config?: AuditEventConfig,
   ): Promise<void> {
     const event: EntityAuditEvent = {
+      eventId: this.generateEventId(),
       eventType: AuditEventType.ENTITY_ACCESSED,
       entityName,
       entityId,
@@ -232,6 +241,7 @@ export class AuditEventEmitter {
     config?: AuditEventConfig,
   ): Promise<void> {
     const event: SecurityAuditEvent = {
+      eventId: this.generateEventId(),
       eventType,
       entityName: 'security',
       userId,
@@ -258,6 +268,7 @@ export class AuditEventEmitter {
     config?: AuditEventConfig,
   ): Promise<void> {
     const event: SensitiveDataAuditEvent = {
+      eventId: this.generateEventId(),
       eventType,
       entityName,
       entityId,
@@ -282,6 +293,7 @@ export class AuditEventEmitter {
     config?: AuditEventConfig,
   ): Promise<void> {
     const event: SystemAuditEvent = {
+      eventId: this.generateEventId(),
       eventType,
       entityName: 'system',
       timestamp: new Date(),
@@ -301,8 +313,20 @@ export class AuditEventEmitter {
       throw new Error('Event type is required');
     }
 
-    if (!event.entityName) {
-      throw new Error('Entity name is required');
+    // EntityName é obrigatório apenas para eventos de entidade e dados sensíveis
+    const requiresEntityName = [
+      AuditEventType.ENTITY_CREATED,
+      AuditEventType.ENTITY_UPDATED,
+      AuditEventType.ENTITY_DELETED,
+      AuditEventType.ENTITY_ACCESSED,
+      AuditEventType.SENSITIVE_DATA_ACCESSED,
+      AuditEventType.SENSITIVE_DATA_EXPORTED,
+      AuditEventType.SENSITIVE_DATA_DELETED,
+      AuditEventType.SENSITIVE_DATA_ANONYMIZED,
+    ].includes(event.eventType);
+
+    if (requiresEntityName && !event.entityName) {
+      throw new Error('Entity name is required for entity and sensitive data events');
     }
 
     if (!event.timestamp) {
@@ -359,7 +383,7 @@ export class AuditEventEmitter {
       throw new Error('Audit queue not available');
     }
 
-    await this.auditQueue.add(
+    const job = await this.auditQueue.add(
       'process-audit-event',
       {
         event,
@@ -367,6 +391,10 @@ export class AuditEventEmitter {
       },
       jobOptions,
     );
+
+    // Registrar métricas de sucesso na fila
+    this.auditMetricsService.recordQueueEvent('auditoria', 'added');
+    this.auditMetricsService.recordEmitterEvent(event.eventType, 'success');
 
     this.logger.debug(`Event added to queue: ${event.eventType}`);
   }
@@ -532,5 +560,12 @@ export class AuditEventEmitter {
       default:
         return RiskLevel.LOW;
     }
+  }
+
+  /**
+   * Gera ID único para evento
+   */
+  private generateEventId(): string {
+    return `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 }

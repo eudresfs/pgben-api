@@ -7,13 +7,15 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { HttpRequest } from '../../../types/express-request';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
 import { Reflector } from '@nestjs/core';
 import { AUDITORIA_METADATA_KEY } from '../decorators/auditoria.decorator';
 import { DataMaskingUtil } from '../utils/data-masking.util';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
+import { AuditContextHolder } from '../../../common/interceptors/audit-context.interceptor';
 
 /**
  * Interface para metadados de auditoria
@@ -66,8 +68,8 @@ export class AuditoriaInterceptor implements NestInterceptor {
     }
 
     const startTime = Date.now();
-    const dadosRequisicao = this.extrairDadosRequisicao(request);
-    const usuario = this.extrairUsuario(request);
+    const dadosRequisicao = this.extrairDadosRequisicao(request as unknown as HttpRequest);
+    const usuario = this.extrairUsuario(request as unknown as HttpRequest);
 
     return next.handle().pipe(
       tap((data) => {
@@ -112,14 +114,15 @@ export class AuditoriaInterceptor implements NestInterceptor {
 
   /**
    * Extrai dados relevantes da requisição HTTP
+   * PADRONIZAÇÃO HTTP: Usa métodos padronizados para captura obrigatória
    */
-  private extrairDadosRequisicao(request: Request) {
+  private extrairDadosRequisicao(request: HttpRequest) {
     return {
       metodo: request.method,
       url: request.url,
-      endpoint: request.route?.path || request.url,
-      ip: this.extrairIP(request),
-      userAgent: request.get('User-Agent') || 'Desconhecido',
+      endpoint: this.normalizeEndpoint(request.originalUrl || request.url),
+      ip: this.extractClientIP(request),
+      userAgent: this.extractUserAgent(request),
       headers: this.filtrarHeaders(request.headers),
       query: request.query,
       params: request.params,
@@ -129,7 +132,7 @@ export class AuditoriaInterceptor implements NestInterceptor {
   /**
    * Extrai informações do usuário autenticado
    */
-  private extrairUsuario(request: Request) {
+  private extrairUsuario(request: HttpRequest) {
     const user = (request as any).user;
     if (!user) {
       return null;
@@ -145,18 +148,60 @@ export class AuditoriaInterceptor implements NestInterceptor {
   }
 
   /**
-   * Extrai o endereço IP real da requisição
+   * PADRONIZAÇÃO HTTP: Extrai IP do cliente com fallbacks obrigatórios
    */
-  private extrairIP(request: Request): string {
-    return (
-      request.ip ||
-      request.connection?.remoteAddress ||
-      request.socket?.remoteAddress ||
-      (request.connection as any)?.socket?.remoteAddress ||
-      request.get('X-Forwarded-For')?.split(',')[0]?.trim() ||
-      request.get('X-Real-IP') ||
-      'Desconhecido'
-    );
+  private extractClientIP(request: HttpRequest): string {
+    // Prioridade: X-Forwarded-For > X-Real-IP > req.ip > connection.remoteAddress
+    const forwardedFor = request.headers['x-forwarded-for'] as string;
+    if (forwardedFor) {
+      // X-Forwarded-For pode conter múltiplos IPs, pegar o primeiro
+      return forwardedFor.split(',')[0].trim();
+    }
+
+    const realIP = request.headers['x-real-ip'] as string;
+    if (realIP) {
+      return realIP.trim();
+    }
+
+    if (request.ip) {
+      return request.ip;
+    }
+
+    if (request.connection?.remoteAddress) {
+      return request.connection.remoteAddress;
+    }
+
+    // Fallback obrigatório - nunca retornar undefined
+    return '127.0.0.1';
+  }
+
+  /**
+   * PADRONIZAÇÃO HTTP: Extrai User-Agent com fallback obrigatório
+   */
+  private extractUserAgent(request: HttpRequest): string {
+    const userAgent = request.headers['user-agent'];
+    
+    if (userAgent && typeof userAgent === 'string' && userAgent.trim()) {
+      return userAgent.trim();
+    }
+
+    // Fallback obrigatório - nunca retornar undefined
+    return 'Unknown User-Agent';
+  }
+
+  /**
+   * PADRONIZAÇÃO HTTP: Normaliza endpoint removendo query parameters
+   */
+  private normalizeEndpoint(originalUrl: string): string {
+    if (!originalUrl || typeof originalUrl !== 'string') {
+      return '/unknown';
+    }
+
+    // Remove query parameters e fragmentos
+    const url = originalUrl.split('?')[0].split('#')[0];
+    
+    // Garante que sempre comece com /
+    return url.startsWith('/') ? url : `/${url}`;
   }
 
   /**
@@ -261,45 +306,12 @@ export class AuditoriaInterceptor implements NestInterceptor {
         },
       };
 
-      // Emitir evento baseado no tipo de operação
-      switch (operacao) {
-        case TipoOperacao.CREATE:
-          await this.auditEventEmitter.emitEntityCreated(
-            auditData.entityName,
-            auditData.entityId,
-            auditData.newData || {},
-            auditData.userId,
-          );
-          break;
-        case TipoOperacao.UPDATE:
-          await this.auditEventEmitter.emitEntityUpdated(
-            auditData.entityName,
-            auditData.entityId,
-            auditData.previousData || {},
-            auditData.newData || {},
-            auditData.userId,
-          );
-          break;
-        case TipoOperacao.DELETE:
-          await this.auditEventEmitter.emitEntityDeleted(
-            auditData.entityName,
-            auditData.entityId,
-            auditData.previousData || {},
-            auditData.userId,
-          );
-          break;
-        default:
-          await this.auditEventEmitter.emitSystemEvent(
-            AuditEventType.SYSTEM_INFO,
-            {
-              description:
-                auditData.description || `${operacao} em ${entidade}`,
-              userId: auditData.userId,
-              entityName: auditData.entityName,
-              entityId: auditData.entityId,
-            },
-          );
-      }
+      // NOTA: Eventos de auditoria HTTP são agora registrados exclusivamente pelo GlobalAuditInterceptor
+      // Este interceptor apenas enriquece metadados específicos do módulo de pagamento
+      // Os dados de auditoria são armazenados no contexto para uso pelo GlobalAuditInterceptor
+      
+      // Contexto de auditoria já está disponível através do AuditContextHolder
+      // Os metadados específicos do pagamento são tratados pelo próprio interceptor
 
       this.logger.debug(
         `Auditoria registrada: ${operacao} em ${entidade} por usuário ${usuario?.id}`,
@@ -493,4 +505,5 @@ export class AuditoriaInterceptor implements NestInterceptor {
 
     return camposSensiveis;
   }
+
 }

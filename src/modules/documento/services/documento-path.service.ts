@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { LoggingService } from '../../../shared/logging/logging.service';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
+import { AuditContextHolder } from '../../../common/interceptors/audit-context.interceptor';
+import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
 
 export interface DocumentoPathInfo {
   cidadaoId: string;
@@ -26,7 +29,10 @@ export interface DocumentoPathOptions {
  */
 @Injectable()
 export class DocumentoPathService {
-  constructor(private readonly logger: LoggingService) {}
+  constructor(
+    private readonly logger: LoggingService,
+    private readonly auditEventEmitter: AuditEventEmitter,
+  ) {}
 
   /**
    * Gera caminho hierárquico para documento
@@ -36,6 +42,7 @@ export class DocumentoPathService {
    */
   generateDocumentPath(options: DocumentoPathOptions): string {
     const { cidadaoId, tipoDocumento, nomeArquivo, solicitacaoId } = options;
+    const auditContext = this.getAuditContext();
 
     // Sanitizar componentes do caminho
     const sanitizedCidadaoId = this.sanitizePath(cidadaoId);
@@ -43,13 +50,24 @@ export class DocumentoPathService {
     const sanitizedNomeArquivo = this.sanitizeFileName(nomeArquivo);
 
     let path: string;
+    let categoria: 'documentos-gerais' | 'solicitacoes';
 
     if (solicitacaoId) {
       const sanitizedSolicitacaoId = this.sanitizePath(solicitacaoId);
       path = `${sanitizedCidadaoId}/solicitacoes/${sanitizedSolicitacaoId}/${sanitizedTipo}/${sanitizedNomeArquivo}`;
+      categoria = 'solicitacoes';
     } else {
       path = `${sanitizedCidadaoId}/documentos-gerais/${sanitizedTipo}/${sanitizedNomeArquivo}`;
+      categoria = 'documentos-gerais';
     }
+
+    // Log do caminho gerado
+    this.logger.debug(`Caminho hierárquico gerado: ${path}`, DocumentoPathService.name, {
+      cidadaoId,
+      tipoDocumento,
+      solicitacaoId,
+      categoria,
+    });
 
     this.logger.debug(`Caminho gerado: ${path}`, DocumentoPathService.name, {
       cidadaoId,
@@ -68,53 +86,62 @@ export class DocumentoPathService {
    * @returns Informações extraídas do caminho
    */
   parseDocumentPath(path: string): DocumentoPathInfo {
-    if (!path || typeof path !== 'string') {
-      throw new Error(
-        'Caminho do documento é obrigatório e deve ser uma string',
-      );
-    }
+    const auditContext = this.getAuditContext();
 
-    const parts = path.split('/').filter((part) => part.length > 0);
-
-    if (parts.length < 3) {
-      throw new Error(
-        `Caminho inválido: ${path}. Formato esperado: cidadao/categoria/tipo/arquivo`,
-      );
-    }
-
-    const cidadaoId = parts[0];
-    const categoria = parts[1];
-
-    if (categoria === 'documentos-gerais') {
-      if (parts.length < 3) {
-        throw new Error(`Caminho inválido para documento geral: ${path}`);
-      }
-
-      return {
-        cidadaoId,
-        tipoDocumento: parts[2],
-        nomeArquivo: parts.slice(3).join('/'), // Suporta arquivos com / no nome
-        isDocumentoGeral: true,
-        categoria: 'documentos-gerais',
-      };
-    } else if (categoria === 'solicitacoes') {
-      if (parts.length < 4) {
+    try {
+      if (!path || typeof path !== 'string') {
         throw new Error(
-          `Caminho inválido para documento de solicitação: ${path}`,
+          'Caminho do documento é obrigatório e deve ser uma string',
         );
       }
 
-      return {
-        cidadaoId,
-        solicitacaoId: parts[2],
-        tipoDocumento: parts[3],
-        nomeArquivo: parts.slice(4).join('/'), // Suporta arquivos com / no nome
-        isDocumentoGeral: false,
-        categoria: 'solicitacoes',
-      };
-    }
+      const parts = path.split('/').filter((part) => part.length > 0);
 
-    throw new Error(`Categoria de documento não reconhecida: ${categoria}`);
+      if (parts.length < 3) {
+        throw new Error(
+          `Caminho inválido: ${path}. Formato esperado: cidadao/categoria/tipo/arquivo`,
+        );
+      }
+
+      const cidadaoId = parts[0];
+      const categoria = parts[1];
+      let pathInfo: DocumentoPathInfo;
+
+      if (categoria === 'documentos-gerais') {
+        if (parts.length < 3) {
+          throw new Error(`Caminho inválido para documento geral: ${path}`);
+        }
+
+        pathInfo = {
+          cidadaoId,
+          tipoDocumento: parts[2],
+          nomeArquivo: parts.slice(3).join('/'), // Suporta arquivos com / no nome
+          isDocumentoGeral: true,
+          categoria: 'documentos-gerais',
+        };
+      } else if (categoria === 'solicitacoes') {
+        if (parts.length < 4) {
+          throw new Error(
+            `Caminho inválido para documento de solicitação: ${path}`,
+          );
+        }
+
+        pathInfo = {
+          cidadaoId,
+          solicitacaoId: parts[2],
+          tipoDocumento: parts[3],
+          nomeArquivo: parts.slice(4).join('/'), // Suporta arquivos com / no nome
+          isDocumentoGeral: false,
+          categoria: 'solicitacoes',
+        };
+      } else {
+        throw new Error(`Categoria de documento não reconhecida: ${categoria}`);
+      }
+
+      return pathInfo;
+    } catch (error) {
+      throw error;
+    }
   }
 
   /**
@@ -230,7 +257,7 @@ export class DocumentoPathService {
     // Remove caracteres perigosos e limita tamanho
     return input
       .replace(/[<>:"|?*\x00-\x1f]/g, '_') // Caracteres perigosos
-      .replace(/\.\.+/g, '_') // Path traversal
+      .replace(/\.\./g, '_') // Path traversal
       .replace(/^\.|\.$/, '_') // Pontos no início/fim
       .substring(0, 50) // Limita tamanho
       .trim();
@@ -270,5 +297,18 @@ export class DocumentoPathService {
       .substring(0, 10);
 
     return sanitizedName + sanitizedExtension;
+  }
+
+  /**
+   * Obtém o contexto de auditoria atual
+   * @returns Contexto de auditoria com informações do usuário e requisição
+   */
+  private getAuditContext() {
+    const context = AuditContextHolder.get();
+    return {
+      userAgent: context?.userAgent || 'unknown',
+      ipAddress: context?.ip || 'unknown',
+      userId: context?.userId || 'system',
+    };
   }
 }

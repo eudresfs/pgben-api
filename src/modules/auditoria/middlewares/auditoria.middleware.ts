@@ -57,10 +57,15 @@ export class AuditoriaMiddleware implements NestMiddleware {
     }
 
     try {
-      // Captura dados da requisição
+      // Captura dados da requisição com validação obrigatória
       const { method, originalUrl, body, user } = req;
-      const ip = req.ip || req.connection.remoteAddress || 'desconhecido'; // ← CORREÇÃO: Garante string
-      const userAgent = req.headers['user-agent'] as string;
+      
+      // PADRONIZAÇÃO HTTP: Garantir captura obrigatória de dados essenciais
+      const ip = this.extractClientIP(req);
+      const userAgent = this.extractUserAgent(req);
+      const endpoint = this.normalizeEndpoint(originalUrl);
+      const metodoHttp = method.toUpperCase();
+      
       const tipoOperacao = this.mapHttpMethodToOperationType(method);
       const { entidade, entidadeId } = this.extractEntityInfo(originalUrl);
       const dadosSensiveis = this.detectarDadosSensiveis(body);
@@ -80,8 +85,8 @@ export class AuditoriaMiddleware implements NestMiddleware {
         // ← CORREÇÃO: Usar setImmediate para não bloquear o ciclo de evento
         setImmediate(() => {
           this.processarAuditoriaAsync(
-            method,
-            originalUrl,
+            metodoHttp,
+            endpoint,
             body,
             responseBody,
             user,
@@ -118,8 +123,8 @@ export class AuditoriaMiddleware implements NestMiddleware {
    * Processa a auditoria de forma assíncrona e isolada
    */
   private async processarAuditoriaAsync(
-    method: string,
-    originalUrl: string,
+    metodoHttp: string,
+    endpoint: string,
     body: any,
     responseBody: any,
     user: any,
@@ -137,23 +142,23 @@ export class AuditoriaMiddleware implements NestMiddleware {
         return;
       }
 
-      // ← CORREÇÃO: Criar DTO de forma simples, sem plainToInstance
+      // PADRONIZAÇÃO HTTP: Criar DTO com dados obrigatórios validados
       const logAuditoriaDto: CreateLogAuditoriaDto = {
         tipo_operacao: tipoOperacao,
         entidade_afetada: entidade,
         entidade_id: entidadeId || '',
         dados_anteriores:
-          method === 'PUT' || method === 'PATCH' ? body : undefined,
+          metodoHttp === 'PUT' || metodoHttp === 'PATCH' ? body : undefined,
         dados_novos:
-          method === 'POST' || method === 'PUT' || method === 'PATCH'
+          metodoHttp === 'POST' || metodoHttp === 'PUT' || metodoHttp === 'PATCH'
             ? responseBody
             : undefined,
         usuario_id: user?.id,
-        ip_origem: ip, // ← Agora sempre será string
-        user_agent: userAgent,
-        endpoint: originalUrl,
-        metodo_http: method,
-        descricao: `${method} em ${entidade}${entidadeId ? ` (ID: ${entidadeId})` : ''}`,
+        ip_origem: ip, // Sempre preenchido com valor válido
+        user_agent: userAgent, // Sempre preenchido com valor válido
+        endpoint: endpoint, // Sempre preenchido com valor normalizado
+        metodo_http: metodoHttp, // Sempre preenchido com valor padronizado
+        descricao: `${metodoHttp} em ${entidade}${entidadeId ? ` (ID: ${entidadeId})` : ''}`,
         dados_sensiveis_acessados:
           dadosSensiveis.length > 0 ? dadosSensiveis : undefined,
         validar: function (validationGroup?: string): void {
@@ -176,8 +181,8 @@ export class AuditoriaMiddleware implements NestMiddleware {
             dadosSensiveis,
             ip, // ← Agora sempre será string
             userAgent,
-            originalUrl,
-            method,
+            endpoint,
+            metodoHttp,
           ),
         );
       }
@@ -323,5 +328,62 @@ export class AuditoriaMiddleware implements NestMiddleware {
     procurarCamposSensiveis(body);
 
     return Array.from(camposEncontrados);
+  }
+
+  /**
+   * PADRONIZAÇÃO HTTP: Extrai IP do cliente com fallbacks obrigatórios
+   */
+  private extractClientIP(req: Request): string {
+    // Prioridade: X-Forwarded-For > X-Real-IP > req.ip > connection.remoteAddress
+    const forwardedFor = req.headers['x-forwarded-for'] as string;
+    if (forwardedFor) {
+      // X-Forwarded-For pode conter múltiplos IPs, pegar o primeiro
+      return forwardedFor.split(',')[0].trim();
+    }
+
+    const realIP = req.headers['x-real-ip'] as string;
+    if (realIP) {
+      return realIP.trim();
+    }
+
+    if (req.ip) {
+      return req.ip;
+    }
+
+    if (req.connection?.remoteAddress) {
+      return req.connection.remoteAddress;
+    }
+
+    // Fallback obrigatório - nunca retornar undefined
+    return '127.0.0.1';
+  }
+
+  /**
+   * PADRONIZAÇÃO HTTP: Extrai User-Agent com fallback obrigatório
+   */
+  private extractUserAgent(req: Request): string {
+    const userAgent = req.headers['user-agent'];
+    
+    if (userAgent && typeof userAgent === 'string' && userAgent.trim()) {
+      return userAgent.trim();
+    }
+
+    // Fallback obrigatório - nunca retornar undefined
+    return 'Unknown User-Agent';
+  }
+
+  /**
+   * PADRONIZAÇÃO HTTP: Normaliza endpoint removendo query parameters
+   */
+  private normalizeEndpoint(originalUrl: string): string {
+    if (!originalUrl || typeof originalUrl !== 'string') {
+      return '/unknown';
+    }
+
+    // Remove query parameters e fragmentos
+    const url = originalUrl.split('?')[0].split('#')[0];
+    
+    // Garante que sempre comece com /
+    return url.startsWith('/') ? url : `/${url}`;
   }
 }

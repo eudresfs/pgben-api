@@ -29,6 +29,8 @@ import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { DataMaskingResponseInterceptor } from '../interceptors/data-masking-response.interceptor';
+import { AuditoriaInterceptor } from '../interceptors/auditoria.interceptor';
+import { AuditoriaPagamento } from '../decorators/auditoria.decorator';
 
 /**
  * Controller simplificado para gerenciamento de pagamentos
@@ -37,7 +39,7 @@ import { DataMaskingResponseInterceptor } from '../interceptors/data-masking-res
 @ApiTags('Pagamentos')
 @Controller('pagamentos')
 @UseGuards(JwtAuthGuard, PermissionGuard)
-@UseInterceptors(DataMaskingResponseInterceptor)
+@UseInterceptors(DataMaskingResponseInterceptor, AuditoriaInterceptor)
 export class PagamentoController {
   constructor(private readonly pagamentoService: PagamentoService) {}
 
@@ -45,6 +47,7 @@ export class PagamentoController {
    * Lista pagamentos com filtros e paginação
    */
   @Get()
+  @AuditoriaPagamento.Consulta('Listagem de pagamentos com filtros')
   @RequiresPermission({
     permissionName: 'pagamento.listar',
     scopeType: TipoEscopo.UNIDADE,
@@ -127,6 +130,7 @@ export class PagamentoController {
    * Busca pagamento por ID
    */
   @Get(':id')
+  @AuditoriaPagamento.Consulta('Consulta de pagamento por ID')
   @RequiresPermission({
     permissionName: 'pagamento.visualizar',
     scopeType: TipoEscopo.UNIDADE,
@@ -143,6 +147,7 @@ export class PagamentoController {
    * Cria um novo pagamento
    */
   @Post()
+  @AuditoriaPagamento.Criacao('Criação de novo pagamento')
   @RequiresPermission({
     permissionName: 'pagamento.criar',
     scopeType: TipoEscopo.UNIDADE,
@@ -167,6 +172,7 @@ export class PagamentoController {
    * Atualiza status do pagamento
    */
   @Patch(':id/status')
+  @AuditoriaPagamento.AtualizacaoStatus('Atualização de status do pagamento')
   @RequiresPermission({
     permissionName: 'pagamento.atualizar',
     scopeType: TipoEscopo.UNIDADE,
@@ -198,6 +204,7 @@ export class PagamentoController {
    * Cancela um pagamento
    */
   @Patch(':id/cancelar')
+  @AuditoriaPagamento.Cancelamento('Cancelamento de pagamento')
   @RequiresPermission({
     permissionName: 'pagamento.cancelar',
     scopeType: TipoEscopo.UNIDADE,
@@ -232,6 +239,7 @@ export class PagamentoController {
    * Busca pagamentos por solicitação
    */
   @Get('solicitacao/:solicitacao_id')
+  @AuditoriaPagamento.Consulta('Consulta de pagamentos por solicitação')
   @RequiresPermission({
     permissionName: 'pagamento.listar',
     scopeType: TipoEscopo.UNIDADE,
@@ -263,6 +271,7 @@ export class PagamentoController {
    * Busca pagamentos por concessão
    */
   @Get('concessao/:concessao_id')
+  @AuditoriaPagamento.Consulta('Consulta de pagamentos por concessão')
   @RequiresPermission({
     permissionName: 'pagamento.listar',
     scopeType: TipoEscopo.UNIDADE,
@@ -291,6 +300,7 @@ export class PagamentoController {
    * Processa vencimentos automáticos
    */
   @Post('processar-vencimentos')
+  @AuditoriaPagamento.ProcessamentoAutomatico('Processamento automático de vencimentos')
   @RequiresPermission({
     permissionName: 'pagamento.processar_vencimentos',
     scopeType: TipoEscopo.SISTEMA,
@@ -311,6 +321,7 @@ export class PagamentoController {
    * Obtém estatísticas de pagamentos
    */
   @Get('estatisticas')
+  @AuditoriaPagamento.Consulta('Consulta de estatísticas de pagamentos')
   @RequiresPermission({
     permissionName: 'pagamento.estatisticas',
     scopeType: TipoEscopo.UNIDADE,

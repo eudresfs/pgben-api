@@ -17,20 +17,36 @@ export class ChangeAtivoToStatusInAprovacao1755891500000 implements MigrationInt
       END $$;
     `);
 
-    // Alterar tabela acoes_aprovacao
-    await queryRunner.query(`
-      ALTER TABLE "acoes_aprovacao" 
-      ADD COLUMN "status" "status_enum" DEFAULT 'ATIVO'
+    // Alterar tabela acoes_aprovacao - verificar se coluna status já existe
+    const statusColumnExists = await queryRunner.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'acoes_aprovacao' AND column_name = 'status'
     `);
     
-    // Migrar dados: true -> ATIVO, false -> INATIVO
-    await queryRunner.query(`
-      UPDATE "acoes_aprovacao" 
-      SET "status" = CASE 
-        WHEN "ativo" = true THEN 'ATIVO'::"status_enum"
-        ELSE 'INATIVO'::"status_enum"
-      END
+    if (statusColumnExists.length === 0) {
+      await queryRunner.query(`
+        ALTER TABLE "acoes_aprovacao" 
+        ADD COLUMN "status" "status_enum" DEFAULT 'ATIVO'
+      `);
+    }
+    
+    // Migrar dados: true -> ATIVO, false -> INATIVO (apenas se coluna ativo existir)
+    const ativoColumnExists = await queryRunner.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'acoes_aprovacao' AND column_name = 'ativo'
     `);
+    
+    if (ativoColumnExists.length > 0) {
+      await queryRunner.query(`
+        UPDATE "acoes_aprovacao" 
+        SET "status" = CASE 
+          WHEN "ativo" = true THEN 'ATIVO'::"status_enum"
+          ELSE 'INATIVO'::"status_enum"
+        END
+      `);
+    }
     
     // Tornar coluna status NOT NULL
     await queryRunner.query(`
@@ -38,26 +54,44 @@ export class ChangeAtivoToStatusInAprovacao1755891500000 implements MigrationInt
       ALTER COLUMN "status" SET NOT NULL
     `);
     
-    // Remover coluna ativo
-    await queryRunner.query(`
-      ALTER TABLE "acoes_aprovacao" 
-      DROP COLUMN "ativo"
-    `);
+    // Remover coluna ativo (apenas se existir)
+    if (ativoColumnExists.length > 0) {
+      await queryRunner.query(`
+        ALTER TABLE "acoes_aprovacao" 
+        DROP COLUMN "ativo"
+      `);
+    }
 
-    // Alterar tabela configuracao_aprovadores
-    await queryRunner.query(`
-      ALTER TABLE "configuracao_aprovadores" 
-      ADD COLUMN "status" "status_enum" DEFAULT 'ATIVO'
+    // Alterar tabela configuracao_aprovadores - verificar se coluna status já existe
+    const statusColumnExistsConfig = await queryRunner.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'configuracao_aprovadores' AND column_name = 'status'
     `);
     
-    // Migrar dados: true -> ATIVO, false -> INATIVO
-    await queryRunner.query(`
-      UPDATE "configuracao_aprovadores" 
-      SET "status" = CASE 
-        WHEN "ativo" = true THEN 'ATIVO'::"status_enum"
-        ELSE 'INATIVO'::"status_enum"
-      END
+    if (statusColumnExistsConfig.length === 0) {
+      await queryRunner.query(`
+        ALTER TABLE "configuracao_aprovadores" 
+        ADD COLUMN "status" "status_enum" DEFAULT 'ATIVO'
+      `);
+    }
+    
+    // Migrar dados: true -> ATIVO, false -> INATIVO (apenas se coluna ativo existir)
+    const ativoColumnExistsConfig = await queryRunner.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'configuracao_aprovadores' AND column_name = 'ativo'
     `);
+    
+    if (ativoColumnExistsConfig.length > 0) {
+      await queryRunner.query(`
+        UPDATE "configuracao_aprovadores" 
+        SET "status" = CASE 
+          WHEN "ativo" = true THEN 'ATIVO'::"status_enum"
+          ELSE 'INATIVO'::"status_enum"
+        END
+      `);
+    }
     
     // Tornar coluna status NOT NULL
     await queryRunner.query(`
@@ -65,26 +99,44 @@ export class ChangeAtivoToStatusInAprovacao1755891500000 implements MigrationInt
       ALTER COLUMN "status" SET NOT NULL
     `);
     
-    // Remover coluna ativo
-    await queryRunner.query(`
-      ALTER TABLE "configuracao_aprovadores" 
-      DROP COLUMN "ativo"
-    `);
+    // Remover coluna ativo (apenas se existir)
+    if (ativoColumnExistsConfig.length > 0) {
+      await queryRunner.query(`
+        ALTER TABLE "configuracao_aprovadores" 
+        DROP COLUMN "ativo"
+      `);
+    }
 
-    // Alterar tabela solicitacao_aprovadores
-    await queryRunner.query(`
-      ALTER TABLE "solicitacao_aprovadores" 
-      ADD COLUMN "status" "status_enum" DEFAULT 'ATIVO'
+    // Alterar tabela solicitacao_aprovadores - verificar se coluna status já existe
+    const statusColumnExistsSolic = await queryRunner.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'solicitacao_aprovadores' AND column_name = 'status'
     `);
     
-    // Migrar dados: true -> ATIVO, false -> INATIVO
-    await queryRunner.query(`
-      UPDATE "solicitacao_aprovadores" 
-      SET "status" = CASE 
-        WHEN "ativo" = true THEN 'ATIVO'::"status_enum"
-        ELSE 'INATIVO'::"status_enum"
-      END
+    if (statusColumnExistsSolic.length === 0) {
+      await queryRunner.query(`
+        ALTER TABLE "solicitacao_aprovadores" 
+        ADD COLUMN "status" "status_enum" DEFAULT 'ATIVO'
+      `);
+    }
+    
+    // Migrar dados: true -> ATIVO, false -> INATIVO (apenas se coluna ativo existir)
+    const ativoColumnExistsSolic = await queryRunner.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'solicitacao_aprovadores' AND column_name = 'ativo'
     `);
+    
+    if (ativoColumnExistsSolic.length > 0) {
+      await queryRunner.query(`
+        UPDATE "solicitacao_aprovadores" 
+        SET "status" = CASE 
+          WHEN "ativo" = true THEN 'ATIVO'::"status_enum"
+          ELSE 'INATIVO'::"status_enum"
+        END
+      `);
+    }
     
     // Tornar coluna status NOT NULL
     await queryRunner.query(`
@@ -92,11 +144,13 @@ export class ChangeAtivoToStatusInAprovacao1755891500000 implements MigrationInt
       ALTER COLUMN "status" SET NOT NULL
     `);
     
-    // Remover coluna ativo
-    await queryRunner.query(`
-      ALTER TABLE "solicitacao_aprovadores" 
-      DROP COLUMN "ativo"
-    `);
+    // Remover coluna ativo (apenas se existir)
+    if (ativoColumnExistsSolic.length > 0) {
+      await queryRunner.query(`
+        ALTER TABLE "solicitacao_aprovadores" 
+        DROP COLUMN "ativo"
+      `);
+    }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

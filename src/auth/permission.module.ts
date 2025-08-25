@@ -21,9 +21,16 @@ import { PermissionScopeRepository } from './repositories/permission-scope.repos
 
 // Services
 import { PermissionService } from './services/permission.service';
+import { AuthorizationService } from './services/authorization.service';
+
+// Controllers
+import { PermissionController } from './controllers/permission.controller';
 
 // Guards
 import { PermissionGuard } from './guards/permission.guard';
+
+// Modules
+import { AuthGuardsModule } from '../shared/guards/auth-guards.module';
 
 // Constants
 const PERMISSION_CACHE_CONFIG = {
@@ -85,6 +92,13 @@ const PERMISSION_CACHE_CONFIG = {
     }),
 
     ConfigModule,
+
+    // Módulo de Guards de Autenticação
+    AuthGuardsModule,
+  ],
+
+  controllers: [
+    PermissionController,
   ],
 
   providers: [
@@ -96,19 +110,14 @@ const PERMISSION_CACHE_CONFIG = {
     UserPermissionRepository,
     PermissionScopeRepository,
 
-    // Serviço principal
+    // Serviços principais
     PermissionService,
-
-    // Guards
-    PermissionGuard,
+    AuthorizationService,
   ],
 
   exports: [
     // Serviço para uso em outros módulos
     PermissionService,
-
-    // Guard para controle de acesso
-    PermissionGuard,
 
     // Repositórios para uso avançado
     PermissionRepository,

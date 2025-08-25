@@ -30,6 +30,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DadosBeneficioFactoryService } from '../../beneficio/services/dados-beneficio-factory.service';
 import { BeneficioService } from '../../beneficio/services/beneficio.service';
 import { DocumentoService } from '../../documento/services/documento.service';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import {
   throwWorkflowStepRequired,
   throwSolicitacaoNotFound,
@@ -78,6 +79,7 @@ export class WorkflowSolicitacaoService {
     @Inject(forwardRef(() => BeneficioService))
     private readonly beneficioService: BeneficioService,
     private readonly documentoService: DocumentoService,
+    private readonly auditEventEmitter: AuditEventEmitter,
   ) {}
 
   /**
@@ -557,16 +559,11 @@ export class WorkflowSolicitacaoService {
               totalDocumentosEnviados: tiposDocumentosEnviados.length,
               documentosHistoricos: tiposDocumentosHistoricos,
               totalDocumentosHistoricos: tiposDocumentosHistoricos.length,
-              todosDocumentosDisponiveis,
-              totalDocumentosDisponiveis: todosDocumentosDisponiveis.length,
-              totalDocumentosObrigatorios: tiposDocumentosObrigatorios.length,
             },
           });
         } else {
-          this.logger.log(
-            `Todos os documentos obrigatórios foram atendidos para solicitação ${solicitacaoId}. ` +
-              `Documentos na solicitação atual: ${tiposDocumentosEnviados.length}, ` +
-              `Documentos do histórico: ${tiposDocumentosHistoricos.length}`,
+          this.logger.debug(
+            `Todos os documentos obrigatórios estão disponíveis para solicitação ${solicitacaoId}`,
           );
         }
       } else {
@@ -579,100 +576,113 @@ export class WorkflowSolicitacaoService {
         throw error;
       }
       this.logger.error(
-        `Erro ao validar documentos obrigatórios para solicitação ${solicitacaoId}: ${error.message}`,
+        `Erro ao validar requisitos documentais para solicitação ${solicitacaoId}: ${error.message}`,
         error.stack,
       );
       throw error;
     }
 
-    this.logger.log(
-      `Validação de envio para análise concluída com sucesso para solicitação ${solicitacaoId} do benefício '${tipoBeneficio.nome}'`,
+    this.logger.debug(
+      `Validação de envio para análise concluída com sucesso para solicitação ${solicitacaoId}`,
     );
   }
 
   /**
-   * Envia uma solicitação para análise, alterando seu estado para EM_ANALISE
+   * Envia uma solicitação para análise
    * @param solicitacaoId ID da solicitação
-   * @param usuarioId ID do usuário que está enviando a solicitação
+   * @param usuarioId ID do usuário
    * @returns Resultado da transição
-   * @throws {AppError} Se a validação falhar ou ocorrer erro na transição
    */
   async enviarParaAnalise(
     solicitacaoId: string,
     usuarioId: string,
   ): Promise<ResultadoTransicaoEstado> {
     this.logger.log(
-      `Iniciando processo de envio para análise da solicitação ${solicitacaoId} pelo usuário ${usuarioId}`,
+      `Enviando solicitação ${solicitacaoId} para análise por usuário ${usuarioId}`,
     );
 
     try {
       // Validar se a solicitação pode ser enviada para análise
       await this.validarEnvioParaAnalise(solicitacaoId);
 
-      this.logger.debug(
-        `Validação concluída com sucesso para solicitação ${solicitacaoId}. Iniciando transição de estado.`,
-      );
-
-      // Se passou na validação, realizar a transição
+      // Realizar a transição de estado
       const resultado = await this.realizarTransicao(
         solicitacaoId,
         StatusSolicitacao.EM_ANALISE,
         usuarioId,
-        'Solicitação enviada para análise após validação completa',
+        'Solicitação enviada para análise',
       );
 
       if (resultado.sucesso) {
-        this.logger.log(
-          `Solicitação ${solicitacaoId} enviada para análise com sucesso. Status alterado de '${resultado.status_anterior}' para '${resultado.status_atual}'`,
-        );
+        // Emitir evento de auditoria
+      await this.auditEventEmitter.emitEntityUpdated(
+        'Solicitacao',
+        solicitacaoId,
+        {
+          status: StatusSolicitacao.RASCUNHO,
+        },
+        {
+          status: StatusSolicitacao.EM_ANALISE,
+        },
+        usuarioId,
+      );
       } else {
-        this.logger.warn(
-          `Falha ao enviar solicitação ${solicitacaoId} para análise. Motivo: ${resultado.mensagem || 'Não especificado'}`,
+        this.logger.error(
+          `Falha ao enviar solicitação ${solicitacaoId} para análise: ${resultado.mensagem}`,
         );
       }
 
       return resultado;
     } catch (error) {
-      // Log detalhado do erro para debugging
       this.logger.error(
         `Erro ao enviar solicitação ${solicitacaoId} para análise: ${error.message}`,
-        {
-          solicitacaoId,
-          usuarioId,
-          errorCode: error.code,
-          errorStack: error.stack,
-          context: 'enviarParaAnalise',
-        },
+        error.stack,
       );
-
-      // Re-propagar o erro para que seja tratado pelo filtro de exceções
       throw error;
     }
   }
 
   /**
-   * Inicia a análise de uma solicitação, alterando seu estado para EM_ANALISE
+   * Inicia a análise de uma solicitação
    * @param solicitacaoId ID da solicitação
-   * @param usuarioId ID do usuário que está iniciando a análise
+   * @param usuarioId ID do usuário
    * @returns Resultado da transição
    */
   async iniciarAnalise(
     solicitacaoId: string,
     usuarioId: string,
   ): Promise<ResultadoTransicaoEstado> {
-    return this.realizarTransicao(
+    const resultado = await this.realizarTransicao(
       solicitacaoId,
       StatusSolicitacao.EM_ANALISE,
       usuarioId,
       'Análise iniciada',
     );
+
+    if (resultado.sucesso) {
+      // Emitir evento de auditoria
+      await this.auditEventEmitter.emitEntityUpdated(
+        'Solicitacao',
+        solicitacaoId,
+        {
+          status: StatusSolicitacao.PENDENTE,
+        },
+        {
+          status: StatusSolicitacao.EM_ANALISE,
+        },
+        usuarioId,
+      );
+    }
+
+    return resultado;
   }
 
   /**
-   * Aprova uma solicitação, alterando seu estado para APROVADA
+   * Aprova uma solicitação
    * @param solicitacaoId ID da solicitação
-   * @param usuarioId ID do usuário que está aprovando a solicitação
-   * @param observacao Observação sobre a aprovação
+   * @param usuarioId ID do usuário
+   * @param observacao Observação da aprovação
+   * @param parecerSemtas Parecer da SEMTAS
    * @returns Resultado da transição
    */
   async aprovarSolicitacao(
@@ -681,29 +691,21 @@ export class WorkflowSolicitacaoService {
     observacao: string,
     parecerSemtas: string,
   ): Promise<ResultadoTransicaoEstado> {
-    // Buscar a solicitação para obter dados do criador
+    // Buscar a solicitação para obter informações necessárias
     const solicitacao = await this.solicitacaoRepository.findOne({
       where: { id: solicitacaoId },
-      relations: ['beneficiario', 'tipo_beneficio'],
+      relations: ['tipo_beneficio'],
     });
 
     if (!solicitacao) {
-      throw new NotFoundException(
-        `Solicitação com ID ${solicitacaoId} não encontrada`,
-      );
+      throw new NotFoundException('Solicitação não encontrada');
     }
 
-    // Primeiro, atualizar o parecer SEMTAS na solicitação
+    // Atualizar o parecer SEMTAS antes da transição
     await this.solicitacaoRepository.update(solicitacaoId, {
       parecer_semtas: parecerSemtas,
-      aprovador_id: usuarioId,
-      data_aprovacao: new Date(),
     });
 
-    // Validar se a solicitação pode ser aprovada (regras de negócio)
-    await this.validacaoService.validarAprovacao(solicitacaoId);
-
-    // Se passar na validação, realizar a transição
     const resultado = await this.realizarTransicao(
       solicitacaoId,
       StatusSolicitacao.APROVADA,
@@ -711,68 +713,62 @@ export class WorkflowSolicitacaoService {
       observacao,
     );
 
-    // Criação automática de concessão vinculada à solicitação aprovada
     if (resultado.sucesso) {
       try {
-        const concessao =
-          await this.concessaoService.criarSeNaoExistir(solicitacao);
-        resultado.concessao = concessao; // Incluir dados da concessão no retorno
-        this.logger.debug(
-          `Concessão criada/recuperada para solicitação ${solicitacao.id}`,
+        // Criar a concessão automaticamente
+        const concessao = await this.concessaoService.criarSeNaoExistir(
+          solicitacao,
         );
+        resultado.concessao = concessao;
       } catch (concessaoErr) {
         this.logger.error(
-          `Erro ao criar concessão automática para solicitação ${solicitacao.id}: ${concessaoErr.message}`,
+          `Erro ao criar concessão para solicitação ${solicitacaoId}: ${concessaoErr.message}`,
           concessaoErr.stack,
         );
+        // Não falhar a aprovação por erro na concessão
       }
-    }
 
-    // Enviar notificação para o criador da solicitação
-    if (resultado.sucesso && solicitacao.tecnico_id) {
-      try {
-        // Buscar o template de aprovação usando o serviço de mapeamento
-        const templateData =
-          await this.templateMappingService.prepararDadosTemplate('APROVACAO');
+      // Enviar notificação para o técnico responsável
+      if (resultado.sucesso && solicitacao.tecnico_id) {
+        try {
+          // Buscar template de notificação
+          const templateData =
+          await this.templateMappingService.prepararDadosTemplate(
+            'APROVACAO',
+          );
 
         await this.notificacaoService.criarEBroadcast({
           destinatario_id: solicitacao.tecnico_id,
-          titulo: 'Solicitação Aprovada',
-          conteudo: `Sua solicitação de ${solicitacao.tipo_beneficio.nome || 'benefício'} foi aprovada. ${observacao ? `Observação: ${observacao}` : ''}`,
-          tipo: 'aprovacao',
-          prioridade: 'high',
-          template_id: templateData.template_id,
-          dados: {
-            solicitacao_id: solicitacao.id,
-            tipo_beneficio: solicitacao.tipo_beneficio?.nome || 'Benefício',
-            beneficiario_nome: solicitacao.beneficiario?.nome || 'Beneficiário',
-            status_anterior: resultado.status_anterior,
-            status_novo: resultado.status_atual,
-            parecer_semtas: parecerSemtas,
-            observacao: observacao || 'Nenhuma observação',
-            data_aprovacao: new Date().toLocaleDateString('pt-BR'),
-            url_sistema:
-              process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
-          },
-        });
+            tipo: 'SOLICITACAO_APROVADA',
+            titulo: 'Solicitação Aprovada',
+            conteudo: `A solicitação ${solicitacao.protocolo} foi aprovada.`,
+            dados: {
+              solicitacao_id: solicitacaoId,
+              protocolo: solicitacao.protocolo,
+              status: StatusSolicitacao.APROVADA,
+              observacao,
+              parecer_semtas: parecerSemtas,
+            },
+          });
 
-        if (templateData.templateEncontrado) {
-          this.logger.log(
-            `Notificação de aprovação enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`,
-          );
-        } else {
-          this.logger.warn(
-            `Template para APROVACAO não encontrado. Notificação enviada sem template.`,
+          if (templateData.templateEncontrado) {
+            this.logger.log(
+              `Notificação de aprovação enviada para técnico ${solicitacao.tecnico_id}`,
+            );
+          } else {
+            this.logger.warn(
+              'Template de notificação para aprovação não encontrado',
+            );
+          }
+        } catch (notificationError) {
+          this.logger.error(
+            `Erro ao enviar notificação de aprovação: ${notificationError.message}`,
+            notificationError.stack,
           );
         }
-      } catch (notificationError) {
-        this.logger.error(
-          `Erro ao enviar notificação de aprovação da solicitação ${solicitacaoId}: ${notificationError.message}`,
-          notificationError.stack,
-        );
       }
 
-      // Emitir notificação SSE específica para aprovação
+      // Emitir notificação SSE
       try {
         this.eventEmitter.emit('sse.notificacao', {
           userId: solicitacao.tecnico_id,
@@ -780,10 +776,9 @@ export class WorkflowSolicitacaoService {
           dados: {
             solicitacaoId: solicitacao.id,
             protocolo: solicitacao.protocolo,
-            tipoBeneficio: solicitacao.tipo_beneficio?.nome || 'Benefício',
-            beneficiarioNome: solicitacao.beneficiario?.nome || 'Beneficiário',
-            parecerSemtas: parecerSemtas,
-            observacao: observacao,
+            status: StatusSolicitacao.APROVADA,
+            observacao,
+            parecer_semtas: parecerSemtas,
             prioridade: 'high',
             dataAprovacao: new Date(),
           },
@@ -794,15 +789,31 @@ export class WorkflowSolicitacaoService {
           sseError.stack,
         );
       }
+
+      // Emitir evento de auditoria
+      if (resultado.sucesso) {
+        await this.auditEventEmitter.emitEntityUpdated(
+          'Solicitacao',
+          solicitacaoId,
+          {
+            status: StatusSolicitacao.EM_ANALISE,
+          },
+          {
+            status: StatusSolicitacao.APROVADA,
+            parecer_semtas: parecerSemtas,
+          },
+          usuarioId,
+        );
+      }
     }
 
     return resultado;
   }
 
   /**
-   * Rejeita uma solicitação, alterando seu estado para INDEFERIDA
+   * Rejeita uma solicitação
    * @param solicitacaoId ID da solicitação
-   * @param usuarioId ID do usuário que está rejeitando a solicitação
+   * @param usuarioId ID do usuário
    * @param motivo Motivo da rejeição
    * @returns Resultado da transição
    */
@@ -811,29 +822,27 @@ export class WorkflowSolicitacaoService {
     usuarioId: string,
     motivo: string,
   ): Promise<ResultadoTransicaoEstado> {
-    // Buscar a solicitação para obter dados do criador
+    // Buscar a solicitação para obter informações necessárias
     const solicitacao = await this.solicitacaoRepository.findOne({
       where: { id: solicitacaoId },
-      relations: ['beneficiario', 'tipo_beneficio'],
+      relations: ['tipo_beneficio'],
     });
 
     if (!solicitacao) {
-      throw new NotFoundException(
-        `Solicitação com ID ${solicitacaoId} não encontrada`,
-      );
+      throw new NotFoundException('Solicitação não encontrada');
     }
 
     const resultado = await this.realizarTransicao(
       solicitacaoId,
       StatusSolicitacao.INDEFERIDA,
       usuarioId,
-      motivo || 'Solicitação indeferida',
+      motivo,
     );
 
-    // Enviar notificação para o criador da solicitação
+    // Enviar notificação para o técnico responsável
     if (resultado.sucesso && solicitacao.tecnico_id) {
       try {
-        // Buscar o template de rejeição usando o serviço de mapeamento
+        // Buscar template de notificação
         const templateData =
           await this.templateMappingService.prepararDadosTemplate(
             'INDEFERIMENTO',
@@ -841,70 +850,77 @@ export class WorkflowSolicitacaoService {
 
         await this.notificacaoService.criarEBroadcast({
           destinatario_id: solicitacao.tecnico_id,
+          tipo: 'SOLICITACAO_REJEITADA',
           titulo: 'Solicitação Rejeitada',
-          conteudo: `Sua solicitação de ${solicitacao.tipo_beneficio.nome || 'benefício'} foi indeferida. ${motivo ? `Motivo: ${motivo}` : ''}`,
-          tipo: 'REJEICAO',
-          prioridade: 'high',
-          template_id: templateData.template_id,
+          conteudo: `A solicitação ${solicitacao.protocolo} foi rejeitada.`,
           dados: {
-            solicitacao_id: solicitacao.id,
-            tipo_beneficio: solicitacao.tipo_beneficio?.nome || 'Benefício',
-            beneficiario_nome: solicitacao.beneficiario?.nome || 'Beneficiário',
-            status_anterior: resultado.status_anterior,
-            status_novo: resultado.status_atual,
-            motivo: motivo || 'Não informado',
-            data_rejeicao: new Date().toLocaleDateString('pt-BR'),
-            url_sistema:
-              process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
+            solicitacao_id: solicitacaoId,
+            protocolo: solicitacao.protocolo,
+            status: StatusSolicitacao.INDEFERIDA,
+            motivo,
           },
         });
 
         if (templateData.templateEncontrado) {
           this.logger.log(
-            `Notificação de rejeição enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`,
+            `Notificação de rejeição enviada para técnico ${solicitacao.tecnico_id}`,
           );
         } else {
           this.logger.warn(
-            `Template para REJEICAO não encontrado. Notificação enviada sem template.`,
+            'Template de notificação para rejeição não encontrado',
           );
         }
       } catch (notificationError) {
         this.logger.error(
-          `Erro ao enviar notificação de rejeição da solicitação ${solicitacaoId}: ${notificationError.message}`,
+          `Erro ao enviar notificação de rejeição: ${notificationError.message}`,
           notificationError.stack,
         );
       }
+    }
 
-      // Emitir notificação SSE específica para rejeição
-      try {
-        this.eventEmitter.emit('sse.notificacao', {
-          userId: solicitacao.tecnico_id,
-          tipo: 'solicitacao_rejeitada',
-          dados: {
-            solicitacaoId: solicitacao.id,
-            protocolo: solicitacao.protocolo,
-            tipoBeneficio: solicitacao.tipo_beneficio?.nome || 'Benefício',
-            beneficiarioNome: solicitacao.beneficiario?.nome || 'Beneficiário',
-            motivo: motivo,
-            prioridade: 'high',
-            dataRejeicao: new Date(),
-          },
-        });
-      } catch (sseError) {
-        this.logger.error(
-          `Erro ao emitir notificação SSE para rejeição ${solicitacaoId}: ${sseError.message}`,
-          sseError.stack,
-        );
-      }
+    // Emitir notificação SSE
+    try {
+      this.eventEmitter.emit('sse.notificacao', {
+        userId: solicitacao.tecnico_id,
+        tipo: 'solicitacao_rejeitada',
+        dados: {
+          solicitacaoId: solicitacao.id,
+          protocolo: solicitacao.protocolo,
+          status: StatusSolicitacao.INDEFERIDA,
+          motivo,
+          prioridade: 'high',
+          dataRejeicao: new Date(),
+        },
+      });
+    } catch (sseError) {
+      this.logger.error(
+        `Erro ao emitir notificação SSE para rejeição ${solicitacaoId}: ${sseError.message}`,
+        sseError.stack,
+      );
+    }
+
+    // Emitir evento de auditoria
+    if (resultado.sucesso) {
+      await this.auditEventEmitter.emitEntityUpdated(
+        'Solicitacao',
+        solicitacaoId,
+        {
+          status: StatusSolicitacao.EM_ANALISE,
+        },
+        {
+          status: StatusSolicitacao.INDEFERIDA,
+        },
+        usuarioId,
+      );
     }
 
     return resultado;
   }
 
   /**
-   * Cancela uma solicitação, alterando seu estado para CANCELADA
+   * Cancela uma solicitação
    * @param solicitacaoId ID da solicitação
-   * @param usuarioId ID do usuário que está cancelando a solicitação
+   * @param usuarioId ID do usuário
    * @param motivo Motivo do cancelamento
    * @returns Resultado da transição
    */
@@ -913,30 +929,27 @@ export class WorkflowSolicitacaoService {
     usuarioId: string,
     motivo: string,
   ): Promise<ResultadoTransicaoEstado> {
-    // Buscar a solicitação para obter dados do criador
+    // Buscar a solicitação para obter informações necessárias
     const solicitacao = await this.solicitacaoRepository.findOne({
       where: { id: solicitacaoId },
-      relations: ['beneficiario', 'tipo_beneficio'],
+      relations: ['tipo_beneficio'],
     });
 
     if (!solicitacao) {
-      throw new NotFoundException(
-        `Solicitação com ID ${solicitacaoId} não encontrada`,
-      );
+      throw new NotFoundException('Solicitação não encontrada');
     }
 
-    // Se passar na validação, realizar a transição
     const resultado = await this.realizarTransicao(
       solicitacaoId,
       StatusSolicitacao.CANCELADA,
       usuarioId,
-      motivo || 'Solicitação cancelada',
+      motivo,
     );
 
-    // Enviar notificação para o criador da solicitação
+    // Enviar notificação para o técnico responsável
     if (resultado.sucesso && solicitacao.tecnico_id) {
       try {
-        // Buscar o template de cancelamento usando o serviço de mapeamento
+        // Buscar template de notificação
         const templateData =
           await this.templateMappingService.prepararDadosTemplate(
             'CANCELAMENTO',
@@ -944,72 +957,80 @@ export class WorkflowSolicitacaoService {
 
         await this.notificacaoService.criarEBroadcast({
           destinatario_id: solicitacao.tecnico_id,
+          tipo: 'SOLICITACAO_CANCELADA',
           titulo: 'Solicitação Cancelada',
-          conteudo: `Sua solicitação de ${solicitacao.tipo_beneficio.nome || 'benefício'} foi cancelada. ${motivo ? `Motivo: ${motivo}` : ''}`,
-          tipo: 'CANCELAMENTO',
-          prioridade: 'medium',
-          template_id: templateData.template_id,
+          conteudo: `A solicitação ${solicitacao.protocolo} foi cancelada.`,
           dados: {
-            solicitacao_id: solicitacao.id,
-            tipo_beneficio: solicitacao.tipo_beneficio?.nome || 'Benefício',
-            beneficiario_nome: solicitacao.beneficiario?.nome || 'Beneficiário',
-            status_anterior: resultado.status_anterior,
-            status_novo: resultado.status_atual,
-            motivo: motivo || 'Não informado',
-            data_cancelamento: new Date().toLocaleDateString('pt-BR'),
-            url_sistema:
-              process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
+            solicitacao_id: solicitacaoId,
+            protocolo: solicitacao.protocolo,
+            status: StatusSolicitacao.CANCELADA,
+            motivo,
           },
+          template_id: templateData.template_id,
         });
 
         if (templateData.templateEncontrado) {
           this.logger.log(
-            `Notificação de cancelamento enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`,
+            `Notificação de cancelamento enviada para técnico ${solicitacao.tecnico_id}`,
           );
         } else {
           this.logger.warn(
-            `Template para CANCELAMENTO não encontrado. Notificação enviada sem template.`,
+            'Template de notificação para cancelamento não encontrado',
           );
         }
       } catch (notificationError) {
         this.logger.error(
-          `Erro ao enviar notificação de cancelamento da solicitação ${solicitacaoId}: ${notificationError.message}`,
+          `Erro ao enviar notificação de cancelamento: ${notificationError.message}`,
           notificationError.stack,
         );
       }
+    }
 
-      // Emitir notificação SSE específica para cancelamento
-      try {
-        this.eventEmitter.emit('sse.notificacao', {
-          userId: solicitacao.tecnico_id,
-          tipo: 'solicitacao_cancelada',
-          dados: {
-            solicitacaoId: solicitacao.id,
-            protocolo: solicitacao.protocolo,
-            tipoBeneficio: solicitacao.tipo_beneficio?.nome || 'Benefício',
-            beneficiarioNome: solicitacao.beneficiario?.nome || 'Beneficiário',
-            motivo: motivo,
-            prioridade: 'medium',
-            dataCancelamento: new Date(),
-          },
-        });
-      } catch (sseError) {
-        this.logger.error(
-          `Erro ao emitir notificação SSE para cancelamento ${solicitacaoId}: ${sseError.message}`,
-          sseError.stack,
-        );
-      }
+    // Emitir notificação SSE
+    try {
+      this.eventEmitter.emit('sse.notificacao', {
+        userId: solicitacao.tecnico_id,
+        tipo: 'solicitacao_cancelada',
+        dados: {
+          solicitacaoId: solicitacao.id,
+          protocolo: solicitacao.protocolo,
+          status: StatusSolicitacao.CANCELADA,
+          motivo,
+          prioridade: 'medium',
+          dataCancelamento: new Date(),
+        },
+      });
+    } catch (sseError) {
+      this.logger.error(
+        `Erro ao emitir notificação SSE para cancelamento ${solicitacaoId}: ${sseError.message}`,
+        sseError.stack,
+      );
+    }
+
+    // Emitir evento de auditoria
+    if (resultado.sucesso) {
+      await this.auditEventEmitter.emitEntityUpdated(
+        'Solicitacao',
+        solicitacaoId,
+        {
+          status: solicitacao.status,
+        },
+        {
+          status: StatusSolicitacao.CANCELADA,
+        },
+        usuarioId,
+      );
     }
 
     return resultado;
   }
 
   /**
-   * Atualiza o status de uma solicitação com informações adicionais para conformidade
+   * Atualiza o status de uma solicitação com dados adicionais
    * @param solicitacaoId ID da solicitação
-   * @param novoStatus Novo status desejado
-   * @param usuarioId ID do usuário que está atualizando o status
-   * @param dadosAdicionais Dados adicionais para a atualização
+   * @param novoStatus Novo status
+   * @param usuarioId ID do usuário
+   * @param dadosAdicionais Dados adicionais opcionais
    * @returns Resultado da transição
    */
   async atualizarStatus(
@@ -1023,9 +1044,9 @@ export class WorkflowSolicitacaoService {
       justificativa?: string;
     },
   ): Promise<ResultadoTransicaoEstado> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    this.logger.log(
+      `Atualizando status da solicitação ${solicitacaoId} para ${novoStatus}`,
+    );
 
     try {
       // Buscar a solicitação
@@ -1037,38 +1058,33 @@ export class WorkflowSolicitacaoService {
         throw new NotFoundException('Solicitação não encontrada');
       }
 
-      // Verificar se a transição é permitida
       if (!this.isTransicaoPermitida(solicitacao.status, novoStatus)) {
-        throw new ForbiddenException(
-          `Transição de estado de ${solicitacao.status} para ${novoStatus} não é permitida`,
+        throw new BadRequestException(
+          `Transição de ${solicitacao.status} para ${novoStatus} não é permitida`,
         );
       }
 
-      // Construir a observação com os dados adicionais
-      let observacaoCompleta = dadosAdicionais?.observacao || '';
-
-      if (dadosAdicionais?.justificativa) {
-        observacaoCompleta += `\nJustificativa: ${dadosAdicionais.justificativa}`;
-      }
+      // Preparar observação
+      const observacao =
+        dadosAdicionais?.observacao ||
+        dadosAdicionais?.justificativa ||
+        `Status atualizado para ${novoStatus}`;
 
       if (dadosAdicionais?.processo_judicial_id) {
-        observacaoCompleta += `\nProcesso Judicial ID: ${dadosAdicionais.processo_judicial_id}`;
+        observacao.concat(` - Processo Judicial: ${dadosAdicionais.processo_judicial_id}`);
       }
 
       if (dadosAdicionais?.determinacao_judicial_id) {
-        observacaoCompleta += `\nDeterminação Judicial ID: ${dadosAdicionais.determinacao_judicial_id}`;
+        observacao.concat(` - Determinação Judicial: ${dadosAdicionais.determinacao_judicial_id}`);
       }
 
-      // Salvar o estado anterior para o retorno
-      const statusAnterior = solicitacao.status;
-
-      // Preparar dados adicionais para atualização
+      // Preparar dados para atualização
       const updateData: any = {
         status: novoStatus,
         updated_at: new Date(),
       };
 
-      // Adicionar dados adicionais, se existirem
+      // Adicionar campos específicos se fornecidos
       if (dadosAdicionais?.processo_judicial_id) {
         updateData.processo_judicial_id = dadosAdicionais.processo_judicial_id;
         updateData.determinacao_judicial_flag = true;
@@ -1080,73 +1096,63 @@ export class WorkflowSolicitacaoService {
         updateData.determinacao_judicial_flag = true;
       }
 
-      // Atualizar a solicitação usando o queryRunner
-      await queryRunner.manager.update(
-        Solicitacao,
-        { id: solicitacaoId },
-        updateData,
-      );
+      // Atualizar a solicitação
+      await this.solicitacaoRepository.update(solicitacaoId, updateData);
 
-      // Registrar a transição no histórico
-      const historico = new HistoricoSolicitacao();
-      historico.solicitacao_id = solicitacaoId;
-      historico.status_anterior = statusAnterior;
-      historico.status_atual = novoStatus;
-      historico.usuario_id = usuarioId;
-      historico.observacao =
-        observacaoCompleta ||
-        `Status atualizado de ${statusAnterior} para ${novoStatus}`;
-      historico.created_at = new Date();
+      // Registrar no histórico
+      await this.historicoRepository.save({
+        solicitacao_id: solicitacaoId,
+        status_anterior: solicitacao.status,
+        status_atual: novoStatus,
+        usuario_id: usuarioId,
+        observacao,
+        dados_alterados: {
+          status: {
+            de: solicitacao.status,
+            para: novoStatus,
+          },
+          ...dadosAdicionais,
+        },
+      });
 
-      await queryRunner.manager.save(HistoricoSolicitacao, historico);
-
-      await queryRunner.commitTransaction();
+      // Buscar a solicitação atualizada
+      const solicitacaoAtualizada = await this.solicitacaoRepository.findOne({
+        where: { id: solicitacaoId },
+      });
 
       return {
         sucesso: true,
-        mensagem: `Status atualizado com sucesso de ${statusAnterior} para ${novoStatus}`,
-        status_anterior: statusAnterior,
+        mensagem: `Status atualizado com sucesso para ${novoStatus}`,
+        status_anterior: solicitacao.status,
         status_atual: novoStatus,
+        solicitacao: solicitacaoAtualizada,
       };
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-
-      // Verificar se é um erro de versão (conflito de concorrência)
-      if (
-        error.name === 'QueryFailedError' &&
-        (error.message.includes('version') ||
-          error.message.includes('version mismatch'))
-      ) {
-        throw new BadRequestException(
-          'A solicitação foi modificada por outro usuário enquanto você a editava. ' +
-            'Por favor, atualize a página e tente novamente.',
-        );
-      }
-
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ForbiddenException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
-
       this.logger.error(
-        `Erro ao atualizar status da solicitação: ${error.message}`,
+        `Erro ao atualizar status da solicitação ${solicitacaoId}: ${error.message}`,
         error.stack,
       );
-      throw new InternalServerErrorException(
-        'Erro ao atualizar status da solicitação',
-      );
+      throw error;
     } finally {
-      await queryRunner.release();
+      // Atualizar prazos independentemente do resultado
+      try {
+        await this.prazoService.atualizarPrazosTransicao(
+          solicitacaoId,
+          novoStatus,
+        );
+      } catch (prazoError) {
+        this.logger.error(
+          `Erro ao atualizar prazos: ${prazoError.message}`,
+          prazoError.stack,
+        );
+      }
     }
   }
 
   /**
    * Valida documentos específicos para benefício de natalidade
    * @param solicitacaoId ID da solicitação
-   * @param tiposFaltantes Lista de tipos de documentos faltantes
+   * @param tiposFaltantes Lista atual de tipos de documentos faltantes
    * @param todosDocumentosDisponiveis Lista de todos os documentos disponíveis
    * @returns Lista atualizada de tipos de documentos faltantes
    * @private
@@ -1157,11 +1163,11 @@ export class WorkflowSolicitacaoService {
     todosDocumentosDisponiveis: TipoDocumentoEnum[],
   ): Promise<TipoDocumentoEnum[]> {
     this.logger.debug(
-      `Iniciando validação específica de documentos para natalidade - solicitação ${solicitacaoId}`,
+      `Iniciando validação específica de documentos de natalidade para solicitação ${solicitacaoId}`,
     );
 
     try {
-      // Buscar dados de natalidade da solicitação
+      // Buscar dados específicos de natalidade
       const dadosNatalidade = await this.dadosNatalidadeRepository.findOne({
         where: { solicitacao_id: solicitacaoId },
       });

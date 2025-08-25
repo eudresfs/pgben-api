@@ -540,7 +540,7 @@ export class NotificacaoProativaService {
           FROM pagamento p 
           WHERE p.status = 'pendente' 
             AND p.data_vencimento < NOW()
-            AND p.deleted_at IS NULL
+            AND p.removed_at IS NULL
         `);
 
         return parseInt(result[0]?.count) || 0;
@@ -554,6 +554,7 @@ export class NotificacaoProativaService {
         const solicitacoesComPagamentoPendente =
           await this.solicitacaoRepository
             .createQueryBuilder('solicitacao')
+            .leftJoin('pagamento', 'pagamento', 'pagamento.solicitacao_id = solicitacao.id')
             .where('solicitacao.pagamento.status = :status', {
               status: 'pendente',
             })

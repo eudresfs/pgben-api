@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
+import { v4 as uuidv4 } from 'uuid';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { SystemContextService } from '../../../common/services/system-context.service';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
@@ -34,6 +35,7 @@ export class AprovacaoAuditListener {
   }) {
     try {
       await this.auditEventEmitter.emit({
+        eventId: uuidv4(),
         eventType: AuditEventType.ENTITY_UPDATED,
         entityName: 'SolicitacaoAprovacao',
         entityId: payload.solicitacaoId,
@@ -74,6 +76,7 @@ export class AprovacaoAuditListener {
   }) {
     try {
       await this.auditEventEmitter.emit({
+        eventId: uuidv4(),
         eventType: AuditEventType.ENTITY_UPDATED,
         entityName: 'SolicitacaoAprovacao',
         entityId: payload.solicitacao.id,
@@ -113,6 +116,7 @@ export class AprovacaoAuditListener {
   }) {
     try {
       await this.auditEventEmitter.emit({
+        eventId: uuidv4(),
         eventType: AuditEventType.ENTITY_UPDATED,
         entityName: 'SolicitacaoAprovacao',
         entityId: payload.solicitacao.id,
@@ -155,6 +159,7 @@ export class AprovacaoAuditListener {
     try {
       await this.systemContextService.runWithSystemContext(async () => {
         await this.auditEventEmitter.emit({
+          eventId: uuidv4(),
           eventType: AuditEventType.ENTITY_UPDATED,
           entityName: 'SolicitacaoAprovacao',
           entityId: payload.solicitacao.id,
@@ -198,6 +203,7 @@ export class AprovacaoAuditListener {
     try {
       await this.systemContextService.runWithSystemContext(async () => {
         await this.auditEventEmitter.emit({
+          eventId: uuidv4(),
           eventType: AuditEventType.SYSTEM_ERROR,
           entityName: 'SolicitacaoAprovacao',
           entityId: payload.solicitacao.id,
@@ -239,6 +245,7 @@ export class AprovacaoAuditListener {
   }) {
     try {
       await this.auditEventEmitter.emit({
+        eventId: uuidv4(),
         eventType: AuditEventType.ENTITY_UPDATED,
         entityName: 'SolicitacaoAprovacao',
         entityId: payload.solicitacao.id,
@@ -279,6 +286,7 @@ export class AprovacaoAuditListener {
   }) {
     try {
       await this.auditEventEmitter.emit({
+        eventId: uuidv4(),
         eventType: AuditEventType.ENTITY_CREATED,
         entityName: 'SolicitacaoAprovacao',
         entityId: payload.solicitacao.id,

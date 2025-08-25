@@ -21,6 +21,7 @@ export interface AuditContext {
   userAgent: string;
   requestId?: string;
   sessionId?: string;
+  correlationId?: string;
   timestamp: Date;
   method: string;
   url: string;

@@ -4,6 +4,9 @@ import { UploadDocumentoDto } from '../../dto/upload-documento.dto';
 import { StorageProviderFactory } from '../../factories/storage-provider.factory';
 import { LoggingService } from '../../../../shared/logging/logging.service';
 import { IDocumentoStorageService } from './interfaces/documento-storage.interface';
+import { AuditEventEmitter } from '../../../auditoria/events/emitters/audit-event.emitter';
+import { AuditContextHolder } from '../../../../common/interceptors/audit-context.interceptor';
+import { AuditEventType } from '../../../auditoria/events/types/audit-event.types';
 
 /**
  * Serviço especializado para operações de storage de documentos
@@ -14,6 +17,7 @@ export class DocumentoStorageService implements IDocumentoStorageService {
   constructor(
     private readonly storageProviderFactory: StorageProviderFactory,
     private readonly logger: LoggingService,
+    private readonly auditEventEmitter: AuditEventEmitter,
   ) {}
 
   /**
@@ -41,26 +45,49 @@ export class DocumentoStorageService implements IDocumentoStorageService {
       },
     );
 
+    const auditContext = this.getAuditContext();
+    const startTime = Date.now();
+
     try {
       const storageProvider = this.storageProviderFactory.getProvider();
 
       if (!storageProvider) {
         throw new InternalServerErrorException(
-          'Provedor de storage não configurado',
+          'Nenhum provider de storage configurado',
         );
       }
 
-      // Salvar arquivo usando o provedor de storage
       const finalPath = await storageProvider.salvarArquivo(
         arquivo.buffer,
         storagePath,
         arquivo.mimetype,
         {
-          originalName: arquivo.originalname,
-          size: arquivo.size,
-          cidadao_id: uploadDocumentoDto.cidadao_id,
-          tipo: uploadDocumentoDto.tipo,
+          tipoDocumento: uploadDocumentoDto.tipo,
+          cidadaoId: uploadDocumentoDto.cidadao_id,
+          solicitacaoId: uploadDocumentoDto.solicitacao_id,
         },
+      );
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+
+      // Registrar auditoria de sucesso
+      await this.auditEventEmitter.emitEntityCreated(
+        'DocumentoStorage',
+        uploadId,
+        {
+          uploadId,
+          cidadaoId: uploadDocumentoDto.cidadao_id,
+          tipoDocumento: uploadDocumentoDto.tipo,
+          nomeArquivo: arquivo.originalname,
+          tamanhoArquivo: arquivo.size,
+          mimeType: arquivo.mimetype,
+          caminhoStorage: storagePath,
+          caminhoFinal: finalPath,
+          providerStorage: storageProvider.nome,
+          duracaoMs: duration,
+          timestamp: new Date().toISOString(),
+        },
+        auditContext.userId,
       );
 
       this.logger.debug(
@@ -75,6 +102,26 @@ export class DocumentoStorageService implements IDocumentoStorageService {
 
       return finalPath;
     } catch (error) {
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+
+      // Registrar auditoria de erro
+      await this.auditEventEmitter.emitSystemEvent(
+        AuditEventType.SYSTEM_ERROR,
+        {
+          uploadId,
+          cidadaoId: uploadDocumentoDto.cidadao_id,
+          tipoDocumento: uploadDocumentoDto.tipo,
+          nomeArquivo: arquivo.originalname,
+          tamanhoArquivo: arquivo.size,
+          caminhoStorage: storagePath,
+          erro: error.message,
+          duracaoMs: duration,
+          timestamp: new Date().toISOString(),
+          sucesso: false,
+        },
+      );
+
       this.logger.error(
         `Erro ao salvar arquivo no storage [${uploadId}]`,
         error.stack,
@@ -113,59 +160,75 @@ export class DocumentoStorageService implements IDocumentoStorageService {
       uploadDocumentoDto.cidadao_id.toString(),
     ];
 
-    // Adicionar tipo se especificado
+    // Adicionar tipo se fornecido
     if (uploadDocumentoDto.tipo) {
       pathParts.push(uploadDocumentoDto.tipo.toString());
     }
 
     pathParts.push(fileName);
 
-    return join(...pathParts).replace(/\\/g, '/');
+    return join(...pathParts);
   }
 
   /**
-   * Remove arquivo do storage em caso de erro
+   * Remove arquivo do storage
    * @param storagePath Caminho do arquivo no storage
    * @param uploadId ID único do upload
    */
   async cleanupFile(storagePath: string, uploadId: string): Promise<void> {
     if (!storagePath) {
+      this.logger.warn(
+        `Caminho de storage não fornecido para limpeza [${uploadId}]`,
+        DocumentoStorageService.name,
+      );
       return;
     }
 
-    this.logger.debug(
-      `Removendo arquivo do storage [${uploadId}]`,
-      DocumentoStorageService.name,
-      {
-        uploadId,
-        storagePath,
-      },
-    );
+    const auditContext = this.getAuditContext();
+    const startTime = Date.now();
 
     try {
       const storageProvider = this.storageProviderFactory.getProvider();
 
       if (!storageProvider) {
         this.logger.warn(
-          `Provedor de storage não configurado para limpeza [${uploadId}]`,
+          `Nenhum provider de storage configurado para limpeza [${uploadId}]`,
           DocumentoStorageService.name,
-          { uploadId, storagePath },
         );
         return;
       }
 
       // Verificar se arquivo existe antes de tentar remover
-      const exists = await this.fileExists(storagePath);
+      const exists = await storageProvider.exists(storagePath);
       if (!exists) {
         this.logger.debug(
-          `Arquivo não existe no storage, limpeza desnecessária [${uploadId}]`,
+          `Arquivo não existe no storage, pulando limpeza [${uploadId}]`,
           DocumentoStorageService.name,
-          { uploadId, storagePath },
+          {
+            uploadId,
+            storagePath,
+          },
         );
         return;
       }
 
-      await storageProvider.removerArquivo(storagePath);
+      await storageProvider.delete(storagePath);
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+
+      // Registrar auditoria de sucesso na limpeza
+      await this.auditEventEmitter.emitEntityDeleted(
+        'DocumentoStorage',
+        uploadId,
+        {
+          uploadId,
+          caminhoStorage: storagePath,
+          providerStorage: storageProvider.nome,
+          duracaoMs: duration,
+          timestamp: new Date().toISOString(),
+        },
+        auditContext.userId,
+      );
 
       this.logger.debug(
         `Arquivo removido do storage com sucesso [${uploadId}]`,
@@ -176,6 +239,23 @@ export class DocumentoStorageService implements IDocumentoStorageService {
         },
       );
     } catch (error) {
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+
+      // Registrar auditoria de erro na limpeza
+      await this.auditEventEmitter.emitSystemEvent(
+        AuditEventType.SYSTEM_ERROR,
+        {
+          uploadId,
+          caminhoStorage: storagePath,
+          erro: error.message,
+          duracaoMs: duration,
+          timestamp: new Date().toISOString(),
+          action: 'ERRO_REMOVER_ARQUIVO_STORAGE',
+          sucesso: false,
+        },
+      );
+
       this.logger.error(
         `Erro ao remover arquivo do storage [${uploadId}]`,
         error.stack,
@@ -215,5 +295,18 @@ export class DocumentoStorageService implements IDocumentoStorageService {
       );
       return false;
     }
+  }
+
+  /**
+   * Obtém o contexto de auditoria atual
+   * @returns Contexto de auditoria com userAgent, IP e userId
+   */
+  private getAuditContext() {
+    const context = AuditContextHolder.get();
+    return {
+      userAgent: context?.userAgent || 'unknown',
+      ipAddress: context?.ip || 'unknown',
+      userId: context?.userId || null,
+    };
   }
 }

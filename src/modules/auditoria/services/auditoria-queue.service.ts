@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { v4 as uuidv4 } from 'uuid';
 import { CreateLogAuditoriaDto } from '../dto/create-log-auditoria.dto';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { BatchAuditJobData, AuditJobData } from '../queues/jobs/audit-processing.job';
@@ -179,6 +180,7 @@ export class AuditoriaQueueService {
   convertDtoToAuditJobData(dto: CreateLogAuditoriaDto): AuditJobData {
     return {
       event: {
+        eventId: uuidv4(),
         eventType: this.mapTipoOperacaoToEventType(dto.tipo_operacao),
         entityName: dto.entidade_afetada,
         entityId: dto.entidade_id,

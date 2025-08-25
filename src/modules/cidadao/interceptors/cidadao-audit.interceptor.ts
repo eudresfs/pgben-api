@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { Request } from 'express';
+import { HttpRequest } from '../../../types/express-request';
 import { AuditoriaQueueService } from '../../auditoria/services/auditoria-queue.service';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { CreateLogAuditoriaDto } from '../../auditoria/dto/create-log-auditoria.dto';
@@ -40,7 +40,7 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
    */
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     // Capturar dados básicos da requisição
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest<HttpRequest>();
     const { method, url } = request;
 
     // Verificação preliminar rápida para determinar se a operação precisa ser auditada
@@ -303,21 +303,12 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
   }
 
   /**
-   * Registra evento de auditoria no sistema
-   * (Implementação futura - integração com sistema de auditoria)
-   */
-  /**
-   * Versão otimizada e não bloqueante do registro de auditoria
-   * Esta implementação não bloqueia o fluxo principal da aplicação
+   * Registra evento de auditoria de forma otimizada e não-bloqueante
    */
   private registerAuditEvent(event: any): void {
-    // Execute de forma não bloqueante em um processo assíncrono separado
+    // Processamento em segundo plano para não bloquear a resposta
     setTimeout(async () => {
-      const requestId = `${event.method}-${event.url}-${Date.now()}`;
-      console.time(`AUDIT-EVENT-${requestId}`);
-
       try {
-        // Versão simplificada para diagnóstico
         const logAuditoriaDto = new CreateLogAuditoriaDto();
 
         // Configuração básica
@@ -333,21 +324,114 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
         logAuditoriaDto.entidade_afetada = 'Cidadao';
         logAuditoriaDto.entidade_id = this.extractEntityId(event.url);
         logAuditoriaDto.usuario_id = event.userId;
-        logAuditoriaDto.endpoint = event.url;
+        logAuditoriaDto.endpoint = this.normalizeEndpointFromRequest(event);
         logAuditoriaDto.metodo_http = event.method;
 
-        // Enfileirar sem aguardar resultado (fire and forget)
+        logAuditoriaDto.ip_origem = this.extractClientIP(event);
+        logAuditoriaDto.user_agent = this.extractUserAgent(event);
+
+        // Enfileira o log de auditoria de forma assíncrona
         this.auditoriaQueueService
           .enfileirarLogAuditoria(logAuditoriaDto)
           .catch((err) =>
             this.logger.warn(`Erro em auditoria: ${err.message}`),
           );
       } catch (error) {
-        // Apenas log, não interrompe o fluxo principal
-        this.logger.warn(`Erro ao registrar auditoria: ${error.message}`);
-      } finally {
-        console.timeEnd(`AUDIT-EVENT-${requestId}`);
+        this.logger.error(
+          `Erro ao registrar auditoria: ${error.message}`,
+          error.stack,
+        );
       }
-    }, 5); // Executa após 5ms para não bloquear
+    }, 0);
+  }
+
+  /**
+   * PADRONIZAÇÃO HTTP: Normaliza endpoint removendo query parameters
+   */
+  private normalizeEndpoint(originalUrl: string): string {
+    if (!originalUrl || typeof originalUrl !== 'string') {
+      return '/unknown';
+    }
+
+    // Remove query parameters e fragmentos
+    const url = originalUrl.split('?')[0].split('#')[0];
+    
+    // Garante que sempre comece com /
+    return url.startsWith('/') ? url : `/${url}`;
+  }
+
+  /**
+   * Extrai o IP do cliente considerando proxies e load balancers
+   * Implementação padronizada para auditoria
+   */
+  private extractClientIP(event: any): string {
+    const request = event.req || event.request || event;
+    
+    // Ordem de prioridade para extração do IP real do cliente
+    const forwardedFor = request.headers?.['x-forwarded-for'] as string;
+    if (forwardedFor) {
+      // Pega o primeiro IP da lista (cliente original)
+      const firstIP = forwardedFor.split(',')[0].trim();
+      if (firstIP && firstIP !== 'unknown') {
+        return firstIP;
+      }
+    }
+
+    // Headers alternativos comuns em diferentes proxies
+    const realIP = request.headers?.['x-real-ip'] as string;
+    if (realIP && realIP !== 'unknown') {
+      return realIP;
+    }
+
+    const clientIP = request.headers?.['x-client-ip'] as string;
+    if (clientIP && clientIP !== 'unknown') {
+      return clientIP;
+    }
+
+    // Conexão direta
+    const connectionIP = request.connection?.remoteAddress;
+    if (connectionIP) {
+      return connectionIP;
+    }
+
+    const socketIP = request.socket?.remoteAddress;
+    if (socketIP) {
+      return socketIP;
+    }
+
+    // Fallback obrigatório
+    return 'unknown';
+  }
+
+  /**
+   * Extrai o User-Agent da requisição
+   * Implementação padronizada para auditoria
+   */
+  private extractUserAgent(event: any): string {
+    const request = event.req || event.request || event;
+    const userAgent = request.headers?.['user-agent'];
+    return userAgent && userAgent.trim() !== '' ? userAgent : 'unknown';
+  }
+
+  /**
+   * Normaliza o endpoint removendo parâmetros dinâmicos
+   * Implementação padronizada para auditoria
+   */
+  private normalizeEndpointFromRequest(request: any): string {
+    let endpoint = request.url || request.path || '/';
+    
+    // Remove query parameters
+    const queryIndex = endpoint.indexOf('?');
+    if (queryIndex !== -1) {
+      endpoint = endpoint.substring(0, queryIndex);
+    }
+    
+    // Normaliza IDs numéricos para :id
+    endpoint = endpoint.replace(/\/\d+/g, '/:id');
+    
+    // Normaliza UUIDs para :uuid
+    endpoint = endpoint.replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '/:uuid');
+    
+    return endpoint;
   }
 }
