@@ -4,6 +4,8 @@ import { Repository, SelectQueryBuilder } from 'typeorm';
 import { VisitaDomiciliar } from '../entities/visita-domiciliar.entity';
 import { AgendamentoVisita } from '../entities/agendamento-visita.entity';
 import { ResultadoVisita, TipoVisita } from '../../../enums';
+import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
+import { PaginationHelper } from '../helpers/pagination.helper';
 
 /**
  * Interface para filtros de busca de visitas
@@ -22,13 +24,24 @@ export interface VisitaFilters {
 }
 
 /**
- * Interface para paginação
+ * Interface para paginação (legado)
+ * @deprecated Use PaginationParamsDto
  */
 export interface PaginationOptions {
   page?: number;
   limit?: number;
   orderBy?: string;
   orderDirection?: 'ASC' | 'DESC';
+}
+
+/**
+ * Interface para resultado de busca paginada
+ */
+export interface PaginatedVisitaResult {
+  items: VisitaDomiciliar[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 /**
@@ -143,29 +156,68 @@ export class VisitaRepository {
    * Busca visitas com filtros e paginação
    * 
    * @param filters Filtros de busca
-   * @param pagination Opções de paginação
-   * @returns Lista de visitas e total
+   * @param paginationParams Parâmetros de paginação
+   * @param orderBy Campo para ordenação
+   * @param orderDirection Direção da ordenação
+   * @returns Lista paginada de visitas
    */
   async findWithFiltersAndPagination(
     filters?: VisitaFilters,
-    pagination?: PaginationOptions,
-  ): Promise<{ visitas: VisitaDomiciliar[]; total: number }> {
+    paginationParams?: PaginationParamsDto,
+    orderBy: string = 'visita.data_visita',
+    orderDirection: 'ASC' | 'DESC' = 'DESC',
+  ): Promise<PaginatedVisitaResult> {
+    // Aplica valores padrão e valida parâmetros
+    const params = PaginationHelper.applyDefaults(paginationParams || {});
+    PaginationHelper.validatePaginationParams(params);
+    
+    // Converte para parâmetros de repository
+    const { page, limit, offset } = PaginationHelper.convertToRepositoryParams(params);
+    
     const queryBuilder = this.buildBaseQueryBuilder();
     this.applyFilters(queryBuilder, filters);
     
     // Aplicar ordenação
-    const orderBy = pagination?.orderBy || 'visita.data_visita';
-    const orderDirection = pagination?.orderDirection || 'DESC';
     queryBuilder.orderBy(orderBy, orderDirection);
     
     // Aplicar paginação
-    if (pagination?.page && pagination?.limit) {
-      const skip = (pagination.page - 1) * pagination.limit;
-      queryBuilder.skip(skip).take(pagination.limit);
-    }
+    const [items, total] = await queryBuilder
+      .skip(offset)
+      .take(limit)
+      .getManyAndCount();
     
-    const [visitas, total] = await queryBuilder.getManyAndCount();
-    return { visitas, total };
+    return { items, total, page, limit };
+  }
+  
+  /**
+   * Busca visitas com filtros e paginação (método legado)
+   * 
+   * @deprecated Use findWithFiltersAndPagination com PaginationParamsDto
+   * @param filters Filtros de busca
+   * @param pagination Opções de paginação
+   * @returns Lista paginada de visitas
+   */
+  async findWithFiltersAndPaginationLegacy(
+    filters?: VisitaFilters,
+    pagination?: PaginationOptions,
+  ): Promise<{ visitas: VisitaDomiciliar[]; total: number }> {
+    const paginationParams = pagination ? 
+      PaginationHelper.applyDefaults({
+        page: pagination.page,
+        limit: pagination.limit,
+      }) : undefined;
+    
+    const orderBy = pagination?.orderBy || 'visita.data_visita';
+    const orderDirection = pagination?.orderDirection || 'DESC';
+    
+    const result = await this.findWithFiltersAndPagination(
+      filters,
+      paginationParams,
+      orderBy,
+      orderDirection,
+    );
+    
+    return { visitas: result.items, total: result.total };
   }
 
   /**

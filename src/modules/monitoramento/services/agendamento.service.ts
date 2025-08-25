@@ -15,6 +15,9 @@ import { Unidade } from '../../../entities/unidade.entity';
 import { AgendamentoRepository } from '../repositories/agendamento.repository';
 import { CriarAgendamentoDto } from '../dto/criar-agendamento.dto';
 import { AgendamentoResponseDto } from '../dto/agendamento-response.dto';
+import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
+import { PaginatedResponseDto } from '../../../shared/dtos/pagination.dto';
+import { PaginationHelper } from '../helpers/pagination.helper';
 import {
   StatusAgendamento,
   TipoVisita,
@@ -726,11 +729,47 @@ export class AgendamentoService {
    * Busca todos os agendamentos com paginação
    * 
    * @param filtros Filtros de busca
+   * @param paginationParams Parâmetros de paginação
+   * @returns Lista paginada de agendamentos
+   */
+  async buscarTodos(
+    filtros?: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
+    try {
+      const repositoryFilters = this.convertToRepositoryFilters(filtros);
+      
+      const { items, total, page, limit } = await this.agendamentoRepository.findWithPagination(
+        repositoryFilters,
+        paginationParams,
+      );
+
+      const agendamentosDto = items.map(agendamento =>
+        this.buildResponseDto(agendamento),
+      );
+
+      return PaginationHelper.createPaginatedResponse(
+        agendamentosDto,
+        page,
+        limit,
+        total,
+      );
+    } catch (error) {
+      this.logger.error(`Erro ao buscar agendamentos: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+  
+  /**
+   * Busca todos os agendamentos com paginação (método legado)
+   * 
+   * @deprecated Use buscarTodos com PaginationParamsDto
+   * @param filtros Filtros de busca
    * @param page Página atual
    * @param limit Limite de itens por página
    * @returns Lista paginada de agendamentos
    */
-  async buscarTodos(
+  async buscarTodosLegacy(
     filtros?: any,
     page: number = 1,
     limit: number = 10,
@@ -741,30 +780,16 @@ export class AgendamentoService {
     limit: number;
     totalPages: number;
   }> {
-    try {
-      const repositoryFilters = this.convertToRepositoryFilters(filtros);
-      
-      const { agendamentos, total } = await this.agendamentoRepository.findWithPagination(
-        filtros,
-        page,
-        limit,
-      );
-
-      const agendamentosDto = agendamentos.map(agendamento =>
-        this.buildResponseDto(agendamento),
-      );
-
-      return {
-        agendamentos: agendamentosDto,
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      };
-    } catch (error) {
-      this.logger.error(`Erro ao buscar agendamentos: ${error.message}`, error.stack);
-      throw error;
-    }
+    const paginationParams = PaginationHelper.applyDefaults({ page, limit });
+    const result = await this.buscarTodos(filtros, paginationParams);
+    
+    return {
+      agendamentos: result.items,
+      total: result.meta.total,
+      page: result.meta.page,
+      limit: result.meta.limit,
+      totalPages: result.meta.pages,
+    };
   }
 
   /**
@@ -789,9 +814,45 @@ export class AgendamentoService {
   }
 
   /**
-   * Busca agendamentos em atraso
+   * Busca agendamentos em atraso com paginação
    */
-  async buscarEmAtraso(filters: any): Promise<{ agendamentos: AgendamentoResponseDto[]; total: number }> {
+  async buscarEmAtraso(
+    filters: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
+    try {
+      // Aplicar valores padrão e validar parâmetros de paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+      
+      const repositoryFilters = {
+        ...this.convertToRepositoryFilters(filters),
+        em_atraso: true,
+      };
+      
+      const { items, total } = await this.agendamentoRepository.findWithPagination(
+        repositoryFilters,
+        validatedParams,
+      );
+      
+      const agendamentosDto = items.map(agendamento => this.buildResponseDto(agendamento));
+      
+      return PaginationHelper.createPaginatedResponse(
+        agendamentosDto,
+        validatedParams.page,
+        validatedParams.limit,
+        total,
+      );
+    } catch (error) {
+      this.logger.error(`Erro ao buscar agendamentos em atraso: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca agendamentos em atraso (método legado para compatibilidade)
+   * @deprecated Use buscarEmAtraso com PaginationParamsDto
+   */
+  async buscarEmAtrasoLegacy(filters: any): Promise<{ agendamentos: AgendamentoResponseDto[]; total: number }> {
     try {
       const repositoryFilters = {
         ...this.convertToRepositoryFilters(filters),
@@ -811,9 +872,46 @@ export class AgendamentoService {
   }
 
   /**
-   * Busca agendamentos por técnico
+   * Busca agendamentos por técnico com paginação
    */
-  async buscarPorTecnico(tecnicoId: string, filters: any): Promise<{ agendamentos: AgendamentoResponseDto[]; total: number }> {
+  async buscarPorTecnico(
+    tecnicoId: string,
+    filters: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
+    try {
+      // Aplicar valores padrão e validar parâmetros de paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+      
+      const repositoryFilters = {
+        ...this.convertToRepositoryFilters(filters),
+        tecnico_id: tecnicoId,
+      };
+      
+      const { items, total } = await this.agendamentoRepository.findWithPagination(
+        repositoryFilters,
+        validatedParams,
+      );
+      
+      const agendamentosDto = items.map(agendamento => this.buildResponseDto(agendamento));
+      
+      return PaginationHelper.createPaginatedResponse(
+        agendamentosDto,
+        validatedParams.page,
+        validatedParams.limit,
+        total,
+      );
+    } catch (error) {
+      this.logger.error(`Erro ao buscar agendamentos por técnico ${tecnicoId}: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca agendamentos por técnico (método legado para compatibilidade)
+   * @deprecated Use buscarPorTecnico com PaginationParamsDto
+   */
+  async buscarPorTecnicoLegacy(tecnicoId: string, filters: any): Promise<{ agendamentos: AgendamentoResponseDto[]; total: number }> {
     try {
       const repositoryFilters = {
         ...this.convertToRepositoryFilters(filters),
@@ -833,9 +931,46 @@ export class AgendamentoService {
   }
 
   /**
-   * Busca agendamentos por beneficiário
+   * Busca agendamentos por beneficiário com paginação
    */
-  async buscarPorBeneficiario(beneficiarioId: string, filters: any): Promise<{ agendamentos: AgendamentoResponseDto[]; total: number }> {
+  async buscarPorBeneficiario(
+    beneficiarioId: string,
+    filters: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
+    try {
+      // Aplicar valores padrão e validar parâmetros de paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+      
+      const repositoryFilters = {
+        ...this.convertToRepositoryFilters(filters),
+        beneficiario_id: beneficiarioId,
+      };
+      
+      const { items, total } = await this.agendamentoRepository.findWithPagination(
+        repositoryFilters,
+        validatedParams,
+      );
+      
+      const agendamentosDto = items.map(agendamento => this.buildResponseDto(agendamento));
+      
+      return PaginationHelper.createPaginatedResponse(
+        agendamentosDto,
+        validatedParams.page,
+        validatedParams.limit,
+        total,
+      );
+    } catch (error) {
+      this.logger.error(`Erro ao buscar agendamentos por beneficiário ${beneficiarioId}: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca agendamentos por beneficiário (método legado para compatibilidade)
+   * @deprecated Use buscarPorBeneficiario com PaginationParamsDto
+   */
+  async buscarPorBeneficiarioLegacy(beneficiarioId: string, filters: any): Promise<{ agendamentos: AgendamentoResponseDto[]; total: number }> {
     try {
       const repositoryFilters = {
         ...this.convertToRepositoryFilters(filters),

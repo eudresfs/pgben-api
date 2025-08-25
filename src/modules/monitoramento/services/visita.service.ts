@@ -9,6 +9,9 @@ import { ResultadoVisita, TipoVisita, StatusAgendamento } from '../enums';
 import { getResultadoVisitaCor, getResultadoVisitaLabel } from '../../../enums/resultado-visita.enum';
 import { getTipoVisitaLabel } from '../../../enums/tipo-visita.enum';
 import { VisitaRepository } from '../repositories/visita.repository';
+import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
+import { PaginatedResponseDto } from '../../../shared/dtos/pagination.dto';
+import { PaginationHelper } from '../helpers/pagination.helper';
 
 
 
@@ -426,7 +429,43 @@ export class VisitaService {
   /**
    * Busca todas as visitas com paginação
    */
-  async buscarTodas(filters: any, page?: number, limit?: number): Promise<{ visitas: VisitaResponseDto[]; total: number }> {
+  /**
+   * Busca todas as visitas com paginação
+   */
+  async buscarTodas(
+    filters: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<VisitaResponseDto>> {
+    try {
+      // Aplicar valores padrão e validar parâmetros de paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+      
+      const filtrosRepository = this.convertToRepositoryFilters(filters);
+      
+      const { items, total } = await this.visitaRepository.findWithFiltersAndPagination(
+        filtrosRepository,
+        validatedParams,
+      );
+      
+      const visitasDto = items.map(visita => this.buildResponseDto(visita));
+      
+      return PaginationHelper.createPaginatedResponse(
+        visitasDto,
+        validatedParams.page,
+        validatedParams.limit,
+        total,
+      );
+    } catch (error) {
+      this.logger.error(`Erro ao buscar todas as visitas: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca todas as visitas (método legado para compatibilidade)
+   * @deprecated Use buscarTodas com PaginationParamsDto
+   */
+  async buscarTodasLegacy(filters: any, page?: number, limit?: number): Promise<{ visitas: VisitaResponseDto[]; total: number }> {
     try {
       const filtrosRepository = this.convertToRepositoryFilters(filters);
       const result = await this.visitaRepository.findWithFilters(filtrosRepository);
@@ -454,24 +493,65 @@ export class VisitaService {
   }
 
   /**
-   * Busca visitas por técnico
+   * Busca visitas por técnico com paginação
    */
-  async buscarPorTecnico(tecnicoId: string, filters: any, page?: number, limit?: number): Promise<{ visitas: VisitaResponseDto[]; total: number }> {
-    return this.buscarTodas({ ...filters, tecnico_id: tecnicoId }, page, limit);
+  async buscarPorTecnico(
+    tecnicoId: string,
+    filters: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<VisitaResponseDto>> {
+    return this.buscarTodas({ ...filters, tecnico_id: tecnicoId }, paginationParams);
   }
 
   /**
-   * Busca visitas por beneficiário
+   * Busca visitas por técnico (método legado para compatibilidade)
+   * @deprecated Use buscarPorTecnico com PaginationParamsDto
    */
-  async buscarPorBeneficiario(beneficiarioId: string, filters: any, page?: number, limit?: number): Promise<{ visitas: VisitaResponseDto[]; total: number }> {
-    return this.buscarTodas({ ...filters, beneficiario_id: beneficiarioId }, page, limit);
+  async buscarPorTecnicoLegacy(tecnicoId: string, filters: any, page?: number, limit?: number): Promise<{ visitas: VisitaResponseDto[]; total: number }> {
+    return this.buscarTodasLegacy({ ...filters, tecnico_id: tecnicoId }, page, limit);
   }
 
   /**
-   * Busca visitas por status
+   * Busca visitas por beneficiário com paginação
    */
-  async buscarPorStatus(status: string, filters: any): Promise<{ visitas: VisitaResponseDto[]; total: number }> {
-    return this.buscarTodas({ ...filters, resultado: status });
+  async buscarPorBeneficiario(
+    beneficiarioId: string,
+    filters: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<VisitaResponseDto>> {
+    return this.buscarTodas({ ...filters, beneficiario_id: beneficiarioId }, paginationParams);
+  }
+
+  /**
+   * Busca visitas por beneficiário (método legado para compatibilidade)
+   * @deprecated Use buscarPorBeneficiario com PaginationParamsDto
+   */
+  async buscarPorBeneficiarioLegacy(beneficiarioId: string, filters: any, page?: number, limit?: number): Promise<{ visitas: VisitaResponseDto[]; total: number }> {
+    return this.buscarTodasLegacy({ ...filters, beneficiario_id: beneficiarioId }, page, limit);
+  }
+
+  /**
+   * Busca visitas por status com paginação
+   */
+  async buscarPorStatus(
+    status: string,
+    filters: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<VisitaResponseDto>> {
+    return this.buscarTodas({ ...filters, resultado: status }, paginationParams);
+  }
+
+  /**
+   * Busca visitas por status (método legado para compatibilidade)
+   * @deprecated Use buscarPorStatus com PaginationParamsDto
+   */
+  async buscarPorStatusLegacy(
+    status: string,
+    filters: any,
+    page?: number,
+    limit?: number
+  ): Promise<{ visitas: VisitaResponseDto[]; total: number }> {
+    return this.buscarTodasLegacy({ ...filters, resultado: status }, page, limit);
   }
 
   /**
@@ -517,7 +597,46 @@ export class VisitaService {
   /**
    * Busca visitas que recomendam renovação
    */
+  /**
+   * Busca visitas que recomendam renovação com paginação
+   */
   async buscarQueRecomendamRenovacao(
+    filtros: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<VisitaResponseDto>> {
+    try {
+      // Aplicar valores padrão e validar parâmetros de paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+      
+      const filtrosRepository = {
+        ...this.convertToRepositoryFilters(filtros),
+        recomenda_renovacao: true,
+      };
+      
+      const { items, total } = await this.visitaRepository.findWithFiltersAndPagination(
+        filtrosRepository,
+        validatedParams,
+      );
+      
+      const visitasDto = items.map(visita => this.buildResponseDto(visita));
+      
+      return PaginationHelper.createPaginatedResponse(
+        visitasDto,
+        validatedParams.page,
+        validatedParams.limit,
+        total,
+      );
+    } catch (error) {
+      this.logger.error(`Erro ao buscar visitas que recomendam renovação: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca visitas que recomendam renovação (método legado para compatibilidade)
+   * @deprecated Use buscarQueRecomendamRenovacao com PaginationParamsDto
+   */
+  async buscarQueRecomendamRenovacaoLegacy(
     filtros: any,
     page: number = 1,
     limit: number = 10
@@ -553,9 +672,45 @@ export class VisitaService {
   }
 
   /**
-   * Busca visitas que necessitam nova visita
+   * Busca visitas que necessitam nova visita com paginação
    */
   async buscarQueNecessitamNovaVisita(
+    filtros: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<VisitaResponseDto>> {
+    try {
+      // Aplicar valores padrão e validar parâmetros de paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+      
+      const filtrosRepository = {
+        ...this.convertToRepositoryFilters(filtros),
+        necessita_nova_visita: true,
+      };
+      
+      const { items, total } = await this.visitaRepository.findWithFiltersAndPagination(
+        filtrosRepository,
+        validatedParams,
+      );
+      
+      const visitasDto = items.map(visita => this.buildResponseDto(visita));
+      
+      return PaginationHelper.createPaginatedResponse(
+        visitasDto,
+        validatedParams.page,
+        validatedParams.limit,
+        total,
+      );
+    } catch (error) {
+      this.logger.error(`Erro ao buscar visitas que necessitam nova visita: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca visitas que necessitam nova visita (método legado para compatibilidade)
+   * @deprecated Use buscarQueNecessitamNovaVisita com PaginationParamsDto
+   */
+  async buscarQueNecessitamNovaVisitaLegacy(
     filtros: any,
     page: number = 1,
     limit: number = 10
@@ -587,9 +742,45 @@ export class VisitaService {
   }
 
   /**
-   * Busca visitas com problemas de elegibilidade
+   * Busca visitas com problemas de elegibilidade com paginação
    */
   async buscarComProblemasElegibilidade(
+    filtros: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<VisitaResponseDto>> {
+    try {
+      // Aplicar valores padrão e validar parâmetros de paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+      
+      const filtrosRepository = {
+        ...this.convertToRepositoryFilters(filtros),
+        problemas_elegibilidade: true,
+      };
+      
+      const { items, total } = await this.visitaRepository.findWithFiltersAndPagination(
+        filtrosRepository,
+        validatedParams,
+      );
+      
+      const visitasDto = items.map(visita => this.buildResponseDto(visita));
+      
+      return PaginationHelper.createPaginatedResponse(
+        visitasDto,
+        validatedParams.page,
+        validatedParams.limit,
+        total,
+      );
+    } catch (error) {
+      this.logger.error(`Erro ao buscar visitas com problemas de elegibilidade: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca visitas com problemas de elegibilidade (método legado para compatibilidade)
+   * @deprecated Use buscarComProblemasElegibilidade com PaginationParamsDto
+   */
+  async buscarComProblemasElegibilidadeLegacy(
     filtros: any,
     page: number = 1,
     limit: number = 10

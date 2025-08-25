@@ -31,12 +31,15 @@ import { CriarAgendamentoDto, AgendamentoResponseDto } from '../dto';
 import { TipoVisita, PrioridadeVisita } from '../enums';
 import { Usuario } from '@/entities';
 import { GetUser } from '@/auth/decorators/get-user.decorator';
+import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
+import { PaginatedResponseDto } from '../../../shared/dtos/pagination.dto';
+import { PaginationHelper } from '../helpers/pagination.helper';
 
 /**
  * Controller para gerenciamento de agendamentos de visitas domiciliares
  * Responsável por operações CRUD e funcionalidades específicas de agendamento
  */
-@ApiTags('Monitoramento - Agendamentos')
+@ApiTags('Agendamentos')
 @Controller('monitoramento/agendamentos')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
@@ -151,6 +154,8 @@ export class AgendamentoController {
   })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (padrão: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página (padrão: 10)' })
+  @ApiQuery({ name: 'orderBy', required: false, type: String, description: 'Campo para ordenação (padrão: created_at)' })
+  @ApiQuery({ name: 'orderDirection', required: false, enum: ['ASC', 'DESC'], description: 'Direção da ordenação (padrão: DESC)' })
   @ApiQuery({ name: 'beneficiario_id', required: false, type: String, description: 'ID do beneficiário' })
   @ApiQuery({ name: 'tecnico_id', required: false, type: String, description: 'ID do técnico responsável' })
   @ApiQuery({ name: 'unidade_id', required: false, type: String, description: 'ID da unidade' })
@@ -162,7 +167,7 @@ export class AgendamentoController {
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Lista de agendamentos retornada com sucesso',
-    type: [AgendamentoResponseDto],
+    type: PaginatedResponseDto,
     example: {
       data: [
         {
@@ -179,14 +184,18 @@ export class AgendamentoController {
           updated_at: '2024-02-10T10:00:00.000Z'
         }
       ],
-      total: 1,
-      page: 1,
-      limit: 10
+      meta: {
+        total: 1,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false
+      }
     }
   })
   async listarAgendamentos(
-    @Query('page', PagePipe) page: number = 1,
-    @Query('limit', LimitPipe) limit: number = 10,
+    @Query() paginationParams: PaginationParamsDto,
     @Query('beneficiario_id') beneficiarioId?: string,
     @Query('tecnico_id') tecnicoId?: string,
     @Query('unidade_id') unidadeId?: string,
@@ -195,8 +204,11 @@ export class AgendamentoController {
     @Query('data_inicio') dataInicio?: string,
     @Query('data_fim') dataFim?: string,
     @Query('apenas_em_atraso', new ParseBoolPipe({ optional: true })) apenasEmAtraso?: boolean
-  ): Promise<{ data: AgendamentoResponseDto[]; total: number; page: number; limit: number }> {
+  ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
     try {
+      // Validar e aplicar valores padrão para paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+
       const filtros = {
         beneficiario_id: beneficiarioId,
         tecnico_id: tecnicoId,
@@ -213,18 +225,12 @@ export class AgendamentoController {
         filtros[key] === undefined && delete filtros[key]
       );
 
-      const { agendamentos, total } = await this.agendamentoService.buscarTodos(
+      const resultado = await this.agendamentoService.buscarTodos(
         filtros,
-        page,
-        limit
+        validatedParams
       );
 
-      return {
-        data: agendamentos,
-        total,
-        page,
-        limit
-      };
+      return resultado;
     } catch (error) {
       // Filtros globais tratarão BadRequestException para parâmetros inválidos
       throw error;
@@ -304,12 +310,14 @@ export class AgendamentoController {
     type: [AgendamentoResponseDto]
   })
   async listarAgendamentosEmAtraso(
-    @Query('page', PagePipe) page: number = 1,
-    @Query('limit', LimitPipe) limit: number = 10,
+    @Query() paginationParams: PaginationParamsDto,
     @Query('unidade_id') unidadeId?: string,
     @Query('tecnico_id') tecnicoId?: string
-  ): Promise<{ data: AgendamentoResponseDto[]; total: number; page: number; limit: number }> {
+  ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
     try {
+      // Validar e aplicar valores padrão para paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+
       const filtros = { unidade_id: unidadeId, tecnico_id: tecnicoId };
       
       // Remove filtros undefined
@@ -317,16 +325,12 @@ export class AgendamentoController {
         filtros[key] === undefined && delete filtros[key]
       );
 
-      const { agendamentos, total } = await this.agendamentoService.buscarEmAtraso(
-        filtros
+      const resultado = await this.agendamentoService.buscarEmAtraso(
+        filtros,
+        validatedParams
       );
 
-      return {
-        data: agendamentos,
-        total,
-        page,
-        limit
-      };
+      return resultado;
     } catch (error) {
       // Filtros globais tratarão erros de validação e consulta
       throw error;
@@ -345,39 +349,37 @@ export class AgendamentoController {
   @ApiParam({ name: 'tecnicoId', description: 'ID do técnico responsável' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (padrão: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página (padrão: 10)' })
+  @ApiQuery({ name: 'orderBy', required: false, type: String, description: 'Campo para ordenação (padrão: created_at)' })
+  @ApiQuery({ name: 'orderDirection', required: false, enum: ['ASC', 'DESC'], description: 'Direção da ordenação (padrão: DESC)' })
   @ApiQuery({ name: 'data_inicio', required: false, type: String, description: 'Data de início (YYYY-MM-DD)' })
   @ApiQuery({ name: 'data_fim', required: false, type: String, description: 'Data de fim (YYYY-MM-DD)' })
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Lista de agendamentos do técnico retornada com sucesso',
-    type: [AgendamentoResponseDto]
+    type: PaginatedResponseDto
   })
   async listarAgendamentosPorTecnico(
     @Param('tecnicoId', ParseUUIDPipe) tecnicoId: string,
-    @Query('page', PagePipe) page: number = 1,
-    @Query('limit', LimitPipe) limit: number = 10,
+    @Query() paginationParams: PaginationParamsDto,
     @Query('data_inicio') dataInicio?: string,
     @Query('data_fim') dataFim?: string
-  ): Promise<{ data: AgendamentoResponseDto[]; total: number; page: number; limit: number }> {
+  ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
     try {
-      const filtros = { data_inicio: dataInicio, data_fim: dataFim };
+      // Valida e aplica valores padrão para paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+      
+      const filtros = { 
+        data_inicio: dataInicio, 
+        data_fim: dataFim,
+        tecnico_id: tecnicoId
+      };
       
       // Remove filtros undefined
       Object.keys(filtros).forEach(key => 
         filtros[key] === undefined && delete filtros[key]
       );
 
-      const { agendamentos, total } = await this.agendamentoService.buscarPorTecnico(
-        tecnicoId,
-        filtros
-      );
-
-      return {
-        data: agendamentos,
-        total,
-        page,
-        limit
-      };
+      return await this.agendamentoService.buscarTodos(filtros, validatedParams);
     } catch (error) {
       // Filtros globais tratarão NotFoundException se técnico não existir
       throw error;
@@ -396,31 +398,26 @@ export class AgendamentoController {
   @ApiParam({ name: 'beneficiarioId', description: 'ID do beneficiário' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (padrão: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página (padrão: 10)' })
+  @ApiQuery({ name: 'orderBy', required: false, type: String, description: 'Campo para ordenação (padrão: created_at)' })
+  @ApiQuery({ name: 'orderDirection', required: false, enum: ['ASC', 'DESC'], description: 'Direção da ordenação (padrão: DESC)' })
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Lista de agendamentos do beneficiário retornada com sucesso',
-    type: [AgendamentoResponseDto]
+    type: PaginatedResponseDto
   })
   async listarAgendamentosPorBeneficiario(
     @Param('beneficiarioId', ParseUUIDPipe) beneficiarioId: string,
-    @Query('page', PagePipe) page: number = 1,
-    @Query('limit', LimitPipe) limit: number = 10
-  ): Promise<{ data: AgendamentoResponseDto[]; total: number; page: number; limit: number }> {
+    @Query() paginationParams: PaginationParamsDto
+  ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
     try {
-      const { agendamentos, total } = await this.agendamentoService.buscarPorBeneficiario(
-        beneficiarioId,
-        {
-          page,
-          limit
-        },
-      );
-
-      return {
-        data: agendamentos,
-        total,
-        page,
-        limit
+      // Valida e aplica valores padrão para paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+      
+      const filtros = { 
+        beneficiario_id: beneficiarioId
       };
+
+      return await this.agendamentoService.buscarTodos(filtros, validatedParams);
     } catch (error) {
       // Filtros globais tratarão NotFoundException se beneficiário não existir
       throw error;

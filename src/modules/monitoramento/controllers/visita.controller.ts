@@ -29,24 +29,27 @@ import { RequiresPermission } from '../../../auth/decorators/requires-permission
 import { VisitaService } from '../services';
 import { RegistrarVisitaDto } from '../dto';
 import { TipoVisita, ResultadoVisita } from '../enums';
+import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
+import { PaginatedResponseDto } from '../../../shared/dtos/pagination.dto';
+import { PaginationHelper } from '../helpers/pagination.helper';
 
 /**
  * Controller para gerenciamento de visitas domiciliares realizadas
  * Responsável por registro, consulta e atualização de visitas executadas
  */
-@ApiTags('Monitoramento - Visitas')
+@ApiTags('Visitas')
 @Controller('monitoramento/visitas')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class VisitaController {
-  constructor(private readonly visitaService: VisitaService) {}
+  constructor(private readonly visitaService: VisitaService) { }
 
   /**
    * Registra uma nova visita domiciliar realizada
    */
   @Post()
   @RequiresPermission({ permissionName: 'monitoramento.visita.registrar' })
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Registrar visita domiciliar',
     description: 'Registra uma visita domiciliar realizada com todos os dados coletados'
   })
@@ -120,8 +123,8 @@ export class VisitaController {
       }
     }
   })
-  @ApiResponse({ 
-    status: HttpStatus.CREATED, 
+  @ApiResponse({
+    status: HttpStatus.CREATED,
     description: 'Visita registrada com sucesso',
     example: {
       message: 'Visita registrada com sucesso',
@@ -138,8 +141,8 @@ export class VisitaController {
       }
     }
   })
-  @ApiResponse({ 
-    status: HttpStatus.BAD_REQUEST, 
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
     description: 'Dados inválidos ou regras de negócio violadas',
     example: {
       statusCode: 400,
@@ -147,8 +150,8 @@ export class VisitaController {
       error: 'Bad Request'
     }
   })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
     description: 'Agendamento não encontrado',
     example: {
       statusCode: 404,
@@ -156,8 +159,8 @@ export class VisitaController {
       error: 'Not Found'
     }
   })
-  @ApiResponse({ 
-    status: HttpStatus.CONFLICT, 
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
     description: 'Visita já foi registrada para este agendamento',
     example: {
       statusCode: 409,
@@ -181,12 +184,14 @@ export class VisitaController {
    */
   @Get()
   @RequiresPermission({ permissionName: 'monitoramento.visita.listar' })
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Listar visitas',
     description: 'Lista todas as visitas realizadas com filtros opcionais'
   })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (padrão: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página (padrão: 10)' })
+  @ApiQuery({ name: 'orderBy', required: false, type: String, description: 'Campo para ordenação (padrão: data_visita)' })
+  @ApiQuery({ name: 'orderDirection', required: false, enum: ['ASC', 'DESC'], description: 'Direção da ordenação (padrão: DESC)' })
   @ApiQuery({ name: 'beneficiario_id', required: false, type: String, description: 'ID do beneficiário' })
   @ApiQuery({ name: 'tecnico_id', required: false, type: String, description: 'ID do técnico responsável' })
   @ApiQuery({ name: 'unidade_id', required: false, type: String, description: 'ID da unidade' })
@@ -196,8 +201,8 @@ export class VisitaController {
   @ApiQuery({ name: 'data_fim', required: false, type: String, description: 'Data de fim (YYYY-MM-DD)' })
   @ApiQuery({ name: 'recomenda_renovacao', required: false, type: Boolean, description: 'Apenas visitas que recomendam renovação' })
   @ApiQuery({ name: 'necessita_nova_visita', required: false, type: Boolean, description: 'Apenas visitas que necessitam nova visita' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: HttpStatus.OK,
     description: 'Lista de visitas retornada com sucesso',
     example: {
       data: [
@@ -222,8 +227,7 @@ export class VisitaController {
     }
   })
   async listarVisitas(
-    @Query('page', PagePipe) page: number = 1,
-    @Query('limit', LimitPipe) limit: number = 10,
+    @Query() paginationParams: PaginationParamsDto,
     @Query('beneficiario_id') beneficiarioId?: string,
     @Query('tecnico_id') tecnicoId?: string,
     @Query('unidade_id') unidadeId?: string,
@@ -233,7 +237,10 @@ export class VisitaController {
     @Query('data_fim') dataFim?: string,
     @Query('recomenda_renovacao', new ParseBoolPipe({ optional: true })) recomendaRenovacao?: boolean,
     @Query('necessita_nova_visita', new ParseBoolPipe({ optional: true })) necessitaNovaVisita?: boolean
-  ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
+  ): Promise<PaginatedResponseDto<any>> {
+    // Aplicar valores padrão e validar parâmetros de paginação
+    const { page, limit, orderBy, orderDirection } = PaginationHelper.applyDefaults(paginationParams);
+
     const filtros = {
       beneficiario_id: beneficiarioId,
       tecnico_id: tecnicoId,
@@ -247,22 +254,14 @@ export class VisitaController {
     };
 
     // Remove filtros undefined
-    Object.keys(filtros).forEach(key => 
+    Object.keys(filtros).forEach(key =>
       filtros[key] === undefined && delete filtros[key]
     );
 
-    const { visitas, total } = await this.visitaService.buscarTodas(
+    return await this.visitaService.buscarTodas(
       filtros,
-      page,
-      limit
+      paginationParams
     );
-
-    return {
-      data: visitas,
-      total,
-      page,
-      limit
-    };
   }
 
   /**
@@ -270,13 +269,13 @@ export class VisitaController {
    */
   @Get(':id')
   @RequiresPermission({ permissionName: 'monitoramento.visita.visualizar' })
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obter visita',
     description: 'Obtém detalhes de uma visita específica'
   })
   @ApiParam({ name: 'id', description: 'ID da visita' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: HttpStatus.OK,
     description: 'Visita encontrada com sucesso',
     example: {
       data: {
@@ -317,8 +316,8 @@ export class VisitaController {
       }
     }
   })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
     description: 'Visita não encontrada',
     example: {
       statusCode: 404,
@@ -341,46 +340,42 @@ export class VisitaController {
    */
   @Get('beneficiario/:beneficiarioId')
   @RequiresPermission({ permissionName: 'monitoramento.visita.listar' })
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Listar visitas por beneficiário',
     description: 'Lista todas as visitas realizadas para um beneficiário específico'
   })
   @ApiParam({ name: 'beneficiarioId', description: 'ID do beneficiário' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (padrão: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página (padrão: 10)' })
+  @ApiQuery({ name: 'orderBy', required: false, type: String, description: 'Campo para ordenação (padrão: data_realizacao)' })
+  @ApiQuery({ name: 'orderDirection', required: false, enum: ['ASC', 'DESC'], description: 'Direção da ordenação (padrão: DESC)' })
   @ApiQuery({ name: 'data_inicio', required: false, type: String, description: 'Data de início (YYYY-MM-DD)' })
   @ApiQuery({ name: 'data_fim', required: false, type: String, description: 'Data de fim (YYYY-MM-DD)' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: HttpStatus.OK,
     description: 'Lista de visitas do beneficiário retornada com sucesso'
   })
   async listarVisitasPorBeneficiario(
     @Param('beneficiarioId', ParseUUIDPipe) beneficiarioId: string,
-    @Query('page', PagePipe) page: number = 1,
-    @Query('limit', LimitPipe) limit: number = 10,
+    @Query() paginationParams: PaginationParamsDto,
     @Query('data_inicio') dataInicio?: string,
     @Query('data_fim') dataFim?: string
-  ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
+  ): Promise<PaginatedResponseDto<any>> {
+    // Aplicar valores padrão e validar parâmetros de paginação
+    const { page, limit, orderBy, orderDirection } = PaginationHelper.applyDefaults(paginationParams);
+
     const filtros = { data_inicio: dataInicio, data_fim: dataFim };
-    
+
     // Remove filtros undefined
-    Object.keys(filtros).forEach(key => 
+    Object.keys(filtros).forEach(key =>
       filtros[key] === undefined && delete filtros[key]
     );
 
-    const { visitas, total } = await this.visitaService.buscarPorBeneficiario(
+    return await this.visitaService.buscarPorBeneficiario(
       beneficiarioId,
       filtros,
-      page,
-      limit
+      paginationParams
     );
-
-    return {
-      data: visitas,
-      total,
-      page,
-      limit
-    };
   }
 
   /**
@@ -388,46 +383,41 @@ export class VisitaController {
    */
   @Get('tecnico/:tecnicoId')
   @RequiresPermission({ permissionName: 'monitoramento.visita.listar' })
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Listar visitas por técnico',
     description: 'Lista todas as visitas realizadas por um técnico específico'
   })
   @ApiParam({ name: 'tecnicoId', description: 'ID do técnico responsável' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (padrão: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página (padrão: 10)' })
+  @ApiQuery({ name: 'orderBy', required: false, type: String, description: 'Campo para ordenação (padrão: data_realizacao)' })
+  @ApiQuery({ name: 'orderDirection', required: false, enum: ['ASC', 'DESC'], description: 'Direção da ordenação (padrão: DESC)' })
   @ApiQuery({ name: 'data_inicio', required: false, type: String, description: 'Data de início (YYYY-MM-DD)' })
   @ApiQuery({ name: 'data_fim', required: false, type: String, description: 'Data de fim (YYYY-MM-DD)' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: HttpStatus.OK,
     description: 'Lista de visitas do técnico retornada com sucesso'
   })
   async listarVisitasPorTecnico(
     @Param('tecnicoId', ParseUUIDPipe) tecnicoId: string,
-    @Query('page', PagePipe) page: number = 1,
-    @Query('limit', LimitPipe) limit: number = 10,
+    @Query() paginationParams: PaginationParamsDto,
     @Query('data_inicio') dataInicio?: string,
     @Query('data_fim') dataFim?: string
-  ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
-    const filtros = { data_inicio: dataInicio, data_fim: dataFim };
+  ): Promise<PaginatedResponseDto<any>> {
+    const { page, limit, orderBy, orderDirection } = PaginationHelper.applyDefaults(paginationParams);
     
+    const filtros = { data_inicio: dataInicio, data_fim: dataFim };
+
     // Remove filtros undefined
-    Object.keys(filtros).forEach(key => 
+    Object.keys(filtros).forEach(key =>
       filtros[key] === undefined && delete filtros[key]
     );
 
-    const { visitas, total } = await this.visitaService.buscarPorTecnico(
+    return await this.visitaService.buscarPorTecnico(
       tecnicoId,
       filtros,
-      page,
-      limit
+      paginationParams
     );
-
-    return {
-      data: visitas,
-      total,
-      page,
-      limit
-    };
   }
 
   /**
@@ -435,49 +425,45 @@ export class VisitaController {
    */
   @Get('renovacao/recomendadas')
   @RequiresPermission({ permissionName: 'monitoramento.visita.listar' })
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Listar visitas que recomendam renovação',
     description: 'Lista todas as visitas que recomendam a renovação do benefício'
   })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (padrão: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página (padrão: 10)' })
+  @ApiQuery({ name: 'orderBy', required: false, type: String, description: 'Campo para ordenação (padrão: data_realizacao)' })
+  @ApiQuery({ name: 'orderDirection', required: false, enum: ['ASC', 'DESC'], description: 'Direção da ordenação (padrão: DESC)' })
   @ApiQuery({ name: 'unidade_id', required: false, type: String, description: 'ID da unidade' })
   @ApiQuery({ name: 'data_inicio', required: false, type: String, description: 'Data de início (YYYY-MM-DD)' })
   @ApiQuery({ name: 'data_fim', required: false, type: String, description: 'Data de fim (YYYY-MM-DD)' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: HttpStatus.OK,
     description: 'Lista de visitas que recomendam renovação retornada com sucesso'
   })
   async listarVisitasQueRecomendamRenovacao(
-    @Query('page', PagePipe) page: number = 1,
-    @Query('limit', LimitPipe) limit: number = 10,
+    @Query() paginationParams: PaginationParamsDto,
     @Query('unidade_id') unidadeId?: string,
     @Query('data_inicio') dataInicio?: string,
     @Query('data_fim') dataFim?: string
-  ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
+  ): Promise<PaginatedResponseDto<any>> {
+    // Aplicar valores padrão e validar parâmetros de paginação
+    const { page, limit, orderBy, orderDirection } = PaginationHelper.applyDefaults(paginationParams);
+
     const filtros = {
       unidade_id: unidadeId,
       data_inicio: dataInicio,
       data_fim: dataFim
     };
-    
+
     // Remove filtros undefined
-    Object.keys(filtros).forEach(key => 
+    Object.keys(filtros).forEach(key =>
       filtros[key] === undefined && delete filtros[key]
     );
 
-    const { visitas, total } = await this.visitaService.buscarQueRecomendamRenovacao(
+    return await this.visitaService.buscarQueRecomendamRenovacao(
       filtros,
-      page,
-      limit
+      paginationParams
     );
-
-    return {
-      data: visitas,
-      total,
-      page,
-      limit
-    };
   }
 
   /**
@@ -485,46 +471,42 @@ export class VisitaController {
    */
   @Get('nova-visita/necessarias')
   @RequiresPermission({ permissionName: 'monitoramento.visita.listar' })
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Listar visitas que necessitam nova visita',
     description: 'Lista todas as visitas que indicam necessidade de nova visita'
   })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (padrão: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página (padrão: 10)' })
+  @ApiQuery({ name: 'orderBy', required: false, type: String, description: 'Campo para ordenação (padrão: data_realizacao)' })
+  @ApiQuery({ name: 'orderDirection', required: false, enum: ['ASC', 'DESC'], description: 'Direção da ordenação (padrão: DESC)' })
   @ApiQuery({ name: 'unidade_id', required: false, type: String, description: 'ID da unidade' })
   @ApiQuery({ name: 'prazo_vencido', required: false, type: Boolean, description: 'Apenas com prazo vencido' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: HttpStatus.OK,
     description: 'Lista de visitas que necessitam nova visita retornada com sucesso'
   })
   async listarVisitasQueNecessitamNovaVisita(
-    @Query('page', PagePipe) page: number = 1,
-    @Query('limit', LimitPipe) limit: number = 10,
+    @Query() paginationParams: PaginationParamsDto,
     @Query('unidade_id') unidadeId?: string,
     @Query('prazo_vencido', new ParseBoolPipe({ optional: true })) prazoVencido?: boolean
-  ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
+  ): Promise<PaginatedResponseDto<any>> {
+    // Aplicar valores padrão e extrair parâmetros de paginação
+    const { page, limit, orderBy, orderDirection } = PaginationHelper.applyDefaults(paginationParams);
+
     const filtros = {
       unidade_id: unidadeId,
       prazo_vencido: prazoVencido
     };
-    
+
     // Remove filtros undefined
-    Object.keys(filtros).forEach(key => 
+    Object.keys(filtros).forEach(key =>
       filtros[key] === undefined && delete filtros[key]
     );
 
-    const { visitas, total } = await this.visitaService.buscarQueNecessitamNovaVisita(
+    return await this.visitaService.buscarQueNecessitamNovaVisita(
       filtros,
-      page,
-      limit
+      paginationParams
     );
-
-    return {
-      data: visitas,
-      total,
-      page,
-      limit
-    };
   }
 
   /**
@@ -532,49 +514,45 @@ export class VisitaController {
    */
   @Get('elegibilidade/problemas')
   @RequiresPermission({ permissionName: 'monitoramento.visita.listar' })
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Listar visitas com problemas de elegibilidade',
     description: 'Lista todas as visitas que identificaram problemas nos critérios de elegibilidade'
   })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (padrão: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página (padrão: 10)' })
+  @ApiQuery({ name: 'orderBy', required: false, type: String, description: 'Campo para ordenação (padrão: data_realizacao)' })
+  @ApiQuery({ name: 'orderDirection', required: false, enum: ['ASC', 'DESC'], description: 'Direção da ordenação (padrão: DESC)' })
   @ApiQuery({ name: 'unidade_id', required: false, type: String, description: 'ID da unidade' })
   @ApiQuery({ name: 'data_inicio', required: false, type: String, description: 'Data de início (YYYY-MM-DD)' })
   @ApiQuery({ name: 'data_fim', required: false, type: String, description: 'Data de fim (YYYY-MM-DD)' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: HttpStatus.OK,
     description: 'Lista de visitas com problemas de elegibilidade retornada com sucesso'
   })
   async listarVisitasComProblemasElegibilidade(
-    @Query('page', PagePipe) page: number = 1,
-    @Query('limit', LimitPipe) limit: number = 10,
+    @Query() paginationParams: PaginationParamsDto,
     @Query('unidade_id') unidadeId?: string,
     @Query('data_inicio') dataInicio?: string,
     @Query('data_fim') dataFim?: string
-  ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
+  ): Promise<PaginatedResponseDto<any>> {
+    // Aplicar valores padrão e extrair parâmetros de paginação
+    const { page, limit, orderBy, orderDirection } = PaginationHelper.applyDefaults(paginationParams);
+
     const filtros = {
       unidade_id: unidadeId,
       data_inicio: dataInicio,
       data_fim: dataFim
     };
-    
+
     // Remove filtros undefined
-    Object.keys(filtros).forEach(key => 
+    Object.keys(filtros).forEach(key =>
       filtros[key] === undefined && delete filtros[key]
     );
 
-    const { visitas, total } = await this.visitaService.buscarComProblemasElegibilidade(
+    return await this.visitaService.buscarComProblemasElegibilidade(
       filtros,
-      page,
-      limit
+      paginationParams
     );
-
-    return {
-      data: visitas,
-      total,
-      page,
-      limit
-    };
   }
 
   /**
@@ -582,7 +560,7 @@ export class VisitaController {
    */
   @Put(':id')
   @RequiresPermission({ permissionName: 'monitoramento.visita.atualizar' })
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Atualizar visita',
     description: 'Atualiza dados de uma visita domiciliar existente'
   })
@@ -633,8 +611,8 @@ export class VisitaController {
       }
     }
   })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: HttpStatus.OK,
     description: 'Visita atualizada com sucesso',
     example: {
       message: 'Visita atualizada com sucesso',
@@ -651,8 +629,8 @@ export class VisitaController {
       }
     }
   })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
     description: 'Visita não encontrada',
     example: {
       statusCode: 404,
@@ -660,8 +638,8 @@ export class VisitaController {
       error: 'Not Found'
     }
   })
-  @ApiResponse({ 
-    status: HttpStatus.BAD_REQUEST, 
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
     description: 'Dados inválidos ou regras de negócio violadas',
     example: {
       statusCode: 400,

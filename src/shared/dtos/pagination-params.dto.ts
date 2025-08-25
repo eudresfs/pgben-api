@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsNumber, IsOptional, Min } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, Min } from 'class-validator';
 
 export class PaginationParamsDto {
   @ApiPropertyOptional({
@@ -42,4 +42,19 @@ export class PaginationParamsDto {
     { toClassOnly: true },
   )
   offset = 0;
+
+  @ApiPropertyOptional({
+    description: 'Campo para ordenação',
+    type: String,
+  })
+  @IsOptional()
+  orderBy?: string;
+
+  @ApiPropertyOptional({
+    description: 'Direção da ordenação',
+    type: String,
+  })
+  @IsOptional()
+  @IsEnum(['ASC', 'DESC'])
+  orderDirection?: 'ASC' | 'DESC';
 }

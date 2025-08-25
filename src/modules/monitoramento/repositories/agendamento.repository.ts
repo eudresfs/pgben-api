@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In, SelectQueryBuilder } from 'typeorm';
 import { AgendamentoVisita } from '../entities/agendamento-visita.entity';
 import { StatusAgendamento, TipoVisita, PrioridadeVisita } from '../../../enums';
+import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
+import { PaginationHelper } from '../helpers/pagination.helper';
 
 /**
  * Interface para filtros de busca de agendamentos
@@ -17,6 +19,16 @@ export interface AgendamentoFilters {
   data_inicio?: Date;
   data_fim?: Date;
   em_atraso?: boolean;
+}
+
+/**
+ * Interface para resultado de busca paginada
+ */
+export interface PaginatedAgendamentoResult {
+  items: AgendamentoVisita[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 /**
@@ -106,28 +118,52 @@ export class AgendamentoRepository {
   }
 
   /**
-   * Busca agendamentos com paginação
+   * Busca agendamentos com filtros e paginação
    * 
+   * @param filters Filtros de busca
+   * @param paginationParams Parâmetros de paginação
+   * @returns Lista paginada de agendamentos
+   */
+  async findWithPagination(
+    filters?: AgendamentoFilters,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedAgendamentoResult> {
+    // Aplica valores padrão e valida parâmetros
+    const params = PaginationHelper.applyDefaults(paginationParams || {});
+    PaginationHelper.validatePaginationParams(params);
+    
+    // Converte para parâmetros de repository
+    const { page, limit, offset } = PaginationHelper.convertToRepositoryParams(params);
+    
+    const queryBuilder = this.createBaseQueryBuilder();
+    this.applyFilters(queryBuilder, filters);
+    queryBuilder.where('agendamento.removed_at IS NULL');
+    
+    const [items, total] = await queryBuilder
+      .skip(offset)
+      .take(limit)
+      .getManyAndCount();
+
+    return { items, total, page, limit };
+  }
+  
+  /**
+   * Busca agendamentos com paginação (método legado)
+   * 
+   * @deprecated Use findWithPagination com PaginationParamsDto
    * @param filters Filtros de busca
    * @param page Página
    * @param limit Limite por página
    * @returns Lista paginada de agendamentos
    */
-  async findWithPagination(
+  async findWithPaginationLegacy(
     filters?: AgendamentoFilters,
     page: number = 1,
     limit: number = 10,
   ): Promise<{ agendamentos: AgendamentoVisita[]; total: number }> {
-    const queryBuilder = this.createBaseQueryBuilder();
-    this.applyFilters(queryBuilder, filters);
-    queryBuilder.where('agendamento.removed_at IS NULL');
-    
-    const [agendamentos, total] = await queryBuilder
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-
-    return { agendamentos, total };
+    const paginationParams = PaginationHelper.applyDefaults({ page, limit });
+    const result = await this.findWithPagination(filters, paginationParams);
+    return { agendamentos: result.items, total: result.total };
   }
 
   /**
