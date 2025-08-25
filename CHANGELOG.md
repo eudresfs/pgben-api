@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.10](https://github.com/kemosoft-team/pgben-server/compare/v0.1.9...v0.1.10) (2025-08-25)
+
+
+### Features
+
+* **aprovacao:** replace boolean 'ativo' with enum 'status' and add user relations ([1f39ec9](https://github.com/kemosoft-team/pgben-server/commit/1f39ec97bbfc898803a9f09a3515f14657426394))
+* **audit:** add operation error handling in audit listener ([8712873](https://github.com/kemosoft-team/pgben-server/commit/8712873d97e468fc4345a954aa44df32ba4f6d2e))
+* **audit:** enhance audit system with global interceptor and deduplication ([306956a](https://github.com/kemosoft-team/pgben-server/commit/306956af7f841c888582e6eb24409e90a39d3f6d))
+* **auditoria:** add entity and operation decorators for audit logging ([1d00519](https://github.com/kemosoft-team/pgben-server/commit/1d00519a1ab410999235c87e2ef6cbf8291a2ad6))
+* **monitoramento:** refactor agendamento to use pagamento_id instead of beneficiario_id ([79ac536](https://github.com/kemosoft-team/pgben-server/commit/79ac5367129b0cd1d7061da923458efa0132bcac))
+* **pagination:** implement standardized pagination across repositories and services ([0416cd2](https://github.com/kemosoft-team/pgben-server/commit/0416cd27ce742c7d8662acdc277bb2cf792c8536))
+
 ### [0.1.9](https://github.com/kemosoft-team/pgben-server/compare/v0.1.8...v0.1.9) (2025-08-22)
 
 

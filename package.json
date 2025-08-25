@@ -1,6 +1,6 @@
 {
   "name": "pgben-server",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "private": true,
   "license": "UNLICENSED",
   "description": "Plataforma de gestão de benefícios eventuais do Governo Federal do Brasil destinado à secretarias municipais de assistência social",
