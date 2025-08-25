@@ -3,8 +3,6 @@ name: Build and Deploy
 on:
   push:
     branches: ['main', 'development']
-  pull_request:
-    branches: ['main', 'development']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -17,6 +15,7 @@ env:
   ENV_SUFFIX: ${{ github.ref == 'refs/heads/development' && '-dev' || '' }}
   DEPLOYMENT_NAME: ${{ github.event.repository.name }}${{ github.ref == 'refs/heads/development' && '-dev' || '' }}
   CONTAINER_PATH: cpr.kemosoft.com.br/${{ github.event.repository.name }}:${{ github.sha }}
+  CONTAINER_NAME: ${{ github.event.repository.name }}
 
 jobs:
   build:
@@ -56,7 +55,7 @@ jobs:
             kubectl patch deployment $DEPLOYMENT_NAME -n $K8S_NAMESPACE -p '{"spec":{"template":{"spec":{"imagePullSecrets":[{"name":"cpr"}]}}}}'
           else
             echo "Deployment exists, updating image..."
-            kubectl -n $K8S_NAMESPACE set image deployment/$DEPLOYMENT_NAME $DEPLOYMENT_NAME=$CONTAINER_PATH --record
+            kubectl -n $K8S_NAMESPACE set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$CONTAINER_PATH --record
           fi
           
           echo "Aguardando rollout do deployment (timeout aumentado para 15 minutos)..."
@@ -79,7 +78,7 @@ jobs:
                 "template": {
                   "spec": {
                     "containers": [{
-                      "name": "'"$DEPLOYMENT_NAME"'",
+                      "name": "'"$CONTAINER_NAME"'",
                       "resources": {
                         "requests": {
                           "memory": "512Mi",
@@ -226,7 +225,7 @@ jobs:
                     service:
                       name: ${APP_NAME}-svc
                       port:
-                        number: ${PORT}  # Esta é a porta do serviço
+                        number: ${PORT}  # Porta do serviço
                   path: /
                   pathType: Prefix
             tls:
