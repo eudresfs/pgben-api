@@ -14,6 +14,7 @@ import {
   Cidadao,
   Unidade,
   Concessao,
+  Pagamento,
 } from '../../entities';
 import { AvaliacaoVisita } from './entities/avaliacao-visita.entity';
 import { HistoricoMonitoramento } from './entities/historico-monitoramento.entity';
@@ -64,6 +65,7 @@ import { VisitaRepository } from './repositories/visita.repository';
       Cidadao,
       Unidade,
       Concessao,
+      Pagamento,
     ]),
     // Módulo compartilhado para serviços utilitários
     SharedModule,

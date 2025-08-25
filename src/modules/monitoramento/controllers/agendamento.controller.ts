@@ -394,26 +394,26 @@ export class AgendamentoController {
   }
 
   /**
-   * Lista agendamentos por beneficiário
+   * Lista agendamentos por pagamento
    */
-  @Get('beneficiario/:beneficiarioId')
+  @Get('pagamento/:pagamentoId')
   @RequiresPermission({ permissionName: 'monitoramento.agendamento.listar' })
   @ApiOperation({ 
-    summary: 'Listar agendamentos por beneficiário',
-    description: 'Lista todos os agendamentos de um beneficiário específico'
+    summary: 'Listar agendamentos por pagamento',
+    description: 'Lista todos os agendamentos de um pagamento específico'
   })
-  @ApiParam({ name: 'beneficiarioId', description: 'ID do beneficiário' })
+  @ApiParam({ name: 'pagamentoId', description: 'ID do pagamento' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (padrão: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página (padrão: 10)' })
   @ApiQuery({ name: 'orderBy', required: false, type: String, description: 'Campo para ordenação (padrão: created_at)' })
   @ApiQuery({ name: 'orderDirection', required: false, enum: ['ASC', 'DESC'], description: 'Direção da ordenação (padrão: DESC)' })
   @ApiResponse({ 
     status: HttpStatus.OK, 
-    description: 'Lista de agendamentos do beneficiário retornada com sucesso',
+    description: 'Lista de agendamentos do pagamento retornada com sucesso',
     type: PaginatedResponseDto
   })
-  async listarAgendamentosPorBeneficiario(
-    @Param('beneficiarioId', ParseUUIDPipe) beneficiarioId: string,
+  async listarAgendamentosPorPagamento(
+    @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string,
     @Query() paginationParams: PaginationParamsDto
   ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
     try {
@@ -421,12 +421,12 @@ export class AgendamentoController {
       const validatedParams = PaginationHelper.applyDefaults(paginationParams);
       
       const filtros = { 
-        beneficiario_id: beneficiarioId
+        pagamento_id: pagamentoId
       };
 
-      return await this.agendamentoService.buscarTodos(filtros, validatedParams);
+      return await this.agendamentoService.buscarPorPagamento(pagamentoId, filtros, validatedParams);
     } catch (error) {
-      // Filtros globais tratarão NotFoundException se beneficiário não existir
+      // Filtros globais tratarão NotFoundException se pagamento não existir
       throw error;
     }
   }

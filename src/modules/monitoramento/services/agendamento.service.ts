@@ -8,10 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Between } from 'typeorm';
 import { AgendamentoVisita } from '../entities/agendamento-visita.entity';
-import { Cidadao } from '../../../entities/cidadao.entity';
-import { Concessao } from '../../../entities/concessao.entity';
-import { Usuario } from '../../../entities/usuario.entity';
-import { Unidade } from '../../../entities/unidade.entity';
+import { Pagamento } from '../../../entities/pagamento.entity';
 import { AgendamentoRepository } from '../repositories/agendamento.repository';
 import { CriarAgendamentoDto } from '../dto/criar-agendamento.dto';
 import { AgendamentoResponseDto } from '../dto/agendamento-response.dto';
@@ -46,14 +43,8 @@ export class AgendamentoService {
 
   constructor(
     private agendamentoRepository: AgendamentoRepository,
-    @InjectRepository(Cidadao)
-    private cidadaoRepository: Repository<Cidadao>,
-    @InjectRepository(Concessao)
-    private concessaoRepository: Repository<Concessao>,
-    @InjectRepository(Usuario)
-    private usuarioRepository: Repository<Usuario>,
-    @InjectRepository(Unidade)
-    private unidadeRepository: Repository<Unidade>,
+    @InjectRepository(Pagamento)
+    private pagamentoRepository: Repository<Pagamento>,
   ) {}
 
   /**
@@ -68,7 +59,7 @@ export class AgendamentoService {
   async criarAgendamento(createDto: CriarAgendamentoDto): Promise<AgendamentoResponseDto> {
     try {
       this.logger.log(
-        `Iniciando criação de agendamento para beneficiário ${createDto.beneficiario_id}`,
+        `Iniciando criação de agendamento para pagamento ${createDto.pagamento_id}`,
       );
 
       // Validar entidades relacionadas
@@ -82,9 +73,7 @@ export class AgendamentoService {
 
       // Criar o agendamento através do repository
       const agendamento = await this.agendamentoRepository.create({
-        beneficiario_id: createDto.beneficiario_id,
-        tecnico_id: createDto.tecnico_id,
-        unidade_id: createDto.unidade_id,
+        pagamento_id: createDto.pagamento_id,
         data_agendamento: new Date(createDto.data_agendamento),
         tipo_visita: createDto.tipo_visita,
         prioridade: createDto.prioridade,
@@ -105,14 +94,14 @@ export class AgendamentoService {
       }
 
       this.logger.log(
-        `Agendamento criado com sucesso: ${savedAgendamento.id} para beneficiário ${createDto.beneficiario_id}`,
+        `Agendamento criado com sucesso: ${savedAgendamento.id} para pagamento ${createDto.pagamento_id}`,
       );
 
       return this.buildResponseDto(agendamentoCompleto);
     } catch (error) {
       // Log detalhado do erro original com contexto completo
       this.logger.error(
-        `Falha ao criar agendamento para beneficiário ${createDto.beneficiario_id}`,
+        `Falha ao criar agendamento para pagamento ${createDto.pagamento_id}`,
         {
           error: error.message,
           stack: error.stack,
@@ -122,8 +111,7 @@ export class AgendamentoService {
           constraint: error.constraint,
           table: error.table,
           column: error.column,
-          beneficiario_id: createDto.beneficiario_id,
-          tecnico_id: createDto.tecnico_id,
+          pagamento_id: createDto.pagamento_id,
           data_agendamento: createDto.data_agendamento,
           tipo_visita: createDto.tipo_visita,
           originalError: error,
@@ -204,13 +192,13 @@ export class AgendamentoService {
       const savedAgendamento = await this.agendamentoRepository.save(agendamento);
 
       this.logger.log(
-        `Agendamento criado com sucesso: ${savedAgendamento.id} para beneficiário ${createDto.beneficiario_id}`,
+        `Agendamento criado com sucesso: ${savedAgendamento.id} para pagamento ${createDto.pagamento_id}`,
       );
 
       return this.buildResponseDto(savedAgendamento);
     } catch (error) {
       this.logger.error(
-        `Erro ao criar agendamento para beneficiário ${createDto.beneficiario_id}: ${error.message}`,
+        `Erro ao criar agendamento para pagamento ${createDto.pagamento_id}: ${error.message}`,
         error.stack,
       );
       throw error;
@@ -345,7 +333,7 @@ export class AgendamentoService {
 
       // Verificar conflitos na nova data
       await this.checkSchedulingConflicts({
-        tecnico_id: agendamento.tecnico_id,
+        pagamento_id: agendamento.pagamento_id,
         data_agendamento: novaDataHora,
       } as CriarAgendamentoDto, id);
 
@@ -457,14 +445,14 @@ export class AgendamentoService {
   }
 
   /**
-   * Busca agendamentos por beneficiário
+   * Busca agendamentos por pagamento
    * 
-   * @param beneficiarioId ID do beneficiário
-   * @returns Lista de agendamentos do beneficiário
+   * @param pagamentoId ID do pagamento
+   * @returns Lista de agendamentos do pagamento
    */
-  async findByBeneficiario(beneficiarioId: string): Promise<AgendamentoResponseDto[]> {
+  async findByPagamento(pagamentoId: string): Promise<AgendamentoResponseDto[]> {
     const repositoryFilters = {
-      beneficiario_id: beneficiarioId,
+      pagamento_id: pagamentoId,
     };
 
     const agendamentos = await this.agendamentoRepository.findWithFilters(repositoryFilters);
@@ -478,91 +466,57 @@ export class AgendamentoService {
    * @param createDto Dados do agendamento
    */
   /**
-   * Valida se todas as entidades relacionadas existem e são válidas
+   * Valida se o pagamento existe e suas relações são válidas
    * 
    * @private
    * @param createDto Dados do agendamento
-   * @throws NotFoundException se alguma entidade não for encontrada
+   * @throws NotFoundException se o pagamento não for encontrado
    * @throws BadRequestException se houver inconsistência nos dados
    */
   private async validateRelatedEntities(createDto: CriarAgendamentoDto): Promise<void> {
-    const validationPromises = [];
-    const validationErrors: string[] = [];
+    // Validar pagamento e suas relações
+    const pagamento = await this.pagamentoRepository.findOne({
+      where: { id: createDto.pagamento_id },
+      relations: [
+        'solicitacao',
+        'solicitacao.beneficiario',
+        'solicitacao.tecnico',
+        'solicitacao.unidade'
+      ],
+    });
 
-    // Validar beneficiário
-    validationPromises.push(
-      this.cidadaoRepository.findOne({
-        where: { id: createDto.beneficiario_id },
-      }).then(beneficiario => {
-        if (!beneficiario) {
-          validationErrors.push(
-            `Beneficiário com ID '${createDto.beneficiario_id}' não foi encontrado no sistema.`
-          );
-        }
-        return beneficiario;
-      })
-    );
-
-    // Validar técnico responsável
-    validationPromises.push(
-      this.usuarioRepository.findOne({
-        where: { id: createDto.tecnico_id },
-      }).then(tecnico => {
-        if (!tecnico) {
-          validationErrors.push(
-            `Técnico com ID '${createDto.tecnico_id}' não foi encontrado no sistema.`
-          );
-        }
-        return tecnico;
-      })
-    );
-
-    // Validar unidade
-    validationPromises.push(
-      this.unidadeRepository.findOne({
-        where: { id: createDto.unidade_id },
-      }).then(unidade => {
-        if (!unidade) {
-          validationErrors.push(
-            `Unidade com ID '${createDto.unidade_id}' não foi encontrada no sistema.`
-          );
-        }
-        return unidade;
-      })
-    );
-
-    // Validar concessão (se fornecida)
-    if (createDto.concessao_id) {
-      validationPromises.push(
-        this.concessaoRepository.findOne({
-          where: { id: createDto.concessao_id },
-          relations: ['solicitacao', 'solicitacao.beneficiario'],
-        }).then(concessao => {
-          if (!concessao) {
-            validationErrors.push(
-              `Concessão com ID '${createDto.concessao_id}' não foi encontrada no sistema.`
-            );
-          } else if (concessao.solicitacao.beneficiario.id !== createDto.beneficiario_id) {
-            validationErrors.push(
-              'A concessão informada não pertence ao beneficiário selecionado. Verifique os dados e tente novamente.'
-            );
-          }
-          return concessao;
-        })
+    if (!pagamento) {
+      throw new NotFoundException(
+        `Pagamento com ID '${createDto.pagamento_id}' não foi encontrado no sistema.`
       );
     }
 
-    // Aguardar todas as validações
-    await Promise.all(validationPromises);
-
-    // Se houver erros, lançar exceção com todas as mensagens
-    if (validationErrors.length > 0) {
-      const errorMessage = validationErrors.length === 1 
-        ? validationErrors[0]
-        : `Foram encontrados os seguintes problemas:\n${validationErrors.map((error, index) => `${index + 1}. ${error}`).join('\n')}`;
-      
-      throw new NotFoundException(errorMessage);
+    if (!pagamento.solicitacao) {
+      throw new BadRequestException(
+        'O pagamento informado não possui uma solicitação associada válida.'
+      );
     }
+
+    if (!pagamento.solicitacao.beneficiario) {
+      throw new BadRequestException(
+        'A solicitação associada ao pagamento não possui um beneficiário válido.'
+      );
+    }
+
+    if (!pagamento.solicitacao.tecnico) {
+      throw new BadRequestException(
+        'A solicitação associada ao pagamento não possui um técnico responsável válido.'
+      );
+    }
+
+    if (!pagamento.solicitacao.unidade) {
+      throw new BadRequestException(
+        'A solicitação associada ao pagamento não possui uma unidade válida.'
+      );
+    }
+
+    // Armazenar as relações no DTO para uso posterior
+    createDto.pagamento_id = pagamento.id;
   }
 
   /**
@@ -628,8 +582,8 @@ export class AgendamentoService {
 
     // Verificar se não há agendamento muito próximo para o mesmo beneficiário
     try {
-      const agendamentoRecente = await this.agendamentoRepository.findRecentScheduleForBeneficiario(
-        createDto.beneficiario_id,
+      const agendamentoRecente = await this.agendamentoRepository.findRecentScheduleForPagamento(
+        createDto.pagamento_id,
         dataAgendamento,
         7
       );
@@ -654,7 +608,7 @@ export class AgendamentoService {
       }
       
       this.logger.warn(
-        `Erro ao verificar agendamentos recentes para beneficiário ${createDto.beneficiario_id}: ${error.message}`
+        `Erro ao verificar agendamentos recentes para pagamento ${createDto.pagamento_id}: ${error.message}`
       );
       // Continua o processo mesmo se a verificação falhar
     }
@@ -683,7 +637,7 @@ export class AgendamentoService {
 
     try {
       const conflito = await this.agendamentoRepository.findConflictingSchedule(
-         createDto.tecnico_id,
+         createDto.pagamento_id,
          dataAgendamento,
          excludeId,
        );
@@ -710,10 +664,10 @@ export class AgendamentoService {
       }
       
       this.logger.error(
-        `Erro ao verificar conflitos de agendamento para técnico ${createDto.tecnico_id}`,
+        `Erro ao verificar conflitos de agendamento para pagamento ${createDto.pagamento_id}`,
         {
           error: error.message,
-          tecnico_id: createDto.tecnico_id,
+          pagamento_id: createDto.pagamento_id,
           data_agendamento: createDto.data_agendamento,
         }
       );
@@ -931,10 +885,10 @@ export class AgendamentoService {
   }
 
   /**
-   * Busca agendamentos por beneficiário com paginação
+   * Busca agendamentos por pagamento com paginação
    */
-  async buscarPorBeneficiario(
-    beneficiarioId: string,
+  async buscarPorPagamento(
+    pagamentoId: string,
     filters: any,
     paginationParams?: PaginationParamsDto,
   ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
@@ -944,7 +898,7 @@ export class AgendamentoService {
       
       const repositoryFilters = {
         ...this.convertToRepositoryFilters(filters),
-        beneficiario_id: beneficiarioId,
+        pagamento_id: pagamentoId,
       };
       
       const { items, total } = await this.agendamentoRepository.findWithPagination(
@@ -961,20 +915,20 @@ export class AgendamentoService {
         total,
       );
     } catch (error) {
-      this.logger.error(`Erro ao buscar agendamentos por beneficiário ${beneficiarioId}: ${error.message}`, error.stack);
+      this.logger.error(`Erro ao buscar agendamentos por pagamento ${pagamentoId}: ${error.message}`, error.stack);
       throw error;
     }
   }
 
   /**
-   * Busca agendamentos por beneficiário (método legado para compatibilidade)
-   * @deprecated Use buscarPorBeneficiario com PaginationParamsDto
+   * Busca agendamentos por pagamento (método legado para compatibilidade)
+   * @deprecated Use buscarPorPagamento com PaginationParamsDto
    */
-  async buscarPorBeneficiarioLegacy(beneficiarioId: string, filters: any): Promise<{ agendamentos: AgendamentoResponseDto[]; total: number }> {
+  async buscarPorPagamentoLegacy(pagamentoId: string, filters: any): Promise<{ agendamentos: AgendamentoResponseDto[]; total: number }> {
     try {
       const repositoryFilters = {
         ...this.convertToRepositoryFilters(filters),
-        beneficiario_id: beneficiarioId,
+        pagamento_id: pagamentoId,
       };
       
       const agendamentos = await this.agendamentoRepository.findWithFilters(repositoryFilters);
@@ -984,7 +938,7 @@ export class AgendamentoService {
         total: agendamentos.length,
       };
     } catch (error) {
-      this.logger.error(`Erro ao buscar agendamentos por beneficiário ${beneficiarioId}: ${error.message}`, error.stack);
+      this.logger.error(`Erro ao buscar agendamentos por pagamento ${pagamentoId}: ${error.message}`, error.stack);
       throw error;
     }
   }
@@ -1054,30 +1008,24 @@ export class AgendamentoService {
 
     return {
       id: agendamento.id,
+      pagamento_id: agendamento.pagamento_id,
       beneficiario: {
-        id: agendamento.beneficiario.id,
-        nome: agendamento.beneficiario.nome,
-        cpf: agendamento.beneficiario.cpf,
-        telefone: agendamento.beneficiario.contatos?.[0].telefone,
-      },
-      concessao: {
-        id: null,
-        numero_protocolo: 'N/A',
-        tipo_beneficio: 'N/A',
-        data_inicio: null,
-        data_fim: null,
+        id: agendamento.pagamento.solicitacao.beneficiario.id,
+        nome: agendamento.pagamento.solicitacao.beneficiario.nome,
+        cpf: agendamento.pagamento.solicitacao.beneficiario.cpf,
+        telefone: agendamento.pagamento.solicitacao.beneficiario.contatos?.[0].telefone,
       },
       tecnico_responsavel: {
-        id: agendamento.tecnico_id,
-        nome: agendamento.tecnico_responsavel?.nome || 'N/A',
-        matricula: agendamento.tecnico_responsavel?.matricula || 'N/A',
-        cargo: agendamento.tecnico_responsavel?.role?.nome || 'Técnico',
+        id: agendamento.pagamento.solicitacao.tecnico_id,
+        nome: agendamento.pagamento.solicitacao.tecnico?.nome || 'N/A',
+        matricula: agendamento.pagamento.solicitacao.tecnico?.matricula || 'N/A',
+        cargo: agendamento.pagamento.solicitacao.tecnico?.role?.nome || 'Técnico',
       },
       unidade: {
-        id: agendamento.unidade.id,
-        nome: agendamento.unidade.nome,
-        codigo: agendamento.unidade.codigo,
-        endereco: agendamento.unidade.endereco,
+        id: agendamento.pagamento.solicitacao.unidade.id,
+        nome: agendamento.pagamento.solicitacao.unidade.nome,
+        codigo: agendamento.pagamento.solicitacao.unidade.codigo,
+        endereco: agendamento.pagamento.solicitacao.unidade.endereco,
       },
       data_agendamento: agendamento.data_agendamento,
       tipo_visita: agendamento.tipo_visita,
@@ -1089,7 +1037,7 @@ export class AgendamentoService {
       status_label: getStatusAgendamentoLabel(agendamento.status),
       observacoes: agendamento.observacoes,
       endereco_visita: agendamento.endereco_visita,
-      telefone_contato: agendamento.beneficiario?.contatos?.[0]?.telefone || null,
+      telefone_contato: agendamento.pagamento.solicitacao.beneficiario?.contatos?.[0]?.telefone || null,
       motivo_visita: agendamento.tipo_visita,
       notificar_beneficiario: agendamento.notificar_beneficiario || false,
       em_atraso: emAtraso,

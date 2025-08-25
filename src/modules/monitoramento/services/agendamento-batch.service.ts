@@ -2,9 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { AgendamentoVisita } from '../entities/agendamento-visita.entity';
-import { Usuario } from '../../../entities/usuario.entity';
-import { Cidadao } from '../../../entities/cidadao.entity';
-import { Unidade } from '../../../entities/unidade.entity';
+import { Pagamento } from '../../../entities/pagamento.entity';
 import { CriarAgendamentoDto } from '../dto/criar-agendamento.dto';
 import { StatusAgendamento } from '../enums';
 
@@ -49,12 +47,8 @@ export class AgendamentoBatchService {
   constructor(
     @InjectRepository(AgendamentoVisita)
     private readonly agendamentoRepository: Repository<AgendamentoVisita>,
-    @InjectRepository(Usuario)
-    private readonly usuarioRepository: Repository<Usuario>,
-    @InjectRepository(Cidadao)
-    private readonly cidadaoRepository: Repository<Cidadao>,
-    @InjectRepository(Unidade)
-    private readonly unidadeRepository: Repository<Unidade>,
+    @InjectRepository(Pagamento)
+    private readonly pagamentoRepository: Repository<Pagamento>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -168,10 +162,7 @@ export class AgendamentoBatchService {
 
             // Criar agendamento
             const agendamento = queryRunner.manager.create(AgendamentoVisita, {
-              beneficiario_id: agendamentoData.beneficiario_id,
-              tecnico_id: agendamentoData.tecnico_id,
-              unidade_id: agendamentoData.unidade_id,
-              concessao_id: agendamentoData.concessao_id,
+              pagamento_id: agendamentoData.pagamento_id,
               data_agendamento: new Date(agendamentoData.data_agendamento),
               tipo_visita: agendamentoData.tipo_visita,
               prioridade: agendamentoData.prioridade,
@@ -220,10 +211,7 @@ export class AgendamentoBatchService {
 
           // Criar agendamento
           const agendamento = this.agendamentoRepository.create({
-            beneficiario_id: agendamentoData.beneficiario_id,
-            tecnico_id: agendamentoData.tecnico_id,
-            unidade_id: agendamentoData.unidade_id,
-            concessao_id: agendamentoData.concessao_id,
+            pagamento_id: agendamentoData.pagamento_id,
             data_agendamento: new Date(agendamentoData.data_agendamento),
             tipo_visita: agendamentoData.tipo_visita,
             prioridade: agendamentoData.prioridade,
@@ -264,28 +252,25 @@ export class AgendamentoBatchService {
   ): Promise<void> {
     const manager = queryRunner?.manager || this.dataSource.manager;
 
-    // Validar beneficiário
-    const beneficiario = await manager.findOne(Cidadao, {
-      where: { id: agendamentoData.beneficiario_id },
+    // Validar pagamento e suas relações
+    const pagamento = await manager.findOne(Pagamento, {
+      where: { id: agendamentoData.pagamento_id },
+      relations: ['solicitacao', 'solicitacao.beneficiario', 'solicitacao.tecnico', 'solicitacao.unidade'],
     });
-    if (!beneficiario) {
-      throw new Error(`Beneficiário não encontrado: ${agendamentoData.beneficiario_id}`);
+    if (!pagamento) {
+      throw new Error(`Pagamento não encontrado: ${agendamentoData.pagamento_id}`);
     }
-
-    // Validar técnico
-    const tecnico = await manager.findOne(Usuario, {
-      where: { id: agendamentoData.tecnico_id },
-    });
-    if (!tecnico) {
-      throw new Error(`Técnico não encontrado: ${agendamentoData.tecnico_id}`);
+    if (!pagamento.solicitacao) {
+      throw new Error(`Solicitação não encontrada para o pagamento: ${agendamentoData.pagamento_id}`);
     }
-
-    // Validar unidade
-    const unidade = await manager.findOne(Unidade, {
-      where: { id: agendamentoData.unidade_id },
-    });
-    if (!unidade) {
-      throw new Error(`Unidade não encontrada: ${agendamentoData.unidade_id}`);
+    if (!pagamento.solicitacao.beneficiario) {
+      throw new Error(`Beneficiário não encontrado para o pagamento: ${agendamentoData.pagamento_id}`);
+    }
+    if (!pagamento.solicitacao.tecnico) {
+      throw new Error(`Técnico não encontrado para o pagamento: ${agendamentoData.pagamento_id}`);
+    }
+    if (!pagamento.solicitacao.unidade) {
+      throw new Error(`Unidade não encontrada para o pagamento: ${agendamentoData.pagamento_id}`);
     }
 
     // Validar data do agendamento (não pode ser no passado)

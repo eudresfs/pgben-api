@@ -27,7 +27,9 @@ import { Usuario } from '../../../entities';
 import { PagamentoService } from '../services/pagamento.service';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
+import { PagamentoPendenteMonitoramentoDto } from '../dtos/pagamento-pendente-monitoramento.dto';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
+import { TipoVisita } from '../../../enums/tipo-visita.enum';
 import { DataMaskingResponseInterceptor } from '../interceptors/data-masking-response.interceptor';
 import { AuditoriaInterceptor } from '../interceptors/auditoria.interceptor';
 import { AuditoriaPagamento } from '../decorators/auditoria.decorator';
@@ -41,7 +43,7 @@ import { AuditoriaPagamento } from '../decorators/auditoria.decorator';
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @UseInterceptors(DataMaskingResponseInterceptor, AuditoriaInterceptor)
 export class PagamentoController {
-  constructor(private readonly pagamentoService: PagamentoService) {}
+  constructor(private readonly pagamentoService: PagamentoService) { }
 
   /**
    * Lista pagamentos com filtros e paginação
@@ -60,17 +62,17 @@ export class PagamentoController {
   @ApiQuery({ name: 'data_fim', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ 
-    name: 'pagamento_ids', 
-    required: false, 
-    type: String, 
-    description: 'Lista de IDs de pagamento separados por vírgula (ex: id1,id2,id3). Máximo de 50 IDs por consulta.' 
+  @ApiQuery({
+    name: 'pagamento_ids',
+    required: false,
+    type: String,
+    description: 'Lista de IDs de pagamento separados por vírgula (ex: id1,id2,id3). Máximo de 50 IDs por consulta.'
   })
-  @ApiQuery({ 
-    name: 'com_comprovante', 
-    required: false, 
-    type: Boolean, 
-    description: 'Filtrar pagamentos que possuem comprovante anexado (true) ou não possuem (false)' 
+  @ApiQuery({
+    name: 'com_comprovante',
+    required: false,
+    type: Boolean,
+    description: 'Filtrar pagamentos que possuem comprovante anexado (true) ou não possuem (false)'
   })
   @ApiResponse({ status: 200, description: 'Lista paginada de pagamentos' })
   async findAll(
@@ -94,15 +96,15 @@ export class PagamentoController {
     if (ids) {
       // Dividir a string por vírgulas e remover espaços em branco
       const idsArray = ids.split(',').map(id => id.trim()).filter(id => id.length > 0);
-      
+
       // Validar formato UUID de cada ID
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       const invalidIds = idsArray.filter(id => !uuidRegex.test(id));
-      
+
       if (invalidIds.length > 0) {
         throw new BadRequestException(`IDs inválidos encontrados: ${invalidIds.join(', ')}`);
       }
-      
+
       pagamento_ids = idsArray;
     }
 
@@ -126,22 +128,7 @@ export class PagamentoController {
     return await this.pagamentoService.findAll(filtros);
   }
 
-  /**
-   * Busca pagamento por ID
-   */
-  @Get(':id')
-  @AuditoriaPagamento.Consulta('Consulta de pagamento por ID')
-  @RequiresPermission({
-    permissionName: 'pagamento.visualizar',
-    scopeType: TipoEscopo.UNIDADE,
-  })
-  @ApiOperation({ summary: 'Busca pagamento por ID' })
-  @ApiParam({ name: 'id', type: 'string', description: 'ID do pagamento' })
-  @ApiResponse({ status: 200, description: 'Detalhes do pagamento' })
-  @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return await this.pagamentoService.findById(id);
-  }
+
 
   /**
    * Cria um novo pagamento
@@ -315,6 +302,101 @@ export class PagamentoController {
       data: [],
       message: `0 pagamentos marcados como vencidos`,
     };
+  }
+
+  /**
+   * Busca pagamentos pendentes de monitoramento
+   */
+  @Get('monitoramento-pendente')
+  @AuditoriaPagamento.Consulta('Consulta de pagamentos pendentes de monitoramento')
+  @RequiresPermission({
+    permissionName: 'monitoramento.pendentes'
+  })
+  @ApiOperation({
+    summary: 'Busca pagamentos pendentes de monitoramento',
+    description: 'Retorna todos os pagamentos que ainda não têm visita/agendamento criado'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de pagamentos pendentes de monitoramento',
+    type: [PagamentoPendenteMonitoramentoDto]
+  })
+  async findPendentesMonitoramento() {
+    const pagamentos = await this.pagamentoService.findPendentesMonitoramento();
+
+    return pagamentos.map(p => ({
+      pagamento_id: p.pagamento_id,
+      dados_pagamento: {
+        id: p.pagamento_id,
+        solicitacao_id: p.solicitacao_id,
+        info_bancaria_id: p.info_bancaria_id,
+        valor: p.valor,
+        data_liberacao: p.data_liberacao,
+        status: p.status,
+        metodo_pagamento: p.metodo_pagamento,
+        liberado_por: p.liberado_por,
+        observacoes: p.observacoes,
+        created_at: p.created_at,
+        updated_at: p.updated_at,
+        removed_at: p.removed_at,
+        data_agendamento: p.data_agendamento,
+        data_prevista_liberacao: p.data_prevista_liberacao,
+        data_pagamento: p.data_pagamento,
+        data_conclusao: p.data_conclusao,
+        criado_por: p.criado_por,
+        comprovante_id: p.comprovante_id,
+        concessao_id: p.concessao_id,
+        numero_parcela: p.numero_parcela,
+        total_parcelas: p.total_parcelas,
+        data_vencimento: p.data_vencimento,
+        data_regularizacao: p.data_regularizacao,
+        monitorado: p.monitorado,
+      },
+      beneficiario: {
+        nome: p.cidadao_nome,
+        cpf: p.cidadao_cpf,
+        bairro: p.endereco_bairro
+      },
+      unidade: {
+        id: p.unidade_id,
+        nome: p.unidade_nome
+      },
+      tecnico: {
+        id: p.tecnico_id,
+        nome: p.tecnico_nome
+      },
+      tipo_visita: this.calcularTipoVisita(p.numero_parcela, p.total_parcelas)
+    }));
+  }
+
+  /**
+   * Busca pagamento por ID
+   */
+  @Get(':id')
+  @AuditoriaPagamento.Consulta('Consulta de pagamento por ID')
+  @RequiresPermission({
+    permissionName: 'pagamento.visualizar',
+    scopeType: TipoEscopo.UNIDADE,
+  })
+  @ApiOperation({ summary: 'Busca pagamento por ID' })
+  @ApiParam({ name: 'id', type: 'string', description: 'ID do pagamento' })
+  @ApiResponse({ status: 200, description: 'Detalhes do pagamento' })
+  @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return await this.pagamentoService.findById(id);
+  }
+
+  /**
+   * Calcula o tipo de visita baseado na parcela
+   */
+  private calcularTipoVisita(parcela: number, totalParcelas: number): TipoVisita {
+    if (parcela === 1) {
+      return TipoVisita.INICIAL;
+    } else if (parcela === totalParcelas) {
+      return TipoVisita.RENOVACAO;
+    } else {
+      return TipoVisita.ACOMPANHAMENTO;
+    }
   }
 
   /**

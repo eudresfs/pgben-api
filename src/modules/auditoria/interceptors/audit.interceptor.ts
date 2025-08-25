@@ -128,6 +128,7 @@ export class AuditInterceptor implements NestInterceptor {
       sensitiveConfig,
       autoAuditConfig,
       timestamp: new Date(),
+      request, // Adicionar o request completo para uso no normalizeEndpoint
     };
   }
 

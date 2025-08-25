@@ -1,11 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, DeepPartial } from 'typeorm';
+import { DataSource, DeepPartial, Brackets, FindOperator } from 'typeorm';
 import { Usuario } from '../../../entities/usuario.entity';
 import { Status } from '../../../enums/status.enum';
 import { throwUserNotFound } from '../../../shared/exceptions/error-catalog/domains/usuario.errors';
 import { ScopedRepository } from '../../../common/repositories/scoped-repository';
-import { RequestContextHolder } from '../../../common/services/request-context-holder.service';
-import { ScopeType } from '../../../enums/scope-type.enum';
 
 /**
  * Repositório de usuários com escopo aplicado
@@ -70,10 +68,55 @@ export class UsuarioRepository {
 
     // Aplicar filtros where adicionais se fornecidos
     if (where && Object.keys(where).length > 0) {
-      Object.entries(where).forEach(([key, value]) => {
-        const columnName = key.includes('.') ? key : `usuario.${key}`;
-        queryBuilder.andWhere(`${columnName} = :${key}`, { [key]: value });
-      });
+      // Verificar se where é um array (condições OR)
+      if (Array.isArray(where)) {
+        // Aplicar condições OR
+        queryBuilder.andWhere(
+          new Brackets((qb) => {
+            where.forEach((condition, index) => {
+              const orConditions: string[] = [];
+              const orParams: Record<string, any> = {};
+              
+              Object.entries(condition).forEach(([key, value]) => {
+                const paramKey = `${key}_${index}`;
+                const columnName = key.includes('.') ? key : `usuario.${key}`;
+                
+                if (value instanceof FindOperator) {
+                  // Para operadores como ILike
+                  orConditions.push(`${columnName} ${(value as any)._type} :${paramKey}`);
+                  orParams[paramKey] = (value as any)._value;
+                } else {
+                  // Para valores simples
+                  orConditions.push(`${columnName} = :${paramKey}`);
+                  orParams[paramKey] = value;
+                }
+              });
+              
+              if (orConditions.length > 0) {
+                const conditionString = orConditions.join(' AND ');
+                if (index === 0) {
+                  qb.where(`(${conditionString})`, orParams);
+                } else {
+                  qb.orWhere(`(${conditionString})`, orParams);
+                }
+              }
+            });
+          })
+        );
+      } else {
+        // Aplicar condições AND normais
+        Object.entries(where).forEach(([key, value]) => {
+          const columnName = key.includes('.') ? key : `usuario.${key}`;
+          
+          if (value instanceof FindOperator) {
+            // Para operadores como ILike
+            queryBuilder.andWhere(`${columnName} ${(value as any)._type} :${key}`, { [key]: (value as any)._value });
+          } else {
+            // Para valores simples
+            queryBuilder.andWhere(`${columnName} = :${key}`, { [key]: value });
+          }
+        });
+      }
     }
 
     // Aplicar ordenação com prefixo correto da tabela

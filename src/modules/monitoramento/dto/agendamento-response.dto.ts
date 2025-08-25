@@ -26,6 +26,13 @@ export class AgendamentoResponseDto {
   })
   id: string;
 
+  @ApiProperty({
+    description: 'Identificador único do pagamento',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    format: 'uuid',
+  })
+  pagamento_id: string;
+
   /**
    * Dados básicos do beneficiário
    */
@@ -73,7 +80,7 @@ export class AgendamentoResponseDto {
       data_fim: '2025-06-30T23:59:59.999Z',
     },
   })
-  concessao: {
+  concessao?: {
     id: string;
     numero_protocolo: string;
     tipo_beneficio: string;

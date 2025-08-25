@@ -10,6 +10,7 @@ import { PaginationHelper } from '../helpers/pagination.helper';
  * Interface para filtros de busca de agendamentos
  */
 export interface AgendamentoFilters {
+  pagamento_id?: string;
   beneficiario_id?: string;
   tecnico_id?: string;
   unidade_id?: string;
@@ -83,13 +84,12 @@ export class AgendamentoRepository {
   async findByIdWithRelations(id: string): Promise<AgendamentoVisita | null> {
     return this.repository
       .createQueryBuilder('agendamento')
-      .leftJoinAndSelect('agendamento.beneficiario', 'beneficiario')
-      .leftJoinAndSelect('agendamento.concessao', 'concessao')
-      .leftJoinAndSelect('concessao.solicitacao', 'solicitacao')
+      .leftJoinAndSelect('agendamento.pagamento', 'pagamento')
+      .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
+      .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
+      .leftJoinAndSelect('solicitacao.unidade', 'unidade')
       .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
-      .leftJoinAndSelect('agendamento.tecnico_responsavel', 'tecnico')
-      .leftJoinAndSelect('tecnico.role', 'role')
-      .leftJoinAndSelect('agendamento.unidade', 'unidade')
       .leftJoinAndSelect('agendamento.visitas', 'visita')
       .where('agendamento.id = :id', { id })
       .getOne();
@@ -189,21 +189,31 @@ export class AgendamentoRepository {
     dataInicio?: Date,
     dataFim?: Date,
   ): Promise<AgendamentoVisita[]> {
-    return this.findWithFilters({
-      tecnico_id: tecnicoId,
-      data_inicio: dataInicio,
-      data_fim: dataFim,
-    });
+    const queryBuilder = this.repository.createQueryBuilder('agendamento')
+      .leftJoinAndSelect('agendamento.pagamento', 'pagamento')
+      .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+      .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
+      .where('tecnico.id = :tecnicoId', { tecnicoId });
+
+    if (dataInicio) {
+      queryBuilder.andWhere('agendamento.data_agendamento >= :dataInicio', { dataInicio });
+    }
+
+    if (dataFim) {
+      queryBuilder.andWhere('agendamento.data_agendamento <= :dataFim', { dataFim });
+    }
+
+    return queryBuilder.getMany();
   }
 
   /**
-   * Busca agendamentos por beneficiário
+   * Busca agendamentos por pagamento
    * 
-   * @param beneficiarioId ID do beneficiário
-   * @returns Lista de agendamentos do beneficiário
+   * @param pagamentoId ID do pagamento
+   * @returns Lista de agendamentos do pagamento
    */
-  async findByBeneficiario(beneficiarioId: string): Promise<AgendamentoVisita[]> {
-    return this.findWithFilters({ beneficiario_id: beneficiarioId });
+  async findByPagamento(pagamentoId: string): Promise<AgendamentoVisita[]> {
+    return this.findWithFilters({ pagamento_id: pagamentoId });
   }
 
   /**
@@ -224,7 +234,10 @@ export class AgendamentoRepository {
 
     const queryBuilder = this.repository
       .createQueryBuilder('agendamento')
-      .where('agendamento.tecnico_id = :tecnico_id', {
+      .leftJoinAndSelect('agendamento.pagamento', 'pagamento')
+      .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+      .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
+      .where('tecnico.id = :tecnico_id', {
         tecnico_id: tecnicoId,
       })
       .andWhere('agendamento.status IN (:...status)', {
@@ -246,15 +259,15 @@ export class AgendamentoRepository {
   }
 
   /**
-   * Busca agendamento recente para um beneficiário
+   * Busca agendamento recente para um pagamento
    * 
-   * @param beneficiarioId ID do beneficiário
+   * @param pagamentoId ID do pagamento
    * @param dataReferencia Data de referência
    * @param diasTolerance Dias de tolerância (padrão: 7)
    * @returns Agendamento recente ou null
    */
-  async findRecentScheduleForBeneficiario(
-    beneficiarioId: string,
+  async findRecentScheduleForPagamento(
+    pagamentoId: string,
     dataReferencia: Date,
     diasTolerance: number = 7,
   ): Promise<AgendamentoVisita | null> {
@@ -263,7 +276,7 @@ export class AgendamentoRepository {
 
     return this.repository.findOne({
       where: {
-        beneficiario_id: beneficiarioId,
+        pagamento_id: pagamentoId,
         status: In([StatusAgendamento.AGENDADO, StatusAgendamento.CONFIRMADO]),
         data_agendamento: Between(inicioJanela, fimJanela),
       },
@@ -331,22 +344,9 @@ export class AgendamentoRepository {
   ): void {
     if (!filters) return;
 
-    if (filters.beneficiario_id) {
-      queryBuilder.andWhere('agendamento.beneficiario_id = :beneficiario_id', {
-        beneficiario_id: filters.beneficiario_id,
-      });
-    }
-
-    if (filters.tecnico_id) {
-      queryBuilder.andWhere(
-        'agendamento.tecnico_id = :tecnico_id',
-        { tecnico_id: filters.tecnico_id },
-      );
-    }
-
-    if (filters.unidade_id) {
-      queryBuilder.andWhere('agendamento.unidade_id = :unidade_id', {
-        unidade_id: filters.unidade_id,
+    if (filters.pagamento_id) {
+      queryBuilder.andWhere('agendamento.pagamento_id = :pagamento_id', {
+        pagamento_id: filters.pagamento_id,
       });
     }
 

@@ -329,6 +329,14 @@ export class PagamentoService {
   }
 
   /**
+   * Busca pagamentos pendentes de monitoramento
+   * Retorna pagamentos que ainda não têm agendamento/visita criado
+   */
+  async findPendentesMonitoramento() {
+    return this.pagamentoRepository.findPendentesMonitoramento();
+  }
+
+  /**
    * Obter estatísticas de pagamentos
    */
   async getEstatisticas() {

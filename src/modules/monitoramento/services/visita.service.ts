@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VisitaDomiciliar } from '../entities/visita-domiciliar.entity';
 import { AgendamentoVisita } from '../entities/agendamento-visita.entity';
+import { Pagamento } from '../../../entities/pagamento.entity';
 import { RegistrarVisitaDto } from '../dto/registrar-visita.dto';
 import { VisitaResponseDto, AtualizarVisitaDto } from '../dtos/visita.dto';
 import { ResultadoVisita, TipoVisita, StatusAgendamento } from '../enums';
@@ -34,6 +35,8 @@ export class VisitaService {
     private readonly visitaRepository: VisitaRepository,
     @InjectRepository(AgendamentoVisita)
     private readonly agendamentoRepository: Repository<AgendamentoVisita>,
+    @InjectRepository(Pagamento)
+    private readonly pagamentoRepository: Repository<Pagamento>,
   ) {}
 
   /**
@@ -58,9 +61,6 @@ export class VisitaService {
       // Criar a visita
       const visita = this.visitaRepository.create({
         agendamento_id: registrarDto.agendamento_id,
-        beneficiario_id: agendamento.beneficiario_id,
-        tecnico_id: agendamento.tecnico_id,
-        unidade_id: agendamento.unidade_id,
         tipo_visita: registrarDto.tipo_visita,
         resultado: registrarDto.resultado,
         beneficiario_presente: registrarDto.beneficiario_presente,
@@ -424,6 +424,39 @@ export class VisitaService {
     agendamento.updated_at = new Date();
 
     await this.agendamentoRepository.save(agendamento);
+
+    // Atualizar campo 'monitorado' do pagamento quando visita tem resultado 'conforme'
+    if (resultado === ResultadoVisita.CONFORME && agendamento.pagamento_id) {
+      await this.updatePagamentoMonitorado(agendamento.pagamento_id);
+    }
+  }
+
+  /**
+   * Atualiza o campo 'monitorado' do pagamento para true
+   * 
+   * @param pagamentoId ID do pagamento a ser atualizado
+   * @private
+   */
+  private async updatePagamentoMonitorado(pagamentoId: string): Promise<void> {
+    try {
+      await this.pagamentoRepository.update(
+        { id: pagamentoId },
+        { 
+          monitorado: true,
+          updated_at: new Date()
+        }
+      );
+
+      this.logger.log(
+        `Campo 'monitorado' atualizado para true no pagamento: ${pagamentoId}`
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erro ao atualizar campo 'monitorado' do pagamento ${pagamentoId}: ${error.message}`,
+        error.stack
+      );
+      // Não propagar o erro para não afetar o fluxo principal da visita
+    }
   }
 
   /**

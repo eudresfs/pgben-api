@@ -7,6 +7,7 @@ import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { ScopedRepository } from '../../../common/repositories/scoped-repository';
 import { InjectScopedRepository } from '../../../common/providers/scoped-repository.provider';
 import { UuidValidator } from '../../../common/utils/uuid-validator.util';
+import { raw } from 'express';
 
 /**
  * Repository para operações de banco de dados relacionadas a Pagamentos
@@ -516,17 +517,41 @@ export class PagamentoRepository {
   }
 
   /**
-   * Verifica se existe pagamento para solicitação
+   * Busca pagamentos pendentes de monitoramento
+   * Retorna pagamentos que ainda não têm agendamento/visita criado
    */
-  async existsBySolicitacao(solicitacao_id: string): Promise<boolean> {
-    // Validar UUID antes de usar na query
-    UuidValidator.validateOrThrow(solicitacao_id, 'solicitacao_id');
-    const count = await this.scopedRepository
-      .createScopedQueryBuilder('pagamento')
-      .where('pagamento.solicitacao_id = :solicitacao_id', { solicitacao_id })
-      .getCount();
-    return count > 0;
+  async findPendentesMonitoramento(): Promise<any[]> {
+    return await this.scopedRepository
+      .createQueryBuilder('pagamento')
+      .distinctOn(['pagamento.id'])
+      .leftJoin('pagamento.solicitacao', 'solicitacao')
+      .leftJoin('solicitacao.tipo_beneficio', 'beneficio')
+      .leftJoin('solicitacao.beneficiario', 'cidadao')
+      .leftJoin('cidadao.enderecos', 'endereco')
+      .leftJoin('solicitacao.unidade', 'unidade')
+      .leftJoin('solicitacao.tecnico', 'tecnico')
+      .leftJoin('agendamento_visita', 'agendamento', 'agendamento.pagamento_id = pagamento.id')
+      .where('agendamento.id IS NULL')
+      .andWhere('pagamento.status = :status', { status: 'pago' })
+      .andWhere('pagamento.monitorado = :monitorado', { monitorado: false })
+      .andWhere('beneficio.codigo = :beneficio', { beneficio: 'aluguel-social' })
+      .select([
+        'pagamento.*',
+        'cidadao.nome AS cidadao_nome',
+        'cidadao.cpf AS cidadao_cpf',
+        'endereco.bairro AS endereco_bairro',
+        'unidade.id AS unidade_id',
+        'unidade.nome AS unidade_nome',
+        'tecnico.id AS tecnico_id',
+        'tecnico.nome AS tecnico_nome'
+      ])
+      .orderBy('pagamento.id')
+      .addOrderBy('pagamento.numero_parcela')
+      .getRawMany();
   }
+
+
+
 
   /**
    * Busca estatísticas de pagamentos
