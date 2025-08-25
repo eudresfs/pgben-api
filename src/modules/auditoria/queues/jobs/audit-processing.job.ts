@@ -1352,7 +1352,7 @@ export class AuditProcessingJob {
       const category = this.getEventCategory(event.eventType);
 
       if (complianceScore < threshold) {
-        this.logger.warn(
+        this.logger.debug(
           `Low compliance score detected: ${complianceScore.toFixed(2)} (threshold: ${threshold}) for ${category} event ${event.eventType}`,
         );
       } else {

@@ -324,13 +324,15 @@ export class AuditInterceptor implements NestInterceptor {
       },
     };
 
-    this.auditEventEmitter.emitSensitiveDataEvent(
-      AuditEventType.SENSITIVE_DATA_ACCESSED,
-      'sensitive_data',
-      'unknown',
-      event.userId,
-      config.fields || [],
-    );
+    // NOTA: Evento de dados sensíveis desabilitado para evitar duplicação
+    // Os dados sensíveis são registrados no log principal pelo middleware
+    // this.auditEventEmitter.emitSensitiveDataEvent(
+    //   AuditEventType.SENSITIVE_DATA_ACCESSED,
+    //   'sensitive_data',
+    //   'unknown',
+    //   event.userId,
+    //   config.fields || [],
+    // );
   }
 
   /**

@@ -166,29 +166,11 @@ export class AuditoriaMiddleware implements NestMiddleware {
         },
       };
 
-      // ← CORREÇÃO: Usar Promise.allSettled para não travar se uma falhar
-      const promises = [
+      // ← CORREÇÃO: Registrar apenas UM log por requisição
+      // Os dados sensíveis já estão incluídos no logAuditoriaDto.dados_sensiveis_acessados
+      const results = await Promise.allSettled([
         this.auditoriaQueueService.enfileirarLogAuditoria(logAuditoriaDto),
-      ];
-
-      // Se houver dados sensíveis, adiciona à fila
-      if (dadosSensiveis.length > 0 && user?.id) {
-        promises.push(
-          this.auditoriaQueueService.enfileirarAcessoDadosSensiveis(
-            user.id,
-            entidade,
-            entidadeId || '',
-            dadosSensiveis,
-            ip, // ← Agora sempre será string
-            userAgent,
-            endpoint,
-            metodoHttp,
-          ),
-        );
-      }
-
-      // Executa todas as operações em paralelo
-      const results = await Promise.allSettled(promises);
+      ]);
 
       // Loga erros das operações que falharam
       results.forEach((result, index) => {

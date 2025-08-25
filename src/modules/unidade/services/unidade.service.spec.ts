@@ -74,28 +74,29 @@ describe('UnidadeService', () => {
       findAll: jest.fn(),
       findById: jest.fn(),
       findByCodigo: jest.fn(),
-      findBySigla: jest.fn(),
+      findOne: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
       update: jest.fn(),
       updateStatus: jest.fn(),
-      remove: jest.fn(),
       count: jest.fn(),
     };
 
     const mockSetorRepository = {
       findAll: jest.fn(),
       findById: jest.fn(),
-      findByNomeAndUnidade: jest.fn(),
+      findByUnidadeId: jest.fn(),
       create: jest.fn(),
-      save: jest.fn(),
       update: jest.fn(),
-      remove: jest.fn(),
-      count: jest.fn(),
+    };
+
+    const mockTransactionRepository = {
+      create: jest.fn().mockReturnValue(mockUnidade),
+      save: jest.fn().mockResolvedValue(mockUnidade),
     };
 
     const mockManager = {
-      getRepository: jest.fn().mockReturnValue(mockUnidadeRepository),
+      getRepository: jest.fn().mockReturnValue(mockTransactionRepository),
     };
 
     const mockDataSource = {
@@ -144,13 +145,7 @@ describe('UnidadeService', () => {
       const mockUnidades = [mockUnidade];
       const mockTotal = 1;
 
-      repository.findAll.mockResolvedValue({
-        data: mockUnidades,
-        total: mockTotal,
-        page: 1,
-        limit: 10,
-        totalPages: 1,
-      });
+      repository.findAll.mockResolvedValue([mockUnidades, mockTotal]);
 
       const result = await service.findAll({
         page: 1,
@@ -179,13 +174,7 @@ describe('UnidadeService', () => {
         limit: 10,
       };
 
-      repository.findAll.mockResolvedValue({
-        data: [mockUnidade],
-        total: 1,
-        page: 1,
-        limit: 10,
-        totalPages: 1,
-      });
+      repository.findAll.mockResolvedValue([[mockUnidade], 1]);
 
       await service.findAll(filtros);
 
@@ -223,9 +212,8 @@ describe('UnidadeService', () => {
       };
 
       repository.findByCodigo.mockResolvedValue(null);
-      repository.findBySigla.mockResolvedValue(null);
-      repository.create.mockReturnValue({ ...novaUnidade, id: 'new-id' });
-      repository.save.mockResolvedValue({ ...novaUnidade, id: 'new-id' });
+      repository.findByCodigo.mockResolvedValue(null);
+      repository.create.mockResolvedValue({ ...novaUnidade, id: 'new-id' } as Unidade);
 
       const result = await service.create(mockCreateUnidadeDto);
 
@@ -233,14 +221,11 @@ describe('UnidadeService', () => {
       expect(repository.findByCodigo).toHaveBeenCalledWith(
         mockCreateUnidadeDto.codigo,
       );
-      expect(repository.findBySigla).toHaveBeenCalledWith(
-        mockCreateUnidadeDto.sigla,
+      expect(repository.findByCodigo).toHaveBeenCalledWith(
+        mockCreateUnidadeDto.codigo,
       );
       expect(repository.create).toHaveBeenCalled();
-      expect(repository.save).toHaveBeenCalledWith({
-        ...novaUnidade,
-        id: 'new-id',
-      });
+      expect(repository.create).toHaveBeenCalledWith(mockCreateUnidadeDto);
     });
 
     it('deve lançar erro quando código já existe', async () => {
@@ -251,9 +236,8 @@ describe('UnidadeService', () => {
       expect(repository.create).not.toHaveBeenCalled();
     });
 
-    it('deve lançar erro quando sigla já existe', async () => {
-      repository.findByCodigo.mockResolvedValue(null);
-      repository.findBySigla.mockResolvedValue(mockUnidade);
+    it('deve lançar erro quando código já existe (segunda verificação)', async () => {
+      repository.findByCodigo.mockResolvedValue(null).mockResolvedValueOnce(null).mockResolvedValue(mockUnidade);
 
       await expect(service.create(mockCreateUnidadeDto)).rejects.toThrow();
 
@@ -267,9 +251,9 @@ describe('UnidadeService', () => {
         ...mockUnidade,
         ...mockUpdateUnidadeDto,
         updated_at: new Date(),
-      };
+      } as Unidade;
 
-      repository.findById.mockResolvedValue(mockUnidade);
+      repository.update.mockResolvedValue(unidadeAtualizada);
       repository.update.mockResolvedValue(unidadeAtualizada);
 
       const result = await service.update(mockUnidade.id, mockUpdateUnidadeDto);
@@ -383,7 +367,7 @@ describe('UnidadeService', () => {
       };
 
       repository.findByCodigo.mockResolvedValue(null);
-      repository.findBySigla.mockResolvedValue(null);
+      repository.findByCodigo.mockResolvedValue(null);
 
       // Assumindo que a validação é feita no DTO ou no service
       await expect(service.create(createDtoComEmailInvalido)).rejects.toThrow();
@@ -396,7 +380,7 @@ describe('UnidadeService', () => {
       };
 
       repository.findByCodigo.mockResolvedValue(null);
-      repository.findBySigla.mockResolvedValue(null);
+      repository.findByCodigo.mockResolvedValue(null);
 
       // Assumindo que a validação é feita no DTO ou no service
       await expect(
@@ -408,7 +392,6 @@ describe('UnidadeService', () => {
   describe('tratamento de erros', () => {
     it('deve tratar erro de transação no banco', async () => {
       repository.findByCodigo.mockResolvedValue(null);
-      repository.findBySigla.mockResolvedValue(null);
       repository.create.mockRejectedValue(new Error('Database error'));
 
       await expect(service.create(mockCreateUnidadeDto)).rejects.toThrow();

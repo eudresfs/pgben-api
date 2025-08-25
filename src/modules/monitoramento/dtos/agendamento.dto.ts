@@ -46,6 +46,14 @@ export class CriarAgendamentoDto {
   unidade_id: string;
 
   @ApiProperty({
+    description: 'ID da concessão',
+    example: 'uuid-concessao',
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  concessao_id?: string;
+
+  @ApiProperty({
     description: 'Data e hora do agendamento',
     example: '2024-01-15T10:00:00Z',
   })

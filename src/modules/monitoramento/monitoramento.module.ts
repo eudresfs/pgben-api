@@ -30,6 +30,7 @@ import {
   AgendamentoService,
   VisitaService,
 } from './services';
+import { AgendamentoBatchService } from './services/agendamento-batch.service';
 import { RelatorioMonitoramentoService } from './services/relatorio-monitoramento.service';
 
 // Repositories
@@ -82,8 +83,9 @@ import { VisitaRepository } from './repositories/visita.repository';
     // Repositories
     AgendamentoRepository,
     VisitaRepository,
-    // Serviços principais
+    // Services
     AgendamentoService,
+    AgendamentoBatchService,
     VisitaService,
     RelatorioMonitoramentoService,
   ],

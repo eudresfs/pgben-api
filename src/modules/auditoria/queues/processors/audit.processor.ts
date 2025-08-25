@@ -269,7 +269,7 @@ export class AuditProcessor
    */
   @OnQueueWaiting()
   onWaiting(jobId: string) {
-    this.logger.log(`Job ${jobId} está esperando na fila`);
+    // this.logger.log(`Job ${jobId} está esperando na fila`);
   }
 
   /**

@@ -291,6 +291,39 @@ export class SetorService {
   }
 
   /**
+   * Busca todos os setores com filtros e paginação
+   * @param options Opções de filtro e paginação
+   * @returns Lista de setores paginada
+   */
+  async findAll(options?: {
+    skip?: number;
+    take?: number;
+    where?: any;
+    order?: any;
+  }) {
+    this.logger.log(`Buscando todos os setores com opções: ${JSON.stringify(options)}`);
+
+    try {
+      const [setores, total] = await this.setorRepository.findAll(options);
+      
+      this.logger.log(`Encontrados ${setores.length} setores de um total de ${total}`);
+
+      return {
+        data: setores,
+        total,
+        page: options?.skip ? Math.floor(options.skip / (options.take || 10)) + 1 : 1,
+        limit: options?.take || 10,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar setores: ${error.message}`,
+        error.stack,
+      );
+      throwSetorOperationFailed({ setorId: undefined });
+    }
+  }
+
+  /**
    * Busca setores por unidade
    * @param unidadeId ID da unidade
    * @returns Lista de setores da unidade

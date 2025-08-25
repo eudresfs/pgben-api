@@ -11,7 +11,8 @@ import {
   ParseUUIDPipe,
   ValidationPipe,
   ParseIntPipe,
-  ParseBoolPipe
+  ParseBoolPipe,
+  Req
 } from '@nestjs/common';
 import { PagePipe, LimitPipe } from '../../../shared/pipes/optional-parse-int.pipe';
 import {
@@ -27,7 +28,10 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { AgendamentoService } from '../services';
-import { CriarAgendamentoDto, AgendamentoResponseDto } from '../dto';
+import { AgendamentoBatchService } from '../services/agendamento-batch.service';
+import { CriarAgendamentoDto } from '../dto/criar-agendamento.dto';
+import { AgendamentoResponseDto } from '../dto/agendamento-response.dto';
+import { SuccessResponseDto } from '../../../shared/dtos/success-response.dto';
 import { TipoVisita, PrioridadeVisita } from '../enums';
 import { Usuario } from '@/entities';
 import { GetUser } from '@/auth/decorators/get-user.decorator';
@@ -44,7 +48,10 @@ import { PaginationHelper } from '../helpers/pagination.helper';
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class AgendamentoController {
-  constructor(private readonly agendamentoService: AgendamentoService) {}
+  constructor(
+    private readonly agendamentoService: AgendamentoService,
+    private readonly agendamentoBatchService: AgendamentoBatchService,
+  ) {}
 
   /**
    * Cria um novo agendamento de visita domiciliar
@@ -640,6 +647,178 @@ export class AgendamentoController {
       };
     } catch (error) {
       // Filtros globais tratarão NotFoundException e BadRequestException
+      throw error;
+    }
+  }
+
+  /**
+   * Endpoint para criação de agendamentos em lote
+   * Processa múltiplos agendamentos de forma otimizada com controle de concorrência
+   */
+  @Post('batch')
+  @RequiresPermission({ permissionName: 'monitoramento.agendamento.criar' })
+  @ApiOperation({
+    summary: 'Criar agendamentos em lote',
+    description: 'Cria múltiplos agendamentos de visita domiciliar de forma otimizada com controle de concorrência e transações'
+  })
+  @ApiBody({
+    type: [CriarAgendamentoDto],
+    description: 'Array de dados para criação dos agendamentos em lote',
+    examples: {
+      'lote-agendamentos': {
+        summary: 'Lote de agendamentos diversos',
+        description: 'Exemplo de criação em lote com diferentes tipos de visita',
+        value: [
+          {
+            beneficiario_id: '550e8400-e29b-41d4-a716-446655440000',
+            tecnico_id: '550e8400-e29b-41d4-a716-446655440001',
+            unidade_id: '550e8400-e29b-41d4-a716-446655440002',
+            tipo_visita: 'inicial',
+            data_hora: '2024-02-15T14:30:00.000Z',
+            prioridade: 'alta',
+            observacoes: 'Primeira visita domiciliar para avaliação inicial'
+          },
+          {
+            beneficiario_id: '550e8400-e29b-41d4-a716-446655440003',
+            tecnico_id: '550e8400-e29b-41d4-a716-446655440004',
+            unidade_id: '550e8400-e29b-41d4-a716-446655440005',
+            tipo_visita: 'acompanhamento',
+            data_hora: '2024-02-20T09:00:00.000Z',
+            prioridade: 'media',
+            observacoes: 'Visita de acompanhamento mensal'
+          }
+        ]
+      }
+    }
+  })
+  @ApiQuery({
+    name: 'batchSize',
+    required: false,
+    type: Number,
+    description: 'Tamanho do lote para processamento (padrão: 10, máximo: 100)',
+    example: 10
+  })
+  @ApiQuery({
+    name: 'maxConcurrency',
+    required: false,
+    type: Number,
+    description: 'Máximo de operações concorrentes (padrão: 3, máximo: 10)',
+    example: 3
+  })
+  @ApiQuery({
+    name: 'useTransaction',
+    required: false,
+    type: Boolean,
+    description: 'Usar transação para garantir atomicidade (padrão: true)',
+    example: true
+  })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Agendamentos criados em lote com sucesso',
+    example: {
+      message: 'Processamento em lote concluído',
+      data: {
+        sucessos: 2,
+        erros: 0,
+        detalhes: {
+          agendamentos_criados: [
+            {
+              id: '550e8400-e29b-41d4-a716-446655440006',
+              beneficiario_id: '550e8400-e29b-41d4-a716-446655440000',
+              tecnico_id: '550e8400-e29b-41d4-a716-446655440001',
+              status: 'agendado'
+            }
+          ],
+          erros_processamento: []
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dados inválidos ou parâmetros de lote incorretos',
+    example: {
+      statusCode: 400,
+      message: ['batchSize deve ser entre 1 e 100', 'Array de agendamentos não pode estar vazio'],
+      error: 'Bad Request'
+    }
+  })
+  @ApiResponse({
+    status: HttpStatus.PARTIAL_CONTENT,
+    description: 'Processamento parcial - alguns agendamentos falharam',
+    example: {
+      message: 'Processamento em lote concluído com erros',
+      data: {
+        sucessos: 1,
+        erros: 1,
+        detalhes: {
+          agendamentos_criados: [
+            {
+              id: '550e8400-e29b-41d4-a716-446655440006',
+              beneficiario_id: '550e8400-e29b-41d4-a716-446655440000'
+            }
+          ],
+          erros_processamento: [
+            {
+              index: 1,
+              erro: 'Técnico não encontrado ou indisponível no horário solicitado',
+              dados: {
+                beneficiario_id: '550e8400-e29b-41d4-a716-446655440003',
+                tecnico_id: '550e8400-e29b-41d4-a716-446655440004'
+              }
+            }
+          ]
+        }
+      }
+    }
+  })
+  async criarAgendamentosEmLote(
+    @Body(ValidationPipe) agendamentos: CriarAgendamentoDto[],
+    @GetUser() user: Usuario,
+    @Query('batchSize', new ParseIntPipe({ optional: true })) batchSize: number = 10,
+    @Query('maxConcurrency', new ParseIntPipe({ optional: true })) maxConcurrency: number = 3,
+    @Query('useTransaction', new ParseBoolPipe({ optional: true })) useTransaction: boolean = true
+  ): Promise<SuccessResponseDto> {
+    try {
+      // Validação dos parâmetros de entrada
+      if (!agendamentos || agendamentos.length === 0) {
+        throw new Error('Array de agendamentos não pode estar vazio');
+      }
+
+      if (batchSize < 1 || batchSize > 100) {
+        throw new Error('batchSize deve ser entre 1 e 100');
+      }
+
+      if (maxConcurrency < 1 || maxConcurrency > 10) {
+        throw new Error('maxConcurrency deve ser entre 1 e 10');
+      }
+
+      // Processamento em lote usando o serviço especializado
+      const resultado = await this.agendamentoBatchService.createAgendamentosInBatch(
+        agendamentos,
+        user.id,
+        {
+          batchSize,
+          maxConcurrency,
+          useTransaction,
+          continueOnError: true
+        }
+      );
+
+      // Determinar status da resposta baseado nos resultados
+      const statusCode = resultado.errors.length > 0 ? HttpStatus.PARTIAL_CONTENT : HttpStatus.CREATED;
+      const message = resultado.errors.length > 0 
+        ? 'Processamento em lote concluído com erros'
+        : 'Processamento em lote concluído';
+
+      return {
+        statusCode,
+        message,
+        data: resultado,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      // Filtros globais tratarão as exceções apropriadamente
       throw error;
     }
   }

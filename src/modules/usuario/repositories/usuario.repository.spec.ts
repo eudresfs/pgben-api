@@ -5,7 +5,7 @@ import { UsuarioRepository } from './usuario.repository';
 import { Usuario } from '../../../entities/usuario.entity';
 import { CreateUsuarioDto } from '../dto/create-usuario.dto';
 import { UpdateUsuarioDto } from '../dto/update-usuario.dto';
-import { UsuarioError } from '../../../errors/usuario.errors';
+import { AppError } from '../../../shared/exceptions/error-catalog/AppError';
 
 /**
  * Testes unitários para o UsuarioRepository
@@ -84,6 +84,14 @@ describe('UsuarioRepository', () => {
     solicitacoes: [],
     auditoriasCreated: [],
     auditoriasUpdated: [],
+    // Métodos da entidade Usuario
+    isAtivo: jest.fn().mockReturnValue(true),
+    ativar: jest.fn(),
+    desativar: jest.fn(),
+    isPrimeiroAcesso: jest.fn().mockReturnValue(false),
+    marcarPrimeiroAcessoRealizado: jest.fn(),
+    getNomeFormatado: jest.fn().mockReturnValue('João da Silva'),
+    podeSerDeletado: jest.fn().mockReturnValue(false),
   } as any;
 
   beforeEach(async () => {
@@ -160,11 +168,11 @@ describe('UsuarioRepository', () => {
       expect(result).toEqual(mockUsuario);
     });
 
-    it('deve lançar UsuarioError quando usuário não encontrado', async () => {
+    it('deve lançar USUARIO_ERRORS quando usuário não encontrado', async () => {
       typeormRepository.findOne.mockResolvedValue(null);
 
       await expect(repository.findById('id-inexistente')).rejects.toThrow(
-        UsuarioError,
+        AppError,
       );
     });
   });
@@ -274,7 +282,17 @@ describe('UsuarioRepository', () => {
         cpf: '123.456.789-00',
         telefone: '(84) 88888-8888',
       };
-      const usuarioAtualizado = { ...mockUsuario, ...updateDto };
+      const usuarioAtualizado = { 
+        ...mockUsuario, 
+        ...updateDto,
+        isAtivo: jest.fn().mockReturnValue(true),
+        ativar: jest.fn(),
+        desativar: jest.fn(),
+        isPrimeiroAcesso: jest.fn().mockReturnValue(false),
+        marcarPrimeiroAcessoRealizado: jest.fn(),
+        getNomeFormatado: jest.fn().mockReturnValue('João da Silva'),
+        podeSerDeletado: jest.fn().mockReturnValue(false),
+      };
 
       typeormRepository.update.mockResolvedValue({ affected: 1 } as any);
       typeormRepository.findOne.mockResolvedValue(usuarioAtualizado);
@@ -291,28 +309,38 @@ describe('UsuarioRepository', () => {
       expect(result).toEqual(usuarioAtualizado);
     });
 
-    it('deve lançar UsuarioError quando usuário não encontrado para atualização', async () => {
+    it('deve lançar USUARIO_ERRORS quando usuário não encontrado para atualização', async () => {
       typeormRepository.update.mockResolvedValue({ affected: 0 } as any);
 
       await expect(
         repository.update('id-inexistente', { nome: 'Novo Nome' }),
-      ).rejects.toThrow(UsuarioError);
+      ).rejects.toThrow(AppError);
     });
   });
 
   describe('updateStatus', () => {
     it('deve atualizar status do usuário', async () => {
       const updateData: DeepPartial<Usuario> = {
-        status: 'inativo',
+        status: Status.INATIVO,
       };
-      const usuarioAtualizado = { ...mockUsuario, status: 'inativo' };
+      const usuarioAtualizado = { 
+        ...mockUsuario, 
+        status: Status.INATIVO,
+        isAtivo: jest.fn().mockReturnValue(false),
+        ativar: jest.fn(),
+        desativar: jest.fn(),
+        isPrimeiroAcesso: jest.fn().mockReturnValue(false),
+        marcarPrimeiroAcessoRealizado: jest.fn(),
+        getNomeFormatado: jest.fn().mockReturnValue('João da Silva'),
+        podeSerDeletado: jest.fn().mockReturnValue(true),
+      };
 
       typeormRepository.update.mockResolvedValue({ affected: 1 } as any);
       typeormRepository.findOne.mockResolvedValue(usuarioAtualizado);
 
       const result = await repository.updateStatus(
         '123e4567-e89b-12d3-a456-426614174000',
-        'inativo',
+        Status.INATIVO,
       );
 
       expect(typeormRepository.update).toHaveBeenCalledWith(
@@ -329,7 +357,17 @@ describe('UsuarioRepository', () => {
         senhaHash: 'novaSenhaHash',
         primeiro_acesso: false,
       };
-      const usuarioAtualizado = { ...mockUsuario, senhaHash: 'novaSenhaHash' };
+      const usuarioAtualizado = { 
+        ...mockUsuario, 
+        senhaHash: 'novaSenhaHash',
+        isAtivo: jest.fn().mockReturnValue(true),
+        ativar: jest.fn(),
+        desativar: jest.fn(),
+        isPrimeiroAcesso: jest.fn().mockReturnValue(false),
+        marcarPrimeiroAcessoRealizado: jest.fn(),
+        getNomeFormatado: jest.fn().mockReturnValue('João da Silva'),
+        podeSerDeletado: jest.fn().mockReturnValue(false),
+      };
 
       typeormRepository.update.mockResolvedValue({ affected: 1 } as any);
       typeormRepository.findOne.mockResolvedValue(usuarioAtualizado);
@@ -358,11 +396,11 @@ describe('UsuarioRepository', () => {
       );
     });
 
-    it('deve lançar UsuarioError quando usuário não encontrado para remoção', async () => {
+    it('deve lançar USUARIO_ERRORS quando usuário não encontrado para remoção', async () => {
       typeormRepository.softDelete.mockResolvedValue({ affected: 0 } as any);
 
       await expect(repository.remove('id-inexistente')).rejects.toThrow(
-        UsuarioError,
+        AppError,
       );
     });
   });

@@ -35,6 +35,17 @@ import { ScopeType } from '../../../entities/user-permission.entity';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { ReqContext } from '../../../shared/request-context/req-context.decorator';
 import { RequestContext } from '../../../shared/request-context/request-context.dto';
+import {
+  AuditEntity,
+  AuditOperation,
+  AuditRead,
+  AuditCreate,
+  AuditUpdate,
+  AuditDelete,
+  AuditSensitiveAccess,
+} from '../../auditoria';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
+import { RiskLevel } from '../../auditoria/events/types/audit-event.types';
 
 /**
  * Controlador de usuários
@@ -45,6 +56,10 @@ import { RequestContext } from '../../../shared/request-context/request-context.
 @Controller('usuario')
 @UseGuards(JwtAuthGuard, PrimeiroAcessoGuard, PermissionGuard)
 @ApiBearerAuth()
+@AuditEntity('Usuario', 'gestao_usuarios', {
+    riskLevel: RiskLevel.HIGH,
+    sensitiveFields: ['email', 'telefone', 'cpf', 'senhaHash']
+  })
 export class UsuarioController {
   constructor(
     private readonly usuarioService: UsuarioService,
@@ -60,6 +75,7 @@ export class UsuarioController {
     permissionName: 'usuario.listar',
     scopeType: ScopeType.UNIT,
   })
+  @AuditRead('Usuario', 'Listagem de usuários')
   @ApiOperation({
     summary: 'Listar usuários',
     description:
@@ -180,6 +196,7 @@ export class UsuarioController {
   @RequiresPermission({
     permissionName: 'usuario.listar'
   })
+  @AuditRead('Role', 'Consulta de roles disponíveis')
   @ApiOperation({ 
     summary: 'Listar roles disponíveis baseado na hierarquia do usuário',
     description: 'Retorna apenas as roles que o usuário atual pode atribuir a outros usuários, baseado na hierarquia: SUPER_ADMIN > ADMIN > GESTOR > COORDENADOR'
@@ -201,6 +218,7 @@ export class UsuarioController {
     permissionName: 'usuario.perfil.visualizar',
     scopeType: ScopeType.SELF,
   })
+  @AuditSensitiveAccess('Usuario', 'Acesso ao perfil do usuário')
   @ApiOperation({ summary: 'Obter perfil do usuário atual' })
   @ApiResponse({ status: 200, description: 'Perfil obtido com sucesso' })
   async getProfile(@Request() req) {
@@ -212,10 +230,9 @@ export class UsuarioController {
    */
   @Get(':id')
   @RequiresPermission({
-    permissionName: 'usuario.visualizar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'usuario.unidade_id',
+    permissionName: 'usuario.visualizar'
   })
+  @AuditSensitiveAccess('Usuario', 'Acesso a dados específicos de usuário')
   @ApiOperation({ summary: 'Obter detalhes de um usuário' })
   @ApiResponse({ status: 200, description: 'Usuário encontrado com sucesso' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
@@ -228,10 +245,9 @@ export class UsuarioController {
    */
   @Post()
   @RequiresPermission({
-    permissionName: 'usuario.criar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'body.unidade_id',
+    permissionName: 'usuario.criar'
   })
+  @AuditCreate('Usuario', 'Criação de novo usuário')
   @ApiOperation({ summary: 'Criar novo usuário' })
   @ApiResponse({ status: 201, description: 'Usuário criado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -264,10 +280,9 @@ export class UsuarioController {
    */
   @Put(':id')
   @RequiresPermission({
-    permissionName: 'usuario.editar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'usuario.unidade_id',
+    permissionName: 'usuario.editar'
   })
+  @AuditUpdate('Usuario', 'Atualização de dados de usuário')
   @ApiOperation({ summary: 'Atualizar usuário existente' })
   @ApiResponse({ status: 200, description: 'Usuário atualizado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -306,9 +321,14 @@ export class UsuarioController {
    */
   @Patch(':id/status')
   @RequiresPermission({
-    permissionName: 'usuario.status.alterar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'usuario.unidade_id',
+    permissionName: 'usuario.status.alterar'
+  })
+  @AuditOperation({
+    tipo: TipoOperacao.UPDATE,
+    entidade: 'Usuario',
+    descricao: 'Alteração de status do usuário',
+    riskLevel: RiskLevel.HIGH,
+    sensitiveFields: ['status']
   })
   @ApiOperation({ summary: 'Ativar/inativar usuário' })
   @ApiResponse({ status: 200, description: 'Status atualizado com sucesso' })
@@ -347,9 +367,14 @@ export class UsuarioController {
   @Put(':id/senha')
   @AllowPrimeiroAcesso()
   @RequiresPermission({
-    permissionName: 'usuario.senha.alterar',
-    scopeType: ScopeType.SELF,
-    scopeIdExpression: 'params.id',
+    permissionName: 'usuario.senha.alterar'
+  })
+  @AuditOperation({
+    tipo: TipoOperacao.UPDATE,
+    entidade: 'Usuario',
+    descricao: 'Alteração de senha do usuário',
+    riskLevel: RiskLevel.HIGH,
+    sensitiveFields: ['senhaHash', 'senha_anterior']
   })
   @ApiOperation({ summary: 'Alterar senha' })
   @ApiResponse({ status: 200, description: 'Senha alterada com sucesso' })
@@ -397,6 +422,13 @@ export class UsuarioController {
    */
   @Put('/primeiro-acesso/alterar-senha')
   @AllowPrimeiroAcesso()
+  @AuditOperation({
+    tipo: TipoOperacao.UPDATE,
+    entidade: 'Usuario',
+    descricao: 'Alteração de senha no primeiro acesso',
+    riskLevel: RiskLevel.HIGH,
+    sensitiveFields: ['senhaHash', 'primeiro_acesso']
+  })
   @ApiOperation({ summary: 'Alterar senha no primeiro acesso' })
   @ApiResponse({ status: 200, description: 'Senha alterada com sucesso' })
   @ApiResponse({
@@ -445,9 +477,14 @@ export class UsuarioController {
    */
   @Post(':usuario_id/reenviar-credenciais')
   @RequiresPermission({
-    permissionName: 'usuario.credenciais.reenviar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'usuario.unidade_id',
+    permissionName: 'usuario.credenciais.reenviar'
+  })
+  @AuditOperation({
+    tipo: TipoOperacao.ACCESS,
+    entidade: 'Usuario',
+    descricao: 'Reenvio de credenciais do usuário',
+    riskLevel: RiskLevel.HIGH,
+    sensitiveFields: ['email', 'senhaHash']
   })
   @ApiOperation({
     summary: 'Reenviar credenciais de acesso',
@@ -497,6 +534,13 @@ export class UsuarioController {
    */
   @Post('/recuperar-senha')
   @UseGuards() // Remove guards de autenticação para endpoint público
+  @AuditOperation({
+    tipo: TipoOperacao.UPDATE,
+    entidade: 'Usuario',
+    descricao: 'Solicitação de recuperação de senha',
+    riskLevel: RiskLevel.HIGH,
+    sensitiveFields: ['email']
+  })
   @ApiOperation({
     summary: 'Solicitar recuperação de senha',
     description: 'Envia email com nova senha temporária para o usuário',
@@ -518,10 +562,9 @@ export class UsuarioController {
    */
   @Delete(':id')
   @RequiresPermission({
-    permissionName: 'usuario.remover',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'usuario.unidade_id',
+    permissionName: 'usuario.remover'
   })
+  @AuditDelete('Usuario', 'Remoção de usuário do sistema')
   @ApiOperation({ summary: 'Remover usuário (soft delete)' })
   @ApiResponse({ status: 200, description: 'Usuário removido com sucesso' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })

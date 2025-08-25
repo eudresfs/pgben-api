@@ -25,6 +25,10 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { ScopeType } from '../../../entities/user-permission.entity';
+import { AuditEntity } from '../../auditoria/decorators/audit-entity.decorator';
+import { AuditOperation } from '../../auditoria/decorators/audit-operation.decorator';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
+import { RiskLevel } from '../../auditoria/events/types/audit-event.types';
 
 /**
  * Controlador de unidades
@@ -35,6 +39,10 @@ import { ScopeType } from '../../../entities/user-permission.entity';
 @Controller('unidade')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
+@AuditEntity({
+  entity: 'Unidade',
+  operation: 'controller'
+})
 export class UnidadeController {
   constructor(private readonly unidadeService: UnidadeService) {}
 
@@ -101,6 +109,13 @@ export class UnidadeController {
     permissionName: 'unidade.visualizar',
     scopeType: ScopeType.GLOBAL,
   })
+  @AuditOperation({
+    tipo: TipoOperacao.READ,
+    entidade: 'Unidade',
+    descricao: 'Consulta detalhes de unidade',
+    riskLevel: RiskLevel.LOW,
+    sensitiveFields: ['responsavel_matricula'],
+  })
   @ApiOperation({ summary: 'Obter detalhes de uma unidade' })
   @ApiResponse({ status: 200, description: 'Unidade encontrada com sucesso' })
   @ApiResponse({ status: 404, description: 'Unidade não encontrada' })
@@ -115,6 +130,13 @@ export class UnidadeController {
   @RequiresPermission({
     permissionName: 'unidade.criar',
     scopeType: ScopeType.GLOBAL,
+  })
+  @AuditOperation({
+    tipo: TipoOperacao.CREATE,
+    entidade: 'Unidade',
+    descricao: 'Criação de nova unidade',
+    riskLevel: RiskLevel.MEDIUM,
+    sensitiveFields: ['responsavel_matricula', 'email'],
   })
   @ApiOperation({ summary: 'Criar nova unidade' })
   @ApiResponse({ status: 201, description: 'Unidade criada com sucesso' })
@@ -131,6 +153,13 @@ export class UnidadeController {
   @RequiresPermission({
     permissionName: 'unidade.editar',
     scopeType: ScopeType.GLOBAL,
+  })
+  @AuditOperation({
+    tipo: TipoOperacao.UPDATE,
+    entidade: 'Unidade',
+    descricao: 'Atualização de dados da unidade',
+    riskLevel: RiskLevel.MEDIUM,
+    sensitiveFields: ['responsavel_matricula', 'email'],
   })
   @ApiOperation({ summary: 'Atualizar unidade existente' })
   @ApiResponse({ status: 200, description: 'Unidade atualizada com sucesso' })
@@ -151,6 +180,13 @@ export class UnidadeController {
   @RequiresPermission({
     permissionName: 'unidade.status.alterar',
     scopeType: ScopeType.GLOBAL,
+  })
+  @AuditOperation({
+    tipo: TipoOperacao.UPDATE,
+    entidade: 'Unidade',
+    descricao: 'Alteração de status da unidade',
+    riskLevel: RiskLevel.HIGH,
+
   })
   @ApiOperation({ summary: 'Ativar/inativar unidade' })
   @ApiResponse({ status: 200, description: 'Status atualizado com sucesso' })
