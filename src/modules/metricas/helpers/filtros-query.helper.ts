@@ -115,6 +115,53 @@ export class FiltrosQueryHelper {
   }
 
   /**
+   * Aplica filtros de benefício específico para pagamentos (via join com solicitacao)
+   */
+  static aplicarFiltroBeneficioPagamento(
+    query: SelectQueryBuilder<Pagamento>,
+    filtros: MetricasFiltrosAvancadosDto
+  ): SelectQueryBuilder<Pagamento> {
+    // Verifica se já existe o join com solicitacao
+    const existingJoins = query.expressionMap.joinAttributes;
+    const hasSolicitacaoJoin = existingJoins.some(join => 
+      join.alias?.name === 'solicitacao' || 
+      join.relationPropertyPath === 'pagamento.solicitacao'
+    );
+    
+    // Se não existe o join, não aplica o filtro (assume que será feito externamente)
+    if (!hasSolicitacaoJoin) {
+      console.warn('Join com solicitacao não encontrado para aplicar filtro de benefício em pagamentos');
+      return query;
+    }
+
+    // Verifica se já existe o join com tipo_beneficio
+    const hasTipoBeneficioJoin = existingJoins.some(join => 
+      join.alias?.name === 'tipo_beneficio' || 
+      join.relationPropertyPath === 'solicitacao.tipo_beneficio'
+    );
+    
+    // Se não existe o join com tipo_beneficio, adiciona
+    if (!hasTipoBeneficioJoin) {
+      query.innerJoin('solicitacao.tipo_beneficio', 'tipo_beneficio');
+    }
+
+    // Prioriza filtros múltiplos
+    if (filtros.beneficios && filtros.beneficios.length > 0) {
+      return query.andWhere('tipo_beneficio.id IN (:...beneficios)', {
+        beneficios: filtros.beneficios
+      });
+    }
+    // Fallback para filtro único
+    else if (filtros.beneficio) {
+      return query.andWhere('tipo_beneficio.id = :beneficio', {
+        beneficio: filtros.beneficio
+      });
+    }
+    
+    return query;
+  }
+
+  /**
    * Aplica filtros de status nas queries
    */
   static aplicarFiltroStatus<T>(
@@ -177,11 +224,20 @@ export class FiltrosQueryHelper {
       const existingJoins = query.expressionMap.joinAttributes;
       
       if (!existingJoins.some(join => join.alias?.name === aliasCidadao)) {
-        query.leftJoin(`${aliasEntity}.cidadao`, aliasCidadao);
+        // Para pagamentos, precisa acessar beneficiário através da solicitação
+        if (aliasEntity === 'pagamento') {
+          // Verifica se já existe join com solicitacao
+          if (!existingJoins.some(join => join.alias?.name === 'solicitacao')) {
+            query.leftJoin(`${aliasEntity}.solicitacao`, 'solicitacao');
+          }
+          query.leftJoin('solicitacao.beneficiario', aliasCidadao);
+        } else {
+          query.leftJoin(`${aliasEntity}.beneficiario`, aliasCidadao);
+        }
       }
       
       if (!existingJoins.some(join => join.alias?.name === aliasEndereco)) {
-        query.leftJoin(`${aliasCidadao}.endereco`, aliasEndereco);
+        query.leftJoin(`${aliasCidadao}.enderecos`, aliasEndereco, 'endereco.data_fim_vigencia IS NULL');
       }
 
       // Aplica filtro de bairros múltiplos
@@ -249,7 +305,7 @@ export class FiltrosQueryHelper {
       .pipe(q => this.aplicarFiltroBeneficio(q, filtros, 'solicitacao'))
       .pipe(q => this.aplicarFiltroStatus(q, filtros, 'solicitacao'))
       .pipe(q => this.aplicarFiltroUsuario(q, filtros, 'solicitacao'))
-      .pipe(q => this.aplicarFiltroBairro(q, filtros, 'solicitacao', 'cidadao', 'endereco'))
+      .pipe(q => this.aplicarFiltroBairro(q, filtros, 'solicitacao', 'beneficiario', 'endereco'))
       .pipe(q => this.aplicarFiltroArquivados(q, filtros, 'solicitacao'));
   }
 
@@ -278,10 +334,10 @@ export class FiltrosQueryHelper {
   ): SelectQueryBuilder<Pagamento> {
     return this.aplicarFiltroPeriodo(query, filtros, 'pagamento.created_at')
       .pipe(q => this.aplicarFiltroUnidade(q, filtros, 'pagamento'))
-      .pipe(q => this.aplicarFiltroBeneficio(q, filtros, 'pagamento'))
+      .pipe(q => this.aplicarFiltroBeneficioPagamento(q, filtros))
       .pipe(q => this.aplicarFiltroStatus(q, filtros, 'pagamento'))
       .pipe(q => this.aplicarFiltroUsuario(q, filtros, 'pagamento'))
-      .pipe(q => this.aplicarFiltroBairro(q, filtros, 'pagamento', 'cidadao', 'endereco'))
+      .pipe(q => this.aplicarFiltroBairro(q, filtros, 'pagamento', 'beneficiario', 'endereco'))
       .pipe(q => this.aplicarFiltroArquivados(q, filtros, 'pagamento'));
   }
 

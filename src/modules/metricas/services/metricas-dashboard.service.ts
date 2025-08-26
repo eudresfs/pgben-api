@@ -334,24 +334,45 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<EvolucaoMensalItem[]> {
-    const meses = [
-      'Jan/2024',
-      'Fev/2024',
-      'Mar/2024',
-      'Abr/2024',
-      'Mai/2024',
-      'Jun/2024',
-    ];
+    // Calcular data de início (6 meses atrás)
+    const dataInicio = new Date();
+    dataInicio.setMonth(dataInicio.getMonth() - 6);
+    dataInicio.setDate(1); // Primeiro dia do mês
 
-    // Por enquanto, retornando dados mock - implementar consulta real
-    return [
-      { mes: 'Jan/2024', familias: 120, pessoas: 380, investimento: 180000 },
-      { mes: 'Fev/2024', familias: 135, pessoas: 420, investimento: 202500 },
-      { mes: 'Mar/2024', familias: 142, pessoas: 445, investimento: 213000 },
-      { mes: 'Abr/2024', familias: 158, pessoas: 490, investimento: 237000 },
-      { mes: 'Mai/2024', familias: 165, pessoas: 515, investimento: 247500 },
-      { mes: 'Jun/2024', familias: 180, pessoas: 560, investimento: 270000 },
-    ];
+    // Query para obter dados mensais de solicitações aprovadas
+    const evolucaoQuery = this.solicitacaoRepository
+      .createQueryBuilder('solicitacao')
+      .leftJoin('solicitacao.pagamentos', 'pagamento')
+      .select([
+        "TO_CHAR(solicitacao.data_abertura, 'Mon/YYYY') as mes",
+        'COUNT(DISTINCT solicitacao.id) as familias',
+        'SUM(COALESCE(pagamento.valor, 0)) as investimento',
+      ])
+      .where('solicitacao.status = :status', {
+        status: StatusSolicitacao.APROVADA,
+      })
+      .andWhere('solicitacao.data_abertura >= :dataInicio', { dataInicio })
+      .andWhere('pagamento.status = :statusPagamento OR pagamento.status IS NULL', {
+        statusPagamento: StatusPagamentoEnum.PAGO,
+      })
+      .groupBy("TO_CHAR(solicitacao.data_abertura, 'Mon/YYYY')")
+      .addGroupBy("DATE_TRUNC('month', solicitacao.data_abertura)")
+      .orderBy("DATE_TRUNC('month', solicitacao.data_abertura)", 'ASC');
+
+    // Aplicar filtros se fornecidos
+    if (filtros && !this.filtrosEstaoVazios(filtros)) {
+      FiltrosQueryHelper.aplicarFiltrosSolicitacao(evolucaoQuery, filtros);
+    }
+
+    const resultados = await evolucaoQuery.getRawMany();
+
+    // Mapear resultados para o formato esperado
+    return resultados.map((item) => ({
+      mes: item.mes,
+      familias: parseInt(item.familias),
+      pessoas: parseInt(item.familias) * 3, // Assumindo média de 3 pessoas por família
+      investimento: parseFloat(item.investimento || '0'),
+    }));
   }
 
   /**
@@ -399,18 +420,66 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<RecursosFaixaEtariaItem[]> {
-    // Implementação mock - deve ser substituída por consulta real
-    return [
-      { faixa_etaria: 'Crianças (0-12)', recursos: 450000, percentual: 36.0 },
-      {
-        faixa_etaria: 'Adolescentes (13-17)',
-        recursos: 280000,
-        percentual: 22.4,
-      },
-      { faixa_etaria: 'Jovens (18-29)', recursos: 250000, percentual: 20.0 },
-      { faixa_etaria: 'Adultos (30-59)', recursos: 200000, percentual: 16.0 },
-      { faixa_etaria: 'Seniors (60+)', recursos: 70000, percentual: 5.6 },
+    // Query para obter recursos por faixa etária baseado na idade do beneficiário
+    const recursosQuery = this.pagamentoRepository
+      .createQueryBuilder('pagamento')
+      .innerJoin('pagamento.solicitacao', 'solicitacao')
+      .innerJoin('solicitacao.beneficiario', 'cidadao')
+      .select([
+        `CASE 
+          WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, cidadao.data_nascimento)) BETWEEN 0 AND 12 THEN 'Crianças (0-12)'
+          WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, cidadao.data_nascimento)) BETWEEN 13 AND 17 THEN 'Adolescentes (13-17)'
+          WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, cidadao.data_nascimento)) BETWEEN 18 AND 29 THEN 'Jovens (18-29)'
+          WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, cidadao.data_nascimento)) BETWEEN 30 AND 59 THEN 'Adultos (30-59)'
+          ELSE 'Idosos (60+)'
+        END as faixa_etaria`,
+        'SUM(pagamento.valor) as recursos',
+      ])
+      .where('pagamento.status IN (:...statusValidos)', {
+        statusValidos: [
+          StatusPagamentoEnum.LIBERADO,
+          StatusPagamentoEnum.PAGO,
+          StatusPagamentoEnum.CONFIRMADO,
+          StatusPagamentoEnum.RECEBIDO,
+        ],
+      })
+      .andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite })
+      .groupBy('faixa_etaria')
+      .orderBy('faixa_etaria', 'ASC');
+
+    // Aplicar filtros se fornecidos
+    if (filtros && !this.filtrosEstaoVazios(filtros)) {
+      FiltrosQueryHelper.aplicarFiltrosPagamento(recursosQuery, filtros);
+    }
+
+    const resultados = await recursosQuery.getRawMany();
+
+    // Calcular total para percentuais
+    const total = resultados.reduce(
+      (acc, item) => acc + parseFloat(item.recursos || '0'),
+      0,
+    );
+
+    // Mapear resultados para o formato esperado
+    const faixasEtarias = resultados.map((item) => ({
+      faixa_etaria: item.faixa_etaria,
+      recursos: parseFloat(item.recursos || '0'),
+      percentual: total > 0 ? Math.round((parseFloat(item.recursos || '0') / total) * 1000) / 10 : 0,
+    }));
+
+    // Garantir que todas as faixas etárias estejam presentes, mesmo com valor 0
+    const faixasCompletas = [
+      'Crianças (0-12)',
+      'Adolescentes (13-17)',
+      'Jovens (18-29)',
+      'Adultos (30-59)',
+      'Idosos (60+)',
     ];
+
+    return faixasCompletas.map((faixa) => {
+      const encontrada = faixasEtarias.find((item) => item.faixa_etaria === faixa);
+      return encontrada || { faixa_etaria: faixa, recursos: 0, percentual: 0 };
+    });
   }
 
   /**
@@ -424,8 +493,13 @@ export class MetricasDashboardService {
       .createQueryBuilder('pagamento')
       .innerJoin('pagamento.solicitacao', 'solicitacao')
       .innerJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
-      .where('pagamento.status = :status', {
-        status: StatusPagamentoEnum.PAGO,
+      .where('pagamento.status IN (:...statusValidos)', {
+        statusValidos: [
+          StatusPagamentoEnum.LIBERADO,
+          StatusPagamentoEnum.PAGO,
+          StatusPagamentoEnum.CONFIRMADO,
+          StatusPagamentoEnum.RECEBIDO,
+        ],
       })
       .andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite })
       .groupBy('tipo_beneficio.nome')
@@ -459,33 +533,45 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<RecursosImpactoTipoItem[]> {
-    // Implementação mock - deve ser substituída por consulta real
-    return [
-      {
-        tipo_beneficio: 'Aluguel Social',
-        recursos: 720000,
-        familias: 720,
-        pessoas: 2160,
-      },
-      {
-        tipo_beneficio: 'Cesta Básica',
-        recursos: 380000,
-        familias: 380,
-        pessoas: 1140,
-      },
-      {
-        tipo_beneficio: 'Benefício Funeral',
-        recursos: 120000,
-        familias: 120,
-        pessoas: 360,
-      },
-      {
-        tipo_beneficio: 'Benefício Natalidade',
-        recursos: 30000,
-        familias: 30,
-        pessoas: 90,
-      },
-    ];
+    // Query para obter recursos e impacto por tipo de benefício
+    const recursosQuery = this.pagamentoRepository
+      .createQueryBuilder('pagamento')
+      .innerJoin('pagamento.solicitacao', 'solicitacao')
+      .innerJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
+      .leftJoin('solicitacao.beneficiario', 'beneficiario')
+      .leftJoin('beneficiario.composicao_familiar', 'composicao_familiar')
+      .select([
+        'tipo_beneficio.nome as tipo_beneficio',
+        'SUM(pagamento.valor) as recursos',
+        'COUNT(DISTINCT solicitacao.beneficiario_id) as familias',
+        'COUNT(composicao_familiar.id) as pessoas',
+      ])
+      .where('pagamento.status IN (:...statusValidos)', {
+        statusValidos: [
+          StatusPagamentoEnum.LIBERADO,
+          StatusPagamentoEnum.PAGO,
+          StatusPagamentoEnum.CONFIRMADO,
+          StatusPagamentoEnum.RECEBIDO,
+        ],
+      })
+      .andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite })
+      .groupBy('tipo_beneficio.nome')
+      .orderBy('recursos', 'DESC');
+
+    // Aplicar filtros se fornecidos
+    if (filtros && !this.filtrosEstaoVazios(filtros)) {
+      FiltrosQueryHelper.aplicarFiltrosPagamento(recursosQuery, filtros);
+    }
+
+    const resultados = await recursosQuery.getRawMany();
+
+    // Mapear resultados para o formato esperado
+    return resultados.map((item) => ({
+      tipo_beneficio: item.tipo_beneficio,
+      recursos: parseFloat(item.recursos || '0'),
+      familias: parseInt(item.familias || '0'),
+      pessoas: parseInt(item.pessoas || '0'),
+    }));
   }
 
   /**
@@ -495,15 +581,49 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<RecursosBairrosItem[]> {
-    // Implementação mock - deve ser substituída por consulta real
-    return [
-      { bairro: 'Centro', recursos: 300000, percentual: 24.0 },
-      { bairro: 'Norte', recursos: 250000, percentual: 20.0 },
-      { bairro: 'Sul', recursos: 200000, percentual: 16.0 },
-      { bairro: 'Leste', recursos: 180000, percentual: 14.4 },
-      { bairro: 'Oeste', recursos: 150000, percentual: 12.0 },
-      { bairro: 'Zona Rural', recursos: 170000, percentual: 13.6 },
-    ];
+    // Query para obter recursos por bairro baseado no endereço do beneficiário
+    const recursosQuery = this.pagamentoRepository
+      .createQueryBuilder('pagamento')
+      .innerJoin('pagamento.solicitacao', 'solicitacao')
+      .innerJoin('solicitacao.beneficiario', 'cidadao')
+      .innerJoin('cidadao.enderecos', 'endereco', 'endereco.data_fim_vigencia IS NULL')
+      .select([
+        'endereco.bairro as bairro',
+        'SUM(pagamento.valor) as recursos',
+      ])
+      .where('pagamento.status IN (:...statusValidos)', {
+        statusValidos: [
+          StatusPagamentoEnum.LIBERADO,
+          StatusPagamentoEnum.PAGO,
+          StatusPagamentoEnum.CONFIRMADO,
+          StatusPagamentoEnum.RECEBIDO,
+        ],
+      })
+      .andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite })
+      .andWhere('endereco.bairro IS NOT NULL')
+      .andWhere('endereco.bairro != :empty', { empty: '' })
+      .groupBy('endereco.bairro')
+      .orderBy('recursos', 'DESC');
+
+    // Aplicar filtros se fornecidos
+    if (filtros && !this.filtrosEstaoVazios(filtros)) {
+      FiltrosQueryHelper.aplicarFiltrosPagamento(recursosQuery, filtros);
+    }
+
+    const resultados = await recursosQuery.getRawMany();
+
+    // Calcular total para percentuais
+    const total = resultados.reduce(
+      (acc, item) => acc + parseFloat(item.recursos || '0'),
+      0,
+    );
+
+    // Mapear resultados para o formato esperado
+    return resultados.map((item) => ({
+      bairro: item.bairro || 'Não informado',
+      recursos: parseFloat(item.recursos || '0'),
+      percentual: total > 0 ? Math.round((parseFloat(item.recursos || '0') / total) * 1000) / 10 : 0,
+    }));
   }
 
   /**

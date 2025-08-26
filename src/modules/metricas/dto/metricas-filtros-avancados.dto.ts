@@ -4,6 +4,46 @@ import { Transform, Type } from 'class-transformer';
 import { DashboardFiltrosDto } from './dashboard-filtros.dto';
 
 /**
+ * Função utilitária para transformar valores em arrays, incluindo parsing de JSON strings
+ * Aplica o princípio DRY evitando duplicação de código de transformação
+ * 
+ * @param value - Valor a ser transformado
+ * @returns Array filtrado ou undefined se vazio
+ */
+function transformToStringArray(value: any): string[] | undefined {
+  if (!value || value === '' || (Array.isArray(value) && value.length === 0)) {
+    return undefined;
+  }
+  
+  // Se é uma string que parece ser JSON array, tenta fazer o parse
+  if (typeof value === 'string' && value.trim().startsWith('[') && value.trim().endsWith(']')) {
+    try {
+      const parsed = JSON.parse(value.trim());
+      if (Array.isArray(parsed)) {
+        const filtered = parsed.filter(v => v && typeof v === 'string' && v.trim() !== '');
+        return filtered.length > 0 ? filtered : undefined;
+      }
+    } catch (error) {
+      // Fallback: usar regex para extrair valores de array sem aspas
+      const arrayMatch = value.trim().match(/^\[(.+)\]$/);
+      if (arrayMatch) {
+        const content = arrayMatch[1];
+        const items = content.split(',').map(item => item.trim()).filter(item => item !== '');
+        return items.length > 0 ? items : undefined;
+      }
+      // Se falhar o parse, trata como string normal
+    }
+  }
+  
+  if (Array.isArray(value)) {
+    const filtered = value.filter(v => v && v.trim() !== '');
+    return filtered.length > 0 ? filtered : undefined;
+  }
+  
+  return value.trim() !== '' ? [value] : undefined;
+}
+
+/**
  * Enum para períodos predefinidos
  */
 export enum PeriodoPredefinido {
@@ -51,16 +91,8 @@ export class MetricasFiltrosAvancadosDto extends DashboardFiltrosDto {
   })
   @IsOptional()
   @IsArray({ message: 'unidades deve ser um array' })
-  @IsUUID('4', { each: true, message: 'Cada unidade deve ser um UUID válido' })
   @Type(() => String)
-  @Transform(({ value }) => {
-    if (!value || value === '' || (Array.isArray(value) && value.length === 0)) return undefined;
-    if (Array.isArray(value)) {
-      const filtered = value.filter(v => v && v.trim() !== '');
-      return filtered.length > 0 ? filtered : undefined;
-    }
-    return value.trim() !== '' ? [value] : undefined;
-  })
+  @Transform(({ value }) => transformToStringArray(value))
   unidades?: string[];
 
   @ApiPropertyOptional({
@@ -70,16 +102,8 @@ export class MetricasFiltrosAvancadosDto extends DashboardFiltrosDto {
   })
   @IsOptional()
   @IsArray({ message: 'beneficios deve ser um array' })
-  @IsUUID('4', { each: true, message: 'Cada benefício deve ser um UUID válido' })
   @Type(() => String)
-  @Transform(({ value }) => {
-    if (!value || value === '' || (Array.isArray(value) && value.length === 0)) return undefined;
-    if (Array.isArray(value)) {
-      const filtered = value.filter(v => v && v.trim() !== '');
-      return filtered.length > 0 ? filtered : undefined;
-    }
-    return value.trim() !== '' ? [value] : undefined;
-  })
+  @Transform(({ value }) => transformToStringArray(value))
   beneficios?: string[];
 
   @ApiPropertyOptional({
@@ -91,14 +115,7 @@ export class MetricasFiltrosAvancadosDto extends DashboardFiltrosDto {
   @IsArray({ message: 'bairros deve ser um array' })
   @IsString({ each: true, message: 'Cada bairro deve ser uma string' })
   @Type(() => String)
-  @Transform(({ value }) => {
-    if (!value || value === '' || (Array.isArray(value) && value.length === 0)) return undefined;
-    if (Array.isArray(value)) {
-      const filtered = value.filter(v => v && v.trim() !== '');
-      return filtered.length > 0 ? filtered : undefined;
-    }
-    return value.trim() !== '' ? [value] : undefined;
-  })
+  @Transform(({ value }) => transformToStringArray(value))
   bairros?: string[];
 
   @ApiPropertyOptional({
@@ -129,16 +146,8 @@ export class MetricasFiltrosAvancadosDto extends DashboardFiltrosDto {
   })
   @IsOptional()
   @IsArray({ message: 'usuarios deve ser um array' })
-  @IsUUID('4', { each: true, message: 'Cada usuário deve ser um UUID válido' })
   @Type(() => String)
-  @Transform(({ value }) => {
-    if (!value || value === '' || (Array.isArray(value) && value.length === 0)) return undefined;
-    if (Array.isArray(value)) {
-      const filtered = value.filter(v => v && v.trim() !== '');
-      return filtered.length > 0 ? filtered : undefined;
-    }
-    return value.trim() !== '' ? [value] : undefined;
-  })
+  @Transform(({ value }) => transformToStringArray(value))
   usuarios?: string[];
 
   @ApiPropertyOptional({
