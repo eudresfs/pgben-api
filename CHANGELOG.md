@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.13](https://github.com/kemosoft-team/pgben-server/compare/v0.1.12...v0.1.13) (2025-08-26)
+
+
+### Features
+
+* **metrics:** add endpoint to get solicitation count by status ([e64003e](https://github.com/kemosoft-team/pgben-server/commit/e64003e15efabe8a3f06e05c051ccb9e5b4b27a0))
+* **pagamento:** add batch receipt generation functionality ([43864fe](https://github.com/kemosoft-team/pgben-server/commit/43864fe47d794ef1b6b0301cc4ddc73dc9a13052))
+
 ### [0.1.12](https://github.com/kemosoft-team/pgben-server/compare/v0.1.11...v0.1.12) (2025-08-26)
 
 
