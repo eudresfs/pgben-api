@@ -28,6 +28,7 @@ import { PagamentoService } from '../services/pagamento.service';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
 import { PagamentoPendenteMonitoramentoDto } from '../dtos/pagamento-pendente-monitoramento.dto';
+import { FiltrosMonitoramentoPendenteDto } from '../dtos/filtros-monitoramento-pendente.dto';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { TipoVisita } from '../../../enums/tipo-visita.enum';
 import { DataMaskingResponseInterceptor } from '../interceptors/data-masking-response.interceptor';
@@ -314,15 +315,25 @@ export class PagamentoController {
   })
   @ApiOperation({
     summary: 'Busca pagamentos pendentes de monitoramento',
-    description: 'Retorna todos os pagamentos que ainda não têm visita/agendamento criado'
+    description: 'Retorna todos os pagamentos que ainda não têm visita/agendamento criado. Suporta filtros por bairro e CPF do beneficiário.'
   })
   @ApiResponse({
     status: 200,
     description: 'Lista de pagamentos pendentes de monitoramento',
     type: [PagamentoPendenteMonitoramentoDto]
   })
-  async findPendentesMonitoramento() {
-    const pagamentos = await this.pagamentoService.findPendentesMonitoramento();
+  async findPendentesMonitoramento(
+    @Query() filtros: FiltrosMonitoramentoPendenteDto
+  ) {
+    // Preparar filtros para o serviço
+    const filtrosServico = {
+      ...(filtros.bairro && { bairro: filtros.bairro }),
+      ...(filtros.cpf && { cpf: filtros.cpf })
+    };
+
+    const pagamentos = await this.pagamentoService.findPendentesMonitoramento(
+      Object.keys(filtrosServico).length > 0 ? filtrosServico : undefined
+    );
 
     return pagamentos.map(p => ({
       pagamento_id: p.pagamento_id,

@@ -546,9 +546,13 @@ export class PagamentoRepository {
   /**
    * Busca pagamentos pendentes de monitoramento
    * Retorna pagamentos que ainda não têm agendamento/visita criado
+   * @param filtros Filtros opcionais para bairro e CPF
    */
-  async findPendentesMonitoramento(): Promise<any[]> {
-    return await this.scopedRepository
+  async findPendentesMonitoramento(filtros?: {
+    bairro?: string;
+    cpf?: string;
+  }): Promise<any[]> {
+    const queryBuilder = this.scopedRepository
       .createQueryBuilder('pagamento')
       .distinctOn(['pagamento.id'])
       .leftJoin('pagamento.solicitacao', 'solicitacao')
@@ -571,7 +575,22 @@ export class PagamentoRepository {
         'unidade.nome AS unidade_nome',
         'tecnico.id AS tecnico_id',
         'tecnico.nome AS tecnico_nome'
-      ])
+      ]);
+
+    // Aplicar filtros opcionais
+    if (filtros?.bairro) {
+      queryBuilder.andWhere('LOWER(endereco.bairro) LIKE LOWER(:bairro)', {
+        bairro: `%${filtros.bairro}%`
+      });
+    }
+
+    if (filtros?.cpf) {
+      // Remove formatação do CPF para busca apenas por números
+      const cpfNumeros = filtros.cpf.replace(/\D/g, '');
+      queryBuilder.andWhere('cidadao.cpf = :cpf', { cpf: cpfNumeros });
+    }
+
+    return await queryBuilder
       .orderBy('pagamento.id')
       .addOrderBy('pagamento.numero_parcela')
       .getRawMany();
