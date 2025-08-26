@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.11](https://github.com/kemosoft-team/pgben-server/compare/v0.1.10...v0.1.11) (2025-08-26)
+
+
+### Features
+
+* **dashboard:** add metrics dashboard service and endpoints ([8b0f966](https://github.com/kemosoft-team/pgben-server/commit/8b0f966d0d89f8bec4c7786a9cd44afea05de1b3))
+* **metrics:** add advanced filtering support for dashboard metrics ([4439c0a](https://github.com/kemosoft-team/pgben-server/commit/4439c0acab603da5a4b592d0f0d4481da5853056))
+
 ### [0.1.10](https://github.com/kemosoft-team/pgben-server/compare/v0.1.9...v0.1.10) (2025-08-25)
 
 
