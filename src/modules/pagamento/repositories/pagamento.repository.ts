@@ -44,6 +44,33 @@ export class PagamentoRepository {
     return await this.scopedRepository
       .createScopedQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+      .leftJoin('pagamento.responsavel_liberacao', 'responsavel_liberacao')
+      .addSelect([
+        'responsavel_liberacao.id',
+        'responsavel_liberacao.nome',
+        'responsavel_liberacao.role',
+      ])
+      .leftJoin('solicitacao.beneficiario', 'beneficiario')
+      .addSelect([
+        'beneficiario.id',
+        'beneficiario.nome',
+        'beneficiario.cpf',
+      ])
+      .leftJoin('solicitacao.unidade', 'unidade')
+      .addSelect([
+        'unidade.id',
+        'unidade.nome',
+      ])
+      .leftJoin('solicitacao.tecnico', 'tecnico')
+      .addSelect([
+        'tecnico.id',
+        'tecnico.nome',
+      ])
+      .leftJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
+      .addSelect([
+        'tipo_beneficio.id',
+        'tipo_beneficio.nome',
+      ])
       .leftJoinAndSelect('pagamento.concessao', 'concessao')
       .where('pagamento.id = :id', { id })
       .orderBy('pagamento.created_at', 'ASC')
