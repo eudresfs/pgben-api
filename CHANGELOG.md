@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.14](https://github.com/kemosoft-team/pgben-server/compare/v0.1.13...v0.1.14) (2025-08-26)
+
+
+### Features
+
+* **aluguel-social:** add locator fields and judicial determination ([995e1bf](https://github.com/kemosoft-team/pgben-server/commit/995e1bfde13e93f14385767f10d679af6e1a2e56))
+* **metrics:** implement real queries for dashboard metrics ([0fc4cf0](https://github.com/kemosoft-team/pgben-server/commit/0fc4cf02b3ab773d37b21d10271848f19808b2c3))
+* **pagamento:** add release criteria calculation to payment lookup ([e67af4c](https://github.com/kemosoft-team/pgben-server/commit/e67af4ca9546ef40fc6dc2ce8560ba9699751b58))
+
 ### [0.1.13](https://github.com/kemosoft-team/pgben-server/compare/v0.1.12...v0.1.13) (2025-08-26)
 
 
