@@ -13,6 +13,7 @@ import { ConfirmacaoRecebimentoDto } from '../dtos/confirmacao-recebimento.dto';
 import { PagamentoUnifiedMapper } from '../mappers';
 import { ConfirmacaoMapper } from '../utils/confirmacao-mapper.util';
 import { PagamentoValidationUtil } from '../utils/pagamento-validation.util';
+import { DocumentoService } from '../../documento/services/documento.service';
 
 /**
  * Service simplificado para gerenciamento de confirmações de recebimento
@@ -25,6 +26,7 @@ export class ConfirmacaoService {
   constructor(
     private readonly confirmacaoRepository: ConfirmacaoRepository,
     private readonly pagamentoRepository: PagamentoRepository,
+    private readonly documentoService: DocumentoService,
   ) {}
 
   /**
@@ -55,6 +57,14 @@ export class ConfirmacaoService {
     PagamentoValidationUtil.validarParaConfirmacao(pagamento);
     await this.verificarConfirmacaoExistente(pagamentoId);
 
+    // Validar se o pagamento possui comprovante_id
+    if (!pagamento.comprovante_id) {
+      throw new BadRequestException(
+        `É necessário um comprovante para confirmar o pagamento.` +
+        `Faça o upload do comprovante antes de confirmar o recebimento.`,
+      );
+    }
+
     // Preparar dados
     const dadosConfirmacao = ConfirmacaoMapper.fromCreateDto(
       createDto,
@@ -71,6 +81,23 @@ export class ConfirmacaoService {
       status: StatusPagamentoEnum.CONFIRMADO,
       data_conclusao: new Date(),
     });
+
+    // Marcar o documento comprovante como verificado automaticamente
+    try {
+      await this.documentoService.verificar(
+        pagamento.comprovante_id,
+        usuarioId,
+        'Documento verificado automaticamente durante confirmação de recebimento do pagamento',
+      );
+      this.logger.log(
+        `Documento ${pagamento.comprovante_id} marcado como verificado automaticamente`,
+      );
+    } catch (error) {
+      // Log do erro mas não falha a confirmação
+      this.logger.warn(
+        `Erro ao verificar documento ${pagamento.comprovante_id} automaticamente: ${error.message}`,
+      );
+    }
 
     this.logger.log(`Confirmação ${confirmacao.id} criada com sucesso`);
     return confirmacao;
