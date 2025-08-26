@@ -13,12 +13,14 @@ import { PagamentoRepository } from '../repositories/pagamento.repository';
 import { ComprovanteUploadDto } from '../dtos/comprovante-upload.dto';
 import { ComprovanteResponseDto } from '../dtos/comprovante-response.dto';
 import { GerarComprovanteDto, ComprovanteGeradoDto } from '../dtos/gerar-comprovante.dto';
+import { GerarComprovanteLoteDto, ComprovanteLoteGeradoDto } from '../dtos/gerar-comprovante-lote.dto';
 import { Documento } from '../../../entities/documento.entity';
 import { TipoDocumentoEnum } from '../../../enums/tipo-documento.enum';
 import { Pagamento } from '../../../entities/pagamento.entity';
 import { StatusPagamentoEnum } from '../../../enums';
 import { PdfGeneratorUtil } from '../utils/pdf-generator.util';
 import { ComprovanteDadosMapper } from '../mappers/comprovante-dados.mapper';
+import { PDFDocument } from 'pdf-lib';
 
 /**
  * Service simplificado para gerenciamento de comprovantes
@@ -347,6 +349,147 @@ export class ComprovanteService {
     this.logger.log(`Buffer PDF gerado com sucesso para pagamento ${pagamentoId}`);
     
     return pdfBuffer;
+  }
+
+  /**
+    * Gera comprovantes em lote para múltiplos pagamentos
+    */
+   async gerarComprovantesLote(
+     gerarLoteDto: GerarComprovanteLoteDto,
+     usuarioId?: string,
+   ): Promise<ComprovanteLoteGeradoDto> {
+    this.logger.log(`Iniciando geração de comprovantes em lote para ${gerarLoteDto.pagamento_ids.length} pagamentos`);
+
+    const pagamentosProcessados = [];
+     const pagamentosFalharam = [];
+     const erros = [];
+    const pdfsBuffers = [];
+
+    // Gerar comprovantes individuais
+     for (const pagamentoId of gerarLoteDto.pagamento_ids) {
+      try {
+        const pdfBuffer = await this.gerarPdfBuffer(pagamentoId, {
+           formato: 'pdf',
+         });
+        
+        pagamentosProcessados.push(pagamentoId);
+        
+        pdfsBuffers.push(pdfBuffer);
+      } catch (error) {
+        this.logger.error(`Erro ao gerar comprovante para pagamento ${pagamentoId}:`, error);
+         pagamentosFalharam.push(pagamentoId);
+         erros.push({
+           pagamentoId,
+           erro: error.message,
+         });
+      }
+    }
+
+    // Combinar PDFs
+     let pdfCombinado: Buffer | undefined;
+     if (pdfsBuffers.length > 0) {
+      try {
+        pdfCombinado = await this.combinarPdfs(pdfsBuffers);
+        this.logger.log(`PDFs combinados com sucesso. Total de páginas: ${pdfsBuffers.length}`);
+      } catch (error) {
+        this.logger.error('Erro ao combinar PDFs:', error);
+        erros.push({
+          pagamentoId: 'COMBINACAO',
+          erro: `Erro ao combinar PDFs: ${error.message}`,
+        });
+      }
+    }
+
+    const nomeArquivoLote = `comprovantes_lote_${new Date().toISOString().split('T')[0]}.pdf`;
+
+    this.logger.log(
+       `Geração de lote concluída. Sucessos: ${pagamentosProcessados.length}, Erros: ${pagamentosFalharam.length}`,
+     );
+
+    return {
+      nomeArquivo: nomeArquivoLote,
+      tipoMime: 'application/pdf',
+      dataGeracao: new Date(),
+      totalComprovantes: gerarLoteDto.pagamento_ids.length,
+        pagamentosProcessados,
+        pagamentosFalharam,
+        errosDetalhados: erros,
+      tamanho: pdfCombinado?.length || 0,
+      conteudoBase64: gerarLoteDto.formato === 'base64' && pdfCombinado 
+        ? pdfCombinado.toString('base64') 
+        : undefined,
+    };
+  }
+
+  /**
+    * Gera apenas o buffer do PDF combinado para download direto
+    */
+   async gerarLotePdfBuffer(
+     gerarLoteDto: GerarComprovanteLoteDto,
+     usuarioId?: string,
+   ): Promise<Buffer> {
+    this.logger.log(`Gerando buffer PDF em lote para ${gerarLoteDto.pagamento_ids.length} pagamentos`);
+
+    const pdfsBuffers = [];
+
+    // Gerar PDFs individuais
+     for (const pagamentoId of gerarLoteDto.pagamento_ids) {
+      try {
+        const pdfBuffer = await this.gerarPdfBuffer(pagamentoId, {
+           formato: 'pdf',
+         });
+        pdfsBuffers.push(pdfBuffer);
+      } catch (error) {
+        this.logger.error(`Erro ao gerar PDF para pagamento ${pagamentoId}:`, error);
+        // Continua com os outros PDFs mesmo se um falhar
+      }
+    }
+
+    if (pdfsBuffers.length === 0) {
+      throw new BadRequestException('Nenhum comprovante pôde ser gerado');
+    }
+
+    // Combinar PDFs
+    const pdfCombinado = await this.combinarPdfs(pdfsBuffers);
+    
+    this.logger.log(`Buffer PDF em lote gerado com sucesso. Total de PDFs: ${pdfsBuffers.length}`);
+    
+    return pdfCombinado;
+  }
+
+  /**
+   * Combina múltiplos PDFs em um único documento
+   */
+  private async combinarPdfs(pdfsBuffers: Buffer[]): Promise<Buffer> {
+    if (pdfsBuffers.length === 0) {
+      throw new BadRequestException('Nenhum PDF para combinar');
+    }
+
+    if (pdfsBuffers.length === 1) {
+      return pdfsBuffers[0];
+    }
+
+    try {
+      // Criar documento PDF principal
+      const pdfCombinado = await PDFDocument.create();
+
+      // Adicionar cada PDF ao documento principal
+      for (const pdfBuffer of pdfsBuffers) {
+        const pdf = await PDFDocument.load(pdfBuffer);
+        const paginas = await pdfCombinado.copyPages(pdf, pdf.getPageIndices());
+        
+        paginas.forEach((pagina) => {
+          pdfCombinado.addPage(pagina);
+        });
+      }
+
+      // Gerar buffer do PDF combinado
+      const pdfBytes = await pdfCombinado.save();
+      return Buffer.from(pdfBytes);
+    } catch (error) {
+      this.logger.error('Erro ao combinar PDFs:', error);
+      throw new BadRequestException(`Erro ao combinar PDFs: ${error.message}`);
+    }
   }
 
   /**
