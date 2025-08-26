@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.12](https://github.com/kemosoft-team/pgben-server/compare/v0.1.11...v0.1.12) (2025-08-26)
+
+
+### Features
+
+* **pagamento:** add filters for pending monitoring payments ([454c95b](https://github.com/kemosoft-team/pgben-server/commit/454c95bb16da8680c5e930c34c91ed8a4d64f63f))
+* **pagamento:** add related entity joins to payment query ([cfce632](https://github.com/kemosoft-team/pgben-server/commit/cfce632694809057dd171f0eb2ca906a5146eed6))
+* **pagamento:** make confirmation fields optional with defaults ([72fc4e1](https://github.com/kemosoft-team/pgben-server/commit/72fc4e15ed2eb1a31ff6e6f6be6e5f19401adc84))
+
 ### [0.1.11](https://github.com/kemosoft-team/pgben-server/compare/v0.1.10...v0.1.11) (2025-08-26)
 
 
