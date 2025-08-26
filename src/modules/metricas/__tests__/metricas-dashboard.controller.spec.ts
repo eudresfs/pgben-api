@@ -1,10 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { MetricasDashboardController } from '../controllers/metricas-dashboard.controller';
 import { MetricasDashboardService } from '../services/metricas-dashboard.service';
 import { ImpactoSocialData } from '../interfaces/impacto-social.interface';
 import { GestaoOperacionalData } from '../interfaces/gestao-operacional.interface';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
+import { PermissionGuard } from '../../../auth/guards/permission.guard';
+import { MetricasFiltrosAvancadosDto, PeriodoPredefinido, StatusSolicitacao } from '../dto/metricas-filtros-avancados.dto';
+import {
+  Solicitacao,
+  Concessao,
+  Pagamento,
+  Cidadao,
+  TipoBeneficio,
+  Endereco,
+  ComposicaoFamiliar,
+  Unidade,
+} from '../../../entities';
 
 /**
  * Testes unitários para o controlador MetricasDashboardController
@@ -105,6 +118,7 @@ describe('MetricasDashboardController', () => {
   };
 
   beforeEach(async () => {
+    // Mock do serviço
     const mockService = {
       getImpactoSocial: jest.fn(),
       getGestaoOperacional: jest.fn(),
@@ -123,6 +137,8 @@ describe('MetricasDashboardController', () => {
     .useValue({ canActivate: () => true })
     .overrideGuard(RolesGuard)
     .useValue({ canActivate: () => true })
+    .overrideGuard(PermissionGuard)
+    .useValue({ canActivate: () => true })
     .compile();
 
     controller = module.get<MetricasDashboardController>(MetricasDashboardController);
@@ -134,37 +150,72 @@ describe('MetricasDashboardController', () => {
   });
 
   describe('getImpactoSocial', () => {
-    it('deve retornar dados de impacto social com período padrão', async () => {
-      // Arrange
+    it('deve retornar métricas de impacto social com sucesso sem filtros', async () => {
+      const filtros: MetricasFiltrosAvancadosDto = {};
       service.getImpactoSocial.mockResolvedValue(mockImpactoSocial);
 
-      // Act
-      const resultado = await controller.getImpactoSocial();
+      const resultado = await controller.getImpactoSocial(filtros);
 
-      // Assert
-      expect(service.getImpactoSocial).toHaveBeenCalledWith(undefined);
+      expect(resultado.success).toBe(true);
+      expect(resultado.message).toBe('Dados de impacto social carregados com sucesso');
       expect(resultado.data).toEqual(mockImpactoSocial);
+      expect(resultado.timestamp).toBeDefined();
+      expect(service.getImpactoSocial).toHaveBeenCalledWith(filtros);
     });
 
-    it('deve retornar dados de impacto social com período específico', async () => {
-      // Arrange
-      const periodo = '90d';
+    it('deve retornar métricas de impacto social com filtros de período', async () => {
+      const filtros: MetricasFiltrosAvancadosDto = {
+        periodo: PeriodoPredefinido.ULTIMOS_90_DIAS
+      };
       service.getImpactoSocial.mockResolvedValue(mockImpactoSocial);
 
-      // Act
-      const resultado = await controller.getImpactoSocial(periodo);
+      const resultado = await controller.getImpactoSocial(filtros);
 
-      // Assert
-      expect(service.getImpactoSocial).toHaveBeenCalledWith(periodo);
+      expect(resultado.success).toBe(true);
       expect(resultado.data).toEqual(mockImpactoSocial);
+      expect(service.getImpactoSocial).toHaveBeenCalledWith(filtros);
+    });
+
+    it('deve retornar métricas de impacto social com filtros múltiplos', async () => {
+      const filtros: MetricasFiltrosAvancadosDto = {
+        periodo: PeriodoPredefinido.ULTIMOS_30_DIAS,
+        unidades: ['123e4567-e89b-12d3-a456-426614174000', '123e4567-e89b-12d3-a456-426614174001', '123e4567-e89b-12d3-a456-426614174002'],
+         beneficios: ['123e4567-e89b-12d3-a456-426614174010', '123e4567-e89b-12d3-a456-426614174011'],
+        bairros: ['Centro', 'Vila Nova'],
+        statusList: [StatusSolicitacao.APROVADO, StatusSolicitacao.EM_ANALISE],
+        incluirArquivados: false
+      };
+      service.getImpactoSocial.mockResolvedValue(mockImpactoSocial);
+
+      const resultado = await controller.getImpactoSocial(filtros);
+
+      expect(resultado.success).toBe(true);
+      expect(resultado.data).toEqual(mockImpactoSocial);
+      expect(service.getImpactoSocial).toHaveBeenCalledWith(filtros);
+    });
+
+    it('deve retornar métricas de impacto social com período personalizado', async () => {
+      const filtros: MetricasFiltrosAvancadosDto = {
+        periodo: PeriodoPredefinido.PERSONALIZADO,
+        dataInicioPersonalizada: '2024-01-01T00:00:00.000Z',
+        dataFimPersonalizada: '2024-12-31T23:59:59.999Z'
+      };
+      service.getImpactoSocial.mockResolvedValue(mockImpactoSocial);
+
+      const resultado = await controller.getImpactoSocial(filtros);
+
+      expect(resultado.success).toBe(true);
+      expect(resultado.data).toEqual(mockImpactoSocial);
+      expect(service.getImpactoSocial).toHaveBeenCalledWith(filtros);
     });
 
     it('deve conter todas as propriedades esperadas na resposta', async () => {
       // Arrange
+      const filtros: MetricasFiltrosAvancadosDto = {};
       service.getImpactoSocial.mockResolvedValue(mockImpactoSocial);
 
       // Act
-      const resultado = await controller.getImpactoSocial();
+      const resultado = await controller.getImpactoSocial(filtros);
 
       // Assert
       expect(resultado).toHaveProperty('success');
@@ -189,48 +240,95 @@ describe('MetricasDashboardController', () => {
       expect(resultado.data.graficos).toHaveProperty('recursos_faixa_etaria');
     });
 
-    it('deve propagar erros do serviço', async () => {
-      // Arrange
-      const erro = new Error('Erro no serviço');
-      service.getImpactoSocial.mockRejectedValue(erro);
+    it('deve lançar erro quando o serviço falha', async () => {
+      const filtros: MetricasFiltrosAvancadosDto = {};
+      service.getImpactoSocial.mockRejectedValue(new Error('Erro no serviço'));
 
-      // Act & Assert
-      await expect(controller.getImpactoSocial()).rejects.toThrow('Erro ao obter métricas de impacto social');
+      await expect(controller.getImpactoSocial(filtros)).rejects.toThrow(
+        'Erro ao obter métricas de impacto social'
+      );
     });
   });
 
   describe('getGestaoOperacional', () => {
-    it('deve retornar dados de gestão operacional com período padrão', async () => {
-      // Arrange
+    it('deve retornar métricas de gestão operacional com sucesso sem filtros', async () => {
+      const filtros: MetricasFiltrosAvancadosDto = {};
       service.getGestaoOperacional.mockResolvedValue(mockGestaoOperacional);
 
-      // Act
-      const resultado = await controller.getGestaoOperacional();
+      const resultado = await controller.getGestaoOperacional(filtros);
 
-      // Assert
-      expect(service.getGestaoOperacional).toHaveBeenCalledWith(undefined);
+      expect(resultado.success).toBe(true);
+      expect(resultado.message).toBe('Dados de gestão operacional carregados com sucesso');
       expect(resultado.data).toEqual(mockGestaoOperacional);
+      expect(resultado.timestamp).toBeDefined();
+      expect(service.getGestaoOperacional).toHaveBeenCalledWith(filtros);
     });
 
-    it('deve retornar dados de gestão operacional com período específico', async () => {
-      // Arrange
-      const periodo = '7d';
+    it('deve retornar métricas de gestão operacional com filtros de período', async () => {
+      const filtros: MetricasFiltrosAvancadosDto = {
+        periodo: PeriodoPredefinido.ULTIMOS_90_DIAS
+      };
       service.getGestaoOperacional.mockResolvedValue(mockGestaoOperacional);
 
-      // Act
-      const resultado = await controller.getGestaoOperacional(periodo);
+      const resultado = await controller.getGestaoOperacional(filtros);
 
-      // Assert
-      expect(service.getGestaoOperacional).toHaveBeenCalledWith(periodo);
+      expect(resultado.success).toBe(true);
       expect(resultado.data).toEqual(mockGestaoOperacional);
+      expect(service.getGestaoOperacional).toHaveBeenCalledWith(filtros);
+    });
+
+    it('deve retornar métricas de gestão operacional com filtros de unidade e usuário', async () => {
+      const filtros: MetricasFiltrosAvancadosDto = {
+        periodo: PeriodoPredefinido.ULTIMOS_30_DIAS,
+        unidades: ['123e4567-e89b-12d3-a456-426614174000', '123e4567-e89b-12d3-a456-426614174001'],
+         usuarios: ['123e4567-e89b-12d3-a456-426614174020', '123e4567-e89b-12d3-a456-426614174021'],
+        incluirArquivados: true
+      };
+      service.getGestaoOperacional.mockResolvedValue(mockGestaoOperacional);
+
+      const resultado = await controller.getGestaoOperacional(filtros);
+
+      expect(resultado.success).toBe(true);
+      expect(resultado.data).toEqual(mockGestaoOperacional);
+      expect(service.getGestaoOperacional).toHaveBeenCalledWith(filtros);
+    });
+
+    it('deve retornar métricas de gestão operacional com filtros de benefício e status', async () => {
+      const filtros: MetricasFiltrosAvancadosDto = {
+        beneficios: ['123e4567-e89b-12d3-a456-426614174010', '123e4567-e89b-12d3-a456-426614174012', '123e4567-e89b-12d3-a456-426614174014'],
+        statusList: [StatusSolicitacao.APROVADO, StatusSolicitacao.REJEITADO],
+        bairros: ['Centro']
+      };
+      service.getGestaoOperacional.mockResolvedValue(mockGestaoOperacional);
+
+      const resultado = await controller.getGestaoOperacional(filtros);
+
+      expect(resultado.success).toBe(true);
+      expect(resultado.data).toEqual(mockGestaoOperacional);
+      expect(service.getGestaoOperacional).toHaveBeenCalledWith(filtros);
+    });
+
+    it('deve retornar métricas de gestão operacional com paginação', async () => {
+      const filtros: MetricasFiltrosAvancadosDto = {
+        limite: 50,
+        offset: 100
+      };
+      service.getGestaoOperacional.mockResolvedValue(mockGestaoOperacional);
+
+      const resultado = await controller.getGestaoOperacional(filtros);
+
+      expect(resultado.success).toBe(true);
+      expect(resultado.data).toEqual(mockGestaoOperacional);
+      expect(service.getGestaoOperacional).toHaveBeenCalledWith(filtros);
     });
 
     it('deve conter todas as propriedades esperadas na resposta', async () => {
-      // Arrange
-      service.getGestaoOperacional.mockResolvedValue(mockGestaoOperacional);
+       // Arrange
+       const filtros: MetricasFiltrosAvancadosDto = {};
+       service.getGestaoOperacional.mockResolvedValue(mockGestaoOperacional);
 
-      // Act
-      const resultado = await controller.getGestaoOperacional();
+       // Act
+       const resultado = await controller.getGestaoOperacional(filtros);
 
       // Assert
       expect(resultado).toHaveProperty('success');
@@ -268,39 +366,37 @@ describe('MetricasDashboardController', () => {
       expect(resultado.data.graficos).toHaveProperty('solicitacoes_unidade');
     });
 
-    it('deve propagar erros do serviço', async () => {
-      // Arrange
-      const erro = new Error('Erro no serviço');
-      service.getGestaoOperacional.mockRejectedValue(erro);
+    it('deve lançar erro quando o serviço falha', async () => {
+      const filtros: MetricasFiltrosAvancadosDto = {};
+      service.getGestaoOperacional.mockRejectedValue(new Error('Erro no serviço'));
 
-      // Act & Assert
-      await expect(controller.getGestaoOperacional()).rejects.toThrow('Erro ao obter métricas de gestão operacional');
+      await expect(controller.getGestaoOperacional(filtros)).rejects.toThrow(
+        'Erro ao obter métricas de gestão operacional'
+      );
     });
   });
 
   describe('Validação de tipos', () => {
     it('deve aceitar períodos válidos para impacto social', async () => {
-      // Arrange
-      service.getImpactoSocial.mockResolvedValue(mockImpactoSocial);
-      const periodosValidos = ['7d', '30d', '90d', '1y'];
+       service.getImpactoSocial.mockResolvedValue(mockImpactoSocial);
+       const periodosValidos = [PeriodoPredefinido.ULTIMOS_7_DIAS, PeriodoPredefinido.ULTIMOS_30_DIAS, PeriodoPredefinido.ULTIMOS_90_DIAS, PeriodoPredefinido.ANO_ATUAL];
 
-      // Act & Assert
-      for (const periodo of periodosValidos) {
-        await controller.getImpactoSocial(periodo);
-        expect(service.getImpactoSocial).toHaveBeenCalledWith(periodo);
-      }
-    });
+       for (const periodo of periodosValidos) {
+         const filtros: MetricasFiltrosAvancadosDto = { periodo };
+         await controller.getImpactoSocial(filtros);
+         expect(service.getImpactoSocial).toHaveBeenCalledWith(filtros);
+       }
+     });
 
     it('deve aceitar períodos válidos para gestão operacional', async () => {
-      // Arrange
-      service.getGestaoOperacional.mockResolvedValue(mockGestaoOperacional);
-      const periodosValidos = ['7d', '30d', '90d', '1y'];
+       service.getGestaoOperacional.mockResolvedValue(mockGestaoOperacional);
+       const periodosValidos = [PeriodoPredefinido.ULTIMOS_7_DIAS, PeriodoPredefinido.ULTIMOS_30_DIAS, PeriodoPredefinido.ULTIMOS_90_DIAS, PeriodoPredefinido.ANO_ATUAL];
 
-      // Act & Assert
-      for (const periodo of periodosValidos) {
-        await controller.getGestaoOperacional(periodo);
-        expect(service.getGestaoOperacional).toHaveBeenCalledWith(periodo);
-      }
-    });
+       for (const periodo of periodosValidos) {
+         const filtros: MetricasFiltrosAvancadosDto = { periodo };
+         await controller.getGestaoOperacional(filtros);
+         expect(service.getGestaoOperacional).toHaveBeenCalledWith(filtros);
+       }
+     });
   });
 });

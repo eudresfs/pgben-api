@@ -5,6 +5,7 @@ import {
   UseGuards,
   HttpStatus,
   HttpException,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { ImpactoSocialResponse } from '../interfaces/impacto-social.interface';
@@ -13,12 +14,15 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { MetricasDashboardService } from '../services/metricas-dashboard.service';
 import { PermissionGuard } from '@/auth/guards/permission.guard';
 import { RequiresPermission } from '@/auth/decorators/requires-permission.decorator';
+import { MetricasFiltrosAvancadosDto } from '../dto/metricas-filtros-avancados.dto';
 
 @ApiTags('Dashboard de Métricas')
 @Controller('dashboard')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class MetricasDashboardController {
+  private readonly logger = new Logger(MetricasDashboardController.name);
+
   constructor(
     private readonly metricasDashboardService: MetricasDashboardService,
   ) {}
@@ -30,22 +34,24 @@ export class MetricasDashboardController {
   @ApiOperation({
     summary: 'Obter métricas de impacto social',
     description:
-      'Retorna métricas consolidadas sobre o impacto social dos benefícios concedidos',
+      'Retorna métricas consolidadas sobre o impacto social dos benefícios concedidos. Suporta filtros avançados por unidade, benefício, bairro, status, usuário e período.',
   })
   @ApiResponse({
     status: 200,
     description: 'Métricas de impacto social obtidas com sucesso',
   })
-  @ApiQuery({
-    name: 'periodo',
-    required: false,
-    description: 'Período para filtrar as métricas (30d, 90d, 1y)',
-    example: '30d',
-  })
-  async getImpactoSocial(@Query('periodo') periodo?: string): Promise<ImpactoSocialResponse> {
+  @ApiQuery({ name: 'periodo', required: false, enum: ['HOJE', 'ONTEM', 'ULTIMOS_7_DIAS', 'ULTIMOS_30_DIAS', 'ULTIMOS_90_DIAS', 'MES_ATUAL', 'MES_ANTERIOR', 'TRIMESTRE_ATUAL', 'TRIMESTRE_ANTERIOR', 'ANO_ATUAL', 'ANO_ANTERIOR', 'PERSONALIZADO'], description: 'Período predefinido para análise' })
+  @ApiQuery({ name: 'unidades', required: false, type: [String], description: 'UUIDs das unidades para filtrar (array)' })
+  @ApiQuery({ name: 'beneficios', required: false, type: [String], description: 'UUIDs dos tipos de benefício para filtrar (array)' })
+  @ApiQuery({ name: 'bairros', required: false, type: [String], description: 'Nomes dos bairros para filtrar (array)' })
+  @ApiQuery({ name: 'status', required: false, type: [String], description: 'Status das solicitações para filtrar (array)' })
+  @ApiQuery({ name: 'usuarios', required: false, type: [String], description: 'UUIDs dos usuários responsáveis para filtrar (array)' })
+  @ApiQuery({ name: 'data_inicio', required: false, type: String, description: 'Data de início para período personalizado (ISO 8601)' })
+  @ApiQuery({ name: 'data_fim', required: false, type: String, description: 'Data de fim para período personalizado (ISO 8601)' })
+  async getImpactoSocial(@Query() filtros: MetricasFiltrosAvancadosDto): Promise<ImpactoSocialResponse> {
     try {
       const impactoSocial = await this.metricasDashboardService.getImpactoSocial(
-        periodo,
+        filtros,
       );
       return {
         success: true,
@@ -54,6 +60,13 @@ export class MetricasDashboardController {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
+      this.logger.error('Erro detalhado no getImpactoSocial:', {
+        message: error.message,
+        stack: error.stack,
+        filtros,
+        errorName: error.constructor.name,
+      });
+      
       throw new HttpException(
         {
           success: false,
@@ -69,22 +82,24 @@ export class MetricasDashboardController {
   @RequiresPermission({permissionName: 'dashboard.gestao_operacional'})
   @ApiOperation({
     summary: 'Obter métricas de gestão operacional',
-    description: 'Retorna métricas sobre a gestão operacional do sistema de benefícios',
+    description: 'Retorna métricas sobre a gestão operacional do sistema de benefícios. Suporta filtros avançados por unidade, benefício, bairro, status, usuário e período.',
   })
   @ApiResponse({
     status: 200,
     description: 'Métricas de gestão operacional obtidas com sucesso',
   })
-  @ApiQuery({
-    name: 'periodo',
-    required: false,
-    description: 'Período para filtrar as métricas (30d, 90d, 1y)',
-    example: '30d',
-  })
-  async getGestaoOperacional(@Query('periodo') periodo?: string): Promise<GestaoOperacionalResponse> {
+  @ApiQuery({ name: 'periodo', required: false, enum: ['HOJE', 'ONTEM', 'ULTIMOS_7_DIAS', 'ULTIMOS_30_DIAS', 'ULTIMOS_90_DIAS', 'MES_ATUAL', 'MES_ANTERIOR', 'TRIMESTRE_ATUAL', 'TRIMESTRE_ANTERIOR', 'ANO_ATUAL', 'ANO_ANTERIOR', 'PERSONALIZADO'], description: 'Período predefinido para análise' })
+  @ApiQuery({ name: 'unidades', required: false, type: [String], description: 'UUIDs das unidades para filtrar (array)' })
+  @ApiQuery({ name: 'beneficios', required: false, type: [String], description: 'UUIDs dos tipos de benefício para filtrar (array)' })
+  @ApiQuery({ name: 'bairros', required: false, type: [String], description: 'Nomes dos bairros para filtrar (array)' })
+  @ApiQuery({ name: 'status', required: false, type: [String], description: 'Status das solicitações para filtrar (array)' })
+  @ApiQuery({ name: 'usuarios', required: false, type: [String], description: 'UUIDs dos usuários responsáveis para filtrar (array)' })
+  @ApiQuery({ name: 'data_inicio', required: false, type: String, description: 'Data de início para período personalizado (ISO 8601)' })
+  @ApiQuery({ name: 'data_fim', required: false, type: String, description: 'Data de fim para período personalizado (ISO 8601)' })
+  async getGestaoOperacional(@Query() filtros: MetricasFiltrosAvancadosDto): Promise<GestaoOperacionalResponse> {
     try {
       const gestaoOperacional = await this.metricasDashboardService.getGestaoOperacional(
-        periodo,
+        filtros,
       );
       return {
         success: true,
@@ -93,6 +108,13 @@ export class MetricasDashboardController {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
+      this.logger.error('Erro detalhado no getGestaoOperacional:', {
+        message: error.message,
+        stack: error.stack,
+        filtros,
+        errorName: error.constructor.name,
+      });
+      
       throw new HttpException(
         {
           success: false,
