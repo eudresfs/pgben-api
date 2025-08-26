@@ -53,6 +53,9 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 // Serviços compartilhados
 import { RequestContextHolder } from '../../common/services/request-context-holder.service';
 
+// Módulos internos
+import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
+
 /**
  * Módulo responsável pelo monitoramento, observabilidade e análise de métricas do sistema
  *
@@ -101,6 +104,9 @@ import { RequestContextHolder } from '../../common/services/request-context-hold
 
     // Importa o módulo compartilhado de autenticação
     AuthModule,
+
+    // Módulo de solicitação para acesso ao SolicitacaoRepository
+    SolicitacaoModule,
   ],
 
   // Controladores para API

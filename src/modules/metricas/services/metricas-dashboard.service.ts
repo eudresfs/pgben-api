@@ -14,6 +14,7 @@ import {
 import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
 import { StatusConcessao } from '../../../enums/status-concessao.enum';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
+import { SolicitacaoRepository } from '../../solicitacao/repositories/solicitacao.repository';
 import {
   ImpactoSocialData,
   ImpactoSocialMetricas,
@@ -64,6 +65,7 @@ export class MetricasDashboardService {
     private readonly composicaoFamiliarRepository: Repository<ComposicaoFamiliar>,
     @InjectRepository(Unidade)
     private readonly unidadeRepository: Repository<Unidade>,
+    private readonly solicitacaoScopedRepository: SolicitacaoRepository,
   ) {}
 
   /**
@@ -786,5 +788,33 @@ export class MetricasDashboardService {
       quantidade: parseInt(item.quantidade),
       percentual: total > 0 ? Math.round((parseInt(item.quantidade) / total) * 1000) / 10 : 0,
     }));
+  }
+
+  /**
+   * Obtém a contagem de solicitações agrupadas por status
+   * Utiliza o repositório com escopo para respeitar permissões e filtros
+   * @returns Objeto com total e array de status com contagens
+   */
+  async obterSolicitacoesPorStatus(): Promise<{ total: number; porStatus: { status: string; quantidade: number }[] }> {
+    try {
+      // Utiliza o método contarPorStatus do repositório com escopo
+      const contagemPorStatus = await this.solicitacaoScopedRepository.contarPorStatus();
+      
+      // Converte o objeto Record<StatusSolicitacao, number> para o formato esperado
+      const porStatus = Object.entries(contagemPorStatus).map(([status, quantidade]) => ({
+        status,
+        quantidade,
+      }));
+      
+      // Calcula o total somando todas as contagens
+      const total = porStatus.reduce((acc, item) => acc + item.quantidade, 0);
+      
+      return {
+        total,
+        porStatus,
+      };
+    } catch (error) {
+      throw new Error(`Erro ao obter contagem de solicitações por status: ${error.message}`);
+    }
   }
 }

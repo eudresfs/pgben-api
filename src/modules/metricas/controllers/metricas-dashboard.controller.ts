@@ -125,4 +125,38 @@ export class MetricasDashboardController {
       );
     }
   }
+
+  @Get('solicitacoes/status')
+  @ApiOperation({ summary: 'Obter contagem de solicitações por status' })
+  @ApiResponse({
+    status: 200,
+    description: 'Contagem de solicitações por status obtida com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        total: { type: 'number', description: 'Total de solicitações' },
+        porStatus: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              status: { type: 'string', description: 'Status da solicitação' },
+              count: { type: 'number', description: 'Quantidade de solicitações com este status' },
+            },
+          },
+        },
+      },
+    },
+  })
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  async getSolicitacoesPorStatus(): Promise<{ total: number; porStatus: { status: string; quantidade: number }[] }> {
+    try {
+      return await this.metricasDashboardService.obterSolicitacoesPorStatus();
+    } catch (error) {
+      throw new HttpException(
+        'Erro ao obter contagem de solicitações por status',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

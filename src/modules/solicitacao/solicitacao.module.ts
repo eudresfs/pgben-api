@@ -131,6 +131,7 @@ import { SharedModule } from '../../shared/shared.module';
   exports: [
     TypeOrmModule,
     SolicitacaoService,
+    SolicitacaoRepository,
     DeterminacaoJudicialService,
     DeterminacaoJudicialAdapterService,
     WorkflowSolicitacaoService,
