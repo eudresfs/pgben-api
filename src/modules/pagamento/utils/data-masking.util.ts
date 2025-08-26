@@ -95,13 +95,13 @@ export class DataMaskingUtil {
     }
 
     switch (tipo) {
-      case 'cpf':
-        // Mascara CPF mantendo apenas os 3 primeiros e 2 últimos dígitos
-        // Ex: 123.456.789-01 -> 123.***.***-01
-        return chave.replace(
-          /(\d{3})\.?(\d{3})\.?(\d{3})\-?(\d{2})/,
-          '$1.***.***-$4',
-        );
+      // case 'cpf':
+      //   // Mascara CPF mantendo apenas os 3 primeiros e 2 últimos dígitos
+      //   // Ex: 123.456.789-01 -> 123.***.***-01
+      //   return chave.replace(
+      //     /(\d{3})\.?(\d{3})\.?(\d{3})\-?(\d{2})/,
+      //     '$1.***.***-$4',
+      //   );
 
       case 'cnpj':
         // Mascara CNPJ mantendo apenas os 2 primeiros e 2 últimos dígitos
