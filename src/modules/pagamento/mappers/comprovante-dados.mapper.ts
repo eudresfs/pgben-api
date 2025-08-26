@@ -28,14 +28,6 @@ export class ComprovanteDadosMapper {
     const infoBancaria = pagamento.info_bancaria;
     const tecnico = pagamento.solicitacao.tecnico;
     const unidade = pagamento.solicitacao.unidade;
-    const tipoBeneficio = pagamento.solicitacao.tipo_beneficio;
-
-    // Validações condicionais baseadas no tipo de benefício
-    const isAluguelSocial = tipoBeneficio.codigo === 'aluguel-social';
-    
-    if (isAluguelSocial && !endereco) {
-      throw new Error('Endereço do beneficiário é obrigatório para aluguel social');
-    }
 
     return {
       beneficiario: {

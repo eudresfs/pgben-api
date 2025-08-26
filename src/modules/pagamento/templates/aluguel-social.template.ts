@@ -31,7 +31,7 @@ export class AluguelSocialTemplate {
     const endereco = dados.beneficiario.endereco
       ? `${dados.beneficiario.endereco.logradouro}, 
         ${dados.beneficiario.endereco.numero || 'S/N'}, ${dados.beneficiario.endereco.bairro}, ${dados.beneficiario.endereco.cidade}/${dados.beneficiario.endereco.estado}, ${dados.beneficiario.endereco.cep}`
-      : 'Endereço não informado';
+      : '_________________________________________________________';
 
     // Dados do locador - TODO: Implementar busca do locador nos dados do pagamento
     // Por enquanto, usando valores placeholder até que os dados do locador sejam disponibilizados

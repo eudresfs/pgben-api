@@ -366,7 +366,7 @@ export class ComprovanteController {
         usuario.id,
       );
 
-      const nomeArquivo = `comprovantes_lote_${new Date().toISOString().split('T')[0]}.pdf`;
+      const nomeArquivo = `recibos_${new Date().toISOString().split('T')[0]}.pdf`;
 
       res.set({
         'Content-Type': 'application/pdf',

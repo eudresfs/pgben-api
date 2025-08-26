@@ -28,6 +28,8 @@ import { PDFDocument } from 'pdf-lib';
  */
 @Injectable()
 export class ComprovanteService {
+  // Configuração de paralelismo para evitar sobrecarga do sistema
+  private readonly MAX_CONCURRENT_PROCESSING = 10;
   private readonly logger = new Logger(ComprovanteService.name);
 
   // Configurações de validação
@@ -332,9 +334,6 @@ export class ComprovanteService {
     // Buscar pagamento com todos os relacionamentos necessários
     const pagamento = await this.buscarPagamentoCompleto(pagamentoId);
 
-    // Validar dados obrigatórios
-    ComprovanteDadosMapper.validarDadosObrigatorios(pagamento);
-
     // Determinar tipo de comprovante baseado no código do tipo de benefício
     const tipoComprovante = this.determinarTipoComprovante(pagamento.solicitacao.tipo_beneficio.codigo);
 
@@ -365,23 +364,49 @@ export class ComprovanteService {
      const erros = [];
     const pdfsBuffers = [];
 
-    // Gerar comprovantes individuais
-     for (const pagamentoId of gerarLoteDto.pagamento_ids) {
-      try {
-        const pdfBuffer = await this.gerarPdfBuffer(pagamentoId, {
-           formato: 'pdf',
-         });
+    // Gerar comprovantes individuais em lotes paralelos controlados
+    const resultados = await this.processarEmLotesParalelos(
+      gerarLoteDto.pagamento_ids,
+      async (pagamentoId) => {
+        try {
+          const pdfBuffer = await this.gerarPdfBuffer(pagamentoId, {
+            formato: 'pdf',
+          });
+          
+          return {
+            sucesso: true,
+            pagamentoId,
+            pdfBuffer,
+          };
+        } catch (error) {
+          this.logger.error(`Erro ao gerar comprovante para pagamento ${pagamentoId}:`, error);
+          return {
+            sucesso: false,
+            pagamentoId,
+            erro: error.message,
+          };
+        }
+      }
+    );
+
+    // Processar resultados
+    for (const resultado of resultados) {
+      if (resultado.status === 'fulfilled') {
+        const { sucesso, pagamentoId, pdfBuffer, erro } = resultado.value;
         
-        pagamentosProcessados.push(pagamentoId);
-        
-        pdfsBuffers.push(pdfBuffer);
-      } catch (error) {
-        this.logger.error(`Erro ao gerar comprovante para pagamento ${pagamentoId}:`, error);
-         pagamentosFalharam.push(pagamentoId);
-         erros.push({
-           pagamentoId,
-           erro: error.message,
-         });
+        if (sucesso) {
+          pagamentosProcessados.push(pagamentoId);
+          pdfsBuffers.push(pdfBuffer);
+        } else {
+          pagamentosFalharam.push(pagamentoId);
+          erros.push({
+            pagamentoId,
+            erro,
+          });
+        }
+      } else {
+        // Caso a promise seja rejeitada (erro não capturado)
+        this.logger.error('Erro não capturado durante processamento:', resultado.reason);
       }
     }
 
@@ -432,16 +457,26 @@ export class ComprovanteService {
 
     const pdfsBuffers = [];
 
-    // Gerar PDFs individuais
-     for (const pagamentoId of gerarLoteDto.pagamento_ids) {
-      try {
-        const pdfBuffer = await this.gerarPdfBuffer(pagamentoId, {
-           formato: 'pdf',
-         });
-        pdfsBuffers.push(pdfBuffer);
-      } catch (error) {
-        this.logger.error(`Erro ao gerar PDF para pagamento ${pagamentoId}:`, error);
-        // Continua com os outros PDFs mesmo se um falhar
+    // Gerar PDFs individuais em lotes paralelos controlados
+    const resultadosPdfs = await this.processarEmLotesParalelos(
+      gerarLoteDto.pagamento_ids,
+      async (pagamentoId) => {
+        try {
+          const pdfBuffer = await this.gerarPdfBuffer(pagamentoId, {
+            formato: 'pdf',
+          });
+          return pdfBuffer;
+        } catch (error) {
+          this.logger.error(`Erro ao gerar PDF para pagamento ${pagamentoId}:`, error);
+          return null; // Retorna null para PDFs que falharam
+        }
+      }
+    );
+
+    // Filtrar apenas os PDFs gerados com sucesso
+    for (const resultado of resultadosPdfs) {
+      if (resultado.status === 'fulfilled' && resultado.value !== null) {
+        pdfsBuffers.push(resultado.value);
       }
     }
 
@@ -455,6 +490,33 @@ export class ComprovanteService {
     this.logger.log(`Buffer PDF em lote gerado com sucesso. Total de PDFs: ${pdfsBuffers.length}`);
     
     return pdfCombinado;
+  }
+
+  /**
+   * Processa itens em lotes paralelos controlados para evitar sobrecarga
+   */
+  private async processarEmLotesParalelos<T, R>(
+    items: T[],
+    processFunction: (item: T) => Promise<R>
+  ): Promise<PromiseSettledResult<R>[]> {
+    const resultados: PromiseSettledResult<R>[] = [];
+    
+    // Processar em lotes de tamanho MAX_CONCURRENT_PROCESSING
+    for (let i = 0; i < items.length; i += this.MAX_CONCURRENT_PROCESSING) {
+      const lote = items.slice(i, i + this.MAX_CONCURRENT_PROCESSING);
+      
+      this.logger.log(
+        `Processando lote ${Math.floor(i / this.MAX_CONCURRENT_PROCESSING) + 1}/${Math.ceil(items.length / this.MAX_CONCURRENT_PROCESSING)} ` +
+        `(${lote.length} itens)`
+      );
+      
+      const promisesLote = lote.map(item => processFunction(item));
+      const resultadosLote = await Promise.allSettled(promisesLote);
+      
+      resultados.push(...resultadosLote);
+    }
+    
+    return resultados;
   }
 
   /**
