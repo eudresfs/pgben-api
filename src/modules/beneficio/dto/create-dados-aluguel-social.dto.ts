@@ -8,6 +8,7 @@ import {
   IsUUID,
   ArrayMaxSize,
   MinLength,
+  Matches,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
@@ -103,6 +104,62 @@ export class CreateDadosAluguelSocialDto {
   })
   @IsOptional()
   observacoes?: string;
+
+  @ApiPropertyOptional({
+    description: 'Valor do aluguel pretendido',
+    example: 'R$ 600,00',
+  })
+  @IsOptional()
+  @IsString({ message: 'Valor do aluguel pretendido deve ser uma string' })
+  valor_aluguel_pretendido?: string;
+
+  @ApiPropertyOptional({
+    description: 'Endereço do imóvel pretendido',
+    example: 'Rua das Flores, 123 - Centro',
+  })
+  @IsOptional()
+  @IsString({ message: 'Endereço do imóvel pretendido deve ser uma string' })
+  endereco_imovel_pretendido?: string;
+
+  @ApiPropertyOptional({
+    description: 'Nome do locador',
+    example: 'João Silva',
+  })
+  @IsOptional()
+  @IsString({ message: 'Nome do locador deve ser uma string' })
+  nome_locador?: string;
+
+  @ApiPropertyOptional({
+    description: 'CPF do locador',
+    example: '123.456.789-00',
+  })
+  @IsOptional()
+  @IsString({ message: 'CPF do locador deve ser uma string' })
+  @Matches(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, {
+    message: 'CPF do locador deve estar no formato XXX.XXX.XXX-XX',
+  })
+  cpf_locador?: string;
+
+  @ApiPropertyOptional({
+    description: 'Telefone do locador',
+    example: '(11) 99999-9999',
+  })
+  @IsOptional()
+  @IsString({ message: 'Telefone do locador deve ser uma string' })
+  @Matches(/^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/, {
+    message: 'Telefone do locador deve estar em formato válido',
+  })
+  telefone_locador?: string;
+
+
+
+  @ApiPropertyOptional({
+    description: 'Determinação judicial',
+    example: false,
+  })
+  @IsOptional()
+  @IsBoolean({ message: 'Determinação judicial deve ser um booleano' })
+  determinacao_judicial?: boolean;
 }
 
 /**

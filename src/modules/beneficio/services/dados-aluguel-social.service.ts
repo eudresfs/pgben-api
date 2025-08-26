@@ -13,10 +13,8 @@ import { WorkflowInterceptor } from '../../../interceptors/workflow.interceptor'
 import { CacheInterceptor } from '../../../shared/interceptors/cache.interceptor';
 import { WorkflowSolicitacaoService } from '../../solicitacao/services/workflow-solicitacao.service';
 import { DadosAluguelSocial } from '../../../entities/dados-aluguel-social.entity';
-import {
-  CreateDadosAluguelSocialDto,
-  UpdateDadosAluguelSocialDto,
-} from '../dto/create-dados-aluguel-social.dto';
+import { CreateDadosAluguelSocialDto } from '../dto/create-dados-aluguel-social.dto';
+import { UpdateDadosAluguelSocialDto } from '../dto/update-dados-aluguel-social.dto';
 import {
   AbstractDadosBeneficioService,
   IPaginatedResult,
@@ -224,6 +222,29 @@ export class DadosAluguelSocialService extends AbstractDadosBeneficioService<
         );
       }
 
+      // Validação de campos do locador
+      if (data.cpf_locador && !/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(data.cpf_locador)) {
+        errorBuilder.add(
+          'cpf_locador',
+          'CPF do locador deve estar no formato XXX.XXX.XXX-XX. Validação de formato falhou.',
+        );
+      }
+
+      if (data.telefone_locador && !/^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/.test(data.telefone_locador)) {
+        errorBuilder.add(
+          'telefone_locador',
+          'Telefone do locador deve estar em formato válido. Validação de formato falhou.',
+        );
+      }
+
+      // Validação de determinação judicial
+      if (data.determinacao_judicial !== undefined && typeof data.determinacao_judicial !== 'boolean') {
+        errorBuilder.add(
+          'determinacao_judicial',
+          'Campo determinacao_judicial deve ser um booleano. Validação de tipo falhou.',
+        );
+      }
+
       // Nota: Removida validação de duplicação para permitir comportamento de upsert
       // A lógica de upsert é tratada no método create() da classe base
 
@@ -316,6 +337,31 @@ export class DadosAluguelSocialService extends AbstractDadosBeneficioService<
         errorBuilder.add(
           'observacoes',
           `Campo observacoes excede o limite máximo de ${BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES} caracteres. Validação de tamanho falhou.`,
+        );
+      }
+
+      // Validação de campos do locador
+      if (data.cpf_locador !== undefined && data.cpf_locador && !/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(data.cpf_locador)) {
+        errorBuilder.add(
+          'cpf_locador',
+          'CPF do locador deve estar no formato XXX.XXX.XXX-XX. Validação de formato falhou.',
+        );
+      }
+
+      if (data.telefone_locador !== undefined && data.telefone_locador && !/^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/.test(data.telefone_locador)) {
+        errorBuilder.add(
+          'telefone_locador',
+          'Telefone do locador deve estar em formato válido. Validação de formato falhou.',
+        );
+      }
+
+
+
+      // Validação de determinação judicial
+      if (data.determinacao_judicial !== undefined && typeof data.determinacao_judicial !== 'boolean') {
+        errorBuilder.add(
+          'determinacao_judicial',
+          'Campo determinacao_judicial deve ser um booleano. Validação de tipo falhou.',
         );
       }
 

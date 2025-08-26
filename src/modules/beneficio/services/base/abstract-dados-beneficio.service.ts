@@ -126,6 +126,9 @@ export abstract class AbstractDadosBeneficioService<
       );
     }
 
+    // Atualizar campos específicos na entidade Solicitacao
+    await this.atualizarCamposSolicitacao(createDto.solicitacao_id, createDto);
+
     // Atualizar status e substatus da solicitação apenas se for criação (não atualização)
     if (!isUpdate) {
       await this.atualizarStatusSolicitacao(
@@ -242,10 +245,54 @@ export abstract class AbstractDadosBeneficioService<
   }
 
   /**
-   * Atualizar status e substatus da solicitação após cadastro dos dados específicos
-   * @param solicitacaoId ID da solicitação
-   * @param usuarioId ID do usuário que realizou a operação
+   * Atualizar campos específicos na entidade Solicitacao baseado nos dados do benefício
    */
+  protected async atualizarCamposSolicitacao(
+    solicitacaoId: string,
+    createDto: TCreateDto,
+  ): Promise<void> {
+    try {
+      const updateData: Partial<Solicitacao> = {};
+
+      // Atualizar determinacao_judicial_flag se determinacao_judicial estiver presente
+      if ('determinacao_judicial' in createDto && createDto.determinacao_judicial) {
+        updateData.determinacao_judicial_flag = true;
+        this.logger.log(
+          `Campo determinacao_judicial_flag atualizado para true na solicitação ${solicitacaoId}`,
+        );
+      }
+
+      // Atualizar quantidade_parcelas se presente nos dados do benefício
+      if ('quantidade_parcelas' in createDto && createDto.quantidade_parcelas) {
+        updateData.quantidade_parcelas = createDto.quantidade_parcelas as number;
+        this.logger.log(
+          `Campo quantidade_parcelas atualizado para ${createDto.quantidade_parcelas} na solicitação ${solicitacaoId}`,
+        );
+      }
+
+      // Aplicar atualizações se houver campos para atualizar
+      if (Object.keys(updateData).length > 0) {
+        updateData.updated_at = new Date();
+        
+        await this.repository.manager.update(
+          Solicitacao,
+          { id: solicitacaoId },
+          updateData,
+        );
+
+        this.logger.log(
+          `Campos da solicitação ${solicitacaoId} atualizados com sucesso: ${Object.keys(updateData).join(', ')}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Erro ao atualizar campos da solicitação ${solicitacaoId}: ${error.message}`,
+        error.stack,
+      );
+      // Não propagar o erro para não afetar a criação dos dados de benefício
+    }
+  }
+
   protected async atualizarStatusSolicitacao(
     solicitacaoId: string,
     usuarioId?: string,
