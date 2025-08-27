@@ -119,10 +119,10 @@ export class PagamentoResponseDto extends PagamentoResponseBaseDto {
     },
   })
   responsavel_liberacao: {
-    id: string;
-    nome: string;
-    role: string;
-  };
+    id?: string;
+    nome?: string;
+    role?: string;
+  } = {};
 
   /**
    * Quantidade de comprovantes anexados

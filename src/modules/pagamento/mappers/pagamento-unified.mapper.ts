@@ -72,11 +72,13 @@ export class PagamentoUnifiedMapper {
       observacoes: pagamento.observacoes,
       numero_parcela: pagamento.numero_parcela || 1,
       total_parcelas: pagamento.total_parcelas || 1,
-      responsavel_liberacao: {
-        id: pagamento.liberado_por || 'sistema',
-        nome: 'Sistema',
-        role: 'Sistema',
-      },
+      responsavel_liberacao: pagamento.responsavel_liberacao
+        ? {
+            id: pagamento.responsavel_liberacao?.id,
+            nome: pagamento.responsavel_liberacao?.nome,
+            role: pagamento.responsavel_liberacao?.role?.toString(),
+          }
+        : null,
       quantidade_comprovantes: 0,
       created_at: pagamento.created_at,
       updated_at: pagamento.updated_at,
@@ -182,11 +184,13 @@ export class PagamentoUnifiedMapper {
       observacoes: pagamento.observacoes,
       numero_parcela: pagamento.numero_parcela || 1,
       total_parcelas: pagamento.total_parcelas || 1,
-      responsavel_liberacao: {
-        id: pagamento.liberado_por || 'sistema',
-        nome: 'Sistema',
-        role: 'Sistema',
-      },
+      responsavel_liberacao: pagamento.responsavel_liberacao
+        ? {
+            id: pagamento.responsavel_liberacao?.id,
+            nome: pagamento.responsavel_liberacao?.nome,
+            role: pagamento.responsavel_liberacao?.role?.toString(),
+          }
+        : null,
       quantidade_comprovantes: 0,
       created_at: pagamento.created_at,
       updated_at: pagamento.updated_at,

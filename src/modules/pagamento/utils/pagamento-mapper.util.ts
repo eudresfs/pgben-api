@@ -2,6 +2,7 @@ import { Pagamento } from '../../../entities/pagamento.entity';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { PagamentoResponseDto } from '../dtos/pagamento-response.dto';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
+import { number } from 'joi';
 
 /**
  * Utilitário para mapeamento de dados de pagamento
@@ -57,11 +58,13 @@ export class PagamentoMapper {
       total_parcelas: pagamento.total_parcelas || 1,
       data_liberacao: pagamento.data_liberacao,
       data_pagamento: pagamento.data_pagamento,
-      responsavel_liberacao: {
-        id: pagamento.liberado_por || 'sistema',
-        nome: 'Sistema',
-        role: 'Sistema',
-      },
+      responsavel_liberacao: pagamento.responsavel_liberacao
+        ? {
+            id: pagamento.responsavel_liberacao?.id,
+            nome: pagamento.responsavel_liberacao?.nome,
+            role: pagamento.responsavel_liberacao?.role?.toString(),
+          }
+        : null,
       quantidade_comprovantes: 0,
       created_at: pagamento.created_at,
       updated_at: pagamento.updated_at,
