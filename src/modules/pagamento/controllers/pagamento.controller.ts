@@ -373,7 +373,8 @@ export class PagamentoController {
         id: p.tecnico_id,
         nome: p.tecnico_nome
       },
-      tipo_visita: this.calcularTipoVisita(p.pagamento_numero_parcela, p.pagamento_total_parcelas)
+      tipo_visita: this.calcularTipoVisita(p.pagamento_numero_parcela, p.pagamento_total_parcelas),
+      tipo_concessao: p.tipo_concessao
     }));
 
     // Retornar resposta paginada

@@ -570,7 +570,7 @@ export class PagamentoRepository {
       .andWhere('pagamento.monitorado = :monitorado', { monitorado: false })
       .andWhere('beneficio.codigo = :beneficio', { beneficio: 'aluguel-social' })
       .select([
-        'pagamento',      
+        'pagamento',
         'cidadao.nome',
         'cidadao.cpf',
         'endereco.bairro',
@@ -579,6 +579,14 @@ export class PagamentoRepository {
         'tecnico.id',
         'tecnico.nome'
       ])
+      .addSelect(
+        `CASE 
+            WHEN solicitacao.solicitacao_original_id IS NOT NULL 
+            THEN 'renovacao' 
+            ELSE 'novo' 
+        END`,
+        'tipo_concessao'
+      );
 
     // Aplicar filtros opcionais
     if (filtros?.bairro) {
