@@ -293,27 +293,46 @@ export class PagamentoController {
   })
   @ApiOperation({
     summary: 'Busca pagamentos pendentes de monitoramento',
-    description: 'Retorna todos os pagamentos que ainda não têm visita/agendamento criado. Suporta filtros por bairro e CPF do beneficiário.'
+    description: 'Retorna todos os pagamentos que ainda não têm visita/agendamento criado. Suporta filtros por bairro, CPF do beneficiário e paginação.'
   })
   @ApiResponse({
     status: 200,
-    description: 'Lista de pagamentos pendentes de monitoramento',
-    type: [PagamentoPendenteMonitoramentoDto]
+    description: 'Lista paginada de pagamentos pendentes de monitoramento',
+    schema: {
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/PagamentoPendenteMonitoramentoDto' }
+        },
+        meta: {
+          type: 'object',
+          properties: {
+            page: { type: 'number' },
+            limit: { type: 'number' },
+            total: { type: 'number' },
+            totalPages: { type: 'number' }
+          }
+        }
+      }
+    }
   })
   async findPendentesMonitoramento(
     @Query() filtros: FiltrosMonitoramentoPendenteDto
   ) {
-    // Preparar filtros para o serviço
+    // Preparar filtros para o serviço incluindo paginação
     const filtrosServico = {
       ...(filtros.bairro && { bairro: filtros.bairro }),
-      ...(filtros.cpf && { cpf: filtros.cpf })
+      ...(filtros.cpf && { cpf: filtros.cpf }),
+      page: filtros.page || 1,
+      limit: filtros.limit || 10,
+      offset: filtros.offset
     };
 
-    const pagamentos = await this.pagamentoService.findPendentesMonitoramento(
-      Object.keys(filtrosServico).length > 0 ? filtrosServico : undefined
-    );
+    const resultado = await this.pagamentoService.findPendentesMonitoramento(filtrosServico);
 
-    return pagamentos.map(p => ({
+    // Mapear os itens para o formato de resposta
+    const items = resultado.items.map(p => ({
       pagamento_id: p.pagamento_id,
       dados_pagamento: {
         id: p.pagamento_id,
@@ -356,6 +375,17 @@ export class PagamentoController {
       },
       tipo_visita: this.calcularTipoVisita(p.numero_parcela, p.total_parcelas)
     }));
+
+    // Retornar resposta paginada
+    return {
+      items,
+      meta: {
+        page: filtros.page || 1,
+        limit: filtros.limit || 10,
+        total: resultado.total,
+        totalPages: Math.ceil(resultado.total / (filtros.limit || 10))
+      }
+    };
   }
 
   /**

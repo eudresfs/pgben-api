@@ -367,11 +367,14 @@ export class PagamentoService {
   /**
    * Busca pagamentos pendentes de monitoramento
    * Retorna pagamentos que ainda não têm agendamento/visita criado
-   * @param filtros Filtros opcionais para bairro e CPF
+   * @param filtros Filtros opcionais para bairro, CPF e paginação
    */
   async findPendentesMonitoramento(filtros?: {
     bairro?: string;
     cpf?: string;
+    page?: number;
+    limit?: number;
+    offset?: number;
   }) {
     return this.pagamentoRepository.findPendentesMonitoramento(filtros);
   }

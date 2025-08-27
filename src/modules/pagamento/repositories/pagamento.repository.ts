@@ -546,15 +546,17 @@ export class PagamentoRepository {
   /**
    * Busca pagamentos pendentes de monitoramento
    * Retorna pagamentos que ainda não têm agendamento/visita criado
-   * @param filtros Filtros opcionais para bairro e CPF
+   * @param filtros Filtros opcionais para bairro, CPF e paginação
    */
   async findPendentesMonitoramento(filtros?: {
     bairro?: string;
     cpf?: string;
-  }): Promise<any[]> {
+    page?: number;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ items: any[]; total: number }> {
     const queryBuilder = this.scopedRepository
       .createQueryBuilder('pagamento')
-      .distinctOn(['pagamento.id'])
       .leftJoin('pagamento.solicitacao', 'solicitacao')
       .leftJoin('solicitacao.tipo_beneficio', 'beneficio')
       .leftJoin('solicitacao.beneficiario', 'cidadao')
@@ -567,15 +569,65 @@ export class PagamentoRepository {
       .andWhere('pagamento.monitorado = :monitorado', { monitorado: false })
       .andWhere('beneficio.codigo = :beneficio', { beneficio: 'aluguel-social' })
       .select([
-        'pagamento.*',
-        'cidadao.nome AS cidadao_nome',
-        'cidadao.cpf AS cidadao_cpf',
-        'endereco.bairro AS endereco_bairro',
-        'unidade.id AS unidade_id',
-        'unidade.nome AS unidade_nome',
-        'tecnico.id AS tecnico_id',
-        'tecnico.nome AS tecnico_nome'
-      ]);
+        // Todos os campos do pagamento (não precisam de agregação pois são únicos por ID)
+        'pagamento.id',
+        'pagamento.solicitacao_id',
+        'pagamento.info_bancaria_id',
+        'pagamento.valor',
+        'pagamento.data_liberacao',
+        'pagamento.status',
+        'pagamento.metodo_pagamento',
+        'pagamento.liberado_por',
+        'pagamento.observacoes',
+        'pagamento.created_at',
+        'pagamento.updated_at',
+        'pagamento.removed_at',
+        'pagamento.data_agendamento',
+        'pagamento.data_prevista_liberacao',
+        'pagamento.data_pagamento',
+        'pagamento.data_conclusao',
+        'pagamento.criado_por',
+        'pagamento.comprovante_id',
+        'pagamento.concessao_id',
+        'pagamento.numero_parcela',
+        'pagamento.total_parcelas',
+        'pagamento.data_vencimento',
+        'pagamento.data_regularizacao',
+        'pagamento.monitorado',
+
+        // Campos das outras tabelas (usar MAX/MIN para evitar erro de GROUP BY)
+        'MAX(cidadao.nome) AS cidadao_nome',
+        'MAX(cidadao.cpf) AS cidadao_cpf',
+        'MAX(endereco.bairro) AS endereco_bairro',
+        'MAX(unidade.id) AS unidade_id',
+        'MAX(unidade.nome) AS unidade_nome',
+        'MAX(tecnico.id) AS tecnico_id',
+        'MAX(tecnico.nome) AS tecnico_nome'
+      ])
+      .groupBy('pagamento.id') // Agrupar apenas pelo ID único
+      .addGroupBy('pagamento.solicitacao_id')
+      .addGroupBy('pagamento.info_bancaria_id')
+      .addGroupBy('pagamento.valor')
+      .addGroupBy('pagamento.data_liberacao')
+      .addGroupBy('pagamento.status')
+      .addGroupBy('pagamento.metodo_pagamento')
+      .addGroupBy('pagamento.liberado_por')
+      .addGroupBy('pagamento.observacoes')
+      .addGroupBy('pagamento.created_at')
+      .addGroupBy('pagamento.updated_at')
+      .addGroupBy('pagamento.removed_at')
+      .addGroupBy('pagamento.data_agendamento')
+      .addGroupBy('pagamento.data_prevista_liberacao')
+      .addGroupBy('pagamento.data_pagamento')
+      .addGroupBy('pagamento.data_conclusao')
+      .addGroupBy('pagamento.criado_por')
+      .addGroupBy('pagamento.comprovante_id')
+      .addGroupBy('pagamento.concessao_id')
+      .addGroupBy('pagamento.numero_parcela')
+      .addGroupBy('pagamento.total_parcelas')
+      .addGroupBy('pagamento.data_vencimento')
+      .addGroupBy('pagamento.data_regularizacao')
+      .addGroupBy('pagamento.monitorado')
 
     // Aplicar filtros opcionais
     if (filtros?.bairro) {
@@ -590,10 +642,23 @@ export class PagamentoRepository {
       queryBuilder.andWhere('cidadao.cpf = :cpf', { cpf: cpfNumeros });
     }
 
-    return await queryBuilder
+    // Aplicar paginação se fornecida
+    const page = filtros?.page || 1;
+    const limit = filtros?.limit || 10;
+    const offset = filtros?.offset || (page - 1) * limit;
+
+    // Contar total de registros
+    const total = await queryBuilder.getCount();
+
+    // Aplicar paginação e buscar resultados
+    const items = await queryBuilder
       .orderBy('pagamento.id')
-      .addOrderBy('pagamento.numero_parcela')
+      .addOrderBy('pagamento.numero_parcela', 'ASC')
+      .offset(offset)
+      .limit(limit)
       .getRawMany();
+
+    return { items, total };
   }
 
 

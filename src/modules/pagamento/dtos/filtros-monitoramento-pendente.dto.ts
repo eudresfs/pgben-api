@@ -1,10 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, Length } from 'class-validator';
+import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
 
 /**
  * DTO para filtros de pagamentos pendentes de monitoramento
+ * Estende PaginationParamsDto para incluir suporte a paginação
  */
-export class FiltrosMonitoramentoPendenteDto {
+export class FiltrosMonitoramentoPendenteDto extends PaginationParamsDto {
   /**
    * Filtro por bairro do beneficiário
    * @example "Centro"
