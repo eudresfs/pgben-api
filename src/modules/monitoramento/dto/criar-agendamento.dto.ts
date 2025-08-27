@@ -57,7 +57,7 @@ export class CriarAgendamentoDto {
   @ApiProperty({
     description: 'Tipo da visita a ser realizada',
     enum: TipoVisita,
-    example: TipoVisita.ACOMPANHAMENTO,
+    example: TipoVisita.CONTINUIDADE,
     enumName: 'TipoVisita',
   })
   @IsNotEmpty({ message: 'Tipo da visita é obrigatório' })

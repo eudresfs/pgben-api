@@ -157,7 +157,7 @@ export class AgendamentoResponseDto {
   @ApiProperty({
     description: 'Tipo da visita que foi agendada',
     enum: TipoVisita,
-    example: TipoVisita.ACOMPANHAMENTO,
+    example: TipoVisita.CONTINUIDADE,
     enumName: 'TipoVisita',
   })
   tipo_visita: TipoVisita;

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import { AgendamentoVisita } from '../entities/agendamento-visita.entity';
 import { Pagamento } from '../../../entities/pagamento.entity';
 import { CriarAgendamentoDto } from '../dto/criar-agendamento.dto';
@@ -251,6 +251,26 @@ export class AgendamentoBatchService {
     queryRunner?: any,
   ): Promise<void> {
     const manager = queryRunner?.manager || this.dataSource.manager;
+
+    // Validar se já existe agendamento ativo para o mesmo pagamento_id
+    const agendamentoExistente = await manager.findOne(AgendamentoVisita, {
+      where: {
+        pagamento_id: agendamentoData.pagamento_id,
+        status: In([
+          StatusAgendamento.AGENDADO,
+          StatusAgendamento.CONFIRMADO,
+          StatusAgendamento.REAGENDADO,
+          StatusAgendamento.PENDENTE
+        ])
+      }
+    });
+    
+    if (agendamentoExistente) {
+      throw new Error(
+        `Já existe um agendamento ativo para o pagamento ${agendamentoData.pagamento_id}. ` +
+        `Status atual: ${agendamentoExistente.status}`
+      );
+    }
 
     // Validar pagamento e suas relações
     const pagamento = await manager.findOne(Pagamento, {

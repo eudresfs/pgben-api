@@ -60,7 +60,7 @@ export class RegistrarVisitaDto {
   @ApiProperty({
     description: 'Tipo da visita que foi realizada',
     enum: TipoVisita,
-    example: TipoVisita.ACOMPANHAMENTO,
+    example: TipoVisita.CONTINUIDADE,
     enumName: 'TipoVisita',
   })
   @IsNotEmpty({ message: 'Tipo da visita é obrigatório' })

@@ -336,29 +336,29 @@ export class PagamentoController {
       pagamento_id: p.pagamento_id,
       dados_pagamento: {
         id: p.pagamento_id,
-        solicitacao_id: p.solicitacao_id,
-        info_bancaria_id: p.info_bancaria_id,
-        valor: p.valor,
-        data_liberacao: p.data_liberacao,
-        status: p.status,
-        metodo_pagamento: p.metodo_pagamento,
-        liberado_por: p.liberado_por,
-        observacoes: p.observacoes,
-        created_at: p.created_at,
-        updated_at: p.updated_at,
-        removed_at: p.removed_at,
-        data_agendamento: p.data_agendamento,
-        data_prevista_liberacao: p.data_prevista_liberacao,
-        data_pagamento: p.data_pagamento,
-        data_conclusao: p.data_conclusao,
-        criado_por: p.criado_por,
-        comprovante_id: p.comprovante_id,
-        concessao_id: p.concessao_id,
-        numero_parcela: p.numero_parcela,
-        total_parcelas: p.total_parcelas,
-        data_vencimento: p.data_vencimento,
-        data_regularizacao: p.data_regularizacao,
-        monitorado: p.monitorado,
+        solicitacao_id: p.pagamento_solicitacao_id,
+        info_bancaria_id: p.pagamento_info_bancaria_id,
+        valor: p.pagamento_valor,
+        data_liberacao: p.pagamento_data_liberacao,
+        status: p.pagamento_status,
+        metodo_pagamento: p.pagamento_metodo_pagamento,
+        liberado_por: p.pagamento_liberado_por,
+        observacoes: p.pagamento_observacoes,
+        created_at: p.pagamento_created_at,
+        updated_at: p.pagamento_updated_at,
+        removed_at: p.pagamento_removed_at,
+        data_agendamento: p.pagamento_data_agendamento,
+        data_prevista_liberacao: p.pagamento_data_prevista_liberacao,
+        data_pagamento: p.pagamento_data_pagamento,
+        data_conclusao: p.pagamento_data_conclusao,
+        criado_por: p.pagamento_criado_por,
+        comprovante_id: p.pagamento_comprovante_id,
+        concessao_id: p.pagamento_concessao_id,
+        numero_parcela: p.pagamento_numero_parcela,
+        total_parcelas: p.pagamento_total_parcelas,
+        data_vencimento: p.pagamento_data_vencimento,
+        data_regularizacao: p.pagamento_data_regularizacao,
+        monitorado: p.pagamento_monitorado,
       },
       beneficiario: {
         nome: p.cidadao_nome,
@@ -373,7 +373,7 @@ export class PagamentoController {
         id: p.tecnico_id,
         nome: p.tecnico_nome
       },
-      tipo_visita: this.calcularTipoVisita(p.numero_parcela, p.total_parcelas)
+      tipo_visita: this.calcularTipoVisita(p.pagamento_numero_parcela, p.pagamento_total_parcelas)
     }));
 
     // Retornar resposta paginada
@@ -414,7 +414,7 @@ export class PagamentoController {
     } else if (parcela === totalParcelas) {
       return TipoVisita.RENOVACAO;
     } else {
-      return TipoVisita.ACOMPANHAMENTO;
+      return TipoVisita.CONTINUIDADE;
     }
   }
 
