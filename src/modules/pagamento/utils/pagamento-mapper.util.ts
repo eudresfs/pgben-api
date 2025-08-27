@@ -78,7 +78,11 @@ export class PagamentoMapper {
     if (pagamento.solicitacao) {
       dto.solicitacao = {
         id: pagamento.solicitacao.id,
-        beneficiario: pagamento.solicitacao.beneficiario?.nome || 'N/A',
+        beneficiario: {
+          id: pagamento.solicitacao.beneficiario?.id || '',
+          nome: pagamento.solicitacao.beneficiario?.nome || 'N/A',
+          cpf: pagamento.solicitacao.beneficiario?.cpf || 'N/A',
+        },
         tipo_beneficio: {
           id: pagamento.solicitacao.tipo_beneficio?.id || '',
           nome: pagamento.solicitacao.tipo_beneficio?.nome || 'N/A',
