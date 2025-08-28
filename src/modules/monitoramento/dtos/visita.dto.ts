@@ -18,6 +18,9 @@ import {
   ResultadoVisita,
   StatusAgendamento,
 } from '../enums';
+import { CidadaoResponseDto } from '@/modules/cidadao/dto/cidadao-response.dto';
+import { UsuarioResponseDto } from '@/modules/aprovacao/dtos/response/usuario-response.dto';
+import { UnidadeResponseDto } from '@/modules/unidade/dto/unidade-response.dto';
 
 /**
  * DTO para registrar uma nova visita
@@ -260,40 +263,34 @@ export class VisitaResponseDto {
   agendamento_id: string;
 
   @ApiProperty({
-    description: 'ID do beneficiário',
-    example: 'uuid-beneficiario',
+    description: 'Beneficiário',
+    type: () => CidadaoResponseDto,
   })
-  beneficiario_id: string;
+  beneficiario?: {
+    id: string,
+    cpf: string,
+    nome: string,
+  };
 
   @ApiProperty({
-    description: 'Nome do beneficiário',
-    example: 'João Silva',
+    description: 'Técnico Responsável',
+    type: () => UsuarioResponseDto,
   })
-  beneficiario_nome: string;
+  tecnico?: {
+    id: string,
+    role: string,
+    nome: string,
+    email: string,
+  };
 
   @ApiProperty({
-    description: 'ID do técnico responsável',
-    example: 'uuid-tecnico',
+    description: 'Unidade',
+    type: () => UnidadeResponseDto,
   })
-  tecnico_id: string;
-
-  @ApiProperty({
-    description: 'Nome do técnico responsável',
-    example: 'Maria Santos',
-  })
-  tecnico_nome: string;
-
-  @ApiProperty({
-    description: 'ID da unidade',
-    example: 'uuid-unidade',
-  })
-  unidade_id: string;
-
-  @ApiProperty({
-    description: 'Nome da unidade',
-    example: 'CRAS Centro',
-  })
-  unidade_nome: string;
+  unidade?: {
+    id: string,
+    nome: string,
+  };
 
   @ApiProperty({
     description: 'Tipo da visita',

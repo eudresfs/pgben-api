@@ -37,7 +37,7 @@ export class VisitaService {
     private readonly agendamentoRepository: Repository<AgendamentoVisita>,
     @InjectRepository(Pagamento)
     private readonly pagamentoRepository: Repository<Pagamento>,
-  ) {}
+  ) { }
 
   /**
    * Registra uma nova visita domiciliar
@@ -264,13 +264,13 @@ export class VisitaService {
         throw new NotFoundException(`Visita com ID ${id} não encontrada`);
       }
 
-     // Validar regras de negócio se resultado foi alterado
+      // Validar regras de negócio se resultado foi alterado
       if (updateVisitaDto.resultado) {
         // Criar um objeto compatível com RegistrarVisitaDto para validação
         const visitaParaValidacao = {
           ...updateVisitaDto,
           agendamento_id: visita.agendamento_id,
-    
+
         } as RegistrarVisitaDto;
         this.validateBusinessRules(visitaParaValidacao);
       }
@@ -441,7 +441,7 @@ export class VisitaService {
     try {
       await this.pagamentoRepository.update(
         { id: pagamentoId },
-        { 
+        {
           monitorado: true,
           updated_at: new Date()
         }
@@ -472,16 +472,16 @@ export class VisitaService {
     try {
       // Aplicar valores padrão e validar parâmetros de paginação
       const validatedParams = PaginationHelper.applyDefaults(paginationParams);
-      
+
       const filtrosRepository = this.convertToRepositoryFilters(filters);
-      
+
       const { items, total } = await this.visitaRepository.findWithFiltersAndPagination(
         filtrosRepository,
         validatedParams,
       );
-      
+
       const visitasDto = items.map(visita => this.buildResponseDto(visita));
-      
+
       return PaginationHelper.createPaginatedResponse(
         visitasDto,
         validatedParams.page,
@@ -502,9 +502,9 @@ export class VisitaService {
     try {
       const filtrosRepository = this.convertToRepositoryFilters(filters);
       const result = await this.visitaRepository.findWithFilters(filtrosRepository);
-      
+
       const visitasDto = result.map(visita => this.buildResponseDto(visita));
-      
+
       return { visitas: visitasDto, total: visitasDto.length };
     } catch (error) {
       this.logger.error(`Erro ao buscar todas as visitas: ${error.message}`);
@@ -517,11 +517,11 @@ export class VisitaService {
    */
   async buscarPorId(id: string): Promise<VisitaResponseDto> {
     const visita = await this.visitaRepository.findByIdWithRelations(id);
-    
+
     if (!visita) {
       throw new NotFoundException(`Visita com ID ${id} não encontrada`);
     }
-    
+
     return this.buildResponseDto(visita);
   }
 
@@ -596,7 +596,7 @@ export class VisitaService {
    */
   private convertToRepositoryFilters(filtros?: any): any {
     if (!filtros) return {};
-    
+
     return {
       beneficiario_id: filtros.beneficiario_id,
       tecnico_id: filtros.tecnico_id || filtros.tecnico_id,
@@ -640,19 +640,19 @@ export class VisitaService {
     try {
       // Aplicar valores padrão e validar parâmetros de paginação
       const validatedParams = PaginationHelper.applyDefaults(paginationParams);
-      
+
       const filtrosRepository = {
         ...this.convertToRepositoryFilters(filtros),
         recomenda_renovacao: true,
       };
-      
+
       const { items, total } = await this.visitaRepository.findWithFiltersAndPagination(
         filtrosRepository,
         validatedParams,
       );
-      
+
       const visitasDto = items.map(visita => this.buildResponseDto(visita));
-      
+
       return PaginationHelper.createPaginatedResponse(
         visitasDto,
         validatedParams.page,
@@ -714,19 +714,19 @@ export class VisitaService {
     try {
       // Aplicar valores padrão e validar parâmetros de paginação
       const validatedParams = PaginationHelper.applyDefaults(paginationParams);
-      
+
       const filtrosRepository = {
         ...this.convertToRepositoryFilters(filtros),
         necessita_nova_visita: true,
       };
-      
+
       const { items, total } = await this.visitaRepository.findWithFiltersAndPagination(
         filtrosRepository,
         validatedParams,
       );
-      
+
       const visitasDto = items.map(visita => this.buildResponseDto(visita));
-      
+
       return PaginationHelper.createPaginatedResponse(
         visitasDto,
         validatedParams.page,
@@ -784,19 +784,19 @@ export class VisitaService {
     try {
       // Aplicar valores padrão e validar parâmetros de paginação
       const validatedParams = PaginationHelper.applyDefaults(paginationParams);
-      
+
       const filtrosRepository = {
         ...this.convertToRepositoryFilters(filtros),
         problemas_elegibilidade: true,
       };
-      
+
       const { items, total } = await this.visitaRepository.findWithFiltersAndPagination(
         filtrosRepository,
         validatedParams,
       );
-      
+
       const visitasDto = items.map(visita => this.buildResponseDto(visita));
-      
+
       return PaginationHelper.createPaginatedResponse(
         visitasDto,
         validatedParams.page,
@@ -884,13 +884,21 @@ export class VisitaService {
     return {
       id: visita.id,
       agendamento_id: visita.agendamento_id,
-      beneficiario_id: visita.beneficiario_id,
-      beneficiario_nome: visita.beneficiario?.nome || 'N/A',
-      tecnico_id: visita.tecnico_id,
-      tecnico_nome: visita.tecnico_responsavel?.nome || 'N/A',
-      unidade_id: visita.unidade_id,
-      unidade_nome: visita.unidade?.nome || 'N/A',
-
+      beneficiario: {
+        id: visita.beneficiario_id,
+        nome: visita.beneficiario?.nome || 'N/A',
+        cpf: visita.beneficiario?.cpf || 'N/A'
+      },
+      tecnico: {
+        id: visita.tecnico_id,
+        nome: visita.tecnico_responsavel?.nome || 'N/A',
+        email: visita.tecnico_responsavel?.email || 'N/A',
+        role: visita.tecnico_responsavel?.role?.toString() || 'N/A'
+      },
+      unidade: {
+        id: visita.unidade_id,
+        nome: visita.unidade?.nome || 'N/A',
+      },
       tipo_visita: visita.tipo_visita,
       tipo_visita_label: getTipoVisitaLabel(visita.tipo_visita),
       status: visita.status,

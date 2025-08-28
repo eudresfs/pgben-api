@@ -386,9 +386,25 @@ export class VisitaRepository {
     return this.visitaRepository
       .createQueryBuilder('visita')
       .leftJoinAndSelect('visita.agendamento', 'agendamento')
-      .leftJoinAndSelect('visita.beneficiario', 'beneficiario')
-      .leftJoinAndSelect('visita.tecnico_responsavel', 'tecnico')
-      .leftJoinAndSelect('visita.unidade', 'unidade');
+      .leftJoin('visita.beneficiario', 'beneficiario')
+      .addSelect([
+        'beneficiario.id',
+        'beneficiario.nome',
+        'beneficiario.cpf'
+      ])
+      .leftJoin('visita.tecnico_responsavel', 'tecnico')
+      .addSelect([
+        'tecnico.id',
+        'tecnico.nome',
+        'tecnico.email',
+        'tecnico.role'
+      ])
+      .leftJoin('visita.unidade', 'unidade')
+      .addSelect([
+        'unidade.id',
+        'unidade.nome',
+        'unidade.endereco'
+      ])
   }
 
   /**

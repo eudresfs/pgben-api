@@ -134,10 +134,11 @@ export class AgendamentoController {
     }
   })
   async criarAgendamento(
+    @GetUser() usuario: Usuario,
     @Body(ValidationPipe) dto: CriarAgendamentoDto
   ): Promise<{ message: string; data: AgendamentoResponseDto }> {
     try {
-      const agendamento = await this.agendamentoService.criarAgendamento(dto);
+      const agendamento = await this.agendamentoService.criarAgendamento(dto, usuario);
 
       return {
         message: 'Agendamento criado com sucesso',
@@ -455,10 +456,11 @@ export class AgendamentoController {
     description: 'Agendamento não pode ser confirmado no status atual' 
   })
   async confirmarAgendamento(
-    @Param('id', ParseUUIDPipe) id: string
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() user: Usuario
   ): Promise<{ message: string; data: AgendamentoResponseDto }> {
     try {
-      const agendamento = await this.agendamentoService.confirmarAgendamento(id);
+      const agendamento = await this.agendamentoService.confirmarAgendamento(id, user);
 
       return {
         message: 'Agendamento confirmado com sucesso',
@@ -541,6 +543,7 @@ export class AgendamentoController {
   })
   async reagendarVisita(
     @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() user: Usuario,
     @Body('nova_data', ValidationPipe) novaData: Date,
     @Body('motivo_reagendamento') motivoReagendamento?: string
   ): Promise<{ message: string; data: AgendamentoResponseDto }> {
@@ -548,7 +551,8 @@ export class AgendamentoController {
       const agendamento = await this.agendamentoService.reagendarVisita(
         id,
         novaData,
-        motivoReagendamento
+        motivoReagendamento,
+        user.id
       );
 
       return {

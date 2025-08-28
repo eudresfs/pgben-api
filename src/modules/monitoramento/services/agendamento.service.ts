@@ -26,6 +26,7 @@ import {
   getPrioridadeVisitaPrazo,
   isStatusAgendamentoAtivo,
 } from '../../../enums';
+import { Usuario } from '@/entities';
 
 /**
  * Serviço responsável pelo gerenciamento de agendamentos de visitas domiciliares.
@@ -56,7 +57,7 @@ export class AgendamentoService {
    * @throws ConflictException se houver conflito de horário
    * @throws NotFoundException se entidades relacionadas não forem encontradas
    */
-  async criarAgendamento(createDto: CriarAgendamentoDto): Promise<AgendamentoResponseDto> {
+  async criarAgendamento(createDto: CriarAgendamentoDto, user: Usuario): Promise<AgendamentoResponseDto> {
     try {
       this.logger.log(
         `Iniciando criação de agendamento para pagamento ${createDto.pagamento_id}`,
@@ -80,6 +81,8 @@ export class AgendamentoService {
         observacoes: createDto.observacoes,
         endereco_visita: createDto.endereco_visita,
         dados_complementares: createDto.dados_complementares,
+        created_by: user.id,
+        updated_by: user.id,
         status: StatusAgendamento.AGENDADO,
         notificar_beneficiario: createDto.notificar_beneficiario || false,
       });
@@ -277,7 +280,7 @@ export class AgendamentoService {
    * @throws NotFoundException se não encontrado
    * @throws BadRequestException se não puder ser confirmado
    */
-  async confirmar(id: string): Promise<AgendamentoResponseDto> {
+  async confirmar(id: string, user: Usuario): Promise<AgendamentoResponseDto> {
     try {
       const agendamento = await this.agendamentoRepository.findByIdWithRelations(id);
 
@@ -293,6 +296,7 @@ export class AgendamentoService {
 
       agendamento.status = StatusAgendamento.CONFIRMADO;
       agendamento.updated_at = new Date();
+      agendamento.updated_by = user.id;
 
       const savedAgendamento = await this.agendamentoRepository.save(agendamento);
 
@@ -317,6 +321,7 @@ export class AgendamentoService {
     id: string,
     novaDataHora: Date,
     motivo?: string,
+    user?: string
   ): Promise<AgendamentoResponseDto> {
     try {
       const agendamento = await this.agendamentoRepository.findByIdWithRelations(id);
@@ -341,6 +346,7 @@ export class AgendamentoService {
       agendamento.data_agendamento = novaDataHora;
       agendamento.status = StatusAgendamento.REAGENDADO;
       agendamento.updated_at = new Date();
+      agendamento.updated_by = user;
 
       // Adicionar informações do reagendamento aos dados complementares
       agendamento.dados_complementares = {
@@ -398,6 +404,7 @@ export class AgendamentoService {
       agendamento.cancelado_por = cancelado_por;
       agendamento.data_cancelamento = new Date();
       agendamento.updated_at = new Date();
+      agendamento.updated_by = cancelado_por;
 
       const savedAgendamento = await this.agendamentoRepository.save(agendamento);
 
@@ -946,15 +953,15 @@ export class AgendamentoService {
   /**
    * Confirma um agendamento
    */
-  async confirmarAgendamento(id: string): Promise<AgendamentoResponseDto> {
-    return this.confirmar(id);
+  async confirmarAgendamento(id: string, user: Usuario): Promise<AgendamentoResponseDto> {
+    return this.confirmar(id, user);
   }
 
   /**
    * Reagenda uma visita
    */
-  async reagendarVisita(id: string, novaData: Date, motivo?: string): Promise<AgendamentoResponseDto> {
-    return this.reagendar(id, novaData, motivo);
+  async reagendarVisita(id: string, novaData: Date, motivo?: string, user?: string): Promise<AgendamentoResponseDto> {
+    return this.reagendar(id, novaData, motivo, user);
   }
 
   /**
@@ -1010,22 +1017,19 @@ export class AgendamentoService {
       id: agendamento.id,
       pagamento_id: agendamento.pagamento_id,
       beneficiario: {
-        id: agendamento.pagamento.solicitacao.beneficiario.id,
-        nome: agendamento.pagamento.solicitacao.beneficiario.nome,
-        cpf: agendamento.pagamento.solicitacao.beneficiario.cpf,
-        telefone: agendamento.pagamento.solicitacao.beneficiario.contatos?.[0].telefone,
+        id: agendamento.pagamento?.solicitacao?.beneficiario?.id || '',
+        nome: agendamento.pagamento?.solicitacao?.beneficiario?.nome || '',
+        cpf: agendamento.pagamento?.solicitacao?.beneficiario?.cpf || '',
       },
-      tecnico_responsavel: {
-        id: agendamento.pagamento.solicitacao.tecnico_id,
-        nome: agendamento.pagamento.solicitacao.tecnico?.nome || 'N/A',
-        matricula: agendamento.pagamento.solicitacao.tecnico?.matricula || 'N/A',
-        cargo: agendamento.pagamento.solicitacao.tecnico?.role?.nome || 'Técnico',
+      tecnico: {
+        id: agendamento.criado_por?.id || '',
+        nome: agendamento.criado_por?.nome || '',
+        email: agendamento.criado_por?.email || '',
+        matricula: agendamento.criado_por?.matricula || '',
       },
       unidade: {
-        id: agendamento.pagamento.solicitacao.unidade.id,
-        nome: agendamento.pagamento.solicitacao.unidade.nome,
-        codigo: agendamento.pagamento.solicitacao.unidade.codigo,
-        endereco: agendamento.pagamento.solicitacao.unidade.endereco,
+        id: agendamento.pagamento?.solicitacao?.unidade?.id || '',
+        nome: agendamento.pagamento?.solicitacao?.unidade?.nome || ''
       },
       data_agendamento: agendamento.data_agendamento,
       tipo_visita: agendamento.tipo_visita,

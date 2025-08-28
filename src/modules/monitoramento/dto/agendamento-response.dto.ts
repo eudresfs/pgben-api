@@ -107,11 +107,11 @@ export class AgendamentoResponseDto {
       cargo: 'Assistente Social',
     },
   })
-  tecnico_responsavel: {
+  tecnico: {
     id: string;
     nome: string;
     matricula: string;
-    cargo: string;
+    email: string;
   };
 
   /**
@@ -136,8 +136,6 @@ export class AgendamentoResponseDto {
   unidade: {
     id: string;
     nome: string;
-    codigo: string;
-    endereco: string;
   };
 
   /**
