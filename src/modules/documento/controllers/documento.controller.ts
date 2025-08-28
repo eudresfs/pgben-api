@@ -47,6 +47,10 @@ import {
   ThumbnailStatusResponseDto,
   ThumbnailStatsResponseDto,
 } from '../dto/thumbnail-response.dto';
+import {
+  DocumentoFiltrosAvancadosDto,
+  DocumentoFiltrosResponseDto,
+} from '../dto/documento-filtros-avancados.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { plainToInstance } from 'class-transformer';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
@@ -181,6 +185,81 @@ export class DocumentoController {
     @Query('cidadaoId') cidadaoId?: string,
   ) {
     return this.documentoService.findReutilizaveis(cidadaoId, tipo);
+  }
+
+  /**
+   * Busca avançada de documentos com filtros múltiplos
+   * Permite filtrar por tipo, status de verificação, tamanho, datas e mais
+   */
+  @Post('filtros-avancados')
+  @RequiresPermission({ permissionName: 'documento.listar' })
+  @ApiOperation({
+    summary: 'Busca avançada de documentos',
+    description: `
+      Realiza busca avançada de documentos com múltiplos filtros:
+      - Filtros por tipo de documento, status de verificação, reutilização
+      - Filtros por cidadão, solicitação, usuário de upload/verificação
+      - Filtros por tamanho de arquivo (mínimo e máximo)
+      - Filtros por tipo MIME
+      - Busca textual por nome do arquivo ou descrição
+      - Filtros por datas (upload, verificação, validade, criação, atualização)
+      - Paginação e ordenação personalizáveis
+      - Inclusão opcional de relacionamentos
+      
+      Exemplo de uso:
+      {
+        "tipo": ["rg", "cpf"],
+        "verificado": [true],
+        "tamanho_min": 1024,
+        "tamanho_max": 10485760,
+        "search": "documento",
+        "include_relations": ["cidadao", "usuario_upload"],
+        "data_upload_inicio": "2024-01-01",
+        "data_upload_fim": "2024-12-31",
+        "page": 1,
+        "limit": 20,
+        "sort_by": "data_upload",
+        "sort_order": "DESC"
+      }
+    `,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Busca realizada com sucesso',
+    type: DocumentoFiltrosResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Parâmetros de filtro inválidos',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Sem permissão para acessar documentos',
+  })
+  async filtrosAvancados(
+    @Body() filtros: DocumentoFiltrosAvancadosDto,
+    @GetUser() usuario: Usuario,
+  ): Promise<DocumentoFiltrosResponseDto> {
+    const inicioExecucao = Date.now();
+    
+    const resultado = await this.documentoService.filtrosAvancados(filtros);
+    
+    const tempoExecucao = Date.now() - inicioExecucao;
+    
+    // Auditoria da busca avançada
+    await this.auditEventEmitter.emitEntityAccessed(
+      'Documento',
+      'filtros-avancados',
+      usuario.id?.toString(),
+      {
+        synchronous: false
+      },
+    );
+    
+    return {
+      ...resultado,
+      tempo_execucao: tempoExecucao,
+    };
   }
 
   /**

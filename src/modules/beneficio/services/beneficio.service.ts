@@ -16,6 +16,8 @@ import { UpdateRequisitoDocumentoDto } from '../dto/update-requisito-documento.d
 import { Status, TipoDocumentoEnum } from '@/enums';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 import { TipoBeneficioSchema } from '../../../entities/tipo-beneficio-schema.entity';
+import { BeneficioFiltrosAvancadosDto, BeneficioFiltrosResponseDto } from '../dto/beneficio-filtros-avancados.dto';
+import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
 
 /**
  * Serviço de Benefícios
@@ -37,6 +39,8 @@ export class BeneficioService {
 
     @InjectRepository(TipoBeneficioSchema)
     private tipoBeneficioSchemaRepository: Repository<TipoBeneficioSchema>,
+
+    private filtrosAvancadosService: FiltrosAvancadosService,
   ) {}
 
   /**
@@ -381,6 +385,146 @@ export class BeneficioService {
       ehDocumentoOffice: requisito.templateEhDocumentoOffice(),
       templateCompleto: requisito.templateEstaCompleto(),
       infoTemplate: requisito.getInfoTemplate(),
+    };
+  }
+
+  /**
+   * Aplica filtros avançados para busca de benefícios
+   * Implementa busca otimizada com múltiplos critérios e paginação
+   * @param filtros Critérios de filtro avançados
+   * @returns Resultado paginado com metadados
+   */
+  async filtrosAvancados(
+    filtros: BeneficioFiltrosAvancadosDto,
+  ): Promise<BeneficioFiltrosResponseDto> {
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      periodicidade,
+      valor_min,
+      valor_max,
+      search,
+      include_relations,
+      data_inicio,
+      data_fim,
+    } = filtros;
+
+    // Construir query base com relacionamentos opcionais
+    const queryBuilder = this.tipoBeneficioRepository
+      .createQueryBuilder('tipo_beneficio');
+
+    // Incluir relacionamentos se solicitado
+    if (include_relations?.includes('requisito_documento')) {
+      queryBuilder.leftJoinAndSelect(
+        'tipo_beneficio.requisito_documento',
+        'requisito_documento',
+      );
+    }
+
+    // Aplicar filtros de status
+    if (status?.length) {
+      queryBuilder.andWhere('tipo_beneficio.status IN (:...status)', {
+        status,
+      });
+    }
+
+    // Aplicar filtros de periodicidade
+    if (periodicidade?.length) {
+      queryBuilder.andWhere('tipo_beneficio.periodicidade IN (:...periodicidade)', {
+        periodicidade,
+      });
+    }
+
+    // Aplicar filtros de valor
+    if (valor_min !== undefined) {
+      queryBuilder.andWhere('tipo_beneficio.valor >= :valor_min', {
+        valor_min,
+      });
+    }
+
+    if (valor_max !== undefined) {
+      queryBuilder.andWhere('tipo_beneficio.valor <= :valor_max', {
+        valor_max,
+      });
+    }
+
+    // Aplicar busca textual
+    if (search) {
+      queryBuilder.andWhere(
+        '(tipo_beneficio.nome ILIKE :search OR tipo_beneficio.codigo ILIKE :search OR tipo_beneficio.descricao ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    // Aplicar filtros de data de criação
+    if (data_inicio) {
+      queryBuilder.andWhere('tipo_beneficio.created_at >= :data_inicio', {
+        data_inicio,
+      });
+    }
+
+    if (data_fim) {
+      queryBuilder.andWhere('tipo_beneficio.created_at <= :data_fim', {
+        data_fim,
+      });
+    }
+
+
+    // Aplicar ordenação padrão
+    queryBuilder.orderBy('tipo_beneficio.created_at', 'DESC');
+
+    // Calcular paginação
+    const offset = (page - 1) * limit;
+    queryBuilder.skip(offset).take(limit);
+
+    // Executar consulta
+    const [items, total] = await queryBuilder.getManyAndCount();
+
+    // Enriquecer cada item com schema ativo se não incluído nos relacionamentos
+    const itemsEnriquecidos = await Promise.all(
+      items.map(async (item) => {
+        // Obter schema ativo para o tipo de benefício
+        const schemaAtivo = await this.tipoBeneficioSchemaRepository.findOne({
+          where: { tipo_beneficio_id: item.id, status: Status.ATIVO },
+        });
+
+        return {
+          ...item,
+          schema: schemaAtivo,
+        };
+      }),
+    );
+
+    // Construir filtros aplicados
+    const filtros_aplicados: any = {};
+    if (status?.length) filtros_aplicados.status = status;
+    if (periodicidade?.length) filtros_aplicados.periodicidade = periodicidade;
+    if (valor_min !== undefined) filtros_aplicados.valor_min = valor_min;
+    if (valor_max !== undefined) filtros_aplicados.valor_max = valor_max;
+    if (search) filtros_aplicados.search = search;
+    if (include_relations?.length) filtros_aplicados.include_relations = include_relations;
+    if (data_inicio) filtros_aplicados.data_inicio = data_inicio;
+    if (data_fim) filtros_aplicados.data_fim = data_fim;
+
+    // Construir metadados de paginação
+    const totalPages = Math.ceil(total / limit);
+    const hasNextPage = page < totalPages;
+    const hasPreviousPage = page > 1;
+
+    return {
+      items: itemsEnriquecidos,
+      total,
+      filtros_aplicados,
+      meta: {
+        limit,
+        offset,
+        page,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage,
+      },
+      tempo_execucao: 0, // Será preenchido no controlador
     };
   }
 }

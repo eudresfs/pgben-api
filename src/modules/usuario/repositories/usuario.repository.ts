@@ -443,4 +443,123 @@ export class UsuarioRepository {
     const repository = this.dataSource.getRepository(Usuario);
     return repository.count({ where });
   }
+
+  /**
+   * Busca usuários com filtros avançados e escopo aplicado automaticamente
+   * @param filtros Filtros avançados a serem aplicados
+   * @returns Array de usuários e total de registros
+   */
+  async findWithAdvancedFilters(filtros: {
+    skip?: number;
+    take?: number;
+    search?: string;
+    includeRelations?: boolean;
+    unidades?: string[];
+    setores?: string[];
+    roles?: string[];
+    status?: string[];
+    primeiro_acesso?: boolean;
+    tentativas_login_min?: number;
+    tentativas_login_max?: number;
+  }): Promise<[Usuario[], number]> {
+    const {
+      skip = 0,
+      take = 10,
+      search,
+      includeRelations = false,
+      unidades,
+      setores,
+      roles,
+      status,
+      primeiro_acesso,
+      tentativas_login_min,
+      tentativas_login_max,
+    } = filtros;
+
+    // Criar QueryBuilder com escopo aplicado automaticamente
+    const query = this.scopedRepository.createScopedQueryBuilder('usuario');
+
+    // Filtro por unidades específicas
+    if (unidades && unidades.length > 0) {
+      query.andWhere('usuario.unidade_id IN (:...unidades)', { unidades });
+    }
+
+    // Filtro por setores
+    if (setores && setores.length > 0) {
+      query.andWhere('usuario.setor_id IN (:...setores)', { setores });
+    }
+
+    // Filtro por roles
+    if (roles && roles.length > 0) {
+      query.andWhere('usuario.role_id IN (:...roles)', { roles });
+    }
+
+    // Filtro por status
+    if (status && status.length > 0) {
+      query.andWhere('usuario.status IN (:...status)', { status });
+    }
+
+    // Filtro por primeiro acesso
+    if (primeiro_acesso !== undefined) {
+      query.andWhere('usuario.primeiro_acesso = :primeiro_acesso', { primeiro_acesso });
+    }
+
+    // Filtro por tentativas de login
+    if (tentativas_login_min !== undefined) {
+      query.andWhere('usuario.tentativas_login >= :tentativas_login_min', { tentativas_login_min });
+    }
+    if (tentativas_login_max !== undefined) {
+      query.andWhere('usuario.tentativas_login <= :tentativas_login_max', { tentativas_login_max });
+    }
+
+    // Busca por nome/email/CPF/matrícula
+    if (search && search.trim() !== '') {
+      const searchTerm = search.trim();
+      const searchClean = searchTerm.replace(/\D/g, ''); // Remove formatação para CPF
+
+      const conditions: string[] = [];
+      const parameters: any = {};
+
+      // Busca por nome (case insensitive)
+      conditions.push('LOWER(usuario.nome) LIKE LOWER(:searchName)');
+      parameters.searchName = `%${searchTerm}%`;
+
+      // Busca por email (case insensitive)
+      conditions.push('LOWER(usuario.email) LIKE LOWER(:searchEmail)');
+      parameters.searchEmail = `%${searchTerm}%`;
+
+      // Busca por matrícula
+      conditions.push('usuario.matricula LIKE :searchMatricula');
+      parameters.searchMatricula = `%${searchTerm}%`;
+
+      // Busca por CPF (se o termo tem dígitos)
+      if (searchClean.length > 0) {
+        conditions.push('usuario.cpf LIKE :searchCpf');
+        parameters.searchCpf = `%${searchClean}%`;
+      }
+
+      // Aplicar condições OR
+      if (conditions.length > 0) {
+        query.andWhere(`(${conditions.join(' OR ')})`, parameters);
+      }
+    }
+
+    // Relacionamentos
+    if (includeRelations) {
+      query.leftJoinAndSelect('usuario.unidade', 'unidade');
+      query.leftJoinAndSelect('usuario.role', 'role');
+      query.leftJoinAndSelect('usuario.setor', 'setor');
+    } else {
+      // Sempre incluir relacionamentos básicos
+      query.leftJoinAndSelect('usuario.unidade', 'unidade');
+      query.leftJoinAndSelect('usuario.role', 'role');
+      query.leftJoinAndSelect('usuario.setor', 'setor');
+    }
+
+    return query
+      .orderBy('usuario.created_at', 'DESC')
+      .skip(skip)
+      .take(Math.min(take, 100))
+      .getManyAndCount();
+  }
 }

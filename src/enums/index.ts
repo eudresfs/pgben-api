@@ -53,6 +53,28 @@ export { TipoArquivo } from './tipo-arquivo.enum';
 export { TipoDocumentoEnum } from './tipo-documento.enum';
 export { TipoContextoNatalidade } from './tipo-contexto-natalidade.enum';
 
+// Enums de filtros avançados
+export { 
+  PeriodoPredefinido, 
+  PERIODO_PREDEFINIDO_LABELS, 
+  getPeriodoLabel, 
+  isPeriodoPersonalizado, 
+  PERIODOS_RECENTES, 
+  PERIODOS_HISTORICOS 
+} from './periodo-predefinido.enum';
+export { 
+  Prioridade, 
+  PRIORIDADE_LABELS, 
+  PRIORIDADE_VALORES, 
+  PRIORIDADE_CORES, 
+  getPrioridadeLabel, 
+  getPrioridadeValor, 
+  getPrioridadeCor,  
+  PRIORIDADES_ORDENADAS, 
+  PRIORIDADES_URGENTES, 
+  PRIORIDADES_NORMAIS 
+} from './prioridade.enum';
+
 // Enums de monitoramento e visitas domiciliares
 export { StatusAgendamento, STATUS_AGENDAMENTO_LABELS, STATUS_AGENDAMENTO_ATIVOS, STATUS_AGENDAMENTO_FINALIZADOS, isStatusAgendamentoAtivo, isStatusAgendamentoFinalizado, getStatusAgendamentoLabel } from './status-agendamento.enum';
 export { TipoVisita, TIPO_VISITA_LABELS, TIPO_VISITA_DESCRICOES, TIPOS_VISITA_PRIORITARIOS, TIPOS_VISITA_OBRIGATORIOS, isTipoVisitaPrioritario, isTipoVisitaObrigatorio, getTipoVisitaLabel } from './tipo-visita.enum';

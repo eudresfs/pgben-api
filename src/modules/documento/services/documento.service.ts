@@ -6,8 +6,10 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Brackets } from 'typeorm';
+import { Repository, Brackets, DataSource } from 'typeorm';
 import { Documento } from '../../../entities/documento.entity';
+import { DocumentoFiltrosAvancadosDto, DocumentoFiltrosResponseDto } from '../dto/documento-filtros-avancados.dto';
+import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
 import { TipoDocumentoEnum } from '../../../enums';
 import { InputSanitizerValidator } from '../validators/input-sanitizer.validator';
 import { StorageProviderFactory } from '../factories/storage-provider.factory';
@@ -87,6 +89,10 @@ export class DocumentoService {
     private readonly storageService: DocumentoStorageService,
     private readonly metadataService: DocumentoMetadataService,
     private readonly persistenceService: DocumentoPersistenceService,
+
+    // Serviços para filtros avançados
+    private readonly filtrosAvancadosService: FiltrosAvancadosService,
+    private readonly dataSource: DataSource,
   ) {
     this.maxRetries = this.configService.get<number>(
       'DOCUMENTO_MAX_RETRIES',
@@ -739,5 +745,179 @@ export class DocumentoService {
       pendentes,
       reutilizaveis,
     };
+  }
+
+  /**
+   * Busca avançada de documentos com filtros personalizados
+   * @param filtros Filtros avançados para busca
+   * @returns Resultado paginado com documentos e metadados
+   */
+  async filtrosAvancados(
+    filtros: DocumentoFiltrosAvancadosDto,
+  ): Promise<DocumentoFiltrosResponseDto> {
+    const startTime = Date.now();
+
+    try {
+      // Criar query builder base
+      const queryBuilder = this.dataSource
+        .createQueryBuilder()
+        .select('documento')
+        .from(Documento, 'documento')
+        .where('documento.removed_at IS NULL');
+
+      // Aplicar joins condicionais baseados nos relacionamentos solicitados
+      if (filtros.include_relations?.includes('usuario_upload')) {
+        queryBuilder.leftJoinAndSelect(
+          'documento.usuario_upload',
+          'usuario_upload',
+        );
+      }
+
+      if (filtros.include_relations?.includes('usuario_verificacao')) {
+        queryBuilder.leftJoinAndSelect(
+          'documento.usuario_verificacao',
+          'usuario_verificacao',
+        );
+      }
+
+      // Aplicar filtros específicos de documento
+      if (filtros.tipo?.length > 0) {
+        queryBuilder.andWhere('documento.tipo IN (:...tipos)', {
+          tipos: filtros.tipo,
+        });
+      }
+
+      if (filtros.verificado !== undefined) {
+        queryBuilder.andWhere('documento.verificado = :verificado', {
+          verificado: filtros.verificado,
+        });
+      }
+
+      if (filtros.reutilizavel !== undefined) {
+        queryBuilder.andWhere('documento.reutilizavel = :reutilizavel', {
+          reutilizavel: filtros.reutilizavel,
+        });
+      }
+
+      if (filtros.cidadaos?.length > 0) {
+        queryBuilder.andWhere('documento.cidadao_id IN (:...cidadaoId)', {
+          cidadaoId: filtros.cidadaos,
+        });
+      }
+
+      if (filtros.solicitacoes?.length > 0) {
+        queryBuilder.andWhere('documento.solicitacao_id IN (:...solicitacaoId)', {
+          solicitacaoId: filtros.solicitacoes,
+        });
+      }
+
+      if (filtros.usuarios_upload?.length > 0) {
+        queryBuilder.andWhere(
+          'documento.usuario_upload_id IN (:...usuarioUploadId)',
+          {
+            usuarioUploadId: filtros.usuarios_upload,
+          },
+        );
+      }
+
+      if (filtros.usuarios_verificacao?.length > 0) {
+        queryBuilder.andWhere(
+          'documento.usuario_verificacao_id IN (:...usuarioVerificacaoId)',
+          {
+            usuarioVerificacaoId: filtros.usuarios_verificacao,
+          },
+        );
+      }
+
+      // Filtros de tamanho
+      if (filtros.tamanho_min !== undefined) {
+        queryBuilder.andWhere('documento.tamanho >= :tamanhoMin', {
+          tamanhoMin: filtros.tamanho_min,
+        });
+      }
+
+      if (filtros.tamanho_max !== undefined) {
+        queryBuilder.andWhere('documento.tamanho <= :tamanhoMax', {
+          tamanhoMax: filtros.tamanho_max,
+        });
+      }
+
+      // Filtro de tipo MIME
+      if (filtros.mimetype?.length > 0) {
+        queryBuilder.andWhere('documento.mimetype IN (:...mimetypes)', {
+          mimetypes: filtros.mimetype,
+        });
+      }
+
+      // Busca textual
+      if (filtros.search) {
+        queryBuilder.andWhere(
+          '(documento.nome_original ILIKE :search OR documento.descricao ILIKE :search OR documento.observacoes_verificacao ILIKE :search)',
+          { search: `%${filtros.search}%` },
+        );
+      }
+
+      // Aplicar filtros de data usando o serviço de filtros avançados
+      this.filtrosAvancadosService.aplicarFiltrosData(
+        queryBuilder,
+        'documento',
+        {
+          data_upload_inicio: filtros.data_upload_inicio,
+          data_upload_fim: filtros.data_upload_fim,
+          data_verificacao_inicio: filtros.data_verificacao_inicio,
+          data_verificacao_fim: filtros.data_verificacao_fim,
+          data_validade_inicio: filtros.data_validade_inicio,
+          data_validade_fim: filtros.data_validade_fim,
+          data_inicio: filtros.data_inicio,
+          data_fim: filtros.data_fim,
+        },
+        {
+          data_upload: 'data_upload',
+          data_verificacao: 'data_verificacao',
+          data_validade: 'data_validade',
+          created_at: 'created_at',
+          updated_at: 'updated_at',
+        },
+      );
+
+      // Aplicar ordenação
+      const campoOrdenacao = filtros.sort_by || 'created_at';
+      const direcaoOrdenacao = filtros.sort_order || 'DESC';
+      queryBuilder.orderBy(
+        `documento.${campoOrdenacao}`,
+        direcaoOrdenacao as 'ASC' | 'DESC',
+      );
+
+      // Aplicar paginação e executar query
+      const resultado = await this.filtrosAvancadosService.aplicarPaginacao(
+        queryBuilder,
+        filtros,
+      );
+
+      const tempoExecucao = Date.now() - startTime;
+
+      return {
+        items: resultado.items,
+        total: resultado.total,
+        filtros_aplicados: this.filtrosAvancadosService.normalizarFiltros(filtros),
+        meta: {
+          page: filtros.page,
+          offset: (filtros.page - 1) * filtros.limit,
+          limit: filtros.limit,
+          totalPages: Math.ceil(resultado.total / filtros.limit),
+          hasNextPage: filtros.page < Math.ceil(resultado.total / filtros.limit),
+          hasPreviousPage: filtros.page > 1,
+        },
+        tempo_execucao: tempoExecucao,
+      };
+    } catch (error) {
+      this.logger.error(
+        'Erro ao executar filtros avançados de documentos',
+        error.stack,
+        DocumentoService.name,
+        { filtros, error: error.message },
+      );
+      throw error;
+    }
   }
 }

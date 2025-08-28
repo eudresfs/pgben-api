@@ -30,6 +30,7 @@ import {
   NovoBolsaFamiliaSacadoResponseDto,
 } from '../dto/portal-transparencia-response.dto';
 import { EnhancedCacheService } from '../../../shared/cache/enhanced-cache.service';
+import { CidadaoFiltrosAvancadosDto, CidadaoFiltrosResponseDto } from '../dto/cidadao-filtros-avancados.dto';
 
 @Injectable()
 export class CidadaoService {
@@ -899,5 +900,121 @@ private async consultarNovoBolsaFamiliaSacado(
     return plainToInstance(CidadaoResponseDto, cidadaoCompleto, {
       excludeExtraneousValues: true,
     });
+  }
+
+  /**
+   * Aplica filtros avançados para busca de cidadãos
+   * @param filtros Filtros avançados a serem aplicados
+   * @param unidadeUsuario ID da unidade do usuário (para controle de escopo)
+   * @param usuarioId ID do usuário que está realizando a consulta
+   * @returns Resultado paginado com metadados de filtros aplicados
+   */
+  async aplicarFiltrosAvancados(
+    filtros: CidadaoFiltrosAvancadosDto,
+    unidadeUsuario: string,
+    usuarioId: string,
+  ): Promise<CidadaoFiltrosResponseDto> {
+    const {
+      page = 1,
+      limit = 10,
+      unidades,
+      bairros,
+      status,
+      search,
+      include_relations = false,
+      apenas_com_beneficios = false,
+      idade_minima,
+      idade_maxima,
+      ...outrosFiltros
+    } = filtros;
+
+    const skip = (page - 1) * limit;
+    const take = Math.min(limit, 100);
+
+    // Construir filtros para o repositório
+    const filtrosRepositorio = {
+      skip,
+      take,
+      search,
+      includeRelations: include_relations,
+      unidades: unidades?.length > 0 ? unidades : undefined,
+      bairros: bairros?.length > 0 ? bairros : undefined,
+      status: status?.length > 0 ? status : undefined,
+      apenas_com_beneficios,
+      idade_minima,
+      idade_maxima,
+      unidade_usuario: unidadeUsuario, // Para controle de escopo
+    };
+
+    this.logger.debug(
+      `Aplicando filtros avançados: ${JSON.stringify(filtrosRepositorio)}`,
+    );
+
+    try {
+      // Buscar cidadãos com filtros avançados
+      const [cidadaos, total] = await this.cidadaoRepository.findWithAdvancedFilters(
+        filtrosRepositorio,
+      );
+
+      // Transformar dados para resposta
+      const items = cidadaos.map((cidadao) =>
+        plainToInstance(CidadaoResponseDto, cidadao, {
+          excludeExtraneousValues: true,
+        }),
+      );
+
+      // Calcular metadados de paginação
+      const totalPages = Math.ceil(total / take);
+      const hasNextPage = page < totalPages;
+      const hasPreviousPage = page > 1;
+
+      // Preparar filtros aplicados para resposta
+      const filtrosAplicados = {
+        unidades: unidades || [],
+        bairros: bairros || [],
+        status: status || [],
+        search: search || null,
+        include_relations,
+        apenas_com_beneficios,
+        idade_minima: idade_minima || null,
+        idade_maxima: idade_maxima || null,
+        ...outrosFiltros,
+      };
+
+      // Auditoria da consulta com filtros avançados
+      await this.auditEmitter.emitSystemEvent(
+        AuditEventType.SYSTEM_INFO,
+        {
+          filtros: filtrosAplicados,
+          total_encontrados: total,
+          pagina: page,
+          limite: take,
+          usuario_id: usuarioId,
+          entidade: 'Cidadao',
+        },
+      );
+
+      return {
+        items,
+        total,
+        filtros_aplicados: filtrosAplicados,
+        meta: {
+          limit: take,
+          offset: skip,
+          page,
+          totalPages,
+          hasNextPage,
+          hasPreviousPage,
+        }
+      };
+    } catch (error) {
+      this.logger.error(
+        `Erro ao aplicar filtros avançados: ${error.message}`,
+        error.stack,
+      );
+      throw new BadRequestException(
+        `Erro ao aplicar filtros: ${error.message}`,
+      );
+    }
   }
 }

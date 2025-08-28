@@ -4,7 +4,9 @@ import { Solicitacao } from '../../../entities/solicitacao.entity';
 import { Cidadao } from '../../../entities/cidadao.entity';
 import { Endereco } from '../../../entities/endereco.entity';
 import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
+import { DadosAluguelSocial } from '../../../entities/dados-aluguel-social.entity';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
+import { PublicoPrioritarioAluguel } from '../../../enums';
 import { IDadosComprovante } from '../interfaces/comprovante-pdf.interface';
 
 describe('ComprovanteDadosMapper', () => {
@@ -47,29 +49,88 @@ describe('ComprovanteDadosMapper', () => {
 
   const mockSolicitacao: Solicitacao = {
     id: 'solicitacao-id',
-    beneficiario_id: 'cidadao-id',
+    protocolo: 'PROT-2024-001',
+    beneficiario_id: 'beneficiario-id',
     beneficiario: mockCidadao,
+    solicitante_id: null,
+    solicitante: null,
     tipo_beneficio_id: 'tipo-beneficio-id',
     tipo_beneficio: mockTipoBeneficio,
-    data_solicitacao: new Date('2024-01-10'),
-    status: 'aprovada',
+    unidade_id: 'unidade-id',
+    unidade: null,
+    tecnico_id: 'tecnico-id',
+    tecnico: null,
+    data_abertura: new Date(),
+    status: 'aprovada' as any,
+    sub_status: null,
+    parecer_semtas: null,
+    aprovador_id: null,
+    aprovador: null,
+    data_aprovacao: null,
+    data_liberacao: null,
+    liberador_id: null,
+    liberador: null,
     observacoes: 'Solicitação aprovada',
+    dados_complementares: null,
+    valor: null,
+    documentos: [],
+    historico: [],
+    pendencias: [],
+    pagamentos: [],
+    info_bancaria: [],
+    concessao: null,
+    version: 1,
+    processo_judicial_id: null,
+    processo_judicial: null,
+    determinacao_judicial_id: null,
+    determinacao_judicial: null,
+    determinacao_judicial_flag: false,
+    quantidade_parcelas: 1,
+    prioridade: 3,
+    solicitacao_original_id: null,
+    solicitacao_original: null,
+    dados_dinamicos: null,
+    prazo_analise: null,
+    prazo_documentos: null,
+    prazo_processamento: null,
+    dados_aluguel_social: mockDadosAluguelSocial,
     created_at: new Date(),
     updated_at: new Date(),
+    removed_at: null,
   } as Solicitacao;
 
   const mockPagamento: Pagamento = {
     id: 'pagamento-id',
     solicitacao_id: 'solicitacao-id',
-    solicitacao: mockSolicitacao,
-    valor: 150.50,
-    data_liberacao: new Date('2024-01-15'),
-    metodo_pagamento: 'PIX',
-    numero_parcelas: 1,
+    concessao_id: null,
+    info_bancaria_id: null,
+    valor: 500.0,
+    data_liberacao: new Date(),
+    data_prevista_liberacao: null,
+    data_agendamento: null,
+    data_pagamento: null,
+    data_conclusao: null,
+    data_vencimento: null,
+    data_regularizacao: null,
     status: StatusPagamentoEnum.LIBERADO,
-    observacoes: 'Pagamento liberado',
+    metodo_pagamento: 'PIX' as any,
+    liberado_por: null,
+    criado_por: null,
+    comprovante_id: null,
+    numero_parcela: 1,
+    total_parcelas: 1,
+    observacoes: 'Teste',
+    monitorado: false,
     created_at: new Date(),
     updated_at: new Date(),
+    removed_at: null,
+    solicitacao: mockSolicitacao,
+    concessao: null,
+    info_bancaria: null,
+    responsavel_liberacao: null,
+    criador: null,
+    documentos: [],
+    confirmacoes: [],
   } as Pagamento;
 
   describe('mapearParaComprovante', () => {
@@ -133,11 +194,10 @@ describe('ComprovanteDadosMapper', () => {
       const resultado = ComprovanteDadosMapper.mapearParaComprovante(mockPagamento);
 
       // Assert
-      expect(resultado.assinaturas).toBeDefined();
-      expect(resultado.assinaturas.beneficiario.nome).toBe('João da Silva');
-      expect(resultado.assinaturas.beneficiario.data).toBeInstanceOf(Date);
-      expect(resultado.assinaturas.tecnico.nome).toBe('Técnico Responsável');
-      expect(resultado.assinaturas.tecnico.cargo).toBe('Assistente Social');
+      expect(resultado.beneficiario.nome).toBe('João da Silva');
+      expect(resultado.tecnico?.nome).toBe('Técnico Responsável');
+      expect(resultado.tecnico?.cargo).toBe('Assistente Social');
+      expect(resultado.dataGeracao).toBeInstanceOf(Date);
     });
 
     it('deve definir unidade padrão quando não especificada', () => {
@@ -151,181 +211,74 @@ describe('ComprovanteDadosMapper', () => {
     });
   });
 
-  describe('formatarCpf', () => {
-    it('deve formatar CPF com pontos e hífen', () => {
-      // Act
-      const cpfFormatado = ComprovanteDadosMapper.formatarCpf('12345678900');
 
-      // Assert
-      expect(cpfFormatado).toBe('123.456.789-00');
-    });
 
-    it('deve retornar CPF já formatado sem alteração', () => {
-      // Act
-      const cpfFormatado = ComprovanteDadosMapper.formatarCpf('123.456.789-00');
 
-      // Assert
-      expect(cpfFormatado).toBe('123.456.789-00');
-    });
-
-    it('deve lidar com CPF vazio', () => {
-      // Act
-      const cpfFormatado = ComprovanteDadosMapper.formatarCpf('');
-
-      // Assert
-      expect(cpfFormatado).toBe('');
-    });
-
-    it('deve lidar com CPF null ou undefined', () => {
-      // Act
-      const cpfNull = ComprovanteDadosMapper.formatarCpf(null as any);
-      const cpfUndefined = ComprovanteDadosMapper.formatarCpf(undefined as any);
-
-      // Assert
-      expect(cpfNull).toBe('');
-      expect(cpfUndefined).toBe('');
-    });
-  });
-
-  describe('formatarCep', () => {
-    it('deve formatar CEP com hífen', () => {
-      // Act
-      const cepFormatado = ComprovanteDadosMapper.formatarCep('01234567');
-
-      // Assert
-      expect(cepFormatado).toBe('01234-567');
-    });
-
-    it('deve retornar CEP já formatado sem alteração', () => {
-      // Act
-      const cepFormatado = ComprovanteDadosMapper.formatarCep('01234-567');
-
-      // Assert
-      expect(cepFormatado).toBe('01234-567');
-    });
-
-    it('deve lidar com CEP vazio', () => {
-      // Act
-      const cepFormatado = ComprovanteDadosMapper.formatarCep('');
-
-      // Assert
-      expect(cepFormatado).toBe('');
-    });
-
-    it('deve lidar com CEP de tamanho incorreto', () => {
-      // Act
-      const cepCurto = ComprovanteDadosMapper.formatarCep('12345');
-      const cepLongo = ComprovanteDadosMapper.formatarCep('123456789');
-
-      // Assert
-      expect(cepCurto).toBe('12345');
-      expect(cepLongo).toBe('123456789');
-    });
-  });
-
-  describe('gerarNumeroComprovante', () => {
-    it('deve gerar número de comprovante com formato correto', () => {
-      // Arrange
-      const data = new Date('2024-01-15');
-
-      // Act
-      const numero = ComprovanteDadosMapper.gerarNumeroComprovante(data);
-
-      // Assert
-      expect(numero).toMatch(/^COMP-202401-[A-Z0-9]{8}$/);
-    });
-
-    it('deve gerar números diferentes para chamadas consecutivas', () => {
-      // Arrange
-      const data = new Date('2024-01-15');
-
-      // Act
-      const numero1 = ComprovanteDadosMapper.gerarNumeroComprovante(data);
-      const numero2 = ComprovanteDadosMapper.gerarNumeroComprovante(data);
-
-      // Assert
-      expect(numero1).not.toBe(numero2);
-    });
-
-    it('deve incluir ano e mês corretos no número', () => {
-      // Arrange
-      const dataMarco = new Date('2024-03-15');
-      const dataDezembo = new Date('2023-12-25');
-
-      // Act
-      const numeroMarco = ComprovanteDadosMapper.gerarNumeroComprovante(dataMarco);
-      const numeroDezembro = ComprovanteDadosMapper.gerarNumeroComprovante(dataDezembo);
-
-      // Assert
-      expect(numeroMarco).toContain('202403');
-      expect(numeroDezembro).toContain('202312');
-    });
-  });
 
   describe('validarDadosObrigatorios', () => {
-    let dadosValidos: IDadosComprovante;
+    let pagamentoValido: Pagamento;
 
     beforeEach(() => {
-      dadosValidos = ComprovanteDadosMapper.mapearParaComprovante(mockPagamento);
+      pagamentoValido = { ...mockPagamento } as Pagamento;
     });
 
     it('deve validar dados completos sem erro', () => {
       // Act & Assert
       expect(() => {
-        ComprovanteDadosMapper.validarDadosObrigatorios(dadosValidos);
+        ComprovanteDadosMapper.validarDadosObrigatorios(pagamentoValido);
       }).not.toThrow();
     });
 
     it('deve lançar erro quando nome do beneficiário estiver ausente', () => {
       // Arrange
-      dadosValidos.beneficiario.nome = '';
+      pagamentoValido.solicitacao.beneficiario.nome = '';
 
       // Act & Assert
       expect(() => {
-        ComprovanteDadosMapper.validarDadosObrigatorios(dadosValidos);
+        ComprovanteDadosMapper.validarDadosObrigatorios(pagamentoValido);
       }).toThrow('Nome do beneficiário é obrigatório');
     });
 
     it('deve lançar erro quando CPF estiver ausente', () => {
       // Arrange
-      dadosValidos.beneficiario.cpf = '';
+      pagamentoValido.solicitacao.beneficiario.cpf = '';
 
       // Act & Assert
       expect(() => {
-        ComprovanteDadosMapper.validarDadosObrigatorios(dadosValidos);
+        ComprovanteDadosMapper.validarDadosObrigatorios(pagamentoValido);
       }).toThrow('CPF do beneficiário é obrigatório');
     });
 
     it('deve lançar erro quando valor do pagamento for inválido', () => {
       // Arrange
-      dadosValidos.pagamento.valor = 0;
+      pagamentoValido.valor = 0;
 
       // Act & Assert
       expect(() => {
-        ComprovanteDadosMapper.validarDadosObrigatorios(dadosValidos);
-      }).toThrow('Valor do pagamento deve ser maior que zero');
+        ComprovanteDadosMapper.validarDadosObrigatorios(pagamentoValido);
+      }).toThrow('Valor do pagamento é obrigatório');
     });
 
-    it('deve lançar erro quando endereço estiver incompleto', () => {
+    it('deve lançar erro quando data de liberação estiver ausente', () => {
       // Arrange
-      dadosValidos.beneficiario.endereco.logradouro = '';
+      pagamentoValido.data_liberacao = null;
 
       // Act & Assert
       expect(() => {
-        ComprovanteDadosMapper.validarDadosObrigatorios(dadosValidos);
-      }).toThrow('Logradouro é obrigatório');
+        ComprovanteDadosMapper.validarDadosObrigatorios(pagamentoValido);
+      }).toThrow('Data de liberação é obrigatória');
     });
 
     it('deve lançar erro com múltiplos campos ausentes', () => {
       // Arrange
-      dadosValidos.beneficiario.nome = '';
-      dadosValidos.beneficiario.cpf = '';
-      dadosValidos.pagamento.valor = 0;
+      pagamentoValido.solicitacao.beneficiario.nome = '';
+      pagamentoValido.solicitacao.beneficiario.cpf = '';
+      pagamentoValido.valor = 0;
 
       // Act & Assert
       expect(() => {
-        ComprovanteDadosMapper.validarDadosObrigatorios(dadosValidos);
-      }).toThrow('Nome do beneficiário é obrigatório, CPF do beneficiário é obrigatório, Valor do pagamento deve ser maior que zero');
+        ComprovanteDadosMapper.validarDadosObrigatorios(pagamentoValido);
+      }).toThrow('Nome do beneficiário é obrigatório, CPF do beneficiário é obrigatório, Valor do pagamento é obrigatório');
     });
   });
 
@@ -342,14 +295,14 @@ describe('ComprovanteDadosMapper', () => {
       expect(dadosExemplo.numeroComprovante).toMatch(/^COMP-\d{6}-[A-Z0-9]{8}$/);
     });
 
-    it('deve criar dados que passam na validação', () => {
+    it('deve criar dados que são válidos', () => {
       // Act
       const dadosExemplo = ComprovanteDadosMapper.criarDadosExemplo();
 
       // Assert
-      expect(() => {
-        ComprovanteDadosMapper.validarDadosObrigatorios(dadosExemplo);
-      }).not.toThrow();
+      expect(dadosExemplo.beneficiario.nome).toBeTruthy();
+      expect(dadosExemplo.beneficiario.cpf).toBeTruthy();
+      expect(dadosExemplo.pagamento.valor).toBeGreaterThan(0);
     });
 
     it('deve incluir todos os campos obrigatórios', () => {
@@ -362,7 +315,146 @@ describe('ComprovanteDadosMapper', () => {
       expect(dadosExemplo.unidade).toBeDefined();
       expect(dadosExemplo.dataGeracao).toBeDefined();
       expect(dadosExemplo.numeroComprovante).toBeDefined();
-      expect(dadosExemplo.assinaturas).toBeDefined();
+      expect(dadosExemplo.beneficiario.nome).toBeTruthy();
+      expect(dadosExemplo.beneficiario.cpf).toBeTruthy();
+    });
+  });
+
+  describe('Mapeamento de dados do locador para Aluguel Social', () => {
+    it('deve mapear corretamente os dados do locador quando presentes', () => {
+      // Arrange
+      const mockTipoBeneficioAluguel = {
+        id: 'tipo-beneficio-aluguel-id',
+        nome: 'aluguel-social',
+        descricao: 'Aluguel Social',
+        codigo: 'AS',
+        valor_maximo: 600,
+        ativo: true,
+        created_at: new Date(),
+        updated_at: new Date(),
+      } as any;
+
+      const mockSolicitacaoAluguel: Partial<Solicitacao> = {
+        ...mockSolicitacao,
+        tipo_beneficio: mockTipoBeneficioAluguel,
+      };
+
+      const mockSolicitacaoAluguelComDados = {
+        ...mockSolicitacaoAluguel,
+        dados_aluguel_social: {
+          id: 'dados-aluguel-id',
+          solicitacao_id: 'solicitacao-id',
+          publico_prioritario: PublicoPrioritarioAluguel.FAMILIAS_IDOSOS,
+          situacao_moradia_atual: 'Família reside em casa de parentes',
+          possui_imovel_interditado: false,
+          nome_locador: 'Maria Santos Silva',
+          cpf_locador: '123.456.789-00',
+          telefone_locador: '(11) 99999-9999',
+          endereco_imovel_pretendido: 'Rua das Palmeiras, 456 - Jardim das Flores',
+          valor_aluguel_pretendido: 'R$ 800,00',
+          created_at: new Date(),
+          updated_at: new Date(),
+        } as DadosAluguelSocial,
+      };
+
+      const mockPagamentoAluguel: Partial<Pagamento> = {
+         ...mockPagamento,
+         solicitacao: mockSolicitacaoAluguelComDados as any,
+       };
+
+      // Act
+      const resultado = ComprovanteDadosMapper.mapearParaComprovante(mockPagamentoAluguel as Pagamento);
+
+      // Assert
+      expect(resultado.locador).toBeDefined();
+      expect(resultado.locador?.nome).toBe('Maria Santos Silva');
+      expect(resultado.locador?.cpf).toBe('123.456.789-00');
+      expect(resultado.imovel).toBeDefined();
+      expect(resultado.imovel?.endereco).toBe('Rua das Palmeiras, 456 - Jardim das Flores');
+    });
+
+    it('deve retornar undefined para dados do locador quando não presentes', () => {
+      // Arrange
+      const mockTipoBeneficioAluguel = {
+        id: 'tipo-beneficio-aluguel-id',
+        nome: 'aluguel-social',
+        descricao: 'Aluguel Social',
+        codigo: 'AS',
+        valor_maximo: 800.00,
+        ativo: true,
+        created_at: new Date(),
+        updated_at: new Date(),
+      } as any;
+
+      const mockSolicitacaoAluguel: Partial<Solicitacao> = {
+        ...mockSolicitacao,
+        tipo_beneficio: mockTipoBeneficioAluguel,
+      };
+
+      const mockSolicitacaoAluguelSemDados = {
+        ...mockSolicitacaoAluguel,
+        dados_aluguel_social: {
+          id: 'dados-aluguel-id',
+          solicitacao_id: 'solicitacao-id',
+          publico_prioritario: PublicoPrioritarioAluguel.FAMILIAS_IDOSOS,
+          situacao_moradia_atual: 'Família reside em casa de parentes',
+          possui_imovel_interditado: false,
+          nome_locador: undefined,
+          cpf_locador: undefined,
+          endereco_imovel_pretendido: undefined,
+          created_at: new Date(),
+          updated_at: new Date(),
+        } as DadosAluguelSocial,
+      };
+
+      const mockPagamentoAluguel: Partial<Pagamento> = {
+         ...mockPagamento,
+         solicitacao: mockSolicitacaoAluguelSemDados as any,
+       };
+
+      // Act
+      const resultado = ComprovanteDadosMapper.mapearParaComprovante(mockPagamentoAluguel as Pagamento);
+
+      // Assert
+      expect(resultado.locador?.nome).toBeUndefined();
+      expect(resultado.locador?.cpf).toBeUndefined();
+      expect(resultado.imovel?.endereco).toBeUndefined();
+    });
+
+    it('deve mapear dados do locador apenas para tipo de benefício aluguel social', () => {
+      // Arrange
+      const mockTipoBeneficioCestaBasica = {
+        id: 'tipo-beneficio-id',
+        nome: 'Cesta Básica',
+        descricao: 'Benefício de auxílio alimentação',
+        codigo: 'cesta-basica',
+        valor_maximo: 200.00,
+        ativo: true,
+        created_at: new Date(),
+        updated_at: new Date(),
+      } as any;
+
+      const mockSolicitacaoCestaBasica: Partial<Solicitacao> = {
+        ...mockSolicitacao,
+        tipo_beneficio: mockTipoBeneficioCestaBasica,
+      };
+
+      const mockSolicitacaoCestaBasicaSemDados = {
+        ...mockSolicitacaoCestaBasica,
+        dados_aluguel_social: null,
+      };
+
+      const mockPagamentoCestaBasica: Partial<Pagamento> = {
+         ...mockPagamento,
+         solicitacao: mockSolicitacaoCestaBasicaSemDados as any,
+       };
+
+      // Act
+      const resultado = ComprovanteDadosMapper.mapearParaComprovante(mockPagamentoCestaBasica as Pagamento);
+
+      // Assert
+      expect(resultado.locador).toBeUndefined();
+      expect(resultado.imovel).toBeUndefined();
     });
   });
 });

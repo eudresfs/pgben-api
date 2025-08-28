@@ -8,6 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  OneToOne,
   Index,
   BeforeInsert,
   AfterUpdate,
@@ -28,6 +29,7 @@ import { SubStatusSolicitacao } from '../enums/sub-status-solicitacao.enum';
 import { InfoBancaria } from './info-bancaria.entity';
 import { Pagamento } from './pagamento.entity';
 import { Concessao } from './concessao.entity';
+import { DadosAluguelSocial } from './dados-aluguel-social.entity';
 
 @Entity('solicitacao')
 @Index(['protocolo'], { unique: true })
@@ -323,6 +325,12 @@ export class Solicitacao {
    */
   @Column({ name: 'prazo_processamento', type: 'timestamp', nullable: true })
   prazo_processamento: Date | null;
+
+  /**
+   * Dados específicos para solicitações de Aluguel Social
+   */
+  @OneToOne(() => DadosAluguelSocial, (dados) => dados.solicitacao, { nullable: true })
+  dados_aluguel_social?: DadosAluguelSocial;
 
   @CreateDateColumn()
   created_at: Date;

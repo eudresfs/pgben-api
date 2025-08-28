@@ -26,6 +26,7 @@ import { UpdateStatusUsuarioDto } from '../dto/update-status-usuario.dto';
 import { UpdateSenhaDto } from '../dto/update-senha.dto';
 import { AlterarSenhaPrimeiroAcessoDto } from '../dto/alterar-senha-primeiro-acesso.dto';
 import { RecuperarSenhaDto } from '../dto/recuperar-senha.dto';
+import { UsuarioFiltrosAvancadosDto, UsuarioFiltrosResponseDto } from '../dto/usuario-filtros-avancados.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { PrimeiroAcessoGuard } from '../../../auth/guards/primeiro-acesso.guard';
@@ -77,13 +78,52 @@ export class UsuarioController {
   })
   @AuditRead('Usuario', 'Listagem de usuários')
   @ApiOperation({
-    summary: 'Listar usuários',
-    description:
-      'Lista usuários com filtros dinâmicos. Aceita qualquer campo da entidade como filtro: nome, email, cpf, telefone, matricula, role_id, unidade_id, setor_id, status, primeiro_acesso, tentativas_login',
+    summary: 'Listar usuários com filtros dinâmicos',
+    description: `Lista usuários com filtros flexíveis e paginação otimizada.
+    
+    **Filtros disponíveis:**
+    - **Busca geral:** search (nome, email, CPF, matrícula)
+    - **Dados pessoais:** nome, email, cpf, telefone, matricula
+    - **Organizacionais:** role_id, unidade_id, setor_id
+    - **Status:** status, primeiro_acesso, tentativas_login
+    
+    **Funcionalidades:**
+    - Paginação configurável (page, limit)
+    - Inclusão opcional de relações (includeRelations)
+    - Busca parcial em campos de texto
+    - Filtros exatos para IDs e status
+    
+    **Exemplo de uso:**
+    \`GET /usuario?search=maria&status=ativo&unidade_id=123&page=1&limit=20\``,
   })
   @ApiResponse({
     status: 200,
-    description: 'Lista de usuários retornada com sucesso',
+    description: 'Lista paginada de usuários com filtros aplicados',
+    schema: {
+      example: {
+        data: [
+          {
+            id: '550e8400-e29b-41d4-a716-446655440000',
+            nome: 'Maria Santos',
+            email: 'maria.santos@semtas.gov.br',
+            cpf: '987.654.321-00',
+            status: 'ativo',
+            unidade: { nome: 'CRAS Centro' },
+            setor: { nome: 'Atendimento' }
+          }
+        ],
+        meta: {
+          total: 150,
+          page: 1,
+          limit: 20,
+          totalPages: 8
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Parâmetros de consulta inválidos'
   })
   @ApiQuery({
     name: 'includeRelations',
@@ -188,6 +228,100 @@ export class UsuarioController {
   }
 
   /**
+   * Lista usuários com filtros avançados
+   * Endpoint otimizado para consultas complexas com múltiplos filtros
+   */
+  @Post('filtros-avancados')
+  @RequiresPermission({
+    permissionName: 'usuario.listar',
+    scopeType: ScopeType.UNIT,
+  })
+  @AuditRead('Usuario', 'Listagem de usuários com filtros avançados')
+  @ApiOperation({ 
+    summary: 'Listar usuários com filtros avançados',
+    description: `Endpoint otimizado para consultas complexas de usuários com múltiplos critérios de filtro.
+    
+    **Funcionalidades principais:**
+    - Filtros por múltiplas unidades, setores e roles
+    - Filtros por status de usuário (ativo, inativo, bloqueado)
+    - Busca textual em nome, email e CPF
+    - Paginação otimizada com cache
+    - Ordenação por múltiplos campos
+    
+    **Casos de uso comuns:**
+    - Listar usuários de unidades específicas
+    - Buscar usuários por roles/permissões
+    - Filtrar por status para auditoria
+    - Relatórios de usuários ativos/inativos
+    - Gestão de acessos por setor`
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista paginada de usuários com filtros aplicados',
+    type: UsuarioFiltrosResponseDto,
+    schema: {
+      example: {
+        items: [
+          {
+            id: '550e8400-e29b-41d4-a716-446655440000',
+            nome: 'Maria Santos',
+            email: 'maria.santos@semtas.gov.br',
+            cpf: '987.654.321-00',
+            status: 'ATIVO',
+            ultimo_acesso: '2024-01-15T14:30:00Z',
+            unidade: {
+              nome: 'CRAS Centro'
+            },
+            setor: {
+              nome: 'Atendimento'
+            },
+            roles: [
+              {
+                nome: 'Técnico Social'
+              }
+            ]
+          }
+        ],
+        total: 85,
+        filtros_aplicados: {
+          unidades: ['550e8400-e29b-41d4-a716-446655440000'],
+          status: ['ativo'],
+          roles: ['tecnico-social']
+        },
+        meta: {
+          page: 1,
+          limit: 10,
+          totalPages: 9,
+          hasNextPage: true,
+          hasPreviousPage: false
+        },
+        tempo_execucao: 95
+      }
+    }
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Parâmetros de filtro inválidos',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: ['unidades deve ser um array de UUIDs válidos'],
+        error: 'Bad Request'
+      }
+    }
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso negado - Permissões insuficientes para visualizar usuários'
+  })
+  async aplicarFiltrosAvancados(
+    @Body() filtrosDto: UsuarioFiltrosAvancadosDto,
+    @ReqContext() context: RequestContext,
+  ): Promise<UsuarioFiltrosResponseDto> {
+    return this.usuarioService.aplicarFiltrosAvancados(filtrosDto);
+  }
+
+  /**
    * Retorna todas as roles (papéis) disponíveis no sistema baseado na hierarquia do usuário
    * Cada usuário só pode ver as roles abaixo da sua na hierarquia:
    * SUPER_ADMIN > ADMIN > GESTOR > COORDENADOR
@@ -219,8 +353,50 @@ export class UsuarioController {
     scopeType: ScopeType.SELF,
   })
   @AuditSensitiveAccess('Usuario', 'Acesso ao perfil do usuário')
-  @ApiOperation({ summary: 'Obter perfil do usuário atual' })
-  @ApiResponse({ status: 200, description: 'Perfil obtido com sucesso' })
+  @ApiOperation({ 
+    summary: 'Obter perfil do usuário autenticado',
+    description: `Retorna informações completas do perfil do usuário atual.
+    
+    **Dados retornados:**
+    - Informações pessoais (nome, email, telefone)
+    - Dados organizacionais (unidade, setor, role)
+    - Status da conta e último acesso
+    - Permissões e configurações do usuário`
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Perfil do usuário retornado com sucesso',
+    schema: {
+      example: {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        nome: 'João Silva',
+        email: 'joao.silva@semtas.gov.br',
+        cpf: '123.456.789-00',
+        telefone: '(85) 99999-9999',
+        matricula: 'SEMTAS2024001',
+        status: 'ATIVO',
+        primeiro_acesso: false,
+        ultimo_acesso: '2024-01-15T14:30:00Z',
+        unidade: {
+          id: '550e8400-e29b-41d4-a716-446655440001',
+          nome: 'CRAS Centro'
+        },
+        setor: {
+          id: '550e8400-e29b-41d4-a716-446655440002',
+          nome: 'Coordenação'
+        },
+        role: {
+          id: '550e8400-e29b-41d4-a716-446655440003',
+          nome: 'Coordenador',
+          nivel_hierarquico: 3
+        }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Token de autenticação inválido ou expirado' 
+  })
   async getProfile(@Request() req) {
     return this.usuarioService.getProfile(req.user.id);
   }
@@ -248,12 +424,76 @@ export class UsuarioController {
     permissionName: 'usuario.criar'
   })
   @AuditCreate('Usuario', 'Criação de novo usuário')
-  @ApiOperation({ summary: 'Criar novo usuário' })
-  @ApiResponse({ status: 201, description: 'Usuário criado com sucesso' })
-  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  @ApiOperation({ 
+    summary: 'Criar novo usuário no sistema',
+    description: `Cria um novo usuário com validações completas e envio automático de credenciais.
+    
+    **Processo de criação:**
+    1. Validação de dados únicos (email, CPF, matrícula)
+    2. Verificação de permissões hierárquicas
+    3. Geração de senha temporária
+    4. Envio de credenciais por email
+    5. Registro de auditoria
+    
+    **Validações aplicadas:**
+    - Email único no sistema
+    - CPF válido e único
+    - Matrícula única na unidade
+    - Role compatível com hierarquia do criador
+    - Unidade e setor válidos e ativos`
+  })
+  @ApiResponse({ 
+    status: 201, 
+    description: 'Usuário criado com sucesso e credenciais enviadas',
+    schema: {
+      example: {
+        success: true,
+        message: 'Usuário criado com sucesso',
+        data: {
+          id: '550e8400-e29b-41d4-a716-446655440000',
+          nome: 'Maria Santos',
+          email: 'maria.santos@semtas.gov.br',
+          cpf: '987.654.321-00',
+          matricula: 'SEMTAS2024002',
+          status: 'ATIVO',
+          primeiro_acesso: true,
+          unidade_id: '550e8400-e29b-41d4-a716-446655440001',
+          setor_id: '550e8400-e29b-41d4-a716-446655440002',
+          role_id: '550e8400-e29b-41d4-a716-446655440003',
+          created_at: '2024-01-15T14:30:00Z'
+        }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Dados de entrada inválidos',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: [
+          'email deve ser um email válido',
+          'cpf deve ter formato válido',
+          'nome deve ter pelo menos 2 caracteres'
+        ],
+        error: 'Bad Request'
+      }
+    }
+  })
   @ApiResponse({
     status: 409,
-    description: 'Email, CPF ou matrícula já em uso',
+    description: 'Conflito - Email, CPF ou matrícula já cadastrados',
+    schema: {
+      example: {
+        statusCode: 409,
+        message: 'Email já está em uso por outro usuário',
+        error: 'Conflict'
+      }
+    }
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Permissões insuficientes para criar usuário com esta role'
   })
   async create(
     @Body() createUsuarioDto: CreateUsuarioDto,
@@ -543,14 +783,49 @@ export class UsuarioController {
   })
   @ApiOperation({
     summary: 'Solicitar recuperação de senha',
-    description: 'Envia email com nova senha temporária para o usuário',
+    description: `Processa solicitação de recuperação de senha com segurança aprimorada.
+    
+    **Processo de recuperação:**
+    1. Validação do email fornecido
+    2. Verificação se usuário existe e está ativo
+    3. Geração de nova senha temporária
+    4. Envio seguro por email
+    5. Marcação para alteração obrigatória no próximo login
+    
+    **Segurança:**
+    - Resposta padronizada independente do email existir
+    - Rate limiting para prevenir ataques
+    - Auditoria de todas as tentativas
+    - Senha temporária com expiração
+    
+    **Nota:** Por segurança, sempre retorna sucesso, mesmo para emails não cadastrados.`,
   })
   @ApiResponse({
     status: 200,
-    description:
-      'Solicitação processada. Se o email estiver cadastrado, instruções serão enviadas.',
+    description: 'Solicitação processada com sucesso',
+    schema: {
+      example: {
+        success: true,
+        message: 'Se o email estiver cadastrado, as instruções de recuperação foram enviadas.',
+        timestamp: '2024-01-15T14:30:00Z'
+      }
+    }
   })
-  @ApiResponse({ status: 400, description: 'Email inválido' })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Email com formato inválido',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: ['email deve ser um endereço de email válido'],
+        error: 'Bad Request'
+      }
+    }
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Muitas tentativas - Aguarde antes de tentar novamente'
+  })
   async recuperarSenha(@Body() recuperarSenhaDto: RecuperarSenhaDto) {
     return this.usuarioService.solicitarRecuperacaoSenha(
       recuperarSenhaDto.email,
@@ -565,9 +840,59 @@ export class UsuarioController {
     permissionName: 'usuario.remover'
   })
   @AuditDelete('Usuario', 'Remoção de usuário do sistema')
-  @ApiOperation({ summary: 'Remover usuário (soft delete)' })
-  @ApiResponse({ status: 200, description: 'Usuário removido com sucesso' })
-  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
+  @ApiOperation({ 
+    summary: 'Remover usuário do sistema (soft delete)',
+    description: `Remove usuário do sistema mantendo histórico para auditoria.
+    
+    **Processo de remoção:**
+    1. Verificação de permissões hierárquicas
+    2. Validação de dependências (solicitações ativas, etc.)
+    3. Desativação da conta (soft delete)
+    4. Revogação de todas as sessões ativas
+    5. Registro completo de auditoria
+    
+    **Importante:**
+    - Remoção é reversível (soft delete)
+    - Histórico de ações é preservado
+    - Dados pessoais são mantidos para auditoria
+    - Usuário não poderá mais fazer login`
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Usuário removido com sucesso',
+    schema: {
+      example: {
+        success: true,
+        message: 'Usuário removido com sucesso',
+        data: {
+          id: '550e8400-e29b-41d4-a716-446655440000',
+          nome: 'Maria Santos',
+          email: 'maria.santos@semtas.gov.br',
+          status: 'REMOVIDO',
+          removed_at: '2024-01-15T14:30:00Z'
+        }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Usuário não encontrado ou já removido',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Usuário não encontrado',
+        error: 'Not Found'
+      }
+    }
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Permissões insuficientes para remover este usuário'
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Usuário possui dependências ativas que impedem a remoção'
+  })
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
     @ReqContext() context: RequestContext,

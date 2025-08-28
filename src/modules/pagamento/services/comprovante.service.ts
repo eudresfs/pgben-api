@@ -559,15 +559,15 @@ export class ComprovanteService {
    */
   private determinarTipoComprovante(codigoTipoBeneficio: string): string {
     const mapeamento = {
-      'cesta-basica': 'Cesta Básica',
-      'aluguel-social': 'Aluguel Social',
+      'cesta-basica': 'cesta_basica',
+      'aluguel-social': 'aluguel_social',
     };
 
     const tipoComprovante = mapeamento[codigoTipoBeneficio];
     
     if (!tipoComprovante) {
       throw new BadRequestException(
-        `Tipo de benefício não suportado para geração de comprovante: ${codigoTipoBeneficio}`,
+        `Não há um modelo de recibo disponível para o benefício: ${codigoTipoBeneficio}`,
       );
     }
 
@@ -603,9 +603,11 @@ export class ComprovanteService {
       .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade');
 
-    // Adiciona join com endereços apenas se for aluguel social
+    // Adiciona joins específicos para aluguel social
     if (isAluguelSocial) {
-      queryBuilder.leftJoinAndSelect('beneficiario.enderecos', 'enderecos');
+      queryBuilder
+        .leftJoinAndSelect('beneficiario.enderecos', 'enderecos')
+        .leftJoinAndSelect('solicitacao.dados_aluguel_social', 'dados_aluguel_social');
     }
 
     const pagamento = await queryBuilder

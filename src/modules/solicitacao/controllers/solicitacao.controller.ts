@@ -29,6 +29,8 @@ import {
   PaginatedResponse,
   FindAllOptions,
 } from '../services/solicitacao.service';
+import { SolicitacaoFiltrosAvancadosDto, SolicitacaoFiltrosResponseDto } from '../dto/solicitacao-filtros-avancados.dto';
+import { IResultadoFiltros } from '../../../common/interfaces/filtros-avancados.interface';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
 import { AvaliarSolicitacaoDto } from '../dto/avaliar-solicitacao.dto';
@@ -45,6 +47,8 @@ import {
 } from '../../../entities/solicitacao.entity';
 import { Request } from 'express';
 import { QueryOptimization } from '../../../common/interceptors/query-optimization.interceptor';
+import { GetUser } from '@/auth/decorators/get-user.decorator';
+import { Usuario } from '@/entities';
 
 /**
  * Controlador de Solicitações
@@ -62,7 +66,118 @@ export class SolicitacaoController {
   ) {}
 
   /**
-   * Lista todas as solicitações com filtros e paginação
+   * Lista todas as solicitações com filtros avançados
+   */
+  @Post('filtros-avancados')
+  @QueryOptimization({
+    enablePagination: true,
+    maxLimit: 100,
+    enableCaching: true,
+    cacheTTL: 120,
+  })
+  @RequiresPermission({
+    permissionName: 'solicitacao.listar',
+    scopeType: ScopeType.UNIT,
+  })
+  @ApiOperation({ 
+    summary: 'Listar solicitações com filtros avançados',
+    description: `Endpoint otimizado para consultas complexas de solicitações com múltiplos critérios de filtro.
+    
+    **Funcionalidades principais:**
+    - Filtros por múltiplos valores (unidades, status, benefícios, etc.)
+    - Períodos predefinidos (hoje, semana atual, mês atual, etc.)
+    - Busca textual em protocolo, nome do beneficiário e CPF
+    - Paginação otimizada com cache
+    - Ordenação por múltiplos campos
+    
+    **Casos de uso comuns:**
+    - Listar solicitações de uma unidade específica
+    - Buscar solicitações por status múltiplos
+    - Filtrar por período de abertura
+    - Buscar por protocolo ou beneficiário
+    - Relatórios gerenciais com filtros complexos`
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista paginada de solicitações com filtros aplicados',
+    type: SolicitacaoFiltrosResponseDto,
+    schema: {
+      example: {
+        items: [
+          {
+            id: '550e8400-e29b-41d4-a716-446655440000',
+            protocolo: 'SOL-2024-001',
+            status: 'EM_ANALISE',
+            data_abertura: '2024-01-15T10:30:00Z',
+            beneficiario: {
+              nome: 'João Silva',
+              cpf: '123.456.789-00'
+            },
+            beneficio: {
+              nome: 'Auxílio Natalidade'
+            },
+            unidade: {
+              nome: 'CRAS Centro'
+            }
+          }
+        ],
+        total: 150,
+        filtros_aplicados: {
+          unidades: ['550e8400-e29b-41d4-a716-446655440000'],
+          status: ['EM_ANALISE', 'APROVADA'],
+          periodo: 'MES_ATUAL'
+        },
+        meta: {
+          page: 1,
+          limit: 10,
+          totalPages: 15,
+          hasNextPage: true,
+          hasPreviousPage: false
+        },
+        tempo_execucao: 150
+      }
+    }
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Parâmetros de filtro inválidos',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: ['unidades deve ser um array de UUIDs válidos'],
+        error: 'Bad Request'
+      }
+    }
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso negado - Permissões insuficientes para visualizar solicitações'
+  })
+  async findAllComFiltrosAvancados(
+    @GetUser() usuario: Usuario,
+    @Body() filtros: SolicitacaoFiltrosAvancadosDto,
+  ): Promise<IResultadoFiltros<Solicitacao>> {
+    try {
+      this.logger.info(
+        `Listando solicitações com filtros avançados - Usuário: ${usuario.id}`,
+        'SolicitacaoController',
+      );
+
+      const resultado = await this.solicitacaoService.findAllComFiltrosAvancados(filtros);
+
+      return resultado;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao listar solicitações com filtros avançados: ${error.message}`,
+        error.stack,
+        'SolicitacaoController',
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Lista todas as solicitações com filtros e paginação (endpoint legado)
    */
   @Get()
   @QueryOptimization({
@@ -75,7 +190,7 @@ export class SolicitacaoController {
     permissionName: 'solicitacao.listar',
     scopeType: ScopeType.UNIT,
   })
-  @ApiOperation({ summary: 'Listar solicitações' })
+  @ApiOperation({ summary: 'Listar solicitações (endpoint legado)' })
   @ApiResponse({
     status: 200,
     description: 'Lista de solicitações retornada com sucesso',

@@ -8,6 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
   Index,
+  OneToOne,
 } from 'typeorm';
 import {
   IsNotEmpty,
@@ -40,7 +41,7 @@ export class DadosAluguelSocial {
   @IsNotEmpty({ message: 'ID da solicitação é obrigatório' })
   solicitacao_id: string;
 
-  @ManyToOne(() => Solicitacao, { onDelete: 'CASCADE' })
+  @OneToOne(() => Solicitacao, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'solicitacao_id' })
   solicitacao: Solicitacao;
 

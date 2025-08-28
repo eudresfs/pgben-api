@@ -29,6 +29,7 @@ import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
 import { PagamentoPendenteMonitoramentoDto } from '../dtos/pagamento-pendente-monitoramento.dto';
 import { FiltrosMonitoramentoPendenteDto } from '../dtos/filtros-monitoramento-pendente.dto';
+import { PagamentoFiltrosAvancadosDto, PagamentoFiltrosResponseDto } from '../dto/pagamento-filtros-avancados.dto';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { TipoVisita } from '../../../enums/tipo-visita.enum';
 import { DataMaskingResponseInterceptor } from '../interceptors/data-masking-response.interceptor';
@@ -130,6 +131,105 @@ export class PagamentoController {
   }
 
 
+
+  /**
+   * Lista pagamentos com filtros avançados
+   */
+  @Post('filtros-avancados')
+  @AuditoriaPagamento.Consulta('Listagem de pagamentos com filtros avançados')
+  @RequiresPermission({
+    permissionName: 'pagamento.listar',
+    scopeType: TipoEscopo.UNIDADE,
+  })
+  @ApiOperation({ 
+    summary: 'Listar pagamentos com filtros avançados',
+    description: `Endpoint otimizado para consultas complexas de pagamentos com múltiplos critérios de filtro.
+    
+    **Funcionalidades principais:**
+    - Filtros por múltiplas unidades, benefícios e status
+    - Filtros por período de pagamento e valores
+    - Busca textual em beneficiário e número do benefício
+    - Paginação otimizada com cache
+    - Ordenação por múltiplos campos
+    - Filtros por método de pagamento e banco
+    
+    **Casos de uso comuns:**
+    - Relatórios financeiros por período
+    - Auditoria de pagamentos por unidade
+    - Consulta de pagamentos por beneficiário
+    - Análise de pagamentos por método
+    - Controle de pagamentos pendentes/processados`
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista paginada de pagamentos com filtros aplicados',
+    type: PagamentoFiltrosResponseDto,
+    schema: {
+      example: {
+        items: [
+          {
+            id: '550e8400-e29b-41d4-a716-446655440000',
+            valor: 600.00,
+            data_pagamento: '2024-01-15',
+            status: 'PROCESSADO',
+            metodo_pagamento: 'PIX',
+            numero_transacao: 'TXN123456789',
+            beneficiario: {
+              nome: 'Maria Silva',
+              cpf: '123.456.789-00'
+            },
+            beneficio: {
+              numero: 'BEN2024001',
+              tipo: 'Auxílio Emergencial'
+            },
+            unidade: {
+              nome: 'CRAS Centro'
+            },
+            banco: {
+              codigo: '001',
+              nome: 'Banco do Brasil'
+            }
+          }
+        ],
+        total: 1250,
+        filtros_aplicados: {
+          unidades: ['550e8400-e29b-41d4-a716-446655440000'],
+          status: ['PROCESSADO'],
+          periodo: 'ultimo_mes',
+          metodos_pagamento: ['PIX']
+        },
+        meta: {
+          page: 1,
+          limit: 10,
+          totalPages: 125,
+          hasNextPage: true,
+          hasPreviousPage: false,
+          valor_total_filtrado: 750000.00
+        },
+        tempo_execucao: 120
+      }
+    }
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Parâmetros de filtro inválidos',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: ['valor_minimo deve ser um número positivo'],
+        error: 'Bad Request'
+      }
+    }
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso negado - Permissões insuficientes para visualizar pagamentos'
+  })
+  async aplicarFiltrosAvancados(
+    @Body() filtros: PagamentoFiltrosAvancadosDto,
+  ): Promise<PagamentoFiltrosResponseDto> {
+    return await this.pagamentoService.aplicarFiltrosAvancados(filtros);
+  }
 
   /**
    * Cria um novo pagamento

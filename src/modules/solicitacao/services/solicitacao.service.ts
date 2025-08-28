@@ -52,6 +52,10 @@ import { AvaliarSolicitacaoDto } from '../dto/avaliar-solicitacao.dto';
 import { VincularProcessoJudicialDto } from '../dto/vincular-processo-judicial.dto';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 import { VincularDeterminacaoJudicialDto } from '../dto/vincular-determinacao-judicial.dto';
+import { SolicitacaoFiltrosAvancadosDto } from '../dto/solicitacao-filtros-avancados.dto';
+import { FiltrosAvancadosService } from '../../../common/services';
+import { IResultadoFiltros } from '../../../common/interfaces';
+import { PeriodoPredefinido, Prioridade } from '../../../enums';
 
 import { ProcessoJudicialRepository } from '../../judicial/repositories/processo-judicial.repository';
 import { ROLES } from '../../../shared/constants/roles.constants';
@@ -126,6 +130,7 @@ export class SolicitacaoService {
     private cidadaoService: CidadaoService,
 
     private readonly auditEventEmitter: AuditEventEmitter,
+    private readonly filtrosAvancadosService: FiltrosAvancadosService,
   ) {
     this.logger = new Logger('SolicitacaoService');
   }
@@ -265,6 +270,291 @@ export class SolicitacaoService {
         hasNext: page < pages,
         hasPrev: page > 1,
       },
+    };
+  }
+
+  /**
+   * Busca solicitações com filtros avançados
+   * 
+   * Implementa o novo padrão de filtros avançados do sistema,
+   * permitindo filtros por múltiplos valores, períodos predefinidos
+   * e funcionalidades avançadas de busca.
+   * 
+   * @param filtros DTO com filtros avançados
+   * @returns Resultado paginado com metadados de filtros aplicados
+   */
+  async findAllComFiltrosAvancados(
+    filtros: SolicitacaoFiltrosAvancadosDto,
+  ): Promise<IResultadoFiltros<Solicitacao>> {
+    const startTime = Date.now();
+
+    // Criar query builder base com joins necessários
+    const queryBuilder = this.solicitacaoRepository
+      .createScopedQueryBuilder('solicitacao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
+      .leftJoinAndSelect('beneficiario.enderecos', 'endereco')
+      .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
+      .leftJoinAndSelect('solicitacao.unidade', 'unidade')
+      .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
+      .select([
+        // Dados básicos da solicitação
+        'solicitacao.id',
+        'solicitacao.protocolo',
+        'solicitacao.status',
+        'solicitacao.valor',
+        'solicitacao.data_abertura',
+        'solicitacao.data_aprovacao',
+        'solicitacao.observacoes',
+        'solicitacao.determinacao_judicial_flag',
+        'solicitacao.prioridade',
+        // Dados básicos do beneficiário
+        'beneficiario.id',
+        'beneficiario.nome',
+        'beneficiario.cpf',
+        // Dados do endereço (para filtro por bairro)
+        'endereco.id',
+        'endereco.bairro',
+        // Dados básicos do benefício
+        'tipo_beneficio.id',
+        'tipo_beneficio.nome',
+        'tipo_beneficio.codigo',
+        // Dados básicos do técnico
+        'tecnico.id',
+        'tecnico.nome',
+        // Dados básicos da unidade
+        'unidade.id',
+        'unidade.nome',
+      ]);
+
+    // Aplicar filtros por múltiplos valores
+    if (filtros.unidades?.length) {
+      queryBuilder.andWhere('solicitacao.unidade_id IN (:...unidades)', {
+        unidades: filtros.unidades,
+      });
+    }
+
+    if (filtros.status?.length) {
+      queryBuilder.andWhere('solicitacao.status IN (:...status)', {
+        status: filtros.status,
+      });
+    }
+
+    if (filtros.beneficios?.length) {
+      queryBuilder.andWhere('solicitacao.tipo_beneficio_id IN (:...beneficios)', {
+        beneficios: filtros.beneficios,
+      });
+    }
+
+    if (filtros.usuarios?.length) {
+      queryBuilder.andWhere('solicitacao.tecnico_id IN (:...usuarios)', {
+        usuarios: filtros.usuarios,
+      });
+    }
+
+    if (filtros.beneficiarios?.length) {
+      queryBuilder.andWhere('solicitacao.beneficiario_id IN (:...beneficiarios)', {
+        beneficiarios: filtros.beneficiarios,
+      });
+    }
+
+    if (filtros.bairros?.length) {
+      queryBuilder.andWhere('LOWER(endereco.bairro) IN (:...bairros)', {
+        bairros: filtros.bairros.map(b => b.toLowerCase()),
+      });
+    }
+
+    if (filtros.prioridades?.length) {
+      queryBuilder.andWhere('solicitacao.prioridade IN (:...prioridades)', {
+        prioridades: filtros.prioridades,
+      });
+    }
+
+    // Aplicar filtros de período
+    if (filtros.periodo || filtros.data_inicio_personalizada || filtros.data_fim_personalizada) {
+      let dataInicio: Date | undefined;
+      let dataFim: Date | undefined;
+
+      if (filtros.periodo && filtros.periodo !== PeriodoPredefinido.PERSONALIZADO) {
+        const agora = new Date();
+        switch (filtros.periodo) {
+          case PeriodoPredefinido.HOJE:
+            dataInicio = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+            dataFim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59);
+            break;
+          case PeriodoPredefinido.ONTEM:
+            const ontem = new Date(agora);
+            ontem.setDate(ontem.getDate() - 1);
+            dataInicio = new Date(ontem.getFullYear(), ontem.getMonth(), ontem.getDate());
+            dataFim = new Date(ontem.getFullYear(), ontem.getMonth(), ontem.getDate(), 23, 59, 59);
+            break;
+          case PeriodoPredefinido.ULTIMOS_7_DIAS:
+            dataInicio = new Date(agora);
+            dataInicio.setDate(dataInicio.getDate() - 7);
+            dataFim = agora;
+            break;
+          case PeriodoPredefinido.ULTIMOS_30_DIAS:
+            dataInicio = new Date(agora);
+            dataInicio.setDate(dataInicio.getDate() - 30);
+            dataFim = agora;
+            break;
+          case PeriodoPredefinido.MES_ATUAL:
+            dataInicio = new Date(agora.getFullYear(), agora.getMonth(), 1);
+            dataFim = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59);
+            break;
+          case PeriodoPredefinido.MES_ANTERIOR:
+            dataInicio = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
+            dataFim = new Date(agora.getFullYear(), agora.getMonth(), 0, 23, 59, 59);
+            break;
+          case PeriodoPredefinido.ANO_ATUAL:
+            dataInicio = new Date(agora.getFullYear(), 0, 1);
+            dataFim = new Date(agora.getFullYear(), 11, 31, 23, 59, 59);
+            break;
+        }
+      } else if (filtros.data_inicio_personalizada || filtros.data_fim_personalizada) {
+        if (filtros.data_inicio_personalizada) {
+          dataInicio = new Date(filtros.data_inicio_personalizada);
+        }
+        if (filtros.data_fim_personalizada) {
+          dataFim = new Date(filtros.data_fim_personalizada);
+        }
+      }
+
+      if (dataInicio) {
+        queryBuilder.andWhere('solicitacao.data_abertura >= :dataInicio', { dataInicio });
+      }
+      if (dataFim) {
+        queryBuilder.andWhere('solicitacao.data_abertura <= :dataFim', { dataFim });
+      }
+    }
+
+    // Aplicar filtros de busca textual
+    if (filtros.search) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where('LOWER(beneficiario.nome) LIKE LOWER(:search)', {
+            search: `%${filtros.search}%`,
+          })
+            .orWhere('beneficiario.cpf LIKE :searchExact', {
+              searchExact: `%${filtros.search}%`,
+            })
+            .orWhere('LOWER(solicitacao.protocolo) LIKE LOWER(:search)', {
+              search: `%${filtros.search}%`,
+            })
+            .orWhere('LOWER(tipo_beneficio.nome) LIKE LOWER(:search)', {
+              search: `%${filtros.search}%`,
+            })
+            .orWhere('LOWER(tipo_beneficio.codigo) LIKE LOWER(:search)', {
+              search: `%${filtros.search}%`,
+            });
+        }),
+      );
+    }
+
+    if (filtros.protocolos?.length) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          filtros.protocolos.forEach((protocolo, index) => {
+            if (index === 0) {
+              qb.where('LOWER(solicitacao.protocolo) LIKE LOWER(:protocolo' + index + ')', {
+                ['protocolo' + index]: `%${protocolo}%`,
+              });
+            } else {
+              qb.orWhere('LOWER(solicitacao.protocolo) LIKE LOWER(:protocolo' + index + ')', {
+                ['protocolo' + index]: `%${protocolo}%`,
+              });
+            }
+          });
+        })
+      );
+    }
+
+    // Aplicar filtros específicos
+    if (filtros.apenas_determinacao_judicial !== undefined) {
+      queryBuilder.andWhere('solicitacao.determinacao_judicial_flag = :determinacao', {
+        determinacao: filtros.apenas_determinacao_judicial,
+      });
+    }
+
+    // Aplicar ordenação
+    const sortBy = filtros.sort_by || 'data_abertura';
+    const sortOrder = filtros.sort_order || 'DESC';
+    
+    const allowedSortFields = ['data_abertura', 'data_aprovacao', 'protocolo', 'status', 'prioridade'];
+    if (!allowedSortFields.includes(sortBy)) {
+      throw new BadRequestException(
+        `Campo de ordenação '${sortBy}' não permitido`,
+      );
+    }
+
+    queryBuilder.orderBy(`solicitacao.${sortBy}`, sortOrder);
+
+    // Aplicar filtro de arquivados
+    if (!filtros.incluir_arquivados) {
+      queryBuilder.andWhere('solicitacao.ativo = :ativo', { ativo: true });
+    }
+
+    // Aplicar paginação
+    const page = filtros.page || 1;
+    const limit = Math.min(filtros.limit || 10, 100); // Máximo 100 itens por página
+    const offset = (page - 1) * limit;
+
+    queryBuilder.skip(offset).take(limit);
+
+    // Executar query
+    const [items, total] = await queryBuilder.getManyAndCount();
+    
+    const resultado = {
+      items,
+      meta: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
+        has_next: page < Math.ceil(total / limit),
+        has_prev: page > 1,
+      },
+    };
+
+    const executionTime = Date.now() - startTime;
+
+    // Log de performance para queries lentas
+    if (executionTime > 1000) {
+      this.logger.warn(`Query lenta detectada: ${executionTime}ms`, {
+        filtros,
+        resultCount: resultado.items.length,
+        totalCount: resultado.meta.total,
+      });
+    }
+
+    // Construir metadados de filtros aplicados
+    const filtrosAplicados = {
+      unidades: filtros.unidades?.length || 0,
+      status: filtros.status?.length || 0,
+      beneficios: filtros.beneficios?.length || 0,
+      usuarios: filtros.usuarios?.length || 0,
+      bairros: filtros.bairros?.length || 0,
+      beneficiarios: filtros.beneficiarios?.length || 0,
+      prioridades: filtros.prioridades?.length || 0,
+      periodo: filtros.periodo || (filtros.data_inicio_personalizada && filtros.data_fim_personalizada ? 'PERSONALIZADO' : undefined),
+      search: !!filtros.search,
+      protocolos: filtros.protocolos?.length || 0,
+      apenas_determinacao_judicial: filtros.apenas_determinacao_judicial,
+      incluir_arquivados: filtros.incluir_arquivados,
+    };
+
+    return {
+      items: resultado.items,
+      total: resultado.meta.total,
+      filtros_aplicados: filtros,
+      meta: {
+        limit: resultado.meta.limit,
+        offset: (resultado.meta.page - 1) * resultado.meta.limit,
+        page: resultado.meta.page,
+        totalPages: resultado.meta.pages,
+        hasNextPage: resultado.meta.has_next,
+        hasPreviousPage: resultado.meta.has_prev
+      },
+      tempo_execucao: executionTime
     };
   }
 

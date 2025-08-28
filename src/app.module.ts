@@ -44,6 +44,7 @@ import { ScopeContextInterceptor } from './common/interceptors/scope-context.int
 import { AuditContextInterceptor } from './common/interceptors/audit-context.interceptor';
 import { GlobalAuditInterceptor } from './modules/auditoria/interceptors/global-audit.interceptor';
 import { RequestContextHolder } from './common/services/request-context-holder.service';
+import { CommonModule } from './common/common.module';
 
 
 @Module({
@@ -135,6 +136,7 @@ import { RequestContextHolder } from './common/services/request-context-holder.s
     MonitoringModule,
 
     // Módulos compartilhados
+    CommonModule,
     EmailModule,
     PermissionSharedModule,
     LoggingModule,

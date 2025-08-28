@@ -24,13 +24,14 @@ import { CreateTipoBeneficioDto } from '../dto/create-tipo-beneficio.dto';
 import { UpdateTipoBeneficioDto } from '../dto/update-tipo-beneficio.dto';
 import { CreateRequisitoDocumentoDto } from '../dto/create-requisito-documento.dto';
 import { UpdateRequisitoDocumentoDto } from '../dto/update-requisito-documento.dto';
+import { BeneficioFiltrosAvancadosDto, BeneficioFiltrosResponseDto } from '../dto/beneficio-filtros-avancados.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { ScopeType } from '../../../entities';
 import { QueryOptimization } from '../../../common/interceptors/query-optimization.interceptor';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
-import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
+import { AuditEventType, RiskLevel } from '../../auditoria/events/types/audit-event.types';
 import { ReqContext } from '../../../shared/request-context/req-context.decorator';
 import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { Usuario } from '../../../entities/usuario.entity';
@@ -111,6 +112,125 @@ export class BeneficioController {
       search,
       status,
     });
+  }
+
+  /**
+   * Busca avançada de benefícios com múltiplos filtros
+   */
+  @Post('filtros-avancados')
+  @RequiresPermission({
+    permissionName: 'beneficio.listar',
+    scopeType: ScopeType.GLOBAL,
+  })
+  @QueryOptimization({
+    enablePagination: true,
+    maxLimit: 100,
+    enableCaching: true,
+    cacheTTL: 300,
+  })
+  @ApiOperation({
+    summary: 'Busca avançada de benefícios',
+    description:
+      'Permite buscar benefícios com múltiplos critérios de filtro, incluindo status, periodicidade, valores, datas e busca textual. Suporta paginação e inclusão de relacionamentos.',
+  })
+  @ApiBody({
+    type: BeneficioFiltrosAvancadosDto,
+    description: 'Critérios de filtro para busca avançada',
+    examples: {
+      'Filtro Básico': {
+        summary: 'Busca simples por status e periodicidade',
+        value: {
+          page: 1,
+          limit: 10,
+          status: ['ativo'],
+          periodicidade: ['mensal'],
+        },
+      },
+      'Filtro Completo': {
+        summary: 'Busca com múltiplos critérios',
+        value: {
+          page: 1,
+          limit: 20,
+          status: ['ativo'],
+          periodicidade: ['mensal', 'unico'],
+          valor_min: 100,
+          valor_max: 1000,
+          search: 'auxílio',
+          include_relations: ['requisito_documento'],
+          created_at_inicio: '2024-01-01T00:00:00.000Z',
+          created_at_fim: '2024-12-31T23:59:59.999Z',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Busca realizada com sucesso',
+    type: BeneficioFiltrosResponseDto,
+    content: {
+      'application/json': {
+        example: {
+          items: [],
+          total: 0,
+          filtros_aplicados: {
+            status: ['ativo'],
+            periodicidade: ['mensal'],
+            valor_min: 100,
+            valor_max: 1000,
+          },
+          meta: {
+            limit: 10,
+            offset: 0,
+            page: 1,
+            totalPages: 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          },
+          tempo_execucao: 150,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Parâmetros de filtro inválidos',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso negado',
+  })
+  async filtrosAvancados(
+    @Body() filtros: BeneficioFiltrosAvancadosDto,
+    @GetUser() usuario: Usuario,
+    @ReqContext() context: any,
+  ): Promise<BeneficioFiltrosResponseDto> {
+    const startTime = Date.now();
+
+    // Emitir evento de auditoria
+    this.auditEventEmitter.emit({
+      eventId: this.generateEventId(),
+      eventType: AuditEventType.BUSINESS_OPERATION,
+      entityName: 'TipoBeneficio',
+      userId: usuario.id,
+      timestamp: new Date(),
+      riskLevel: RiskLevel.LOW,
+      lgpdRelevant: false,
+      metadata: {
+        filtros_aplicados: filtros,
+        modulo: 'beneficio',
+        endpoint: '/beneficio/filtros-avancados',
+        userEmail: usuario.email,
+      },
+      ip: context?.ip,
+      userAgent: context?.userAgent,
+    });
+
+    const resultado = await this.beneficioService.filtrosAvancados(filtros);
+
+    const endTime = Date.now();
+    resultado.tempo_execucao = endTime - startTime;
+
+    return resultado;
   }
 
   /**
@@ -506,5 +626,12 @@ export class BeneficioController {
     @Param('requisitoId') requisitoId: string,
   ) {
     return this.beneficioService.getTemplateInfo(id, requisitoId);
+  }
+
+  /**
+   * Gera um ID único para eventos de auditoria
+   */
+  private generateEventId(): string {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 }

@@ -7,11 +7,14 @@ import {
   FindManyOptions,
   IsNull,
   Not,
+  DataSource,
 } from 'typeorm';
 import { LogAuditoria } from '../../../entities/log-auditoria.entity';
 import { CreateLogAuditoriaDto } from '../dto/create-log-auditoria.dto';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { QueryLogAuditoriaDto } from '../dto/query-log-auditoria.dto';
+import { AuditoriaFiltrosAvancadosDto, AuditoriaFiltrosResponseDto } from '../dto/auditoria-filtros-avancados.dto';
+import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
 
 /**
  * Serviço de Auditoria
@@ -39,6 +42,8 @@ export class AuditoriaService {
   constructor(
     @InjectRepository(LogAuditoria)
     private readonly logAuditoriaRepository: Repository<LogAuditoria>,
+    private readonly dataSource: DataSource,
+    private readonly filtrosAvancadosService: FiltrosAvancadosService,
   ) {}
 
   /**
@@ -293,6 +298,109 @@ export class AuditoriaService {
       integro: true,
       hash: 'hash-simulado-para-testes',
       datahora_verificacao: new Date(),
+    };
+  }
+
+  /**
+   * Busca avançada de logs de auditoria com filtros personalizados
+   * @param filtros Filtros avançados para busca
+   * @returns Resultado da busca com metadados
+   */
+  async filtrosAvancados(
+    filtros: AuditoriaFiltrosAvancadosDto,
+  ): Promise<AuditoriaFiltrosResponseDto> {
+    const startTime = Date.now();
+
+    // Criar query builder
+    const queryBuilder = this.dataSource
+      .getRepository(LogAuditoria)
+      .createQueryBuilder('auditoria');
+
+    // Aplicar filtros de tipo de operação
+    if (filtros.tipo_operacao && filtros.tipo_operacao.length > 0) {
+      queryBuilder.andWhere('auditoria.tipo_operacao IN (:...tipos)', {
+        tipos: filtros.tipo_operacao,
+      });
+    }
+
+    // Aplicar filtros de entidade afetada
+    if (filtros.entidade_afetada && filtros.entidade_afetada.length > 0) {
+      queryBuilder.andWhere('auditoria.entidade_afetada IN (:...entidades)', {
+        entidades: filtros.entidade_afetada,
+      });
+    }
+
+    // Aplicar filtro de usuário
+    if (filtros.usuario_id) {
+      queryBuilder.andWhere('auditoria.usuario_id = :usuarioId', {
+        usuarioId: filtros.usuario_id,
+      });
+    }
+
+    // Aplicar filtros de nível de risco
+    if (filtros.nivel_risco && filtros.nivel_risco.length > 0) {
+      queryBuilder.andWhere('auditoria.nivel_risco IN (:...niveis)', {
+        niveis: filtros.nivel_risco,
+      });
+    }
+
+    // Aplicar filtros de método HTTP
+    if (filtros.metodo_http && filtros.metodo_http.length > 0) {
+      queryBuilder.andWhere('auditoria.metodo_http IN (:...metodos)', {
+        metodos: filtros.metodo_http,
+      });
+    }
+
+    // Aplicar busca textual
+    if (filtros.search) {
+      queryBuilder.andWhere(
+        '(auditoria.descricao ILIKE :search OR auditoria.endpoint ILIKE :search OR auditoria.entidade_afetada ILIKE :search)',
+        { search: `%${filtros.search}%` },
+      );
+    }
+
+    // Aplicar filtros de data de criação
+    this.filtrosAvancadosService.aplicarFiltrosData(
+      queryBuilder,
+      'auditoria',
+      filtros,
+      { created_at: 'created_at' },
+    );
+
+    // Aplicar inclusão de relacionamentos
+    if (filtros.include_relations && filtros.include_relations.length > 0) {
+      filtros.include_relations.forEach((relation) => {
+        if (relation === 'usuario') {
+          queryBuilder.leftJoinAndSelect('auditoria.usuario', 'usuario');
+        }
+      });
+    }
+
+    // Aplicar ordenação
+    queryBuilder.orderBy('auditoria.created_at', 'DESC');
+
+    // Aplicar paginação e executar query
+    const resultado = await this.filtrosAvancadosService.aplicarPaginacao(
+      queryBuilder,
+      filtros,
+    );
+
+    const endTime = Date.now();
+    const executionTime = endTime - startTime;
+
+    return {
+      items: resultado.items,
+      total: resultado.total,
+      filtros_aplicados: this.filtrosAvancadosService.normalizarFiltros(filtros),
+      meta: {
+        page: filtros.page,
+        limit: filtros.limit,
+        offset: (filtros.page - 1) * filtros.limit,
+        totalPages: Math.ceil(resultado.total / filtros.limit),
+        hasNextPage: filtros.page * filtros.limit < resultado.total,
+        hasPreviousPage: filtros.page > 1,
+      },
+      tempo_execucao: executionTime,
     };
   }
 

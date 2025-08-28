@@ -16,11 +16,16 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiBody,
 } from '@nestjs/swagger';
 import { UnidadeService } from '../services/unidade.service';
 import { CreateUnidadeDto } from '../dto/create-unidade.dto';
 import { UpdateUnidadeDto } from '../dto/update-unidade.dto';
 import { UpdateStatusUnidadeDto } from '../dto/update-status-unidade.dto';
+import {
+  UnidadeFiltrosAvancadosDto,
+  UnidadeFiltrosResponseDto,
+} from '../dto/unidade-filtros-avancados.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
@@ -196,6 +201,81 @@ export class UnidadeController {
     @Body() updateStatusUnidadeDto: UpdateStatusUnidadeDto,
   ) {
     return this.unidadeService.updateStatus(id, updateStatusUnidadeDto);
+  }
+
+  /**
+   * Busca avançada de unidades com filtros complexos
+   */
+  @Post('filtros-avancados')
+  @RequiresPermission({
+    permissionName: 'unidade.listar',
+    scopeType: ScopeType.GLOBAL,
+  })
+  @AuditOperation({
+    tipo: TipoOperacao.READ,
+    entidade: 'Unidade',
+    descricao: 'Busca avançada de unidades com filtros',
+    riskLevel: RiskLevel.LOW,
+  })
+  @ApiOperation({
+    summary: 'Busca avançada de unidades',
+    description: `
+      Permite busca avançada de unidades com múltiplos filtros:
+      - Filtros por status (ativo, inativo)
+      - Filtros por tipo de unidade (CRAS, CREAS, etc.)
+      - Busca textual por nome, código ou sigla
+      - Filtros por período de criação/atualização
+      - Inclusão opcional de relacionamentos (setores, usuários)
+      - Paginação e ordenação customizáveis
+    `,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Busca realizada com sucesso',
+    type: UnidadeFiltrosResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Parâmetros de filtro inválidos',
+  })
+  @ApiBody({
+    type: UnidadeFiltrosAvancadosDto,
+    description: 'Filtros para busca avançada',
+    examples: {
+      basico: {
+        summary: 'Busca básica com paginação',
+        value: {
+          page: 1,
+          limit: 10,
+          search: 'CRAS',
+        },
+      },
+      avancado: {
+        summary: 'Busca avançada com múltiplos filtros',
+        value: {
+          page: 1,
+          limit: 20,
+          status: ['ativo'],
+          tipo: ['CRAS', 'CREAS'],
+          search: 'Centro',
+          include_relations: ['setores'],
+          created_at_inicio: '2024-01-01T00:00:00.000Z',
+          created_at_fim: '2024-12-31T23:59:59.999Z',
+        },
+      },
+    },
+  })
+  async filtrosAvancados(
+    @Body() filtros: UnidadeFiltrosAvancadosDto,
+  ): Promise<UnidadeFiltrosResponseDto> {
+    const startTime = Date.now();
+    const resultado = await this.unidadeService.filtrosAvancados(filtros);
+    const executionTime = Date.now() - startTime;
+
+    return {
+      ...resultado,
+      tempo_execucao: executionTime,
+    };
   }
 
   /**

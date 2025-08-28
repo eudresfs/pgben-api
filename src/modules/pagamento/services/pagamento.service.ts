@@ -29,6 +29,8 @@ import { SolicitacaoService } from '@/modules/solicitacao/services/solicitacao.s
 import { PagamentoUnifiedMapper } from '../mappers';
 import { PagamentoCacheService } from './pagamento-cache.service';
 import { PagamentoValidationService } from './pagamento-validation.service';
+import { PagamentoFiltrosAvancadosDto, PagamentoFiltrosResponseDto } from '../dto/pagamento-filtros-avancados.dto';
+import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
 
 /**
  * Service simplificado para gerenciamento de pagamentos
@@ -49,6 +51,7 @@ export class PagamentoService {
     private readonly concessaoService: ConcessaoService,
     private readonly mapper: PagamentoUnifiedMapper,
     private readonly pagamentoCalculatorService: PagamentoCalculatorService,
+    private readonly filtrosAvancadosService: FiltrosAvancadosService,
   ) {}
 
   /**
@@ -377,6 +380,199 @@ export class PagamentoService {
     offset?: number;
   }) {
     return this.pagamentoRepository.findPendentesMonitoramento(filtros);
+  }
+
+  /**
+   * Aplica filtros avançados para busca de pagamentos
+   * Implementa busca otimizada com múltiplos critérios e paginação
+   * @param filtros Critérios de filtro avançados
+   * @returns Resultado paginado com metadados
+   */
+  async aplicarFiltrosAvancados(
+    filtros: PagamentoFiltrosAvancadosDto,
+  ): Promise<PagamentoFiltrosResponseDto> {
+    const startTime = Date.now();
+
+    try {
+      // Construir query base com relacionamentos necessários
+      const queryBuilder = this.pagamentoRepository
+        .createScopedQueryBuilder('pagamento')
+        .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+        .leftJoinAndSelect('pagamento.concessao', 'concessao')
+        .leftJoinAndSelect('pagamento.usuario', 'usuario')
+        .leftJoinAndSelect('pagamento.unidade', 'unidade')
+        .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
+        .leftJoinAndSelect('solicitacao.beneficio', 'beneficio');
+
+      // Aplicar filtros condicionalmente
+      if (filtros.unidades?.length > 0) {
+        queryBuilder.andWhere('pagamento.unidade_id IN (:...unidades)', {
+          unidades: filtros.unidades,
+        });
+      }
+
+      if (filtros.status?.length > 0) {
+        queryBuilder.andWhere('pagamento.status IN (:...status)', {
+          status: filtros.status,
+        });
+      }
+
+      if (filtros.metodos_pagamento?.length > 0) {
+        queryBuilder.andWhere('pagamento.metodo_pagamento IN (:...metodos)', {
+          metodos: filtros.metodos_pagamento,
+        });
+      }
+
+      if (filtros.solicitacoes?.length > 0) {
+        queryBuilder.andWhere('pagamento.solicitacao_id IN (:...solicitacoes)', {
+          solicitacoes: filtros.solicitacoes,
+        });
+      }
+
+      if (filtros.concessoes?.length > 0) {
+        queryBuilder.andWhere('pagamento.concessao_id IN (:...concessoes)', {
+          concessoes: filtros.concessoes,
+        });
+      }
+
+      // Filtro de busca textual
+      if (filtros.search) {
+        queryBuilder.andWhere(
+          '(cidadao.nome ILIKE :search OR cidadao.cpf ILIKE :search OR pagamento.observacoes ILIKE :search)',
+          { search: `%${filtros.search}%` },
+        );
+      }
+
+      // Filtros de data
+      if (filtros.data_liberacao_inicio) {
+        queryBuilder.andWhere('pagamento.data_liberacao >= :dataLiberacaoInicio', {
+          dataLiberacaoInicio: filtros.data_liberacao_inicio,
+        });
+      }
+
+      if (filtros.data_liberacao_fim) {
+        queryBuilder.andWhere('pagamento.data_liberacao <= :dataLiberacaoFim', {
+          dataLiberacaoFim: filtros.data_liberacao_fim,
+        });
+      }
+
+      if (filtros.data_pagamento_inicio) {
+        queryBuilder.andWhere('pagamento.data_pagamento >= :dataPagamentoInicio', {
+          dataPagamentoInicio: filtros.data_pagamento_inicio,
+        });
+      }
+
+      if (filtros.data_pagamento_fim) {
+        queryBuilder.andWhere('pagamento.data_pagamento <= :dataPagamentoFim', {
+          dataPagamentoFim: filtros.data_pagamento_fim,
+        });
+      }
+
+      // Filtros de valor
+      if (filtros.valor_minimo !== undefined) {
+        queryBuilder.andWhere('pagamento.valor >= :valorMin', {
+          valorMin: filtros.valor_minimo,
+        });
+      }
+
+      if (filtros.valor_maximo !== undefined) {
+        queryBuilder.andWhere('pagamento.valor <= :valorMax', {
+          valorMax: filtros.valor_maximo,
+        });
+      }
+
+      // Filtros de parcela
+      if (filtros.parcela_min !== undefined) {
+        queryBuilder.andWhere('pagamento.numero_parcela >= :parcelaMin', {
+          parcelaMin: filtros.parcela_min,
+        });
+      }
+
+      if (filtros.parcela_max !== undefined) {
+        queryBuilder.andWhere('pagamento.numero_parcela <= :parcelaMax', {
+          parcelaMax: filtros.parcela_max,
+        });
+      }
+
+      // Filtro de comprovante
+      if (filtros.com_comprovante !== undefined) {
+        if (filtros.com_comprovante) {
+          queryBuilder.andWhere('pagamento.comprovante_id IS NOT NULL');
+        } else {
+          queryBuilder.andWhere('pagamento.comprovante_id IS NULL');
+        }
+      }
+
+      // Incluir relacionamentos opcionais
+      if (filtros.include_relations?.includes('comprovante')) {
+        queryBuilder.leftJoinAndSelect('pagamento.comprovante', 'comprovante');
+      }
+
+      if (filtros.include_relations?.includes('monitoramento')) {
+        queryBuilder.leftJoinAndSelect('pagamento.agendamentos', 'agendamentos');
+        queryBuilder.leftJoinAndSelect('agendamentos.visitas', 'visitas');
+      }
+
+      // Aplicar ordenação
+      const sortField = filtros.sort_by || 'data_liberacao';
+      const sortOrder = filtros.sort_order || 'DESC';
+      queryBuilder.orderBy(`pagamento.${sortField}`, sortOrder);
+
+      // Aplicar paginação
+      const page = filtros.page || 1;
+      const limit = Math.min(filtros.limit || 20, 100);
+      const offset = (page - 1) * limit;
+
+      queryBuilder.skip(offset).take(limit);
+
+      // Executar query
+      const [items, total] = await queryBuilder.getManyAndCount();
+
+      // Remover campos sensíveis dos resultados
+      const sanitizedItems = items.map((item) => {
+        // Remover campos sensíveis dos usuários relacionados
+        if (item.solicitacao?.tecnico?.senhaHash) {
+          delete item.solicitacao.tecnico.senhaHash;
+        }
+        if (item.solicitacao?.aprovador?.senhaHash) {
+          delete item.solicitacao.aprovador.senhaHash;
+        }
+        if (item.solicitacao?.liberador?.senhaHash) {
+          delete item.solicitacao.liberador.senhaHash;
+        }
+        return item;
+      });
+
+      // Calcular tempo de execução
+      const tempoExecucao = Date.now() - startTime;
+
+      // Preparar metadados de paginação
+      const totalPages = Math.ceil(total / limit);
+      const meta = {
+        limit,
+        offset,
+        page,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      };
+
+      return {
+        items: sanitizedItems,
+        total,
+        filtros_aplicados: this.filtrosAvancadosService.normalizarFiltros(filtros),
+        meta,
+        tempo_execucao: tempoExecucao,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Erro ao aplicar filtros avançados de pagamentos: ${error.message}`,
+        error.stack,
+      );
+      throw new BadRequestException(
+        'Erro ao processar filtros de pagamentos',
+      );
+    }
   }
 
   /**
