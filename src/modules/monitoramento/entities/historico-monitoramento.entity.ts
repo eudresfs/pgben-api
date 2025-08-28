@@ -21,6 +21,7 @@ export enum TipoAcaoHistorico {
   AGENDAMENTO_CONFIRMADO = 'agendamento_confirmado',
   AGENDAMENTO_REAGENDADO = 'agendamento_reagendado',
   AGENDAMENTO_CANCELADO = 'agendamento_cancelado',
+  AGENDAMENTO_ATUALIZADO = 'agendamento_atualizado',
   VISITA_INICIADA = 'visita_iniciada',
   VISITA_FINALIZADA = 'visita_finalizada',
   VISITA_CANCELADA = 'visita_cancelada',

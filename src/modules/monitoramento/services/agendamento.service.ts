@@ -27,6 +27,7 @@ import {
   isStatusAgendamentoAtivo,
 } from '../../../enums';
 import { Usuario } from '@/entities';
+import { HistoricoAgendamentoService } from './historico-agendamento.service';
 
 /**
  * Serviço responsável pelo gerenciamento de agendamentos de visitas domiciliares.
@@ -46,6 +47,7 @@ export class AgendamentoService {
     private agendamentoRepository: AgendamentoRepository,
     @InjectRepository(Pagamento)
     private pagamentoRepository: Repository<Pagamento>,
+    private historicoAgendamentoService: HistoricoAgendamentoService,
   ) {}
 
   /**
@@ -168,11 +170,13 @@ export class AgendamentoService {
    * Cria um novo agendamento de visita domiciliar
    * 
    * @param createDto Dados do agendamento a ser criado
+   * @param usuarioId ID do usuário que criou o agendamento
    * @returns Dados do agendamento criado
    * @throws BadRequestException se os dados forem inválidos
    * @throws ConflictException se houver conflito de horário
    */
-  async create(createDto: CriarAgendamentoDto): Promise<AgendamentoResponseDto> {
+  async create(createDto: CriarAgendamentoDto, usuarioId: string): Promise<AgendamentoResponseDto> {
+    const startTime = Date.now();
     try {
       // Validar entidades relacionadas
       await this.validateRelatedEntities(createDto);
@@ -193,6 +197,19 @@ export class AgendamentoService {
       });
 
       const savedAgendamento = await this.agendamentoRepository.save(agendamento);
+
+      // Registrar histórico de criação
+      try {
+        await this.historicoAgendamentoService.registrarCriacao(
+          savedAgendamento,
+          usuarioId || 'sistema',
+          Date.now() - startTime,
+        );
+      } catch (historicoError) {
+        this.logger.warn(
+          `Erro ao registrar histórico de criação do agendamento ${savedAgendamento.id}: ${historicoError.message}`,
+        );
+      }
 
       this.logger.log(
         `Agendamento criado com sucesso: ${savedAgendamento.id} para pagamento ${createDto.pagamento_id}`,
@@ -276,13 +293,16 @@ export class AgendamentoService {
    * Confirma um agendamento
    * 
    * @param id ID do agendamento
+   * @param usuarioId ID do usuário que confirma
    * @returns Agendamento confirmado
    * @throws NotFoundException se não encontrado
    * @throws BadRequestException se não puder ser confirmado
    */
-  async confirmar(id: string, user: Usuario): Promise<AgendamentoResponseDto> {
+  async confirmar(id: string, usuarioId: string): Promise<AgendamentoResponseDto> {
+    const startTime = Date.now();
     try {
       const agendamento = await this.agendamentoRepository.findByIdWithRelations(id);
+      const dadosAnteriores = { ...agendamento };
 
       if (!agendamento) {
         throw new NotFoundException(`Agendamento com ID ${id} não encontrado`);
@@ -296,9 +316,23 @@ export class AgendamentoService {
 
       agendamento.status = StatusAgendamento.CONFIRMADO;
       agendamento.updated_at = new Date();
-      agendamento.updated_by = user.id;
+      agendamento.updated_by = usuarioId;
 
       const savedAgendamento = await this.agendamentoRepository.save(agendamento);
+
+      // Registrar histórico de confirmação
+      try {
+        await this.historicoAgendamentoService.registrarAtualizacao(
+          dadosAnteriores,
+          savedAgendamento,
+          usuarioId,
+          Date.now() - startTime,
+        );
+      } catch (historicoError) {
+        this.logger.warn(
+          `Erro ao registrar histórico de confirmação do agendamento ${id}: ${historicoError.message}`,
+        );
+      }
 
       this.logger.log(`Agendamento ${id} confirmado com sucesso`);
 
@@ -321,10 +355,12 @@ export class AgendamentoService {
     id: string,
     novaDataHora: Date,
     motivo?: string,
-    user?: string
+    usuarioId?: string
   ): Promise<AgendamentoResponseDto> {
+    const startTime = Date.now();
     try {
       const agendamento = await this.agendamentoRepository.findByIdWithRelations(id);
+      const dadosAnteriores = { ...agendamento };
 
       if (!agendamento) {
         throw new NotFoundException(`Agendamento com ID ${id} não encontrado`);
@@ -346,7 +382,7 @@ export class AgendamentoService {
       agendamento.data_agendamento = novaDataHora;
       agendamento.status = StatusAgendamento.REAGENDADO;
       agendamento.updated_at = new Date();
-      agendamento.updated_by = user;
+      agendamento.updated_by = usuarioId;
 
       // Adicionar informações do reagendamento aos dados complementares
       agendamento.dados_complementares = {
@@ -363,6 +399,20 @@ export class AgendamentoService {
       };
 
       const savedAgendamento = await this.agendamentoRepository.save(agendamento);
+
+      // Registrar histórico de reagendamento
+      try {
+        await this.historicoAgendamentoService.registrarAtualizacao(
+          dadosAnteriores,
+          savedAgendamento,
+          usuarioId,
+          Date.now() - startTime,
+        );
+      } catch (historicoError) {
+        this.logger.warn(
+          `Erro ao registrar histórico de reagendamento do agendamento ${id}: ${historicoError.message}`,
+        );
+      }
 
       this.logger.log(`Agendamento ${id} reagendado de ${dataAnterior} para ${novaDataHora}`);
 
@@ -386,8 +436,10 @@ export class AgendamentoService {
     motivo: string,
     cancelado_por: string,
   ): Promise<AgendamentoResponseDto> {
+    const startTime = Date.now();
     try {
       const agendamento = await this.agendamentoRepository.findByIdWithRelations(id);
+      const dadosAnteriores = { ...agendamento };
 
       if (!agendamento) {
         throw new NotFoundException(`Agendamento com ID ${id} não encontrado`);
@@ -407,6 +459,20 @@ export class AgendamentoService {
       agendamento.updated_by = cancelado_por;
 
       const savedAgendamento = await this.agendamentoRepository.save(agendamento);
+
+      // Registrar histórico de cancelamento
+      try {
+        await this.historicoAgendamentoService.registrarCancelamento(
+          savedAgendamento,
+          motivo,
+          cancelado_por,
+          Date.now() - startTime,
+        );
+      } catch (historicoError) {
+        this.logger.warn(
+          `Erro ao registrar histórico de cancelamento do agendamento ${id}: ${historicoError.message}`,
+        );
+      }
 
       this.logger.log(`Agendamento ${id} cancelado por ${cancelado_por}: ${motivo}`);
 
@@ -953,8 +1019,8 @@ export class AgendamentoService {
   /**
    * Confirma um agendamento
    */
-  async confirmarAgendamento(id: string, user: Usuario): Promise<AgendamentoResponseDto> {
-    return this.confirmar(id, user);
+  async confirmarAgendamento(id: string, usuarioId: string): Promise<AgendamentoResponseDto> {
+    return this.confirmar(id, usuarioId);
   }
 
   /**
@@ -1046,10 +1112,10 @@ export class AgendamentoService {
       notificar_beneficiario: agendamento.notificar_beneficiario || false,
       em_atraso: emAtraso,
       dias_atraso: diasAtraso > 0 ? diasAtraso : undefined,
-      prazo_limite: prazoLimite.toISOString(),
+      prazo_limite: prazoLimite,
       visita_realizada: null,
-      created_at: agendamento.created_at.toISOString(),
-      updated_at: agendamento.updated_at.toISOString(),
+      created_at: agendamento.created_at,
+      updated_at: agendamento.updated_at,
     };
   }
 }

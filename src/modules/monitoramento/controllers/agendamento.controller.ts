@@ -457,10 +457,10 @@ export class AgendamentoController {
   })
   async confirmarAgendamento(
     @Param('id', ParseUUIDPipe) id: string,
-    @GetUser() user: Usuario
+    @GetUser() usuario: Usuario
   ): Promise<{ message: string; data: AgendamentoResponseDto }> {
     try {
-      const agendamento = await this.agendamentoService.confirmarAgendamento(id, user);
+      const agendamento = await this.agendamentoService.confirmarAgendamento(id, usuario.id);
 
       return {
         message: 'Agendamento confirmado com sucesso',

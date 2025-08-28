@@ -290,7 +290,7 @@ export class AgendamentoResponseDto {
     type: 'string',
     format: 'date-time',
   })
-  prazo_limite?: string;
+  prazo_limite?: Date;
 
   /**
    * Dados da visita realizada (se houver)
@@ -330,7 +330,7 @@ export class AgendamentoResponseDto {
     type: 'string',
     format: 'date-time',
   })
-  created_at: string;
+  created_at: Date;
 
   /**
    * Data da última atualização
@@ -341,7 +341,7 @@ export class AgendamentoResponseDto {
     type: 'string',
     format: 'date-time',
   })
-  updated_at: string;
+  updated_at: Date;
 
   /**
    * Dados complementares

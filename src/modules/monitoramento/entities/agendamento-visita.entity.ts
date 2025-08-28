@@ -16,6 +16,7 @@ import {
   PrioridadeVisita,
 } from '../enums';
 import { Pagamento } from '../../../entities/pagamento.entity';
+import { Usuario } from '@/entities';
 
 @Entity('agendamento_visita')
 export class AgendamentoVisita {
@@ -115,6 +116,30 @@ export class AgendamentoVisita {
   })
   @Column({ type: 'timestamp', nullable: true })
   data_cancelamento?: Date;
+
+  @ApiProperty({
+    description: 'ID do usuário que criou o agendamento',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    required: false,
+  })
+  @Column({ type: 'uuid', nullable: true })
+  created_by?: string;
+
+  @ApiProperty({
+    description: 'ID do usuário que atualizou o agendamento',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    required: false,
+  })
+  @Column({ type: 'uuid', nullable: true })
+  updated_by?: string;
+
+  @ManyToOne(() => Usuario, { eager: true })
+  @JoinColumn({ name: 'updated_by' })
+  atualizado_por: Usuario;
+
+  @ManyToOne(() => Usuario, { eager: true })
+  @JoinColumn({ name: 'created_by' })
+  criado_por: Usuario;
 
   @ApiProperty({
     description: 'Data de criação do registro',

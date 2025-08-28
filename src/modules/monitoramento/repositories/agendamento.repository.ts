@@ -86,10 +86,29 @@ export class AgendamentoRepository {
       .createQueryBuilder('agendamento')
       .leftJoinAndSelect('agendamento.pagamento', 'pagamento')
       .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
-      .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
+      .leftJoin('solicitacao.beneficiario', 'beneficiario')
+      .addSelect([
+        'beneficiario.id',
+        'beneficiario.nome',
+        'beneficiario.cpf',
+      ])
+      .leftJoin('solicitacao.tecnico', 'tecnico')
+      .addSelect([
+        'tecnico.id',
+        'tecnico.nome',
+        'tecnico.email',
+      ])
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
-      .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
+      .addSelect([
+        'unidade.id',
+        'unidade.nome',
+      ])
+      .leftJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
+      .addSelect([
+        'tipo_beneficio.id',
+        'tipo_beneficio.nome',
+        'tipo_beneficio.codigo',
+      ])
       .leftJoinAndSelect('agendamento.visitas', 'visita')
       .where('agendamento.id = :id', { id })
       .getOne();
@@ -320,14 +339,12 @@ export class AgendamentoRepository {
   private createBaseQueryBuilder(): SelectQueryBuilder<AgendamentoVisita> {
     return this.repository
       .createQueryBuilder('agendamento')
-      .leftJoinAndSelect('agendamento.beneficiario', 'beneficiario')
-      .leftJoinAndSelect('agendamento.concessao', 'concessao')
-      .leftJoinAndSelect('concessao.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
-      .leftJoinAndSelect('agendamento.tecnico_responsavel', 'tecnico')
-      .leftJoinAndSelect('tecnico.role', 'role')
-      .leftJoinAndSelect('agendamento.unidade', 'unidade')
-      .leftJoinAndSelect('agendamento.visitas', 'visita')
+      .leftJoinAndSelect('agendamento.pagamento', 'pagamento')
+      .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
+      .leftJoinAndSelect('solicitacao.unidade', 'unidade_solicitacao')
+      .leftJoinAndSelect('agendamento.criado_por', 'tecnico')
+      .leftJoinAndSelect('tecnico.unidade', 'unidade_tecnico')
       .orderBy('agendamento.data_agendamento', 'ASC');
   }
 
