@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.15](https://github.com/kemosoft-team/pgben-server/compare/v0.1.14...v0.1.15) (2025-08-29)
+
+
+### Features
+
+* **concessao:** implement advanced filters for concession management ([dede910](https://github.com/kemosoft-team/pgben-server/commit/dede910ef2b370c8203ec1222044febcf66814a0))
+* **filters:** implement advanced filtering system across modules ([990a999](https://github.com/kemosoft-team/pgben-server/commit/990a99947b887c43012c633798f78c7e9da10128))
+* **monitoramento:** add agendamento history tracking system ([d6c2ad5](https://github.com/kemosoft-team/pgben-server/commit/d6c2ad5e1abb92790b64523a9ea6363bddef5842))
+* **monitoramento:** rename ACOMPANHAMENTO to CONTINUIDADE visit type ([334a5c6](https://github.com/kemosoft-team/pgben-server/commit/334a5c63bb7b3bbea40c18383a7928b083e9038b))
+* **pagamento:** add pagination to pending monitoring payments endpoint ([8a30c34](https://github.com/kemosoft-team/pgben-server/commit/8a30c349c9fc713da556d00fe5ef1821c5781931))
+* **pagamento:** add tipo_concessao field to payment response ([10da0b2](https://github.com/kemosoft-team/pgben-server/commit/10da0b2af6f5b98d0d5eb676339605438e2a93a6))
+* **pagamento:** enhance beneficiario data structure in response dto and mapper ([7f95650](https://github.com/kemosoft-team/pgben-server/commit/7f956504a1901745596c83f24f1ee67b354aa386))
+
 ### [0.1.14](https://github.com/kemosoft-team/pgben-server/compare/v0.1.13...v0.1.14) (2025-08-26)
 
 
