@@ -167,18 +167,18 @@ export class BeneficioFiltrosResponseDto implements IResultadoFiltros {
       limit: { type: 'number', description: 'Limite de itens por página' },
       offset: { type: 'number', description: 'Offset da consulta' },
       page: { type: 'number', description: 'Página atual' },
-      totalPages: { type: 'number', description: 'Total de páginas' },
-      hasNextPage: { type: 'boolean', description: 'Se há próxima página' },
-      hasPreviousPage: { type: 'boolean', description: 'Se há página anterior' }
+      pages: { type: 'number', description: 'Total de páginas' },
+      hasNext: { type: 'boolean', description: 'Se há próxima página' },
+      hasPrev: { type: 'boolean', description: 'Se há página anterior' }
     }
   })
   meta: {
     limit: number;
     offset: number;
     page: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
+    pages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
   };
 
   @ApiProperty({

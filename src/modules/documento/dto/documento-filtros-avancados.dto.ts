@@ -261,18 +261,18 @@ export class DocumentoFiltrosResponseDto implements IResultadoFiltros {
       limit: 10,
       offset: 0,
       page: 1,
-      totalPages: 15,
-      hasNextPage: true,
-      hasPreviousPage: false,
+      pages: 15,
+      hasNext: true,
+      hasPrev: false,
     },
   })
   meta: {
     limit: number;
     offset: number;
     page: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
+    pages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
   };
 
   @ApiProperty({

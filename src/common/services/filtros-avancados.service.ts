@@ -398,9 +398,9 @@ export class FiltrosAvancadosService {
         limit,
         offset,
         page: pagina,
-        totalPages: totalPaginas,
-        hasNextPage: pagina < totalPaginas,
-        hasPreviousPage: pagina > 1
+        pages: totalPaginas,
+        hasNext: pagina < totalPaginas,
+        hasPrev: pagina > 1
       },
       tempo_execucao: tempoExecucao
     };

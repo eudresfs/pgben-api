@@ -156,18 +156,18 @@ export class AuditoriaFiltrosResponseDto implements IResultadoFiltros {
       limit: 20,
       offset: 0,
       page: 1,
-      totalPages: 8,
-      hasNextPage: true,
-      hasPreviousPage: false,
+      pages: 8,
+      hasNext: true,
+      hasPrev: false,
     },
   })
   meta: {
     limit: number;
     offset: number;
     page: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
+    pages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
   };
 
   @ApiProperty({

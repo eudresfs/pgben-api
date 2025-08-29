@@ -809,7 +809,7 @@ export class AgendamentoService {
     total: number;
     page: number;
     limit: number;
-    totalPages: number;
+    pages: number;
   }> {
     const paginationParams = PaginationHelper.applyDefaults({ page, limit });
     const result = await this.buscarTodos(filtros, paginationParams);
@@ -819,7 +819,7 @@ export class AgendamentoService {
       total: result.meta.total,
       page: result.meta.page,
       limit: result.meta.limit,
-      totalPages: result.meta.pages,
+      pages: result.meta.pages,
     };
   }
 
@@ -1127,18 +1127,19 @@ export class AgendamentoService {
    * Aplica filtros avançados para busca de agendamentos
    * 
    * @param filtros Filtros avançados a serem aplicados
-   * @returns Dados dos filtros disponíveis e estatísticas
+   * @returns Dados paginados dos agendamentos com estatísticas e filtros disponíveis
    */
   async aplicarFiltrosAvancados(filtros: AgendamentoFiltrosAvancadosDto): Promise<AgendamentoFiltrosResponseDto> {
     try {
-      // Criar query builder base
+      // Aplicar valores padrão de paginação
+      const paginationParams = PaginationHelper.applyDefaults({
+        page: filtros.page,
+        limit: filtros.limit
+      });
+
+      // Criar query builder base com relacionamentos
       const queryBuilder = this.agendamentoRepository
         .createQueryBuilder()
-        .leftJoinAndSelect('agendamento.pagamento', 'pagamento')
-        .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
-        .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
-        .leftJoinAndSelect('solicitacao.unidade', 'unidade')
-        .leftJoinAndSelect('solicitacao.tecnico', 'tecnico');
 
       // Aplicar filtros condicionalmente
       if (filtros.unidades?.length) {
@@ -1218,11 +1219,30 @@ export class AgendamentoService {
       const sortOrder = filtros.sort_order || 'ASC';
       queryBuilder.orderBy(`agendamento.${sortBy}`, sortOrder);
 
-      // Executar query para obter dados
+      // Obter total de registros antes da paginação
+      const total = await queryBuilder.getCount();
+
+      // Aplicar paginação
+      const skip = (paginationParams.page - 1) * paginationParams.limit;
+      queryBuilder.skip(skip).take(paginationParams.limit);
+
+      // Executar query para obter dados paginados
       const agendamentos = await queryBuilder.getMany();
 
-      // Construir resposta com estatísticas
+      // Converter para DTOs
+      const agendamentosDto = agendamentos.map(agendamento => this.buildResponseDto(agendamento));
+
+      // Construir resposta com dados paginados e estatísticas
       const response: AgendamentoFiltrosResponseDto = {
+        data: agendamentosDto,
+        meta: {
+          total,
+          page: paginationParams.page,
+          limit: paginationParams.limit,
+          pages: Math.ceil(total / paginationParams.limit),
+          hasNext: paginationParams.page < Math.ceil(total / paginationParams.limit),
+          hasPrev: paginationParams.page > 1
+        },
         unidades: await this.obterUnidadesDisponiveis(),
         status: await this.obterStatusDisponiveis(),
         tipos_visita: await this.obterTiposVisitaDisponiveis(),
@@ -1251,12 +1271,9 @@ export class AgendamentoService {
   private async obterUnidadesDisponiveis(): Promise<Array<{ id: string; nome: string; total_agendamentos: number }>> {
     const result = await this.agendamentoRepository
       .createQueryBuilder()
-      .leftJoin('agendamento.pagamento', 'pagamento')
-      .leftJoin('pagamento.solicitacao', 'solicitacao')
-      .leftJoin('solicitacao.unidade', 'unidade')
       .select('unidade.id', 'id')
       .addSelect('unidade.nome', 'nome')
-      .addSelect('COUNT(agendamento.id)', 'total_agendamentos')
+      .addSelect('COUNT(DISTINCT agendamento.id)', 'total_agendamentos')
       .where('unidade.id IS NOT NULL')
       .groupBy('unidade.id')
       .addGroupBy('unidade.nome')
@@ -1338,12 +1355,12 @@ export class AgendamentoService {
   private async obterTecnicosDisponiveis(): Promise<Array<{ id: string; nome: string; total_agendamentos: number }>> {
     const result = await this.agendamentoRepository
       .createQueryBuilder()
-      .leftJoinAndSelect('agendamento.pagamento', 'pagamento')
-      .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
+      // .leftJoin('agendamento.pagamento', 'pagamento')
+      // .leftJoin('pagamento.solicitacao', 'solicitacao')
+      // .leftJoin('solicitacao.tecnico', 'tecnico')
       .select('tecnico.id', 'id')
       .addSelect('tecnico.nome', 'nome')
-      .addSelect('COUNT(agendamento.id)', 'total_agendamentos')
+      .addSelect('COUNT(DISTINCT agendamento.id)', 'total_agendamentos')
       .where('tecnico.id IS NOT NULL')
       .groupBy('tecnico.id')
       .addGroupBy('tecnico.nome')

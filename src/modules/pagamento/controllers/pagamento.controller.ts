@@ -201,9 +201,9 @@ export class PagamentoController {
         meta: {
           page: 1,
           limit: 10,
-          totalPages: 125,
-          hasNextPage: true,
-          hasPreviousPage: false,
+          pages: 125,
+          hasNext: true,
+          hasPrev: false,
           valor_total_filtrado: 750000.00
         },
         tempo_execucao: 120
@@ -411,7 +411,7 @@ export class PagamentoController {
             page: { type: 'number' },
             limit: { type: 'number' },
             total: { type: 'number' },
-            totalPages: { type: 'number' }
+            pages: { type: 'number' }
           }
         }
       }
@@ -484,7 +484,7 @@ export class PagamentoController {
         page: filtros.page || 1,
         limit: filtros.limit || 10,
         total: resultado.total,
-        totalPages: Math.ceil(resultado.total / (filtros.limit || 10))
+        pages: Math.ceil(resultado.total / (filtros.limit || 10))
       }
     };
   }

@@ -207,7 +207,7 @@ export class HistoricoAgendamentoController {
            total: resultado.total,
            page: resultado.page,
            limit: resultado.limit,
-           pages: resultado.totalPages,
+           pages: resultado.pages,
            hasNext: resultado.hasNext,
            hasPrev: resultado.hasPrev
          }
@@ -308,7 +308,7 @@ export class HistoricoAgendamentoController {
            total: resultado.total,
            page: resultado.page,
            limit: resultado.limit,
-           pages: resultado.totalPages,
+           pages: resultado.pages,
            hasNext: resultado.hasNext,
            hasPrev: resultado.hasPrev
          }

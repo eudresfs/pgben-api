@@ -130,9 +130,9 @@ export class SolicitacaoController {
         meta: {
           page: 1,
           limit: 10,
-          totalPages: 15,
-          hasNextPage: true,
-          hasPreviousPage: false
+          pages: 15,
+          hasNext: true,
+          hasPrev: false
         },
         tempo_execucao: 150
       }

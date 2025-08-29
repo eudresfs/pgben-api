@@ -396,9 +396,9 @@ export class AuditoriaService {
         page: filtros.page,
         limit: filtros.limit,
         offset: (filtros.page - 1) * filtros.limit,
-        totalPages: Math.ceil(resultado.total / filtros.limit),
-        hasNextPage: filtros.page * filtros.limit < resultado.total,
-        hasPreviousPage: filtros.page > 1,
+        pages: Math.ceil(resultado.total / filtros.limit),
+        hasNext: filtros.page * filtros.limit < resultado.total,
+        hasPrev: filtros.page > 1,
       },
       tempo_execucao: executionTime,
     };

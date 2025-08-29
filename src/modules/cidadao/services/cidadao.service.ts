@@ -964,9 +964,9 @@ private async consultarNovoBolsaFamiliaSacado(
       );
 
       // Calcular metadados de paginação
-      const totalPages = Math.ceil(total / take);
-      const hasNextPage = page < totalPages;
-      const hasPreviousPage = page > 1;
+      const pages = Math.ceil(total / take);
+      const hasNext = page < pages;
+      const hasPrev = page > 1;
 
       // Preparar filtros aplicados para resposta
       const filtrosAplicados = {
@@ -1002,9 +1002,9 @@ private async consultarNovoBolsaFamiliaSacado(
           limit: take,
           offset: skip,
           page,
-          totalPages,
-          hasNextPage,
-          hasPreviousPage,
+          pages,
+          hasNext,
+          hasPrev,
         }
       };
     } catch (error) {

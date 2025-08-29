@@ -342,10 +342,8 @@ export class AgendamentoRepository {
       .leftJoinAndSelect('agendamento.pagamento', 'pagamento')
       .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
       .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
-      .leftJoinAndSelect('solicitacao.unidade', 'unidade_solicitacao')
+      .leftJoinAndSelect('solicitacao.unidade', 'unidade')
       .leftJoinAndSelect('agendamento.criado_por', 'tecnico')
-      .leftJoinAndSelect('tecnico.unidade', 'unidade_tecnico')
-      .orderBy('agendamento.data_agendamento', 'ASC');
   }
 
   /**

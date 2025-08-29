@@ -140,7 +140,7 @@ export class AprovacaoController {
         total: resultado.total,
         page,
         limit,
-        totalPages: Math.ceil(resultado.total / limit)
+        pages: Math.ceil(resultado.total / limit)
       }
     };
   }
@@ -254,7 +254,7 @@ export class AprovacaoController {
         total: resultado.total,
         page,
         limit,
-        totalPages: Math.ceil(resultado.total / limit)
+        pages: Math.ceil(resultado.total / limit)
       }
     };
   }
@@ -379,8 +379,8 @@ export class AprovacaoController {
     );
 
     return {
+      ...resultado,
       message: 'Filtros aplicados com sucesso',
-      data: resultado
     };
   }
 

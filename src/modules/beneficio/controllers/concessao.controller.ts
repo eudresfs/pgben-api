@@ -267,8 +267,8 @@ export class ConcessaoController {
 
     // Calcular metadados de paginação seguindo o padrão do projeto
     const page = filtro.page || Math.floor(result.offset / result.limit) + 1;
-    const totalPages = Math.ceil(result.total / result.limit);
-    const hasNext = page < totalPages;
+    const pages = Math.ceil(result.total / result.limit);
+    const hasNext = page < pages;
     const hasPrevious = page > 1;
 
     // Criar metadados de paginação
@@ -276,7 +276,7 @@ export class ConcessaoController {
       page,
       limit: result.limit,
       total: result.total,
-      pages: totalPages,
+      pages: pages,
       hasNext,
       hasPrev: hasPrevious,
     };

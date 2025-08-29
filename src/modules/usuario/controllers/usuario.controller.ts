@@ -116,7 +116,7 @@ export class UsuarioController {
           total: 150,
           page: 1,
           limit: 20,
-          totalPages: 8
+          pages: 8
         }
       }
     }
@@ -291,9 +291,9 @@ export class UsuarioController {
         meta: {
           page: 1,
           limit: 10,
-          totalPages: 9,
-          hasNextPage: true,
-          hasPreviousPage: false
+          pages: 9,
+          hasNext: true,
+          hasPrev: false
         },
         tempo_execucao: 95
       }

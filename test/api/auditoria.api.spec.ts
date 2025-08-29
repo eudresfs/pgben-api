@@ -152,7 +152,7 @@ describe('Auditoria API', () => {
       expect(response.body.total).toBe(5);
       expect(response.body.page).toBe(1);
       expect(response.body.limit).toBe(3);
-      expect(response.body.totalPages).toBe(2);
+      expect(response.body.pages).toBe(2);
     });
 
     it('deve filtrar logs por tipo de operação', async () => {

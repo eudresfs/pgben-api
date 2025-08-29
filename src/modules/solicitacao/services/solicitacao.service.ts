@@ -512,9 +512,9 @@ export class SolicitacaoService {
         limit: resultado.meta.limit,
         offset: (resultado.meta.page - 1) * resultado.meta.limit,
         page: resultado.meta.page,
-        totalPages: resultado.meta.pages,
-        hasNextPage: resultado.meta.has_next,
-        hasPreviousPage: resultado.meta.has_prev
+        pages: resultado.meta.pages,
+        hasNext: resultado.meta.has_next,
+        hasPrev: resultado.meta.has_prev
       },
       tempo_execucao: executionTime
     };

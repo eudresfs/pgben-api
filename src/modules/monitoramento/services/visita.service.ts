@@ -36,6 +36,8 @@ export class VisitaService {
 
   constructor(
     private readonly visitaRepository: VisitaRepository,
+    @InjectRepository(VisitaDomiciliar)
+    private readonly visitaEntityRepository: Repository<VisitaDomiciliar>,
     @InjectRepository(AgendamentoVisita)
     private readonly agendamentoRepository: Repository<AgendamentoVisita>,
     @InjectRepository(Pagamento)
@@ -957,12 +959,13 @@ export class VisitaService {
    * @returns Resultado da busca com estatísticas e opções de filtro
    */
   async aplicarFiltrosAvancados(filtros: VisitaFiltrosAvancadosDto): Promise<VisitaFiltrosResponseDto> {
-    const queryBuilder = this.visitaRepository.createQueryBuilder('visita')
+    const queryBuilder = this.visitaEntityRepository.createQueryBuilder('visita')
       .leftJoinAndSelect('visita.agendamento', 'agendamento')
-      .leftJoinAndSelect('agendamento.beneficiario', 'beneficiario')
-      .leftJoinAndSelect('beneficiario.unidade', 'unidade')
+      .leftJoinAndSelect('visita.beneficiario', 'beneficiario')
       .leftJoinAndSelect('visita.tecnico_responsavel', 'tecnico')
-      .leftJoinAndSelect('agendamento.pagamento', 'pagamento');
+      .leftJoinAndSelect('agendamento.pagamento', 'pagamento')
+      .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+      .leftJoinAndSelect('solicitacao.unidade', 'unidade')
 
     // Aplicar filtros condicionais
     if (filtros.unidades?.length) {
@@ -1041,9 +1044,21 @@ export class VisitaService {
     // Obter opções de filtro
     const opcoesFilter = await this.obterOpcoesFilterVisitas();
 
+    // Calcular metadados de paginação
+    const pages = Math.ceil(total / limit);
+    const hasNext = page < pages;
+    const hasPrev = page > 1;
+
     return {
-      visitas: visitas.map(visita => this.mapearVisitaParaResponse(visita)),
-      total,
+      data: visitas.map(visita => this.mapearVisitaParaResponse(visita)),
+      meta: {
+        limit,
+        total,
+        page,
+        pages,
+        hasNext,
+        hasPrev
+      },
       estatisticas,
       opcoes_filtro: opcoesFilter
     };

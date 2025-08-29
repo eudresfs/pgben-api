@@ -181,9 +181,9 @@ export interface IResultadoFiltros<T = any> {
     limit: number;
     offset: number;
     page: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
+    pages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
   };
   
   /** Tempo de execução da query (em ms) */

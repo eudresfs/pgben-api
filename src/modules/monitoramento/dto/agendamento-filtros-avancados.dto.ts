@@ -1,10 +1,10 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsArray, IsUUID, IsEnum, IsString, IsBoolean } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
 import { TipoVisita, PrioridadeVisita, StatusAgendamento } from '../enums';
 import { PeriodoPredefinido } from '@/enums/periodo-predefinido.enum';
-import { transformToUUIDArray } from '../../../common/utils/filtros-transform.util';
+import { transformToStringArray, transformToUUIDArray } from '../../../common/utils/filtros-transform.util';
 
 /**
  * DTO para filtros avançados de agendamentos
@@ -47,7 +47,7 @@ export class AgendamentoFiltrosAvancadosDto extends PaginationParamsDto {
   @IsOptional()
   @IsArray()
   @IsEnum(StatusAgendamento, { each: true })
-  @Transform(({ value }) => transformToUUIDArray(value))
+  @Transform(({ value }) => transformToStringArray(value))
   status?: StatusAgendamento[];
 
   @ApiPropertyOptional({
@@ -65,7 +65,7 @@ export class AgendamentoFiltrosAvancadosDto extends PaginationParamsDto {
   @IsOptional()
   @IsArray()
   @IsEnum(TipoVisita, { each: true })
-  @Transform(({ value }) => transformToUUIDArray(value))
+  @Transform(({ value }) => transformToStringArray(value))
   tipos_visita?: TipoVisita[];
 
   @ApiPropertyOptional({
@@ -83,7 +83,7 @@ export class AgendamentoFiltrosAvancadosDto extends PaginationParamsDto {
   @IsOptional()
   @IsArray()
   @IsEnum(PrioridadeVisita, { each: true })
-  @Transform(({ value }) => transformToUUIDArray(value))
+  @Transform(({ value }) => transformToStringArray(value))
   prioridades?: PrioridadeVisita[];
 
   @ApiPropertyOptional({
@@ -252,9 +252,59 @@ export class AgendamentoFiltrosAvancadosDto extends PaginationParamsDto {
 
 /**
  * DTO de resposta para filtros avançados de agendamentos
- * Inclui metadados sobre os filtros aplicados e estatísticas
+ * Inclui dados paginados, metadados sobre os filtros aplicados e estatísticas
  */
 export class AgendamentoFiltrosResponseDto {
+  @ApiProperty({
+    description: 'Lista paginada de agendamentos que atendem aos critérios de filtro aplicados',
+    type: [Object],
+    example: [
+      {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        data_agendamento: '2024-01-15T10:30:00Z',
+        status: 'agendado',
+        tipo_visita: 'inicial',
+        prioridade: 'alta',
+        observacoes: 'Primeira visita domiciliar',
+        beneficiario: {
+          id: '660e8400-e29b-41d4-a716-446655440001',
+          nome: 'João Silva',
+          cpf: '123.456.789-00'
+        },
+        tecnico: {
+          id: '770e8400-e29b-41d4-a716-446655440002',
+          nome: 'Maria Santos'
+        },
+        unidade: {
+          id: '880e8400-e29b-41d4-a716-446655440003',
+          nome: 'CRAS Centro'
+        }
+      }
+    ]
+  })
+  data: any[];
+
+  @ApiProperty({
+    description: 'Metadados de paginação',
+    type: Object,
+    example: {
+      total: 150,
+      page: 1,
+      limit: 10,
+      pages: 15,
+      hasNext: true,
+      hasPrev: false
+    }
+  })
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+
   @ApiPropertyOptional({
     description: 'Lista de unidades disponíveis para filtro',
     type: [Object],

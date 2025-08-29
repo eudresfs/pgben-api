@@ -1442,8 +1442,8 @@ export class ConcessaoService {
       }));
 
       // Calcular metadados de paginação
-      const totalPages = Math.ceil(total / limit);
-      const hasNext = page < totalPages;
+      const pages = Math.ceil(total / limit);
+      const hasNext = page < pages;
       const hasPrev = page > 1;
 
       const executionTime = Date.now() - startTime;
@@ -1458,7 +1458,7 @@ export class ConcessaoService {
           page,
           limit,
           total,
-          pages: totalPages,
+          pages: pages,
           hasNext,
           hasPrev: hasPrev,
         },

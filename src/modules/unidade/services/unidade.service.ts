@@ -83,7 +83,7 @@ export class UnidadeService {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
+        pages: Math.ceil(total / limit),
       },
     };
   }
@@ -292,9 +292,9 @@ export class UnidadeService {
     const [unidades, total] = await queryComFiltros.getManyAndCount();
 
     // Calcular metadados de paginação
-    const totalPages = Math.ceil(total / filtros.limit);
-    const hasNextPage = filtros.page < totalPages;
-    const hasPreviousPage = filtros.page > 1;
+    const pages = Math.ceil(total / filtros.limit);
+    const hasNext = filtros.page < pages;
+    const hasPrev = filtros.page > 1;
 
     this.logger.log(
       `Busca avançada concluída: ${unidades.length} unidades encontradas de ${total} total`,
@@ -312,10 +312,10 @@ export class UnidadeService {
         page: filtros.page,
         offset: (filtros.page - 1) * filtros.limit,
         limit: filtros.limit,
-        totalPages: totalPages,
+        pages: pages,
         total,
-        hasNextPage,
-        hasPreviousPage,
+        hasNext,
+        hasPrev,
       },
       tempo_execucao: 0,
     };

@@ -210,18 +210,18 @@ export class UnidadeFiltrosResponseDto implements IResultadoFiltros {
       limit: { type: 'number', example: 10 },
       offset: { type: 'number', example: 0 },
       page: { type: 'number', example: 1 },
-      totalPages: { type: 'number', example: 15 },
-      hasNextPage: { type: 'boolean', example: true },
-      hasPreviousPage: { type: 'boolean', example: false },
+      pages: { type: 'number', example: 15 },
+      hasNext: { type: 'boolean', example: true },
+      hasPrev: { type: 'boolean', example: false },
     },
   })
   meta: {
     limit: number;
     offset: number;
     page: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
+    pages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
     total: number;
   };
 

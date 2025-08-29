@@ -27,7 +27,7 @@ export class CursorCidadaoPaginatedResponseDto {
         type: 'string',
         example: '550e8400-e29b-41d4-a716-446655440000',
       },
-      hasNextPage: { type: 'boolean', example: true },
+      hasNext: { type: 'boolean', example: true },
     },
     description: 'Metadados da paginação',
   })
@@ -36,6 +36,6 @@ export class CursorCidadaoPaginatedResponseDto {
     count: number;
     total: number;
     nextCursor?: string;
-    hasNextPage: boolean;
+    hasNext: boolean;
   };
 }

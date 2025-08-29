@@ -240,14 +240,27 @@ export class VisitaFiltrosResponseDto {
       necessita_nova_visita: false
     }]
   })
-  visitas: any[];
+  data: any[];
 
   @ApiProperty({
-    description: 'Total de registros encontrados',
-    type: Number,
-    example: 150
+    description: 'Metadados de paginação',
+    example: {
+      limit: 20,
+      total: 0,
+      page: 1,
+      pages: 8,
+      hasNext: true,
+      hasPrev: false
+    }
   })
-  total: number;
+  meta: {
+    limit: number;
+    total: number;
+    page: number;
+    pages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 
   @ApiProperty({
     description: 'Estatísticas das visitas',

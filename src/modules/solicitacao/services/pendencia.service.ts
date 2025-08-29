@@ -543,14 +543,14 @@ export class PendenciaService {
       }),
     );
 
-    const totalPages = Math.ceil(total / limit);
+    const pages = Math.ceil(total / limit);
 
     return new PaginatedResponseDto(pendenciasDto, {
       page,
       limit,
       total,
-      pages: totalPages,
-      hasNext: page < totalPages,
+      pages: pages,
+      hasNext: page < pages,
       hasPrev: page > 1,
     });
   }

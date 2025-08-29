@@ -508,9 +508,9 @@ export class BeneficioService {
     if (data_fim) filtros_aplicados.data_fim = data_fim;
 
     // Construir metadados de paginação
-    const totalPages = Math.ceil(total / limit);
-    const hasNextPage = page < totalPages;
-    const hasPreviousPage = page > 1;
+    const pages = Math.ceil(total / limit);
+    const hasNext = page < pages;
+    const hasPrev = page > 1;
 
     return {
       items: itemsEnriquecidos,
@@ -520,9 +520,9 @@ export class BeneficioService {
         limit,
         offset,
         page,
-        totalPages,
-        hasNextPage,
-        hasPreviousPage,
+        pages,
+        hasNext,
+        hasPrev,
       },
       tempo_execucao: 0, // Será preenchido no controlador
     };

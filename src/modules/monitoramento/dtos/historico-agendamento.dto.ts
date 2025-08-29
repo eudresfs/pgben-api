@@ -442,7 +442,7 @@ export class HistoricoAgendamentoResponseDto {
     description: 'Total de páginas',
     example: 8,
   })
-  totalPages: number;
+  pages: number;
 
   @ApiProperty({
     description: 'Indica se há próxima página',

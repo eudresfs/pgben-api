@@ -4,7 +4,7 @@ import { Transform } from 'class-transformer';
 import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
 import { StatusSolicitacao } from '../enums';
 import { PeriodoPredefinido } from '../../../enums/periodo-predefinido.enum';
-import { transformToUUIDArray } from '../../../common/utils/filtros-transform.util';
+import { transformToStringArray, transformToUUIDArray } from '../../../common/utils/filtros-transform.util';
 
 /**
  * DTO para filtros avançados de aprovações
@@ -46,7 +46,7 @@ export class AprovacaoFiltrosAvancadosDto extends PaginationParamsDto {
   @IsOptional()
   @IsArray()
   @IsEnum(StatusSolicitacao, { each: true })
-  @Transform(({ value }) => transformToUUIDArray(value))
+  @Transform(({ value }) => transformToStringArray(value))
   status?: StatusSolicitacao[];
 
   @ApiPropertyOptional({
@@ -62,7 +62,7 @@ export class AprovacaoFiltrosAvancadosDto extends PaginationParamsDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @Transform(({ value }) => transformToUUIDArray(value))
+  @Transform(({ value }) => transformToStringArray(value))
   tipos_acao?: string[];
 
   @ApiPropertyOptional({
@@ -179,17 +179,12 @@ export class AprovacaoFiltrosAvancadosDto extends PaginationParamsDto {
   
   @ApiPropertyOptional({
     description: 'Relacionamentos a incluir na resposta para otimizar consultas.',
-    type: [String],
-    example: ['solicitante', 'aprovador', 'acao'],
-    items: {
-      type: 'string',
-      enum: ['solicitante', 'aprovador', 'acao', 'anexos']
-    }
+    type: Boolean,
+    example: true
   })
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  include_relations?: string[];
+  @IsBoolean()
+  include_relations?: boolean;
 
   @ApiPropertyOptional({
     description: 'Campo para ordenação dos resultados.',
@@ -321,7 +316,7 @@ export class AprovacaoFiltrosResponseDto {
       }
     }
   })
-  aprovacoes: Array<{
+  data: Array<{
     id: string;
     codigo: string;
     status: string;
@@ -329,6 +324,26 @@ export class AprovacaoFiltrosResponseDto {
     solicitante: any;
     created_at: Date;
   }>;
+
+  @ApiPropertyOptional({
+    description: 'Metadados de paginação',
+    example: {
+      limit: 20,
+      total: 20,
+      page: 1,
+      pages: 8,
+      hasNext: true,
+      hasPrev: false
+    }
+  })
+  meta: {
+    limit: number;
+    total: number;
+    page: number;
+    pages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 
   @ApiPropertyOptional({
     description: 'Períodos predefinidos disponíveis para filtro',

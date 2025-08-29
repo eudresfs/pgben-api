@@ -49,7 +49,7 @@ export interface IPaginatedResult<T> {
   total: number;
   page: number;
   limit: number;
-  totalPages: number;
+  pages: number;
 }
 
 /**
@@ -239,7 +239,7 @@ export abstract class AbstractDadosBeneficioService<
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit),
+        pages: Math.ceil(total / limit),
       },
     };
   }

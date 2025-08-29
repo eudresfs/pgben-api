@@ -69,7 +69,7 @@ describe('UnidadeController', () => {
     total: 1,
     page: 1,
     limit: 10,
-    totalPages: 1,
+    pages: 1,
   };
 
   // Mock para AuthGuard

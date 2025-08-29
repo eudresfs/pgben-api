@@ -240,7 +240,7 @@ export class UsuarioService {
           total,
           page,
           limit,
-          totalPages: Math.ceil(total / limit),
+          pages: Math.ceil(total / limit),
         },
       };
     }
@@ -269,7 +269,7 @@ export class UsuarioService {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
+        pages: Math.ceil(total / limit),
       },
     };
   }
@@ -1507,9 +1507,9 @@ export class UsuarioService {
           limit,
           offset,
           page: Math.floor(offset / limit) + 1,
-          totalPages: Math.ceil(total / limit),
-          hasNextPage: offset + limit < total,
-          hasPreviousPage: offset > 0
+          pages: Math.ceil(total / limit),
+          hasNext: offset + limit < total,
+          hasPrev: offset > 0
         },
         tempo_execucao: tempoExecucao
       };

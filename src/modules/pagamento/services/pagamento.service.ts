@@ -563,14 +563,14 @@ export class PagamentoService {
       const tempoExecucao = Date.now() - startTime;
 
       // Preparar metadados de paginação
-      const totalPages = Math.ceil(total / limit);
+      const pages = Math.ceil(total / limit);
       const meta = {
         limit,
         offset,
         page,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1,
+        pages,
+        hasNext: page < pages,
+        hasPrev: page > 1,
       };
 
       // Calcular período se fornecido

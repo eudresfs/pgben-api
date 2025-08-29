@@ -69,7 +69,7 @@ export class PaginatedResponse<T> {
         description: 'Número de itens por página',
         example: 10,
       },
-      totalPages: {
+      pages: {
         type: 'integer',
         description: 'Número total de páginas',
         example: 15,
@@ -90,7 +90,7 @@ export class PaginatedResponse<T> {
     total: number;
     page: number;
     limit: number;
-    totalPages: number;
+    pages: number;
     hasPrevious: boolean;
     hasNext: boolean;
   };

@@ -904,9 +904,9 @@ export class DocumentoService {
           page: filtros.page,
           offset: (filtros.page - 1) * filtros.limit,
           limit: filtros.limit,
-          totalPages: Math.ceil(resultado.total / filtros.limit),
-          hasNextPage: filtros.page < Math.ceil(resultado.total / filtros.limit),
-          hasPreviousPage: filtros.page > 1,
+          pages: Math.ceil(resultado.total / filtros.limit),
+          hasNext: filtros.page < Math.ceil(resultado.total / filtros.limit),
+          hasPrev: filtros.page > 1,
         },
         tempo_execucao: tempoExecucao,
       };

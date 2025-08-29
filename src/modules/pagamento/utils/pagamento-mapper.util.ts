@@ -159,12 +159,12 @@ export class PagamentoMapper {
       page: number;
       itemsPerPage: number;
       totalItems: number;
-      totalPages: number;
-      hasNextPage: boolean;
-      hasPreviousPage: boolean;
+      pages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
     };
   } {
-    const totalPages = Math.ceil(total / limit);
+    const pages = Math.ceil(total / limit);
 
     return {
       data: items,
@@ -172,9 +172,9 @@ export class PagamentoMapper {
         page: page,
         itemsPerPage: limit,
         totalItems: total,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1,
+        pages,
+        hasNext: page < pages,
+        hasPrev: page > 1,
       },
     };
   }

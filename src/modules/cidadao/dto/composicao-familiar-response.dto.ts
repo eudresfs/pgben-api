@@ -237,7 +237,7 @@ export class ComposicaoFamiliarPaginatedResponseDto {
       total: 50,
       page: 1,
       limit: 10,
-      totalPages: 5,
+      pages: 5,
       hasNext: true,
       hasPrev: false,
     },
@@ -247,7 +247,7 @@ export class ComposicaoFamiliarPaginatedResponseDto {
     total: number;
     page: number;
     limit: number;
-    totalPages: number;
+    pages: number;
     hasNext: boolean;
     hasPrev: boolean;
   };

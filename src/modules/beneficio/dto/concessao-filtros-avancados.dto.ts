@@ -134,7 +134,7 @@ export class ConcessaoFiltrosAvancadosDto extends PaginationParamsDto {
   @IsOptional()
   @IsArray()
   @IsNumber({}, { each: true })
-  @Min(1, { each: true })
+  @Min(0, { each: true })
   @Max(5, { each: true })
   @ArrayMaxSize(5)
   @Type(() => Number)
@@ -148,16 +148,6 @@ export class ConcessaoFiltrosAvancadosDto extends PaginationParamsDto {
     return value ? [Number(value)] : undefined;
   })
   prioridades?: number[];
-
-  @ApiPropertyOptional({
-    description: 'Incluir concessões arquivadas',
-    example: false,
-    default: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  @Type(() => Boolean)
-  incluir_arquivados?: boolean = false;
 
   @ApiPropertyOptional({
     description: 'Incluir relacionamentos nas consultas',

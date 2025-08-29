@@ -316,9 +316,9 @@ export class PagamentoFiltrosResponseDto implements IResultadoFiltros {
     limit: number;
     offset: number;
     page: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
+    pages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
   };
 
   @ApiProperty({

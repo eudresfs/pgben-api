@@ -56,7 +56,7 @@ export interface HistoricoAgendamentoResponse {
   /** Itens por página */
   limit: number;
   /** Total de páginas */
-  totalPages: number;
+  pages: number;
   /** Indica se há próxima página */
   hasNext: boolean;
   /** Indica se há página anterior */
@@ -422,15 +422,15 @@ export class HistoricoAgendamentoService {
   ): HistoricoAgendamentoResponse {
     const page = paginacao?.page || 1;
     const limit = paginacao?.limit || 20;
-    const totalPages = Math.ceil(resultado.total / limit);
+    const pages = Math.ceil(resultado.total / limit);
 
     return {
       data: resultado.data,
       total: resultado.total,
       page,
       limit,
-      totalPages,
-      hasNext: page < totalPages,
+      pages,
+      hasNext: page < pages,
       hasPrev: page > 1,
     };
   }

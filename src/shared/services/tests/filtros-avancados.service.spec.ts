@@ -256,9 +256,9 @@ describe('FiltrosAvancadosService', () => {
 
       expect(resultado.items).toEqual(dados);
       expect(resultado.total).toBe(total);
-      expect(resultado.meta.totalPages).toBe(2);
-      expect(resultado.meta.hasNextPage).toBe(true);
-      expect(resultado.meta.hasPreviousPage).toBe(false);
+      expect(resultado.meta.pages).toBe(2);
+      expect(resultado.meta.hasNext).toBe(true);
+      expect(resultado.meta.hasPrev).toBe(false);
     });
   });
 

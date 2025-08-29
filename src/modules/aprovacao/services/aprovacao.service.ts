@@ -2077,7 +2077,6 @@ export class AprovacaoService {
         .leftJoinAndSelect('aprovacao.solicitante', 'solicitante')
         .leftJoinAndSelect('aprovacao.acao_aprovacao', 'acao')
         .leftJoinAndSelect('aprovacao.solicitacao_aprovadores', 'aprovadores')
-        .leftJoinAndSelect('aprovadores.aprovador', 'aprovador')
         .leftJoinAndSelect('solicitante.unidade', 'unidade');
 
       // ========== APLICAR FILTROS ==========
@@ -2112,7 +2111,7 @@ export class AprovacaoService {
 
       // Filtro por aprovadores
       if (filtros.aprovadores?.length) {
-        queryBuilder.andWhere('aprovadores.aprovador_id IN (:...aprovadores)', {
+        queryBuilder.andWhere('aprovadores.usuario_id IN (:...aprovadores)', {
           aprovadores: filtros.aprovadores
         });
       }
@@ -2188,9 +2187,22 @@ export class AprovacaoService {
         this.calcularEstatisticasAprovacoes()
       ]);
 
+      // ========== CALCULAR METADADOS DE PAGINAÇÃO ==========
+      const pages = Math.ceil(total / limit);
+      const hasNext = page < pages;
+      const hasPrev = page > 1;
+
       // ========== CONSTRUIR RESPOSTA ==========
       return {
-        aprovacoes: aprovacoes.map(aprovacao => this.mapearAprovacaoParaResposta(aprovacao)),
+        data: aprovacoes.map(aprovacao => this.mapearAprovacaoParaResposta(aprovacao)),
+        meta: {
+          limit,
+          total,
+          page,
+          pages,
+          hasNext,
+          hasPrev
+        },
         estatisticas,
         unidades,
         status: statusList,

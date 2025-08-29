@@ -181,18 +181,18 @@ export class UsuarioFiltrosResponseDto implements IResultadoFiltros {
       limit: 10,
       offset: 0,
       page: 1,
-      totalPages: 1,
-      hasNextPage: false,
-      hasPreviousPage: false
+      pages: 1,
+      hasNext: false,
+      hasPrev: false
     }
   })
   meta: {
     limit: number;
     offset: number;
     page: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
+    pages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
   };
 
   @ApiProperty({

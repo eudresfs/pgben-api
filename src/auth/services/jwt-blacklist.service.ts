@@ -294,7 +294,7 @@ export class JwtBlacklistService {
     total: number;
     page: number;
     limit: number;
-    totalPages: number;
+    pages: number;
   }> {
     try {
       const page = queryDto.page || 1;
@@ -336,14 +336,14 @@ export class JwtBlacklistService {
       queryBuilder.skip(skip).take(limit);
 
       const [data, total] = await queryBuilder.getManyAndCount();
-      const totalPages = Math.ceil(total / limit);
+      const pages = Math.ceil(total / limit);
 
       return {
         data,
         total,
         page,
         limit,
-        totalPages,
+        pages,
       };
     } catch (error) {
       this.logger.error(`Erro ao listar tokens blacklisted: ${error.message}`, {

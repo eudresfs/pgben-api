@@ -229,7 +229,7 @@ export class ComposicaoFamiliarService {
       }),
     );
 
-    const totalPages = Math.ceil(total / limit);
+    const pages = Math.ceil(total / limit);
 
     return {
       data,
@@ -237,8 +237,8 @@ export class ComposicaoFamiliarService {
         total,
         page,
         limit,
-        totalPages,
-        hasNext: page < totalPages,
+        pages,
+        hasNext: page < pages,
         hasPrev: page > 1,
       },
     };

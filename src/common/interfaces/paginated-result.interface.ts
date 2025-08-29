@@ -32,6 +32,6 @@ export interface PaginatedResult<T> {
     /**
      * Total de páginas disponíveis
      */
-    totalPages: number;
+    pages: number;
   };
 }
