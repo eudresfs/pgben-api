@@ -349,6 +349,27 @@ export class AgendamentoRepository {
   }
 
   /**
+   * Cria um query builder público para consultas customizadas
+   * 
+   * @returns Query builder configurado
+   */
+  createQueryBuilder(): SelectQueryBuilder<AgendamentoVisita> {
+    return this.createBaseQueryBuilder();
+  }
+
+  /**
+   * Conta o total de agendamentos com filtros opcionais
+   * 
+   * @param filters Filtros opcionais
+   * @returns Número total de agendamentos
+   */
+  async count(filters?: AgendamentoFilters): Promise<number> {
+    const queryBuilder = this.createBaseQueryBuilder();
+    this.applyFilters(queryBuilder, filters);
+    return queryBuilder.getCount();
+  }
+
+  /**
    * Aplica filtros ao query builder
    * 
    * @private

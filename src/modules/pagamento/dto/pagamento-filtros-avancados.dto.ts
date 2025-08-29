@@ -15,13 +15,14 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
-import { 
-  IResultadoFiltros, 
+import {
+  IResultadoFiltros,
   IFiltrosAvancados,
-  IPeriodoCalculado 
+  IPeriodoCalculado
 } from '../../../common/interfaces/filtros-avancados.interface';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
+import { PeriodoPredefinido } from '../../../enums/periodo-predefinido.enum';
 import { transformToStringArray } from '../../../common/utils/filtros-transform.util';
 
 /**
@@ -92,6 +93,18 @@ export class PagamentoFiltrosAvancadosDto extends PaginationParamsDto {
   concessoes?: string[];
 
   @ApiPropertyOptional({
+    description: 'Lista de IDs de benefícios para filtrar',
+    example: ['990e8400-e29b-41d4-a716-446655440004'],
+    type: [String]
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @ArrayMaxSize(100)
+  @Transform(({ value }) => transformToStringArray(value))
+  beneficios?: string[];
+
+  @ApiPropertyOptional({
     description: 'Busca textual em campos relevantes (protocolo, nome do beneficiário, CPF)',
     example: 'João Silva',
   })
@@ -100,7 +113,16 @@ export class PagamentoFiltrosAvancadosDto extends PaginationParamsDto {
   search?: string;
 
   @ApiPropertyOptional({
-    description: 'Data de início para filtro por período de liberação',
+    description: 'Período predefinido para filtro de datas',
+    example: 'ultimos_30_dias',
+    enum: PeriodoPredefinido,
+  })
+  @IsOptional()
+  @IsEnum(PeriodoPredefinido)
+  periodo?: PeriodoPredefinido;
+
+  @ApiPropertyOptional({
+    description: 'Data de início para filtro por período de liberação (usado com período personalizado)',
     example: '2024-01-01',
   })
   @IsOptional()
@@ -108,7 +130,7 @@ export class PagamentoFiltrosAvancadosDto extends PaginationParamsDto {
   data_liberacao_inicio?: string;
 
   @ApiPropertyOptional({
-    description: 'Data de fim para filtro por período de liberação',
+    description: 'Data de fim para filtro por período de liberação (usado com período personalizado)',
     example: '2024-12-31',
   })
   @IsOptional()
@@ -116,7 +138,7 @@ export class PagamentoFiltrosAvancadosDto extends PaginationParamsDto {
   data_liberacao_fim?: string;
 
   @ApiPropertyOptional({
-    description: 'Data de início para filtro por período de pagamento',
+    description: 'Data de início para filtro por período de pagamento (usado com período personalizado)',
     example: '2024-01-01',
   })
   @IsOptional()
@@ -124,7 +146,7 @@ export class PagamentoFiltrosAvancadosDto extends PaginationParamsDto {
   data_pagamento_inicio?: string;
 
   @ApiPropertyOptional({
-    description: 'Data de fim para filtro por período de pagamento',
+    description: 'Data de fim para filtro por período de pagamento (usado com período personalizado)',
     example: '2024-12-31',
   })
   @IsOptional()
@@ -140,7 +162,7 @@ export class PagamentoFiltrosAvancadosDto extends PaginationParamsDto {
   @IsNumber()
   @Min(0)
   @Type(() => Number)
-  valor_minimo?: number;
+  valor_min?: number;
 
   @ApiPropertyOptional({
     description: 'Valor máximo do pagamento',
@@ -151,7 +173,7 @@ export class PagamentoFiltrosAvancadosDto extends PaginationParamsDto {
   @IsNumber()
   @Min(0)
   @Type(() => Number)
-  valor_maximo?: number;
+  valor_max?: number;
 
   @ApiPropertyOptional({
     description: 'Número da parcela mínima',
@@ -277,7 +299,7 @@ export class PagamentoFiltrosResponseDto implements IResultadoFiltros {
       dias: { type: 'number' }
     }
   })
-  periodoCalculado?: IPeriodoCalculado;
+  periodo_calculado?: IPeriodoCalculado;
 
   @ApiProperty({
     description: 'Metadados de paginação',

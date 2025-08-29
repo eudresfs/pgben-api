@@ -377,6 +377,18 @@ export class VisitaRepository {
   }
 
   /**
+   * Conta o total de visitas com filtros opcionais
+   * 
+   * @param filters Filtros opcionais
+   * @returns Número total de visitas
+   */
+  async count(filters?: VisitaFilters): Promise<number> {
+    const queryBuilder = this.buildBaseQueryBuilder();
+    this.applyFilters(queryBuilder, filters);
+    return queryBuilder.getCount();
+  }
+
+  /**
    * Constrói o query builder base com relacionamentos
    * 
    * @private

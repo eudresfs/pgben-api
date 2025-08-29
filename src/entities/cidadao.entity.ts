@@ -35,6 +35,7 @@ import { InfoBancaria } from './info-bancaria.entity';
 import { Contato } from './contato.entity';
 import { Endereco } from './endereco.entity';
 import { Usuario } from './usuario.entity';
+import { Concessao } from './concessao.entity';
 
 @Entity('cidadao')
 @Index(['cpf'], { unique: true })

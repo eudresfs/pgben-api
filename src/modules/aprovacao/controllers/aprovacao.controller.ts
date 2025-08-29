@@ -25,6 +25,7 @@ import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { AprovacaoService } from '../services';
 import { CriarSolicitacaoDto, ProcessarAprovacaoDto } from '../dtos';
+import { AprovacaoFiltrosAvancadosDto, AprovacaoFiltrosResponseDto } from '../dto/aprovacao-filtros-avancados.dto';
 import { ListaAprovacoesPendentesResponseDto } from '../dtos/response/aprovacao-response.dto';
 import { StatusSolicitacao } from '../enums';
 import { 
@@ -297,6 +298,90 @@ export class AprovacaoController {
        message: 'Aprovações pendentes por entidade listadas com sucesso',
        data: resultado
      };
+  }
+
+  /**
+   * Aplica filtros avançados para busca de aprovações
+   */
+  @Post('filtros-avancados')
+  @RequiresPermission({ permissionName: 'aprovacao.listar' })
+  @ApiOperation({
+    summary: 'Aplicar filtros avançados',
+    description: 'Aplica filtros avançados para busca e análise de aprovações com múltiplos critérios e estatísticas'
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Filtros aplicados com sucesso',
+    type: AprovacaoFiltrosResponseDto,
+    schema: {
+      example: {
+        message: 'Filtros aplicados com sucesso',
+        data: {
+          aprovacoes: [
+            {
+              id: '550e8400-e29b-41d4-a716-446655440000',
+              codigo: 'APR-2024-001',
+              tipo_acao: 'PAGAMENTO_EMERGENCIAL',
+              status: 'PENDENTE',
+              solicitante: {
+                id: '660e8400-e29b-41d4-a716-446655440001',
+                nome: 'João Silva'
+              },
+              created_at: '2024-01-15T10:30:00Z',
+              prazo_aprovacao: '2024-01-17T18:00:00Z'
+            }
+          ],
+          total: 1,
+          estatisticas: {
+            total_aprovacoes: 150,
+            aprovacoes_pendentes: 25,
+            aprovacoes_vencidas: 5,
+            aprovacoes_hoje: 8
+          },
+          opcoes_filtro: {
+            unidades: [
+              {
+                id: '770e8400-e29b-41d4-a716-446655440002',
+                nome: 'CRAS Centro',
+                total_aprovacoes: 45
+              }
+            ],
+            status: [
+              { status: 'PENDENTE', total: 25 },
+              { status: 'APROVADA', total: 100 }
+            ],
+            tipos_acao: [
+              { tipo_acao: 'PAGAMENTO_EMERGENCIAL', total: 30 }
+            ]
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Parâmetros de filtro inválidos',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: ['Data de início deve ser anterior à data de fim'],
+        error: 'Bad Request'
+      }
+    }
+  })
+  async aplicarFiltrosAvancados(
+    @Body(ValidationPipe) filtros: AprovacaoFiltrosAvancadosDto,
+    @Request() req: any
+  ) {
+    const resultado = await this.aprovacaoService.aplicarFiltrosAvancados(
+      filtros,
+      req.user.id
+    );
+
+    return {
+      message: 'Filtros aplicados com sucesso',
+      data: resultado
+    };
   }
 
   /**

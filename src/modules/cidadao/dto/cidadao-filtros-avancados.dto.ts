@@ -55,6 +55,7 @@ export class CidadaoFiltrosAvancadosDto extends PaginationParamsDto {
     return Array.isArray(value) ? value.map(s => String(s).toUpperCase()) : [];
   })
   status?: string[];
+  
   @ApiPropertyOptional({
     description: 'Termo de busca para nome, CPF ou outros campos',
     example: 'João Silva'

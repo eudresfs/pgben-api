@@ -488,11 +488,13 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       }
     }
 
-    // Filtro apenas com benefícios
+    // Filtro apenas com benefícios (através das solicitações aprovadas)
     if (apenas_com_beneficios) {
       query
-        .leftJoin('cidadao.beneficios', 'beneficio')
-        .andWhere('beneficio.id IS NOT NULL');
+        .leftJoin('cidadao.solicitacoes', 's')
+        .leftJoin('s.concessao', 'c')
+        .andWhere('c.id IS NOT NULL')
+        .andWhere('c.status = :statusAprovado', { statusAprovado: 'ativo' });
     }
 
     // Busca por nome/CPF/NIS
@@ -543,7 +545,7 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       query.leftJoinAndSelect('cidadao.contatos', 'contato');
       query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
       query.leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar');
-      query.leftJoinAndSelect('cidadao.beneficios', 'beneficios');
+      query.leftJoinAndSelect('cidadao.solicitacoes', 'solicitacoes');
     } else {
       // Sempre incluir unidade e último endereço
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');

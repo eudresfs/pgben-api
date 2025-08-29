@@ -31,6 +31,8 @@ import { PagamentoCacheService } from './pagamento-cache.service';
 import { PagamentoValidationService } from './pagamento-validation.service';
 import { PagamentoFiltrosAvancadosDto, PagamentoFiltrosResponseDto } from '../dto/pagamento-filtros-avancados.dto';
 import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
+import { PeriodoPredefinido } from '../../../enums/periodo-predefinido.enum';
+import { SelectQueryBuilder } from 'typeorm';
 
 /**
  * Service simplificado para gerenciamento de pagamentos
@@ -52,7 +54,7 @@ export class PagamentoService {
     private readonly mapper: PagamentoUnifiedMapper,
     private readonly pagamentoCalculatorService: PagamentoCalculatorService,
     private readonly filtrosAvancadosService: FiltrosAvancadosService,
-  ) {}
+  ) { }
 
   /**
    * Cria um novo pagamento
@@ -208,7 +210,7 @@ export class PagamentoService {
 
     // Buscar pagamento existente com relações necessárias
     const pagamento = await this.pagamentoRepository.findPagamentoComRelacoes(id);
-    
+
     if (!pagamento) {
       throw new NotFoundException('Pagamento não encontrado');
     }
@@ -260,12 +262,12 @@ export class PagamentoService {
     if (pagamento.numero_parcela === 1 && pagamento.concessao_id) {
       try {
         await this.concessaoService.atualizarStatus(
-           pagamento.concessao_id,
-           StatusConcessao.ATIVO,
-           usuarioId,
-           `Ativação automática - Primeira parcela do pagamento ${id} atualizada para ${updateDto.status}`,
-         );
-        
+          pagamento.concessao_id,
+          StatusConcessao.ATIVO,
+          usuarioId,
+          `Ativação automática - Primeira parcela do pagamento ${id} atualizada para ${updateDto.status}`,
+        );
+
         this.logger.log(
           `Status da concessão ${pagamento.concessao_id} atualizado para ATIVO devido à atualização da primeira parcela`,
         );
@@ -399,15 +401,26 @@ export class PagamentoService {
         .createScopedQueryBuilder('pagamento')
         .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
         .leftJoinAndSelect('pagamento.concessao', 'concessao')
-        .leftJoinAndSelect('pagamento.usuario', 'usuario')
-        .leftJoinAndSelect('pagamento.unidade', 'unidade')
-        .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
-        .leftJoinAndSelect('solicitacao.beneficio', 'beneficio');
+        .leftJoin('solicitacao.tecnico', 'usuario')
+        .addSelect([
+          'usuario.id',
+          'usuario.email',
+          'unidade.nome',
+        ])
+        .leftJoinAndSelect('solicitacao.unidade', 'unidade')
+        .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
+        .leftJoinAndSelect('solicitacao.tipo_beneficio', 'beneficio');
 
       // Aplicar filtros condicionalmente
       if (filtros.unidades?.length > 0) {
-        queryBuilder.andWhere('pagamento.unidade_id IN (:...unidades)', {
+        queryBuilder.andWhere('solicitacao.unidade_id IN (:...unidades)', {
           unidades: filtros.unidades,
+        });
+      }
+
+      if (filtros.beneficios?.length > 0) {
+        queryBuilder.andWhere('solicitacao.tipo_beneficio IN (:...beneficios)', {
+          beneficios: filtros.beneficios,
         });
       }
 
@@ -443,7 +456,10 @@ export class PagamentoService {
         );
       }
 
-      // Filtros de data
+      // Aplicar filtros de período
+      this.aplicarFiltrosPeriodo(queryBuilder, filtros);
+
+      // Filtros de data específicos (sobrescrevem período se fornecidos)
       if (filtros.data_liberacao_inicio) {
         queryBuilder.andWhere('pagamento.data_liberacao >= :dataLiberacaoInicio', {
           dataLiberacaoInicio: filtros.data_liberacao_inicio,
@@ -469,15 +485,15 @@ export class PagamentoService {
       }
 
       // Filtros de valor
-      if (filtros.valor_minimo !== undefined) {
+      if (filtros.valor_min !== undefined) {
         queryBuilder.andWhere('pagamento.valor >= :valorMin', {
-          valorMin: filtros.valor_minimo,
+          valorMin: filtros.valor_min,
         });
       }
 
-      if (filtros.valor_maximo !== undefined) {
+      if (filtros.valor_max !== undefined) {
         queryBuilder.andWhere('pagamento.valor <= :valorMax', {
-          valorMax: filtros.valor_maximo,
+          valorMax: filtros.valor_max,
         });
       }
 
@@ -557,10 +573,17 @@ export class PagamentoService {
         hasPreviousPage: page > 1,
       };
 
+      // Calcular período se fornecido
+      let periodoCalculado: any;
+      if (filtros.periodo && filtros.periodo !== 'personalizado') {
+        periodoCalculado = this.filtrosAvancadosService.calcularPeriodoPredefinido(filtros.periodo);
+      }
+
       return {
         items: sanitizedItems,
         total,
         filtros_aplicados: this.filtrosAvancadosService.normalizarFiltros(filtros),
+        periodo_calculado: periodoCalculado,
         meta,
         tempo_execucao: tempoExecucao,
       };
@@ -618,7 +641,7 @@ export class PagamentoService {
 
       this.logger.log(
         `${pagamentosGerados.length} pagamentos gerados para concessão ${concessao.id} - ` +
-          `Total: R$ ${dadosPagamento.valor.toFixed(2)}`,
+        `Total: R$ ${dadosPagamento.valor.toFixed(2)}`,
       );
 
       // Emitir eventos de invalidação de cache para cada pagamento criado
@@ -709,7 +732,7 @@ export class PagamentoService {
 
     this.logger.log(
       `Criando ${quantidadeParcelas} parcelas de R$ ${valorParcela.toFixed(2)} ` +
-        `para ${solicitacao.tipo_beneficio?.nome}`,
+      `para ${solicitacao.tipo_beneficio?.nome}`,
     );
 
     for (let i = 1; i <= quantidadeParcelas; i++) {
@@ -829,5 +852,44 @@ export class PagamentoService {
       `Liberação: ${format(dataLiberacao, 'dd/MM/yyyy')} - ` +
       `Vencimento: ${format(dataVencimento, 'dd/MM/yyyy')}`
     );
+  }
+
+  /**
+   * Aplica filtros de período baseado em período predefinido ou datas customizadas
+   * @param queryBuilder Query builder do TypeORM
+   * @param filtros Filtros avançados contendo período
+   */
+  private aplicarFiltrosPeriodo(
+    queryBuilder: SelectQueryBuilder<Pagamento>,
+    filtros: PagamentoFiltrosAvancadosDto,
+  ): void {
+    // Se tem período predefinido, calcular as datas automaticamente
+    if (filtros.periodo && filtros.periodo !== PeriodoPredefinido.PERSONALIZADO) {
+      try {
+        const periodoCalculado = this.filtrosAvancadosService.calcularPeriodoPredefinido(filtros.periodo);
+        
+        // Aplicar filtro de data de liberação baseado no período
+        queryBuilder.andWhere('pagamento.data_liberacao >= :periodoInicio', {
+          periodoInicio: periodoCalculado.dataInicio,
+        });
+        
+        queryBuilder.andWhere('pagamento.data_liberacao <= :periodoFim', {
+          periodoFim: periodoCalculado.dataFim,
+        });
+        
+        this.logger.debug(
+          `Aplicado filtro de período ${filtros.periodo}: ${periodoCalculado.dataInicio} a ${periodoCalculado.dataFim}`,
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Erro ao calcular período ${filtros.periodo}: ${error.message}`,
+        );
+        throw new BadRequestException(
+          `Período inválido: ${filtros.periodo}`,
+        );
+      }
+    }
+    // Se é período personalizado, as datas específicas serão aplicadas posteriormente
+    // no método principal (data_liberacao_inicio, data_liberacao_fim, etc.)
   }
 }

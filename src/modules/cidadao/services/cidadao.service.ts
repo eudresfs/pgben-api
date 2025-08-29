@@ -936,7 +936,7 @@ private async consultarNovoBolsaFamiliaSacado(
       skip,
       take,
       search,
-      includeRelations: include_relations,
+      include_relations,
       unidades: unidades?.length > 0 ? unidades : undefined,
       bairros: bairros?.length > 0 ? bairros : undefined,
       status: status?.length > 0 ? status : undefined,

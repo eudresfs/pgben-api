@@ -28,6 +28,9 @@ import {
 } from '../../../enums';
 import { Usuario } from '@/entities';
 import { HistoricoAgendamentoService } from './historico-agendamento.service';
+import { AgendamentoFiltrosAvancadosDto, AgendamentoFiltrosResponseDto } from '../dto/agendamento-filtros-avancados.dto';
+import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
+import { PeriodoPredefinido } from '../../../enums/periodo-predefinido.enum';
 
 /**
  * Serviço responsável pelo gerenciamento de agendamentos de visitas domiciliares.
@@ -48,6 +51,7 @@ export class AgendamentoService {
     @InjectRepository(Pagamento)
     private pagamentoRepository: Repository<Pagamento>,
     private historicoAgendamentoService: HistoricoAgendamentoService,
+    private filtrosAvancadosService: FiltrosAvancadosService,
   ) {}
 
   /**
@@ -1116,6 +1120,289 @@ export class AgendamentoService {
       visita_realizada: null,
       created_at: agendamento.created_at,
       updated_at: agendamento.updated_at,
+    };
+  }
+
+  /**
+   * Aplica filtros avançados para busca de agendamentos
+   * 
+   * @param filtros Filtros avançados a serem aplicados
+   * @returns Dados dos filtros disponíveis e estatísticas
+   */
+  async aplicarFiltrosAvancados(filtros: AgendamentoFiltrosAvancadosDto): Promise<AgendamentoFiltrosResponseDto> {
+    try {
+      // Criar query builder base
+      const queryBuilder = this.agendamentoRepository
+        .createQueryBuilder()
+        .leftJoinAndSelect('agendamento.pagamento', 'pagamento')
+        .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+        .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
+        .leftJoinAndSelect('solicitacao.unidade', 'unidade')
+        .leftJoinAndSelect('solicitacao.tecnico', 'tecnico');
+
+      // Aplicar filtros condicionalmente
+      if (filtros.unidades?.length) {
+        queryBuilder.andWhere('unidade.id IN (:...unidades)', { unidades: filtros.unidades });
+      }
+
+      if (filtros.status?.length) {
+        queryBuilder.andWhere('agendamento.status IN (:...status)', { status: filtros.status });
+      }
+
+      if (filtros.tipos_visita?.length) {
+        queryBuilder.andWhere('agendamento.tipo_visita IN (:...tipos_visita)', { tipos_visita: filtros.tipos_visita });
+      }
+
+      if (filtros.prioridades?.length) {
+        queryBuilder.andWhere('agendamento.prioridade IN (:...prioridades)', { prioridades: filtros.prioridades });
+      }
+
+      if (filtros.tecnicos?.length) {
+        queryBuilder.andWhere('tecnico.id IN (:...tecnicos)', { tecnicos: filtros.tecnicos });
+      }
+
+      if (filtros.beneficiarios?.length) {
+        queryBuilder.andWhere('beneficiario.id IN (:...beneficiarios)', { beneficiarios: filtros.beneficiarios });
+      }
+
+      if (filtros.pagamentos?.length) {
+        queryBuilder.andWhere('pagamento.id IN (:...pagamentos)', { pagamentos: filtros.pagamentos });
+      }
+
+      // Filtros de período
+      if (filtros.periodo) {
+        const { dataInicio, dataFim } = this.filtrosAvancadosService.calcularPeriodoPredefinido(filtros.periodo);
+        queryBuilder.andWhere('agendamento.data_agendamento BETWEEN :dataInicio AND :dataFim', {
+          dataInicio,
+          dataFim
+        });
+      } else {
+        if (filtros.data_inicio) {
+          queryBuilder.andWhere('agendamento.data_agendamento >= :dataInicio', {
+            dataInicio: new Date(filtros.data_inicio)
+          });
+        }
+        if (filtros.data_fim) {
+          queryBuilder.andWhere('agendamento.data_agendamento <= :dataFim', {
+            dataFim: new Date(filtros.data_fim)
+          });
+        }
+      }
+
+      // Filtro de busca textual
+      if (filtros.search) {
+        const searchTerm = `%${filtros.search.toLowerCase()}%`;
+        queryBuilder.andWhere(
+          '(LOWER(beneficiario.nome) LIKE :search OR LOWER(tecnico.nome) LIKE :search OR LOWER(agendamento.observacoes) LIKE :search)',
+          { search: searchTerm }
+        );
+      }
+
+      // Filtro de agendamentos em atraso
+      if (filtros.em_atraso === true) {
+        queryBuilder.andWhere('agendamento.data_agendamento < :agora', { agora: new Date() });
+        queryBuilder.andWhere('agendamento.status NOT IN (:...statusConcluidos)', {
+          statusConcluidos: [StatusAgendamento.REALIZADO, StatusAgendamento.CANCELADO]
+        });
+      }
+
+      // Filtro para incluir/excluir cancelados
+      if (filtros.incluir_cancelados === false) {
+        queryBuilder.andWhere('agendamento.status != :statusCancelado', {
+          statusCancelado: StatusAgendamento.CANCELADO
+        });
+      }
+
+      // Aplicar ordenação
+      const sortBy = filtros.sort_by || 'data_agendamento';
+      const sortOrder = filtros.sort_order || 'ASC';
+      queryBuilder.orderBy(`agendamento.${sortBy}`, sortOrder);
+
+      // Executar query para obter dados
+      const agendamentos = await queryBuilder.getMany();
+
+      // Construir resposta com estatísticas
+      const response: AgendamentoFiltrosResponseDto = {
+        unidades: await this.obterUnidadesDisponiveis(),
+        status: await this.obterStatusDisponiveis(),
+        tipos_visita: await this.obterTiposVisitaDisponiveis(),
+        prioridades: await this.obterPrioridadesDisponiveis(),
+        tecnicos: await this.obterTecnicosDisponiveis(),
+        estatisticas: await this.calcularEstatisticas(),
+        periodos_disponiveis: Object.values(PeriodoPredefinido)
+      };
+
+      return response;
+    } catch (error) {
+      this.logger.error(`Erro ao aplicar filtros avançados: ${error.message}`, error.stack);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new Error(`Erro interno ao aplicar filtros avançados: ${error.message}`);
+    }
+  }
+
+  /**
+   * Obtém unidades disponíveis para filtro
+   * 
+   * @private
+   * @returns Lista de unidades com contadores
+   */
+  private async obterUnidadesDisponiveis(): Promise<Array<{ id: string; nome: string; total_agendamentos: number }>> {
+    const result = await this.agendamentoRepository
+      .createQueryBuilder()
+      .leftJoin('agendamento.pagamento', 'pagamento')
+      .leftJoin('pagamento.solicitacao', 'solicitacao')
+      .leftJoin('solicitacao.unidade', 'unidade')
+      .select('unidade.id', 'id')
+      .addSelect('unidade.nome', 'nome')
+      .addSelect('COUNT(agendamento.id)', 'total_agendamentos')
+      .where('unidade.id IS NOT NULL')
+      .groupBy('unidade.id')
+      .addGroupBy('unidade.nome')
+      .getRawMany();
+
+    return result.map(item => ({
+      id: item.id,
+      nome: item.nome,
+      total_agendamentos: parseInt(item.total_agendamentos)
+    }));
+  }
+
+  /**
+   * Obtém status disponíveis para filtro
+   * 
+   * @private
+   * @returns Lista de status com contadores
+   */
+  private async obterStatusDisponiveis(): Promise<Array<{ status: string; total: number }>> {
+    const result = await this.agendamentoRepository
+      .createQueryBuilder()
+      .select('agendamento.status', 'status')
+      .addSelect('COUNT(agendamento.id)', 'total')
+      .groupBy('agendamento.status')
+      .getRawMany();
+
+    return result.map(item => ({
+      status: item.status,
+      total: parseInt(item.total)
+    }));
+  }
+
+  /**
+   * Obtém tipos de visita disponíveis para filtro
+   * 
+   * @private
+   * @returns Lista de tipos com contadores
+   */
+  private async obterTiposVisitaDisponiveis(): Promise<Array<{ tipo: string; total: number }>> {
+    const result = await this.agendamentoRepository
+      .createQueryBuilder()
+      .select('agendamento.tipo_visita', 'tipo')
+      .addSelect('COUNT(agendamento.id)', 'total')
+      .groupBy('agendamento.tipo_visita')
+      .getRawMany();
+
+    return result.map(item => ({
+      tipo: item.tipo,
+      total: parseInt(item.total)
+    }));
+  }
+
+  /**
+   * Obtém prioridades disponíveis para filtro
+   * 
+   * @private
+   * @returns Lista de prioridades com contadores
+   */
+  private async obterPrioridadesDisponiveis(): Promise<Array<{ prioridade: string; total: number }>> {
+    const result = await this.agendamentoRepository
+      .createQueryBuilder()
+      .select('agendamento.prioridade', 'prioridade')
+      .addSelect('COUNT(agendamento.id)', 'total')
+      .groupBy('agendamento.prioridade')
+      .getRawMany();
+
+    return result.map(item => ({
+      prioridade: item.prioridade,
+      total: parseInt(item.total)
+    }));
+  }
+
+  /**
+   * Obtém técnicos disponíveis para filtro
+   * 
+   * @private
+   * @returns Lista de técnicos com contadores
+   */
+  private async obterTecnicosDisponiveis(): Promise<Array<{ id: string; nome: string; total_agendamentos: number }>> {
+    const result = await this.agendamentoRepository
+      .createQueryBuilder()
+      .leftJoinAndSelect('agendamento.pagamento', 'pagamento')
+      .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+      .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
+      .select('tecnico.id', 'id')
+      .addSelect('tecnico.nome', 'nome')
+      .addSelect('COUNT(agendamento.id)', 'total_agendamentos')
+      .where('tecnico.id IS NOT NULL')
+      .groupBy('tecnico.id')
+      .addGroupBy('tecnico.nome')
+      .getRawMany();
+
+    return result.map(item => ({
+      id: item.id,
+      nome: item.nome,
+      total_agendamentos: parseInt(item.total_agendamentos)
+    }));
+  }
+
+  /**
+   * Calcula estatísticas gerais dos agendamentos
+   * 
+   * @private
+   * @returns Estatísticas dos agendamentos
+   */
+  private async calcularEstatisticas(): Promise<{
+    total_agendamentos: number;
+    agendamentos_em_atraso: number;
+    agendamentos_hoje: number;
+    agendamentos_proximos_7_dias: number;
+  }> {
+    const agora = new Date();
+    const inicioHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+    const fimHoje = new Date(inicioHoje.getTime() + 24 * 60 * 60 * 1000);
+    const proximos7Dias = new Date(agora.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    const [total, emAtraso, hoje, proximos7] = await Promise.all([
+      this.agendamentoRepository.count(),
+      this.agendamentoRepository
+        .createQueryBuilder()
+        .where('agendamento.data_agendamento < :agora', { agora })
+        .andWhere('agendamento.status NOT IN (:...statusConcluidos)', {
+          statusConcluidos: [StatusAgendamento.REALIZADO, StatusAgendamento.CANCELADO]
+        })
+        .getCount(),
+      this.agendamentoRepository
+        .createQueryBuilder()
+        .where('agendamento.data_agendamento BETWEEN :inicio AND :fim', {
+          inicio: inicioHoje,
+          fim: fimHoje
+        })
+        .getCount(),
+      this.agendamentoRepository
+        .createQueryBuilder()
+        .where('agendamento.data_agendamento BETWEEN :agora AND :proximos7', {
+          agora,
+          proximos7: proximos7Dias
+        })
+        .getCount()
+    ]);
+
+    return {
+      total_agendamentos: total,
+      agendamentos_em_atraso: emAtraso,
+      agendamentos_hoje: hoje,
+      agendamentos_proximos_7_dias: proximos7
     };
   }
 }

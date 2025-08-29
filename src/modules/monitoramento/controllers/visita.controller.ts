@@ -27,7 +27,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { VisitaService } from '../services';
-import { RegistrarVisitaDto } from '../dto';
+import { RegistrarVisitaDto, VisitaFiltrosAvancadosDto, VisitaFiltrosResponseDto } from '../dto';
 import { TipoVisita, ResultadoVisita } from '../enums';
 import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
 import { PaginatedResponseDto } from '../../../shared/dtos/pagination.dto';
@@ -657,5 +657,140 @@ export class VisitaController {
       message: 'Visita atualizada com sucesso',
       data: visita
     };
+  }
+
+  /**
+   * Aplica filtros avançados para busca de visitas
+   */
+  @Post('filtros-avancados')
+  @RequiresPermission({ permissionName: 'monitoramento.visita.listar' })
+  @ApiOperation({
+    summary: 'Aplicar filtros avançados para visitas',
+    description: 'Aplica filtros avançados para busca de visitas domiciliares com múltiplos critérios e retorna estatísticas'
+  })
+  @ApiBody({
+    type: VisitaFiltrosAvancadosDto,
+    description: 'Critérios de filtros avançados para busca de visitas',
+    examples: {
+      'filtros-basicos': {
+        summary: 'Filtros básicos por período e tipo',
+        description: 'Exemplo de filtros básicos por período e tipo de visita',
+        value: {
+          periodo: 'ultimos_30_dias',
+          tipos_visita: ['inicial', 'acompanhamento'],
+          resultados: ['realizada'],
+          page: 1,
+          limit: 20
+        }
+      },
+      'filtros-completos': {
+        summary: 'Filtros completos com múltiplos critérios',
+        description: 'Exemplo de filtros avançados com múltiplos critérios',
+        value: {
+          unidades: ['550e8400-e29b-41d4-a716-446655440000'],
+          tipos_visita: ['inicial'],
+          resultados: ['realizada'],
+          tecnicos: ['550e8400-e29b-41d4-a716-446655440001'],
+          data_inicio: '2024-01-01T00:00:00.000Z',
+          data_fim: '2024-12-31T23:59:59.999Z',
+          search: 'beneficiário presente',
+          recomenda_renovacao: true,
+          beneficiario_presente: true,
+          sort_by: 'data_realizacao',
+          sort_order: 'DESC',
+          page: 1,
+          limit: 20
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Filtros aplicados com sucesso',
+    type: VisitaFiltrosResponseDto,
+    example: {
+      visitas: [
+        {
+          id: '550e8400-e29b-41d4-a716-446655440010',
+          agendamento_id: '550e8400-e29b-41d4-a716-446655440000',
+          tipo_visita: 'inicial',
+          resultado: 'realizada',
+          data_realizacao: '2024-02-15T14:30:00.000Z',
+          beneficiario_presente: true,
+          recomenda_renovacao: true,
+          necessita_nova_visita: false,
+          tecnico: {
+            id: '550e8400-e29b-41d4-a716-446655440001',
+            nome: 'João Silva'
+          },
+          beneficiario: {
+            id: '550e8400-e29b-41d4-a716-446655440002',
+            nome: 'Maria Santos',
+            unidade: {
+              id: '550e8400-e29b-41d4-a716-446655440000',
+              nome: 'Unidade Centro'
+            }
+          }
+        }
+      ],
+      total: 150,
+      estatisticas: {
+        total_visitas: 150,
+        visitas_realizadas: 120,
+        visitas_nao_localizadas: 20,
+        visitas_hoje: 5,
+        renovacoes_recomendadas: 80,
+        novas_visitas_necessarias: 15
+      },
+      opcoes_filtro: {
+        unidades: [
+          { id: '550e8400-e29b-41d4-a716-446655440000', nome: 'Unidade Centro', total_visitas: 50 }
+        ],
+        tipos_visita: [
+          { tipo: 'inicial', total: 80 },
+          { tipo: 'acompanhamento', total: 70 }
+        ],
+        resultados: [
+          { resultado: 'realizada', total: 120 },
+          { resultado: 'nao_localizado', total: 30 }
+        ],
+        tecnicos: [
+          { id: '550e8400-e29b-41d4-a716-446655440001', nome: 'João Silva', total_visitas: 25 }
+        ],
+        periodos_disponiveis: ['hoje', 'ultimos_7_dias', 'ultimos_30_dias', 'ultimo_trimestre']
+      }
+    }
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Parâmetros de filtro inválidos',
+    example: {
+      statusCode: 400,
+      message: ['periodo deve ser um valor válido', 'page deve ser maior que 0'],
+      error: 'Bad Request'
+    }
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Token de acesso inválido ou expirado',
+    example: {
+      statusCode: 401,
+      message: 'Unauthorized',
+      error: 'Unauthorized'
+    }
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Usuário não possui permissão para listar visitas',
+    example: {
+      statusCode: 403,
+      message: 'Acesso negado. Permissão necessária: monitoramento.visita.listar',
+      error: 'Forbidden'
+    }
+  })
+  async aplicarFiltrosAvancados(
+    @Body(ValidationPipe) filtros: VisitaFiltrosAvancadosDto
+  ): Promise<VisitaFiltrosResponseDto> {
+    return await this.visitaService.aplicarFiltrosAvancados(filtros);
   }
 }

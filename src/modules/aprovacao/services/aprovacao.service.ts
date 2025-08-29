@@ -5,7 +5,10 @@ import { AcaoAprovacao, SolicitacaoAprovacao } from '../entities';
 import { ConfiguracaoAprovador } from '../entities/configuracao-aprovador.entity';
 import { SolicitacaoAprovador } from '../entities/solicitacao-aprovador.entity';
 import { CriarSolicitacaoDto, CriarAcaoAprovacaoDto } from '../dtos';
+import { AprovacaoFiltrosAvancadosDto, AprovacaoFiltrosResponseDto } from '../dto/aprovacao-filtros-avancados.dto';
 import { StatusSolicitacao, TipoAcaoCritica, EstrategiaAprovacao } from '../enums';
+import { PeriodoPredefinido } from '../../../enums/periodo-predefinido.enum';
+import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
 import { ConfiguracaoAprovacao } from '../decorators';
 import { UsuarioService } from '../../usuario/services/usuario.service';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
@@ -45,7 +48,8 @@ export class AprovacaoService {
     private readonly eventEmitter: EventEmitter2,
     private readonly auditEventEmitter: AuditEventEmitter,
     private readonly execucaoAcaoService: ExecucaoAcaoService,
-    private readonly permissionService: PermissionService
+    private readonly permissionService: PermissionService,
+    private readonly filtrosAvancadosService: FiltrosAvancadosService
   ) {}
 
   /**
@@ -2052,5 +2056,332 @@ export class AprovacaoService {
       this.logger.error(`Erro ao obter usuário com perfis ${usuarioId}:`, error);
       return null;
     }
+  }
+
+  /**
+   * Aplica filtros avançados para busca de aprovações
+   * 
+   * Implementa o padrão de filtros avançados estabelecido no sistema,
+   * permitindo busca por múltiplos critérios e retornando estatísticas.
+   */
+  async aplicarFiltrosAvancados(
+    filtros: AprovacaoFiltrosAvancadosDto,
+    usuarioId: string
+  ): Promise<AprovacaoFiltrosResponseDto> {
+    try {
+      this.logger.log(`Aplicando filtros avançados para aprovações - Usuário: ${usuarioId}`);
+
+      // Construir query base com relacionamentos
+      const queryBuilder = this.solicitacaoRepository
+        .createQueryBuilder('aprovacao')
+        .leftJoinAndSelect('aprovacao.solicitante', 'solicitante')
+        .leftJoinAndSelect('aprovacao.acao_aprovacao', 'acao')
+        .leftJoinAndSelect('aprovacao.solicitacao_aprovadores', 'aprovadores')
+        .leftJoinAndSelect('aprovadores.aprovador', 'aprovador')
+        .leftJoinAndSelect('solicitante.unidade', 'unidade');
+
+      // ========== APLICAR FILTROS ==========
+
+      // Filtro por unidades
+      if (filtros.unidades?.length) {
+        queryBuilder.andWhere('unidade.id IN (:...unidades)', {
+          unidades: filtros.unidades
+        });
+      }
+
+      // Filtro por status
+      if (filtros.status?.length) {
+        queryBuilder.andWhere('aprovacao.status IN (:...status)', {
+          status: filtros.status
+        });
+      }
+
+      // Filtro por tipos de ação
+      if (filtros.tipos_acao?.length) {
+        queryBuilder.andWhere('acao.tipo_acao IN (:...tipos)', {
+          tipos: filtros.tipos_acao
+        });
+      }
+
+      // Filtro por solicitantes
+      if (filtros.solicitantes?.length) {
+        queryBuilder.andWhere('aprovacao.solicitante_id IN (:...solicitantes)', {
+          solicitantes: filtros.solicitantes
+        });
+      }
+
+      // Filtro por aprovadores
+      if (filtros.aprovadores?.length) {
+        queryBuilder.andWhere('aprovadores.aprovador_id IN (:...aprovadores)', {
+          aprovadores: filtros.aprovadores
+        });
+      }
+
+      // Filtro por período
+      const { dataInicio, dataFim } = this.calcularPeriodo(
+        filtros.periodo,
+        filtros.data_inicio,
+        filtros.data_fim
+      );
+
+      if (dataInicio) {
+        queryBuilder.andWhere('aprovacao.created_at >= :dataInicio', {
+          dataInicio
+        });
+      }
+
+      if (dataFim) {
+        queryBuilder.andWhere('aprovacao.created_at <= :dataFim', {
+          dataFim
+        });
+      }
+
+      // Filtro de busca textual
+      if (filtros.search) {
+        queryBuilder.andWhere(
+          '(aprovacao.codigo ILIKE :search OR ' +
+          'aprovacao.justificativa ILIKE :search OR ' +
+          'aprovacao.observacoes ILIKE :search OR ' +
+          'acao.nome ILIKE :search OR ' +
+          'solicitante.nome ILIKE :search)',
+          { search: `%${filtros.search}%` }
+        );
+      }
+
+      // Filtro por prazo vencido
+      if (filtros.prazo_vencido === true) {
+        queryBuilder.andWhere(
+          'aprovacao.prazo_aprovacao IS NOT NULL AND aprovacao.prazo_aprovacao < :agora',
+          { agora: new Date() }
+        );
+      }
+
+      // Filtro para incluir/excluir processadas
+      if (filtros.incluir_processadas === false) {
+        queryBuilder.andWhere(
+          'aprovacao.status NOT IN (:...statusProcessados)',
+          { statusProcessados: [StatusSolicitacao.APROVADA, StatusSolicitacao.REJEITADA] }
+        );
+      }
+
+      // ========== APLICAR ORDENAÇÃO ==========
+      const sortBy = filtros.sort_by || 'created_at';
+      const sortOrder = filtros.sort_order || 'DESC';
+      queryBuilder.orderBy(`aprovacao.${sortBy}`, sortOrder);
+
+      // ========== APLICAR PAGINAÇÃO ==========
+      const page = filtros.page || 1;
+      const limit = filtros.limit || 20;
+      const offset = (page - 1) * limit;
+
+      queryBuilder.skip(offset).take(limit);
+
+      // ========== EXECUTAR CONSULTA ==========
+      const [aprovacoes, total] = await queryBuilder.getManyAndCount();
+
+      // ========== OBTER DADOS PARA FILTROS ==========
+      const [unidades, statusList, tiposAcao, solicitantes, estatisticas] = await Promise.all([
+        this.obterUnidadesDisponiveis(),
+        this.obterStatusDisponiveis(),
+        this.obterTiposAcaoDisponiveis(),
+        this.obterSolicitantesDisponiveis(),
+        this.calcularEstatisticasAprovacoes()
+      ]);
+
+      // ========== CONSTRUIR RESPOSTA ==========
+      return {
+        aprovacoes: aprovacoes.map(aprovacao => this.mapearAprovacaoParaResposta(aprovacao)),
+        estatisticas,
+        unidades,
+        status: statusList,
+        tipos_acao: tiposAcao,
+        solicitantes,
+        periodos_disponiveis: Object.values(PeriodoPredefinido)
+      };
+    } catch (error) {
+      this.logger.error('Erro ao aplicar filtros avançados:', error);
+      throw new BadRequestException('Erro ao aplicar filtros avançados');
+    }
+  }
+
+  /**
+   * Calcula período baseado em período predefinido ou datas específicas
+   */
+  private calcularPeriodo(
+    periodo?: PeriodoPredefinido,
+    dataInicio?: string,
+    dataFim?: string
+  ): { dataInicio?: Date; dataFim?: Date } {
+    if (periodo) {
+      return this.filtrosAvancadosService.calcularPeriodoPredefinido(periodo);
+    }
+
+    return {
+      dataInicio: dataInicio ? new Date(dataInicio) : undefined,
+      dataFim: dataFim ? new Date(dataFim) : undefined
+    };
+  }
+
+  /**
+   * Obtém unidades disponíveis para filtro
+   */
+  private async obterUnidadesDisponiveis() {
+    const resultado = await this.solicitacaoRepository
+      .createQueryBuilder('aprovacao')
+      .leftJoin('aprovacao.solicitante', 'solicitante')
+      .leftJoin('solicitante.unidade', 'unidade')
+      .select([
+        'unidade.id as id',
+        'unidade.nome as nome',
+        'COUNT(aprovacao.id) as total_aprovacoes'
+      ])
+      .where('unidade.id IS NOT NULL')
+      .groupBy('unidade.id, unidade.nome')
+      .orderBy('unidade.nome', 'ASC')
+      .getRawMany();
+
+    return resultado.map(item => ({
+      id: item.id,
+      nome: item.nome,
+      total_aprovacoes: parseInt(item.total_aprovacoes)
+    }));
+  }
+
+  /**
+   * Obtém status disponíveis para filtro
+   */
+  private async obterStatusDisponiveis() {
+    const resultado = await this.solicitacaoRepository
+      .createQueryBuilder('aprovacao')
+      .select([
+        'aprovacao.status as status',
+        'COUNT(aprovacao.id) as total'
+      ])
+      .groupBy('aprovacao.status')
+      .orderBy('aprovacao.status', 'ASC')
+      .getRawMany();
+
+    return resultado.map(item => ({
+      status: item.status,
+      total: parseInt(item.total)
+    }));
+  }
+
+  /**
+   * Obtém tipos de ação disponíveis para filtro
+   */
+  private async obterTiposAcaoDisponiveis() {
+    const resultado = await this.solicitacaoRepository
+      .createQueryBuilder('aprovacao')
+      .leftJoin('aprovacao.acao_aprovacao', 'acao')
+      .select([
+        'acao.tipo_acao as tipo_acao',
+        'COUNT(aprovacao.id) as total'
+      ])
+      .where('acao.tipo_acao IS NOT NULL')
+      .groupBy('acao.tipo_acao')
+      .orderBy('acao.tipo_acao', 'ASC')
+      .getRawMany();
+
+    return resultado.map(item => ({
+      tipo_acao: item.tipo_acao,
+      total: parseInt(item.total)
+    }));
+  }
+
+  /**
+   * Obtém solicitantes disponíveis para filtro
+   */
+  private async obterSolicitantesDisponiveis() {
+    const resultado = await this.solicitacaoRepository
+      .createQueryBuilder('aprovacao')
+      .leftJoin('aprovacao.solicitante', 'solicitante')
+      .select([
+        'solicitante.id as id',
+        'solicitante.nome as nome',
+        'COUNT(aprovacao.id) as total_solicitacoes'
+      ])
+      .where('solicitante.id IS NOT NULL')
+      .groupBy('solicitante.id, solicitante.nome')
+      .orderBy('solicitante.nome', 'ASC')
+      .getRawMany();
+
+    return resultado.map(item => ({
+      id: item.id,
+      nome: item.nome,
+      total_solicitacoes: parseInt(item.total_solicitacoes)
+    }));
+  }
+
+  /**
+   * Calcula estatísticas gerais das aprovações
+   */
+  private async calcularEstatisticasAprovacoes() {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const amanha = new Date(hoje);
+    amanha.setDate(amanha.getDate() + 1);
+
+    const [total, pendentes, vencidas, hoje_count] = await Promise.all([
+      this.solicitacaoRepository.count(),
+      this.solicitacaoRepository.count({
+        where: { status: StatusSolicitacao.PENDENTE }
+      }),
+      this.solicitacaoRepository
+        .createQueryBuilder('aprovacao')
+        .where('aprovacao.prazo_aprovacao IS NOT NULL')
+        .andWhere('aprovacao.prazo_aprovacao < :agora', { agora: new Date() })
+        .andWhere('aprovacao.status = :status', { status: StatusSolicitacao.PENDENTE })
+        .getCount(),
+      this.solicitacaoRepository
+        .createQueryBuilder('aprovacao')
+        .where('aprovacao.created_at >= :hoje', { hoje })
+        .andWhere('aprovacao.created_at < :amanha', { amanha })
+        .getCount()
+    ]);
+
+    return {
+      total_aprovacoes: total,
+      aprovacoes_pendentes: pendentes,
+      aprovacoes_vencidas: vencidas,
+      aprovacoes_hoje: hoje_count
+    };
+  }
+
+  /**
+   * Mapeia entidade de aprovação para formato de resposta
+   */
+  private mapearAprovacaoParaResposta(aprovacao: SolicitacaoAprovacao): any {
+    return {
+      id: aprovacao.id,
+      codigo: aprovacao.codigo,
+      tipo_acao: aprovacao.acao_aprovacao?.tipo_acao,
+      nome_acao: aprovacao.acao_aprovacao?.nome,
+      status: aprovacao.status,
+      justificativa: aprovacao.justificativa,
+      observacoes: aprovacao.observacoes,
+      prazo_aprovacao: aprovacao.prazo_aprovacao,
+      prazo_vencido: aprovacao.prazo_aprovacao ? new Date() > aprovacao.prazo_aprovacao : false,
+      solicitante: {
+        id: aprovacao.solicitante?.id,
+        nome: aprovacao.solicitante?.nome,
+        email: aprovacao.solicitante?.email,
+        unidade: {
+          id: aprovacao.solicitante?.unidade?.id,
+          nome: aprovacao.solicitante?.unidade?.nome
+        }
+      },
+      aprovadores: aprovacao.solicitacao_aprovadores?.map(sa => ({
+        id: sa.usuario?.id,
+        nome: sa.usuario?.nome,
+        decisao: sa.aprovado,
+        justificativa: sa.justificativa_decisao,
+        processado_em: sa.decidido_em
+      })) || [],
+      dados_acao: aprovacao.dados_acao,
+      metodo_execucao: aprovacao.metodo_execucao,
+      created_at: aprovacao.created_at,
+      updated_at: aprovacao.updated_at
+    };
   }
 }

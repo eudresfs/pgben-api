@@ -38,6 +38,7 @@ import { GetUser } from '@/auth/decorators/get-user.decorator';
 import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
 import { PaginatedResponseDto } from '../../../shared/dtos/pagination.dto';
 import { PaginationHelper } from '../helpers/pagination.helper';
+import { AgendamentoFiltrosAvancadosDto, AgendamentoFiltrosResponseDto } from '../dto/agendamento-filtros-avancados.dto';
 
 /**
  * Controller para gerenciamento de agendamentos de visitas domiciliares
@@ -823,6 +824,132 @@ export class AgendamentoController {
       };
     } catch (error) {
       // Filtros globais tratarão as exceções apropriadamente
+      throw error;
+    }
+  }
+
+  /**
+   * Aplica filtros avançados para busca de agendamentos
+   * Endpoint especializado para filtros complexos com múltiplos critérios
+   */
+  @Post('filtros-avancados')
+  @RequiresPermission({ permissionName: 'monitoramento.agendamento.listar' })
+  @ApiOperation({
+    summary: 'Aplicar filtros avançados em agendamentos',
+    description: 'Endpoint para aplicação de filtros avançados em agendamentos, permitindo busca por múltiplos critérios, períodos predefinidos e ordenação customizada. Ideal para relatórios gerenciais e análises detalhadas.'
+  })
+  @ApiBody({
+    type: AgendamentoFiltrosAvancadosDto,
+    description: 'Filtros avançados para busca de agendamentos',
+    examples: {
+      'filtro-basico': {
+        summary: 'Filtro básico por unidade e status',
+        description: 'Exemplo de filtro simples por unidade e status',
+        value: {
+          unidades: ['550e8400-e29b-41d4-a716-446655440000'],
+          status: ['agendado', 'em_andamento'],
+          page: 1,
+          limit: 20
+        }
+      },
+      'filtro-periodo': {
+        summary: 'Filtro por período predefinido',
+        description: 'Exemplo usando período predefinido',
+        value: {
+          periodo: 'ultimos_30_dias',
+          tipos_visita: ['inicial', 'acompanhamento'],
+          prioridades: ['alta', 'media'],
+          include_relations: true
+        }
+      },
+      'filtro-avancado': {
+        summary: 'Filtro avançado completo',
+        description: 'Exemplo com múltiplos filtros e busca textual',
+        value: {
+          unidades: ['550e8400-e29b-41d4-a716-446655440000', '660e8400-e29b-41d4-a716-446655440001'],
+          tecnicos: ['550e8400-e29b-41d4-a716-446655440002'],
+          status: ['agendado'],
+          tipos_visita: ['inicial'],
+          prioridades: ['alta'],
+          search: 'João Silva',
+          data_inicio: '2024-01-01T00:00:00.000Z',
+          data_fim: '2024-12-31T23:59:59.999Z',
+          em_atraso: false,
+          incluir_cancelados: false,
+          include_relations: true,
+          sort_by: 'data_agendamento',
+          sort_order: 'ASC',
+          page: 1,
+          limit: 50
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Filtros aplicados com sucesso',
+    type: AgendamentoFiltrosResponseDto,
+    example: {
+      message: 'Filtros aplicados com sucesso',
+      data: {
+        unidades: [
+          { id: '550e8400-e29b-41d4-a716-446655440000', nome: 'CRAS Centro', total_agendamentos: 45 }
+        ],
+        status: [
+          { status: 'agendado', total: 120 },
+          { status: 'em_andamento', total: 45 }
+        ],
+        tipos_visita: [
+          { tipo: 'inicial', total: 85 },
+          { tipo: 'acompanhamento', total: 150 }
+        ],
+        prioridades: [
+          { prioridade: 'alta', total: 25 },
+          { prioridade: 'media', total: 180 }
+        ],
+        tecnicos: [
+          { id: '550e8400-e29b-41d4-a716-446655440002', nome: 'Maria Santos', total_agendamentos: 28 }
+        ],
+        estatisticas: {
+          total_agendamentos: 395,
+          agendamentos_em_atraso: 12,
+          agendamentos_hoje: 8,
+          agendamentos_proximos_7_dias: 45
+        },
+        periodos_disponiveis: ['hoje', 'ultimos_7_dias', 'ultimos_30_dias', 'ultimo_mes', 'ultimos_3_meses']
+      }
+    }
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Parâmetros de filtro inválidos',
+    example: {
+      statusCode: 400,
+      message: ['unidades deve ser um array de UUIDs válidos', 'data_inicio deve ser uma data válida'],
+      error: 'Bad Request'
+    }
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Usuário não possui permissão para listar agendamentos',
+    example: {
+      statusCode: 403,
+      message: 'Acesso negado: permissão monitoramento.agendamento.listar requerida',
+      error: 'Forbidden'
+    }
+  })
+  async aplicarFiltrosAvancados(
+    @Body(ValidationPipe) filtros: AgendamentoFiltrosAvancadosDto
+  ): Promise<{ message: string; data: AgendamentoFiltrosResponseDto }> {
+    try {
+      const resultado = await this.agendamentoService.aplicarFiltrosAvancados(filtros);
+
+      return {
+        message: 'Filtros aplicados com sucesso',
+        data: resultado
+      };
+    } catch (error) {
+      // Os filtros de exceção globais irão capturar e tratar adequadamente
       throw error;
     }
   }

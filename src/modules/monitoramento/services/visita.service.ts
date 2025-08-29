@@ -13,6 +13,9 @@ import { VisitaRepository } from '../repositories/visita.repository';
 import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
 import { PaginatedResponseDto } from '../../../shared/dtos/pagination.dto';
 import { PaginationHelper } from '../helpers/pagination.helper';
+import { VisitaFiltrosAvancadosDto, VisitaFiltrosResponseDto } from '../dto/visita-filtros-avancados.dto';
+import { PeriodoPredefinido } from '../../../enums/periodo-predefinido.enum';
+import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
 
 
 
@@ -37,6 +40,7 @@ export class VisitaService {
     private readonly agendamentoRepository: Repository<AgendamentoVisita>,
     @InjectRepository(Pagamento)
     private readonly pagamentoRepository: Repository<Pagamento>,
+    private readonly filtrosAvancadosService: FiltrosAvancadosService,
   ) { }
 
   /**
@@ -880,6 +884,16 @@ export class VisitaService {
    * @param visita Entidade da visita
    * @returns DTO de resposta formatado
    */
+  /**
+   * Mapeia uma visita domiciliar para o formato de resposta
+   * 
+   * @param visita Entidade da visita domiciliar
+   * @returns DTO de resposta da visita
+   */
+  private mapearVisitaParaResponse(visita: VisitaDomiciliar): VisitaResponseDto {
+    return this.buildResponseDto(visita);
+  }
+
   private buildResponseDto(visita: VisitaDomiciliar): VisitaResponseDto {
     return {
       id: visita.id,
@@ -933,6 +947,204 @@ export class VisitaService {
       created_at: visita.created_at.toISOString(),
       updated_at: visita.updated_at.toISOString(),
       dados_complementares: visita.dados_complementares,
+    };
+  }
+
+  /**
+   * Aplica filtros avançados para busca de visitas domiciliares
+   * 
+   * @param filtros Critérios de filtros avançados
+   * @returns Resultado da busca com estatísticas e opções de filtro
+   */
+  async aplicarFiltrosAvancados(filtros: VisitaFiltrosAvancadosDto): Promise<VisitaFiltrosResponseDto> {
+    const queryBuilder = this.visitaRepository.createQueryBuilder('visita')
+      .leftJoinAndSelect('visita.agendamento', 'agendamento')
+      .leftJoinAndSelect('agendamento.beneficiario', 'beneficiario')
+      .leftJoinAndSelect('beneficiario.unidade', 'unidade')
+      .leftJoinAndSelect('visita.tecnico_responsavel', 'tecnico')
+      .leftJoinAndSelect('agendamento.pagamento', 'pagamento');
+
+    // Aplicar filtros condicionais
+    if (filtros.unidades?.length) {
+      queryBuilder.andWhere('unidade.id IN (:...unidades)', { unidades: filtros.unidades });
+    }
+
+    if (filtros.tipos_visita?.length) {
+      queryBuilder.andWhere('visita.tipo_visita IN (:...tipos)', { tipos: filtros.tipos_visita });
+    }
+
+    if (filtros.resultados?.length) {
+      queryBuilder.andWhere('visita.resultado IN (:...resultados)', { resultados: filtros.resultados });
+    }
+
+    if (filtros.tecnicos?.length) {
+      queryBuilder.andWhere('tecnico.id IN (:...tecnicos)', { tecnicos: filtros.tecnicos });
+    }
+
+    if (filtros.beneficiarios?.length) {
+      queryBuilder.andWhere('beneficiario.id IN (:...beneficiarios)', { beneficiarios: filtros.beneficiarios });
+    }
+
+    // Filtros de período
+    if (filtros.periodo) {
+      const { dataInicio, dataFim } = this.filtrosAvancadosService.calcularPeriodoPredefinido(filtros.periodo);
+      queryBuilder.andWhere('visita.data_realizacao BETWEEN :dataInicio AND :dataFim', {
+        dataInicio,
+        dataFim
+      });
+    } else if (filtros.data_inicio && filtros.data_fim) {
+      queryBuilder.andWhere('visita.data_realizacao BETWEEN :dataInicio AND :dataFim', {
+        dataInicio: filtros.data_inicio,
+        dataFim: filtros.data_fim
+      });
+    }
+
+    // Filtro de busca textual
+    if (filtros.search) {
+      queryBuilder.andWhere(
+        '(beneficiario.nome ILIKE :search OR beneficiario.cpf ILIKE :search OR visita.observacoes_gerais ILIKE :search OR visita.parecer_tecnico ILIKE :search)',
+        { search: `%${filtros.search}%` }
+      );
+    }
+
+    // Filtros booleanos
+    if (filtros.recomenda_renovacao !== undefined) {
+      queryBuilder.andWhere('visita.recomenda_renovacao = :recomenda', { recomenda: filtros.recomenda_renovacao });
+    }
+
+    if (filtros.necessita_nova_visita !== undefined) {
+      queryBuilder.andWhere('visita.necessita_nova_visita = :necessita', { necessita: filtros.necessita_nova_visita });
+    }
+
+    if (filtros.beneficiario_presente !== undefined) {
+      queryBuilder.andWhere('visita.beneficiario_presente = :presente', { presente: filtros.beneficiario_presente });
+    }
+
+    // Ordenação
+    const sortBy = filtros.sort_by || 'data_realizacao';
+    const sortOrder = filtros.sort_order || 'DESC';
+    queryBuilder.orderBy(`visita.${sortBy}`, sortOrder);
+
+    // Paginação
+    const page = filtros.page || 1;
+    const limit = filtros.limit || 20;
+    const offset = (page - 1) * limit;
+
+    queryBuilder.skip(offset).take(limit);
+
+    // Executar consulta
+    const [visitas, total] = await queryBuilder.getManyAndCount();
+
+    // Calcular estatísticas
+    const estatisticas = await this.calcularEstatisticasVisitas();
+
+    // Obter opções de filtro
+    const opcoesFilter = await this.obterOpcoesFilterVisitas();
+
+    return {
+      visitas: visitas.map(visita => this.mapearVisitaParaResponse(visita)),
+      total,
+      estatisticas,
+      opcoes_filtro: opcoesFilter
+    };
+  }
+
+  /**
+   * Calcula estatísticas gerais das visitas
+   */
+  private async calcularEstatisticasVisitas() {
+    const hoje = new Date();
+    const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    const fimHoje = new Date(inicioHoje.getTime() + 24 * 60 * 60 * 1000 - 1);
+
+    const [totalVisitas, visitasRealizadas, visitasNaoLocalizadas, visitasHoje, renovacoesRecomendadas, novasVisitasNecessarias] = await Promise.all([
+      this.visitaRepository.count(),
+      this.visitaRepository.count({ resultado: [ResultadoVisita.REALIZADA_COM_SUCESSO] }),
+      this.visitaRepository.count({ resultado: [ResultadoVisita.ENDERECO_NAO_LOCALIZADO] }),
+      this.visitaRepository.count({
+        data_inicio: inicioHoje,
+        data_fim: fimHoje
+      }),
+      this.visitaRepository.count({ recomenda_renovacao: true }),
+      this.visitaRepository.count({ necessita_nova_visita: true })
+    ]);
+
+    return {
+      total_visitas: totalVisitas,
+      visitas_realizadas: visitasRealizadas,
+      visitas_nao_localizadas: visitasNaoLocalizadas,
+      visitas_hoje: visitasHoje,
+      renovacoes_recomendadas: renovacoesRecomendadas,
+      novas_visitas_necessarias: novasVisitasNecessarias
+    };
+  }
+
+  /**
+   * Obtém opções disponíveis para filtros
+   */
+  private async obterOpcoesFilterVisitas() {
+    // Obter unidades com contagem de visitas
+    const unidades = await this.visitaRepository
+      .createQueryBuilder('visita')
+      .leftJoin('visita.agendamento', 'agendamento')
+      .leftJoin('agendamento.beneficiario', 'beneficiario')
+      .leftJoin('beneficiario.unidade', 'unidade')
+      .select('unidade.id', 'id')
+      .addSelect('unidade.nome', 'nome')
+      .addSelect('COUNT(visita.id)', 'total_visitas')
+      .where('unidade.id IS NOT NULL')
+      .groupBy('unidade.id')
+      .addGroupBy('unidade.nome')
+      .getRawMany();
+
+    // Obter tipos de visita com contagem
+    const tiposVisita = await this.visitaRepository
+      .createQueryBuilder('visita')
+      .select('visita.tipo_visita', 'tipo')
+      .addSelect('COUNT(*)', 'total')
+      .groupBy('visita.tipo_visita')
+      .getRawMany();
+
+    // Obter resultados com contagem
+    const resultados = await this.visitaRepository
+      .createQueryBuilder('visita')
+      .select('visita.resultado', 'resultado')
+      .addSelect('COUNT(*)', 'total')
+      .groupBy('visita.resultado')
+      .getRawMany();
+
+    // Obter técnicos com contagem de visitas
+    const tecnicos = await this.visitaRepository
+      .createQueryBuilder('visita')
+      .leftJoin('visita.tecnico_responsavel', 'tecnico')
+      .select('tecnico.id', 'id')
+      .addSelect('tecnico.nome', 'nome')
+      .addSelect('COUNT(visita.id)', 'total_visitas')
+      .where('tecnico.id IS NOT NULL')
+      .groupBy('tecnico.id')
+      .addGroupBy('tecnico.nome')
+      .getRawMany();
+
+    return {
+      unidades: unidades.map(u => ({
+        id: u.id,
+        nome: u.nome,
+        total_visitas: parseInt(u.total_visitas)
+      })),
+      tipos_visita: tiposVisita.map(t => ({
+        tipo: t.tipo,
+        total: parseInt(t.total)
+      })),
+      resultados: resultados.map(r => ({
+        resultado: r.resultado,
+        total: parseInt(r.total)
+      })),
+      tecnicos: tecnicos.map(t => ({
+        id: t.id,
+        nome: t.nome,
+        total_visitas: parseInt(t.total_visitas)
+      })),
+      periodos_disponiveis: Object.values(PeriodoPredefinido)
     };
   }
 }

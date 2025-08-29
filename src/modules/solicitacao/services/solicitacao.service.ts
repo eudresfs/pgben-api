@@ -375,41 +375,9 @@ export class SolicitacaoService {
       let dataFim: Date | undefined;
 
       if (filtros.periodo && filtros.periodo !== PeriodoPredefinido.PERSONALIZADO) {
-        const agora = new Date();
-        switch (filtros.periodo) {
-          case PeriodoPredefinido.HOJE:
-            dataInicio = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
-            dataFim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59);
-            break;
-          case PeriodoPredefinido.ONTEM:
-            const ontem = new Date(agora);
-            ontem.setDate(ontem.getDate() - 1);
-            dataInicio = new Date(ontem.getFullYear(), ontem.getMonth(), ontem.getDate());
-            dataFim = new Date(ontem.getFullYear(), ontem.getMonth(), ontem.getDate(), 23, 59, 59);
-            break;
-          case PeriodoPredefinido.ULTIMOS_7_DIAS:
-            dataInicio = new Date(agora);
-            dataInicio.setDate(dataInicio.getDate() - 7);
-            dataFim = agora;
-            break;
-          case PeriodoPredefinido.ULTIMOS_30_DIAS:
-            dataInicio = new Date(agora);
-            dataInicio.setDate(dataInicio.getDate() - 30);
-            dataFim = agora;
-            break;
-          case PeriodoPredefinido.MES_ATUAL:
-            dataInicio = new Date(agora.getFullYear(), agora.getMonth(), 1);
-            dataFim = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59);
-            break;
-          case PeriodoPredefinido.MES_ANTERIOR:
-            dataInicio = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
-            dataFim = new Date(agora.getFullYear(), agora.getMonth(), 0, 23, 59, 59);
-            break;
-          case PeriodoPredefinido.ANO_ATUAL:
-            dataInicio = new Date(agora.getFullYear(), 0, 1);
-            dataFim = new Date(agora.getFullYear(), 11, 31, 23, 59, 59);
-            break;
-        }
+        const { dataInicio: inicio, dataFim: fim } = this.filtrosAvancadosService.calcularPeriodoPredefinido(filtros.periodo);
+        dataInicio = inicio;
+        dataFim = fim;
       } else if (filtros.data_inicio_personalizada || filtros.data_fim_personalizada) {
         if (filtros.data_inicio_personalizada) {
           dataInicio = new Date(filtros.data_inicio_personalizada);

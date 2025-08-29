@@ -204,17 +204,29 @@ export class FiltrosAvancadosService {
     periodo: PeriodoPredefinido,
     timezone: string = 'America/Sao_Paulo'
   ): IPeriodoCalculado {
+    const resultado = this.calcularPeriodoPredefinido(periodo);
+    return {
+      dataInicio: resultado.dataInicio,
+      dataFim: resultado.dataFim,
+      descricao: this.obterDescricaoPeriodo(periodo),
+      timezone
+    };
+  }
+
+  /**
+   * Calcula período predefinido (formato simplificado para compatibilidade)
+   * Retorna apenas dataInicio e dataFim para manter compatibilidade com serviços existentes
+   */
+  calcularPeriodoPredefinido(periodo: PeriodoPredefinido): { dataInicio: Date; dataFim: Date } {
     
     const agora = new Date();
     let dataInicio: Date;
     let dataFim: Date;
-    let descricao: string;
     
     switch (periodo) {
       case PeriodoPredefinido.HOJE:
         dataInicio = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
         dataFim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59, 999);
-        descricao = 'Hoje';
         break;
         
       case PeriodoPredefinido.ONTEM:
@@ -222,7 +234,6 @@ export class FiltrosAvancadosService {
         ontem.setDate(ontem.getDate() - 1);
         dataInicio = new Date(ontem.getFullYear(), ontem.getMonth(), ontem.getDate());
         dataFim = new Date(ontem.getFullYear(), ontem.getMonth(), ontem.getDate(), 23, 59, 59, 999);
-        descricao = 'Ontem';
         break;
         
       case PeriodoPredefinido.ULTIMOS_7_DIAS:
@@ -230,7 +241,6 @@ export class FiltrosAvancadosService {
         dataInicio.setDate(dataInicio.getDate() - 6);
         dataInicio.setHours(0, 0, 0, 0);
         dataFim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59, 999);
-        descricao = 'Últimos 7 dias';
         break;
         
       case PeriodoPredefinido.ULTIMOS_30_DIAS:
@@ -238,7 +248,6 @@ export class FiltrosAvancadosService {
         dataInicio.setDate(dataInicio.getDate() - 29);
         dataInicio.setHours(0, 0, 0, 0);
         dataFim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59, 999);
-        descricao = 'Últimos 30 dias';
         break;
         
       case PeriodoPredefinido.ULTIMOS_90_DIAS:
@@ -246,44 +255,62 @@ export class FiltrosAvancadosService {
         dataInicio.setDate(dataInicio.getDate() - 89);
         dataInicio.setHours(0, 0, 0, 0);
         dataFim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59, 999);
-        descricao = 'Últimos 90 dias';
         break;
         
       case PeriodoPredefinido.MES_ATUAL:
         dataInicio = new Date(agora.getFullYear(), agora.getMonth(), 1);
         dataFim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59, 999);
-        descricao = 'Mês atual';
         break;
         
       case PeriodoPredefinido.MES_ANTERIOR:
         const mesAnterior = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
         dataInicio = mesAnterior;
         dataFim = new Date(agora.getFullYear(), agora.getMonth(), 0, 23, 59, 59, 999);
-        descricao = 'Mês anterior';
         break;
         
       case PeriodoPredefinido.ANO_ATUAL:
         dataInicio = new Date(agora.getFullYear(), 0, 1);
         dataFim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59, 999);
-        descricao = 'Ano atual';
         break;
         
       case PeriodoPredefinido.ANO_ANTERIOR:
         dataInicio = new Date(agora.getFullYear() - 1, 0, 1);
         dataFim = new Date(agora.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
-        descricao = 'Ano anterior';
         break;
         
       default:
         throw new BadRequestException(`Período não suportado: ${periodo}`);
     }
     
-    return {
-      dataInicio,
-      dataFim,
-      descricao,
-      timezone
-    };
+    return { dataInicio, dataFim };
+  }
+
+  /**
+   * Obtém descrição do período predefinido
+   */
+  private obterDescricaoPeriodo(periodo: PeriodoPredefinido): string {
+    switch (periodo) {
+      case PeriodoPredefinido.HOJE:
+        return 'Hoje';
+      case PeriodoPredefinido.ONTEM:
+        return 'Ontem';
+      case PeriodoPredefinido.ULTIMOS_7_DIAS:
+        return 'Últimos 7 dias';
+      case PeriodoPredefinido.ULTIMOS_30_DIAS:
+        return 'Últimos 30 dias';
+      case PeriodoPredefinido.ULTIMOS_90_DIAS:
+        return 'Últimos 90 dias';
+      case PeriodoPredefinido.MES_ATUAL:
+        return 'Mês atual';
+      case PeriodoPredefinido.MES_ANTERIOR:
+        return 'Mês anterior';
+      case PeriodoPredefinido.ANO_ATUAL:
+        return 'Ano atual';
+      case PeriodoPredefinido.ANO_ANTERIOR:
+        return 'Ano anterior';
+      default:
+        return 'Período personalizado';
+    }
   }
   
   /**

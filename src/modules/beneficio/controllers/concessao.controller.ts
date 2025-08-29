@@ -37,6 +37,7 @@ import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { Usuario } from '../../../entities/usuario.entity';
 import { FiltroConcessaoDto } from '../dto/filtro-concessao.dto';
 import { ConcessaoListResponseDto } from '../dto/concessao-response.dto';
+import { ConcessaoFiltrosAvancadosDto, ConcessaoFiltrosResponseDto } from '../dto/concessao-filtros-avancados.dto';
 import {
   PaginatedResponseDto,
   PaginationMetaDto,
@@ -285,6 +286,87 @@ export class ConcessaoController {
       result.data as ConcessaoListResponseDto[];
 
     return new PaginatedResponseDto(items, meta);
+  }
+
+  /**
+   * Lista concessões com filtros avançados
+   */
+  @Post('filtros-avancados')
+  @RequiresPermission({
+    permissionName: 'concessao.listar',
+    scopeType: ScopeType.UNIT,
+  })
+  @ApiOperation({ 
+    summary: 'Listar concessões com filtros avançados',
+    description: `Endpoint otimizado para consultas complexas de concessões com múltiplos critérios de filtro.
+    
+    **Funcionalidades principais:**
+    - Filtros por múltiplas unidades, benefícios e status
+    - Filtros por período de criação e início da concessão
+    - Busca textual em protocolo, nome do beneficiário e CPF
+    - Paginação otimizada com cache
+    - Ordenação por múltiplos campos
+    - Filtros por determinação judicial e prioridade
+    
+    **Casos de uso comuns:**
+    - Relatórios de concessões por período
+    - Auditoria de concessões por unidade
+    - Consulta de concessões por beneficiário
+    - Análise de concessões por status
+    - Controle de concessões prioritárias`
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista paginada de concessões com filtros aplicados',
+    type: ConcessaoFiltrosResponseDto,
+    schema: {
+      example: {
+        items: [
+          {
+            id: '550e8400-e29b-41d4-a716-446655440000',
+            data_inicio: '2024-01-15',
+            status: 'ATIVO',
+            prioridade: 1,
+            protocolo: 'SOL-2024-001',
+            determinacao_judicial: false,
+            beneficiario: {
+              id: '550e8400-e29b-41d4-a716-446655440001',
+              nome: 'João Silva Santos',
+              cpf: '12345678901'
+            },
+            tipo_beneficio: {
+              id: '550e8400-e29b-41d4-a716-446655440002',
+              nome: 'Auxílio Emergencial',
+              codigo: 'AUX-001'
+            },
+            unidade: {
+              id: '550e8400-e29b-41d4-a716-446655440003',
+              nome: 'CRAS Centro',
+              codigo: 'CRAS-01'
+            }
+          }
+        ],
+        meta: {
+          page: 1,
+          limit: 10,
+          total: 100,
+          pages: 10,
+          hasNext: true,
+          hasPrev: false
+        },
+        performance: {
+          executionTime: 150,
+          queryCount: 2,
+          cacheHit: false
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Parâmetros de filtro inválidos' })
+  async aplicarFiltrosAvancados(
+    @Body() filtros: ConcessaoFiltrosAvancadosDto,
+  ): Promise<ConcessaoFiltrosResponseDto> {
+    return await this.concessaoService.aplicarFiltrosAvancados(filtros);
   }
 
   /**
