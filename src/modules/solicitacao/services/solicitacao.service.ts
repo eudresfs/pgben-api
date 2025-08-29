@@ -488,11 +488,6 @@ export class SolicitacaoService {
 
     queryBuilder.orderBy(`solicitacao.${sortBy}`, sortOrder);
 
-    // Aplicar filtro de arquivados
-    if (!filtros.incluir_arquivados) {
-      queryBuilder.andWhere('solicitacao.ativo = :ativo', { ativo: true });
-    }
-
     // Aplicar paginação
     const page = filtros.page || 1;
     const limit = Math.min(filtros.limit || 10, 100); // Máximo 100 itens por página
@@ -538,8 +533,7 @@ export class SolicitacaoService {
       periodo: filtros.periodo || (filtros.data_inicio_personalizada && filtros.data_fim_personalizada ? 'PERSONALIZADO' : undefined),
       search: !!filtros.search,
       protocolos: filtros.protocolos?.length || 0,
-      apenas_determinacao_judicial: filtros.apenas_determinacao_judicial,
-      incluir_arquivados: filtros.incluir_arquivados,
+      apenas_determinacao_judicial: filtros.apenas_determinacao_judicial
     };
 
     return {
