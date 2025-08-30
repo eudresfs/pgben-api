@@ -1,5 +1,7 @@
 import { SelectQueryBuilder } from 'typeorm';
-import { MetricasFiltrosAvancadosDto, PeriodoPredefinido, PeriodoCalculador, StatusSolicitacao } from '../dto/metricas-filtros-avancados.dto';
+import { MetricasFiltrosAvancadosDto, PeriodoPredefinido, PeriodoCalculador } from '../dto/metricas-filtros-avancados.dto';
+import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
+import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { Solicitacao, Concessao, Pagamento } from '../../../entities';
 
 /**
@@ -22,18 +24,18 @@ export class FiltrosQueryHelper {
 
     // Se período personalizado foi especificado
     if (filtros.periodo === PeriodoPredefinido.PERSONALIZADO) {
-      if (filtros.dataInicioPersonalizada && filtros.dataFimPersonalizada) {
+      if (filtros.data_inicio && filtros.data_fim) {
         const validacao = PeriodoCalculador.validarPeriodoPersonalizado(
-          filtros.dataInicioPersonalizada,
-          filtros.dataFimPersonalizada
+          filtros.data_inicio,
+          filtros.data_fim
         );
         
         if (!validacao.valido) {
           throw new Error(`Período inválido: ${validacao.erro}`);
         }
         
-        dataInicio = new Date(filtros.dataInicioPersonalizada);
-        dataFim = new Date(filtros.dataFimPersonalizada);
+        dataInicio = new Date(filtros.data_inicio);
+        dataFim = new Date(filtros.data_fim);
       } else {
         throw new Error('Datas de início e fim são obrigatórias para período personalizado');
       }
@@ -74,17 +76,40 @@ export class FiltrosQueryHelper {
     filtros: MetricasFiltrosAvancadosDto,
     alias: string = 'entity'
   ): SelectQueryBuilder<T> {
-    // Prioriza filtros múltiplos
-    if (filtros.unidades && filtros.unidades.length > 0) {
-      return query.andWhere(`${alias}.unidade_id IN (:...unidades)`, {
-        unidades: filtros.unidades
-      });
-    }
-    // Fallback para filtro único
-    else if (filtros.unidade) {
-      return query.andWhere(`${alias}.unidade_id = :unidade`, {
-        unidade: filtros.unidade
-      });
+    // Para pagamentos, a unidade deve ser acessada através da solicitação
+    if (alias === 'pagamento') {
+      // Verifica se já existe join com solicitacao
+      const existingJoins = query.expressionMap.joinAttributes;
+      if (!existingJoins.some(join => join.alias?.name === 'solicitacao')) {
+        query.leftJoin(`${alias}.solicitacao`, 'solicitacao');
+      }
+      
+      // Prioriza filtros múltiplos
+      if (filtros.unidades && filtros.unidades.length > 0) {
+        return query.andWhere('solicitacao.unidade_id IN (:...unidades)', {
+          unidades: filtros.unidades
+        });
+      }
+      // Fallback para filtro único
+      else if (filtros.unidade) {
+        return query.andWhere('solicitacao.unidade_id = :unidade', {
+          unidade: filtros.unidade
+        });
+      }
+    } else {
+      // Para outras entidades, usa o campo unidade_id diretamente
+      // Prioriza filtros múltiplos
+      if (filtros.unidades && filtros.unidades.length > 0) {
+        return query.andWhere(`${alias}.unidade_id IN (:...unidades)`, {
+          unidades: filtros.unidades
+        });
+      }
+      // Fallback para filtro único
+      else if (filtros.unidade) {
+        return query.andWhere(`${alias}.unidade_id = :unidade`, {
+          unidade: filtros.unidade
+        });
+      }
     }
     
     return query;
@@ -162,6 +187,32 @@ export class FiltrosQueryHelper {
   }
 
   /**
+   * Mapeia status de solicitação para status de pagamento correspondentes
+   */
+  private static mapearStatusSolicitacaoParaPagamento(statusSolicitacao: string[]): string[] {
+    const mapeamento: Record<string, string[]> = {
+      [StatusSolicitacao.APROVADA]: [StatusPagamentoEnum.LIBERADO, StatusPagamentoEnum.PAGO],
+      [StatusSolicitacao.PENDENTE]: [StatusPagamentoEnum.PENDENTE],
+      [StatusSolicitacao.EM_PROCESSAMENTO]: [StatusPagamentoEnum.AGENDADO, StatusPagamentoEnum.LIBERADO],
+      [StatusSolicitacao.CONCLUIDA]: [StatusPagamentoEnum.PAGO, StatusPagamentoEnum.CONFIRMADO, StatusPagamentoEnum.RECEBIDO],
+      [StatusSolicitacao.LIBERADA]: [StatusPagamentoEnum.LIBERADO],
+      [StatusSolicitacao.CANCELADA]: [StatusPagamentoEnum.CANCELADO],
+      [StatusSolicitacao.ARQUIVADA]: [StatusPagamentoEnum.CANCELADO]
+    };
+
+    const statusPagamento = new Set<string>();
+    
+    statusSolicitacao.forEach(status => {
+      const statusMapeados = mapeamento[status];
+      if (statusMapeados) {
+        statusMapeados.forEach(s => statusPagamento.add(s));
+      }
+    });
+
+    return Array.from(statusPagamento);
+  }
+
+  /**
    * Aplica filtros de status nas queries
    */
   static aplicarFiltroStatus<T>(
@@ -169,20 +220,33 @@ export class FiltrosQueryHelper {
     filtros: MetricasFiltrosAvancadosDto,
     alias: string = 'entity'
   ): SelectQueryBuilder<T> {
-    // Prioriza filtros múltiplos
-    if (filtros.statusList && filtros.statusList.length > 0) {
-      return query.andWhere(`${alias}.status IN (:...statusList)`, {
-        statusList: filtros.statusList
-      });
+    if (!filtros.status) {
+      return query;
     }
-    // Fallback para filtro único
-    else if (filtros.status) {
-      return query.andWhere(`${alias}.status = :status`, {
-        status: filtros.status
-      });
+
+    const statusArray = Array.isArray(filtros.status) ? filtros.status : [filtros.status];
+    
+    if (statusArray.length === 0) {
+      return query;
+    }
+
+    // Para pagamentos, mapear status de solicitação para status de pagamento
+    if (alias === 'pagamento') {
+      const statusPagamento = this.mapearStatusSolicitacaoParaPagamento(statusArray);
+      
+      if (statusPagamento.length > 0) {
+        return query.andWhere(`${alias}.status IN (:...statusPagamento)`, {
+          statusPagamento
+        });
+      }
+      
+      return query;
     }
     
-    return query;
+    // Para outras entidades, usar status diretamente
+    return query.andWhere(`${alias}.status IN (:...status)`, {
+      status: statusArray
+    });
   }
 
   /**
@@ -193,17 +257,30 @@ export class FiltrosQueryHelper {
     filtros: MetricasFiltrosAvancadosDto,
     alias: string = 'entity'
   ): SelectQueryBuilder<T> {
-    // Prioriza filtros múltiplos
+    // Prioriza filtros múltiplos (usuarios) sobre filtro único (usuario)
     if (filtros.usuarios && filtros.usuarios.length > 0) {
-      return query.andWhere(`${alias}.usuario_responsavel_id IN (:...usuarios)`, {
-        usuarios: filtros.usuarios
-      });
-    }
-    // Fallback para filtro único
-    else if (filtros.usuario) {
-      return query.andWhere(`${alias}.usuario_responsavel_id = :usuario`, {
-        usuario: filtros.usuario
-      });
+      // Para pagamentos, o técnico está na solicitação
+      if (alias === 'pagamento') {
+        // Verifica se o join com solicitacao já existe
+        const existingJoins = query.expressionMap.joinAttributes;
+        const hasJoinSolicitacao = existingJoins.some(join => 
+          join.alias?.name === 'solicitacao' || 
+          (join.relation?.propertyName === 'solicitacao' && join.entityOrProperty === 'pagamento.solicitacao')
+        );
+        
+        if (!hasJoinSolicitacao) {
+          query.leftJoin('pagamento.solicitacao', 'solicitacao');
+        }
+        
+        return query.andWhere('solicitacao.tecnico_id IN (:...usuarios)', {
+          usuarios: filtros.usuarios
+        });
+      } else {
+        // Para outras entidades, usa o campo tecnico_id diretamente
+        return query.andWhere(`${alias}.tecnico_id IN (:...usuarios)`, {
+          usuarios: filtros.usuarios
+        });
+      }
     }
     
     return query;
@@ -257,23 +334,6 @@ export class FiltrosQueryHelper {
     return query;
   }
 
-  /**
-   * Aplica filtro para incluir/excluir registros arquivados
-   */
-  static aplicarFiltroArquivados<T>(
-    query: SelectQueryBuilder<T>,
-    filtros: MetricasFiltrosAvancadosDto,
-    alias: string = 'entity'
-  ): SelectQueryBuilder<T> {
-    if (!filtros.incluirArquivados) {
-      // Exclui registros arquivados/inativos
-      return query.andWhere(`(
-        ${alias}.removed_at IS NULL
-      )`);
-    }
-    
-    return query;
-  }
 
   /**
    * Aplica paginação nas queries
@@ -282,8 +342,8 @@ export class FiltrosQueryHelper {
     query: SelectQueryBuilder<T>,
     filtros: MetricasFiltrosAvancadosDto
   ): SelectQueryBuilder<T> {
-    if (filtros.limite) {
-      query.limit(filtros.limite);
+    if (filtros.limit) {
+      query.limit(filtros.limit);
     }
     
     if (filtros.offset) {
@@ -305,8 +365,7 @@ export class FiltrosQueryHelper {
       .pipe(q => this.aplicarFiltroBeneficio(q, filtros, 'solicitacao'))
       .pipe(q => this.aplicarFiltroStatus(q, filtros, 'solicitacao'))
       .pipe(q => this.aplicarFiltroUsuario(q, filtros, 'solicitacao'))
-      .pipe(q => this.aplicarFiltroBairro(q, filtros, 'solicitacao', 'beneficiario', 'endereco'))
-      .pipe(q => this.aplicarFiltroArquivados(q, filtros, 'solicitacao'));
+      .pipe(q => this.aplicarFiltroBairro(q, filtros, 'solicitacao', 'beneficiario', 'endereco'));
   }
 
   /**
@@ -321,8 +380,7 @@ export class FiltrosQueryHelper {
       .pipe(q => this.aplicarFiltroBeneficio(q, filtros, 'concessao'))
       .pipe(q => this.aplicarFiltroStatus(q, filtros, 'concessao'))
       .pipe(q => this.aplicarFiltroUsuario(q, filtros, 'concessao'))
-      .pipe(q => this.aplicarFiltroBairro(q, filtros, 'concessao', 'cidadao', 'endereco'))
-      .pipe(q => this.aplicarFiltroArquivados(q, filtros, 'concessao'));
+      .pipe(q => this.aplicarFiltroBairro(q, filtros, 'concessao', 'cidadao', 'endereco'));
   }
 
   /**
@@ -337,8 +395,7 @@ export class FiltrosQueryHelper {
       .pipe(q => this.aplicarFiltroBeneficioPagamento(q, filtros))
       .pipe(q => this.aplicarFiltroStatus(q, filtros, 'pagamento'))
       .pipe(q => this.aplicarFiltroUsuario(q, filtros, 'pagamento'))
-      .pipe(q => this.aplicarFiltroBairro(q, filtros, 'pagamento', 'beneficiario', 'endereco'))
-      .pipe(q => this.aplicarFiltroArquivados(q, filtros, 'pagamento'));
+      .pipe(q => this.aplicarFiltroBairro(q, filtros, 'pagamento', 'beneficiario', 'endereco'));
   }
 
   /**
@@ -363,26 +420,22 @@ export class FiltrosQueryHelper {
       resumo.push(`Benefício: ${filtros.beneficio}`);
     }
     
-    if (filtros.statusList?.length) {
-      resumo.push(`Status: ${filtros.statusList.join(', ')}`);
+    if (filtros.status?.length) {
+      resumo.push(`Status: ${filtros.status.join(', ')}`);
     } else if (filtros.status) {
       resumo.push(`Status: ${filtros.status}`);
     }
     
     if (filtros.usuarios?.length) {
       resumo.push(`Usuários: ${filtros.usuarios.length}`);
-    } else if (filtros.usuario) {
-      resumo.push(`Usuário: ${filtros.usuario}`);
+    } else if (filtros.usuarios) {
+      resumo.push(`Usuário: ${filtros.usuarios}`);
     }
     
     if (filtros.bairros?.length) {
       resumo.push(`Bairros: ${filtros.bairros.join(', ')}`);
     } else if (filtros.bairro) {
       resumo.push(`Bairro: ${filtros.bairro}`);
-    }
-    
-    if (filtros.incluirArquivados) {
-      resumo.push('Incluindo arquivados');
     }
     
     return resumo.length > 0 ? resumo.join(' | ') : 'Nenhum filtro aplicado';

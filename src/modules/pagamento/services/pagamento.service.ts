@@ -460,15 +460,15 @@ export class PagamentoService {
       this.aplicarFiltrosPeriodo(queryBuilder, filtros);
 
       // Filtros de data específicos (sobrescrevem período se fornecidos)
-      if (filtros.data_liberacao_inicio) {
-        queryBuilder.andWhere('pagamento.data_liberacao >= :dataLiberacaoInicio', {
-          dataLiberacaoInicio: filtros.data_liberacao_inicio,
+      if (filtros.data_inicio) {
+        queryBuilder.andWhere('pagamento.data_liberacao >= :dataInicio', {
+          dataInicio: filtros.data_inicio,
         });
       }
 
-      if (filtros.data_liberacao_fim) {
-        queryBuilder.andWhere('pagamento.data_liberacao <= :dataLiberacaoFim', {
-          dataLiberacaoFim: filtros.data_liberacao_fim,
+      if (filtros.data_fim) {
+        queryBuilder.andWhere('pagamento.data_liberacao <= :dataFim', {
+          dataFim: filtros.data_fim,
         });
       }
 

@@ -2,46 +2,8 @@ import { IsOptional, IsString, IsDateString, IsUUID, IsEnum, IsArray } from 'cla
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { DashboardFiltrosDto } from './dashboard-filtros.dto';
-
-/**
- * Função utilitária para transformar valores em arrays, incluindo parsing de JSON strings
- * Aplica o princípio DRY evitando duplicação de código de transformação
- * 
- * @param value - Valor a ser transformado
- * @returns Array filtrado ou undefined se vazio
- */
-function transformToStringArray(value: any): string[] | undefined {
-  if (!value || value === '' || (Array.isArray(value) && value.length === 0)) {
-    return undefined;
-  }
-  
-  // Se é uma string que parece ser JSON array, tenta fazer o parse
-  if (typeof value === 'string' && value.trim().startsWith('[') && value.trim().endsWith(']')) {
-    try {
-      const parsed = JSON.parse(value.trim());
-      if (Array.isArray(parsed)) {
-        const filtered = parsed.filter(v => v && typeof v === 'string' && v.trim() !== '');
-        return filtered.length > 0 ? filtered : undefined;
-      }
-    } catch (error) {
-      // Fallback: usar regex para extrair valores de array sem aspas
-      const arrayMatch = value.trim().match(/^\[(.+)\]$/);
-      if (arrayMatch) {
-        const content = arrayMatch[1];
-        const items = content.split(',').map(item => item.trim()).filter(item => item !== '');
-        return items.length > 0 ? items : undefined;
-      }
-      // Se falhar o parse, trata como string normal
-    }
-  }
-  
-  if (Array.isArray(value)) {
-    const filtered = value.filter(v => v && v.trim() !== '');
-    return filtered.length > 0 ? filtered : undefined;
-  }
-  
-  return value.trim() !== '' ? [value] : undefined;
-}
+import { transformToUUIDArray, transformToEnumArray, transformToStringArray } from '@/common/utils';
+import { StatusSolicitacao } from '@/enums/status-solicitacao.enum';
 
 /**
  * Enum para períodos predefinidos
@@ -61,18 +23,7 @@ export enum PeriodoPredefinido {
   PERSONALIZADO = 'personalizado'
 }
 
-/**
- * Enum para status de solicitação
- */
-export enum StatusSolicitacao {
-  PENDENTE = 'pendente',
-  EM_ANALISE = 'em_analise',
-  APROVADO = 'aprovado',
-  REJEITADO = 'rejeitado',
-  SUSPENSO = 'suspenso',
-  CANCELADO = 'cancelado',
-  CONCLUIDO = 'concluido'
-}
+
 
 /**
  * DTO para filtros avançados das métricas de dashboard
@@ -92,7 +43,7 @@ export class MetricasFiltrosAvancadosDto extends DashboardFiltrosDto {
   @IsOptional()
   @IsArray({ message: 'unidades deve ser um array' })
   @Type(() => String)
-  @Transform(({ value }) => transformToStringArray(value))
+  @Transform(({ value }) => transformToUUIDArray(value))
   unidades?: string[];
 
   @ApiPropertyOptional({
@@ -120,24 +71,16 @@ export class MetricasFiltrosAvancadosDto extends DashboardFiltrosDto {
 
   @ApiPropertyOptional({
     description: 'Status das solicitações para filtrar os dados (múltiplos status)',
-    example: ['aprovado', 'pendente'],
+    example: ['liberada', 'em_processamento'],
     enum: StatusSolicitacao,
     isArray: true
   })
   @IsOptional()
-  @IsArray({ message: 'statusList deve ser um array' })
+  @IsArray({ message: 'status deve ser um array' })
   @IsEnum(StatusSolicitacao, { each: true, message: 'Cada status deve ser um valor válido' })
   @Type(() => String)
-  @Transform(({ value }) => Array.isArray(value) ? value : [value])
-  statusList?: StatusSolicitacao[];
-
-  @ApiPropertyOptional({
-    description: 'ID do usuário responsável para filtrar os dados',
-    example: '123e4567-e89b-12d3-a456-426614174003'
-  })
-  @IsOptional()
-  @IsUUID('4', { message: 'usuario deve ser um UUID válido' })
-  usuario?: string;
+  @Transform(({ value }) => transformToStringArray(value))
+  status?: string[];
 
   @ApiPropertyOptional({
     description: 'IDs dos usuários responsáveis para filtrar os dados (múltiplos usuários)',
@@ -147,7 +90,7 @@ export class MetricasFiltrosAvancadosDto extends DashboardFiltrosDto {
   @IsOptional()
   @IsArray({ message: 'usuarios deve ser um array' })
   @Type(() => String)
-  @Transform(({ value }) => transformToStringArray(value))
+  @Transform(({ value }) => transformToUUIDArray(value))
   usuarios?: string[];
 
   @ApiPropertyOptional({
@@ -169,7 +112,7 @@ export class MetricasFiltrosAvancadosDto extends DashboardFiltrosDto {
     if (!value || typeof value !== 'string' || value.trim() === '') return undefined;
     return value.trim();
   })
-  dataInicioPersonalizada?: string;
+  data_inicio?: string;
 
   @ApiPropertyOptional({
     description: 'Data de fim personalizada (usado quando periodo = "personalizado")',
@@ -181,21 +124,8 @@ export class MetricasFiltrosAvancadosDto extends DashboardFiltrosDto {
     if (!value || typeof value !== 'string' || value.trim() === '') return undefined;
     return value.trim();
   })
-  dataFimPersonalizada?: string;
+  data_fim?: string;
 
-  @ApiPropertyOptional({
-    description: 'Incluir dados arquivados/inativos',
-    example: false,
-    default: false
-  })
-  @IsOptional()
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      return value.toLowerCase() === 'true';
-    }
-    return Boolean(value);
-  })
-  incluirArquivados?: boolean = false;
 
   @ApiPropertyOptional({
     description: 'Limite de registros para paginação',
@@ -210,7 +140,7 @@ export class MetricasFiltrosAvancadosDto extends DashboardFiltrosDto {
     const num = parseInt(value, 10);
     return isNaN(num) ? 1000 : Math.min(Math.max(num, 1), 10000);
   })
-  limite?: number = 1000;
+  limit?: number = 1000;
 
   @ApiPropertyOptional({
     description: 'Offset para paginação',

@@ -3,6 +3,7 @@ import { DashboardFiltrosDto } from '../dto/dashboard-filtros.dto';
 import { QueryScopeHelper } from '../../../common/helpers/query-scope.helper';
 import { IScopeContext } from '../../../common/interfaces/scope-context.interface';
 import { ScopeType } from '../../../enums/scope-type.enum';
+import { MetricasFiltrosAvancadosDto } from '../dto/metricas-filtros-avancados.dto';
 
 /**
  * Helper para aplicar filtros padronizados do dashboard
@@ -63,7 +64,7 @@ export class DashboardFiltrosHelper {
    */
   private static aplicarFiltrosQueryParams<T extends ObjectLiteral>(
     qb: SelectQueryBuilder<T>,
-    filtros: DashboardFiltrosDto,
+    filtros: MetricasFiltrosAvancadosDto,
     alias: string,
     cidadaoAlias: string,
     beneficioAlias: string,

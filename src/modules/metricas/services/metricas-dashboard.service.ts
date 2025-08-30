@@ -199,17 +199,19 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<ImpactoSocialMetricas> {
-    // Contar famílias beneficiadas (solicitações aprovadas)
+    // Contar famílias beneficiadas
     const familiasBeneficiadasQuery = this.solicitacaoRepository
       .createQueryBuilder('solicitacao')
-      .where('solicitacao.status = :status', {
-        status: StatusSolicitacao.APROVADA,
-      })
-      .andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite });
+      .where('solicitacao.data_abertura >= :dataLimite', { dataLimite });
     
-    // Aplicar filtros apenas se não estão vazios
+    // Aplicar filtros dinâmicos, incluindo status se fornecido
     if (filtros && !this.filtrosEstaoVazios(filtros)) {
       FiltrosQueryHelper.aplicarFiltrosSolicitacao(familiasBeneficiadasQuery, filtros);
+    } else {
+      // Se não há filtros, aplica filtro padrão para solicitações aprovadas
+      familiasBeneficiadasQuery.andWhere('solicitacao.status = :status', {
+        status: StatusSolicitacao.APROVADA,
+      });
     }
     
     const familiasBeneficiadas = await familiasBeneficiadasQuery.getCount();
@@ -339,7 +341,7 @@ export class MetricasDashboardService {
     dataInicio.setMonth(dataInicio.getMonth() - 6);
     dataInicio.setDate(1); // Primeiro dia do mês
 
-    // Query para obter dados mensais de solicitações aprovadas
+    // Query para obter dados mensais de solicitações
     const evolucaoQuery = this.solicitacaoRepository
       .createQueryBuilder('solicitacao')
       .leftJoin('solicitacao.pagamentos', 'pagamento')
@@ -348,10 +350,7 @@ export class MetricasDashboardService {
         'COUNT(DISTINCT solicitacao.id) as familias',
         'SUM(COALESCE(pagamento.valor, 0)) as investimento',
       ])
-      .where('solicitacao.status = :status', {
-        status: StatusSolicitacao.APROVADA,
-      })
-      .andWhere('solicitacao.data_abertura >= :dataInicio', { dataInicio })
+      .where('solicitacao.data_abertura >= :dataInicio', { dataInicio })
       .andWhere('pagamento.status = :statusPagamento OR pagamento.status IS NULL', {
         statusPagamento: StatusPagamentoEnum.PAGO,
       })
@@ -359,9 +358,14 @@ export class MetricasDashboardService {
       .addGroupBy("DATE_TRUNC('month', solicitacao.data_abertura)")
       .orderBy("DATE_TRUNC('month', solicitacao.data_abertura)", 'ASC');
 
-    // Aplicar filtros se fornecidos
+    // Aplicar filtros dinâmicos, incluindo status se fornecido
     if (filtros && !this.filtrosEstaoVazios(filtros)) {
       FiltrosQueryHelper.aplicarFiltrosSolicitacao(evolucaoQuery, filtros);
+    } else {
+      // Se não há filtros, aplica filtro padrão para solicitações aprovadas
+      evolucaoQuery.andWhere('solicitacao.status = :status', {
+        status: StatusSolicitacao.APROVADA,
+      });
     }
 
     const resultados = await evolucaoQuery.getRawMany();
@@ -385,18 +389,21 @@ export class MetricasDashboardService {
     const distribuicaoQuery = this.solicitacaoRepository
       .createQueryBuilder('solicitacao')
       .innerJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
-      .where('solicitacao.status = :status', {
-        status: StatusSolicitacao.APROVADA,
-      })
-      .andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite })
+      .where('solicitacao.data_abertura >= :dataLimite', { dataLimite })
       .groupBy('tipo_beneficio.nome')
       .select([
         'tipo_beneficio.nome as tipo',
         'COUNT(solicitacao.id) as quantidade',
       ]);
     
+    // Aplica filtros dinâmicos, incluindo status se fornecido
     if (filtros) {
       FiltrosQueryHelper.aplicarFiltrosSolicitacao(distribuicaoQuery, filtros);
+    } else {
+      // Se não há filtros, aplica filtro padrão para solicitações aprovadas
+      distribuicaoQuery.andWhere('solicitacao.status = :status', {
+        status: StatusSolicitacao.APROVADA,
+      });
     }
     
     const distribuicao = await distribuicaoQuery.getRawMany();

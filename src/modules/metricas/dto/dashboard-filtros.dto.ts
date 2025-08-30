@@ -35,22 +35,6 @@ export class DashboardFiltrosDto {
   bairro?: string;
 
   @ApiPropertyOptional({
-    description: 'Status da solicitação para filtrar os dados',
-    example: 'aprovado',
-    enum: [
-      'pendente',
-      'em_analise',
-      'aprovado',
-      'rejeitado',
-      'suspenso',
-      'cancelado',
-    ],
-  })
-  @IsOptional()
-  @IsString({ message: 'status deve ser uma string' })
-  status?: string;
-
-  @ApiPropertyOptional({
     description: 'Data de início do período (formato ISO 8601)',
     example: '2024-01-01T00:00:00.000Z',
   })

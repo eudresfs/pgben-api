@@ -100,7 +100,7 @@ export class CriarMetricaDefinicaoDto {
     description:
       'Consulta SQL para coletar dados (para métricas baseadas em banco de dados)',
     example:
-      "SELECT AVG(EXTRACT(EPOCH FROM (data_conclusao - data_solicitacao))/86400) FROM solicitacao WHERE status = 'concluido' AND data_conclusao BETWEEN ${PERIODO_INICIO} AND ${PERIODO_FIM}",
+      "SELECT AVG(EXTRACT(EPOCH FROM (data_conclusao - data_solicitacao))/86400) FROM solicitacao WHERE status = 'concluida' AND data_conclusao BETWEEN ${PERIODO_INICIO} AND ${PERIODO_FIM}",
   })
   @IsString()
   @IsOptional()
@@ -247,7 +247,7 @@ export class AtualizarMetricaDefinicaoDto {
     description:
       'Consulta SQL para coletar dados (para métricas baseadas em banco de dados)',
     example:
-      "SELECT AVG(EXTRACT(EPOCH FROM (data_conclusao - data_solicitacao))/86400) FROM solicitacao WHERE status = 'concluido' AND data_conclusao BETWEEN ${PERIODO_INICIO} AND ${PERIODO_FIM}",
+      "SELECT AVG(EXTRACT(EPOCH FROM (data_conclusao - data_solicitacao))/86400) FROM solicitacao WHERE status = 'concluida' AND data_conclusao BETWEEN ${PERIODO_INICIO} AND ${PERIODO_FIM}",
   })
   @IsString()
   @IsOptional()

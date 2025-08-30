@@ -940,14 +940,11 @@ export class AgendamentoController {
   })
   async aplicarFiltrosAvancados(
     @Body(ValidationPipe) filtros: AgendamentoFiltrosAvancadosDto
-  ): Promise<{ message: string; data: AgendamentoFiltrosResponseDto }> {
+  ): Promise<AgendamentoFiltrosResponseDto> {
     try {
       const resultado = await this.agendamentoService.aplicarFiltrosAvancados(filtros);
 
-      return {
-        message: 'Filtros aplicados com sucesso',
-        data: resultado
-      };
+      return resultado;
     } catch (error) {
       // Os filtros de exceção globais irão capturar e tratar adequadamente
       throw error;

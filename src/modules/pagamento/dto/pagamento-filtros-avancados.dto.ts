@@ -127,7 +127,7 @@ export class PagamentoFiltrosAvancadosDto extends PaginationParamsDto {
   })
   @IsOptional()
   @IsDateString()
-  data_liberacao_inicio?: string;
+  data_inicio?: string;
 
   @ApiPropertyOptional({
     description: 'Data de fim para filtro por período de liberação (usado com período personalizado)',
@@ -135,7 +135,7 @@ export class PagamentoFiltrosAvancadosDto extends PaginationParamsDto {
   })
   @IsOptional()
   @IsDateString()
-  data_liberacao_fim?: string;
+  data_fim?: string;
 
   @ApiPropertyOptional({
     description: 'Data de início para filtro por período de pagamento (usado com período personalizado)',
