@@ -29,6 +29,7 @@ import { LoggingService } from './shared/logging/logging.service';
 import { LoggingInterceptor } from './shared/logging/logging.interceptor';
 import { ErrorLoggerFilter } from './shared/logging/filters/error-logger.filter';
 import { ScopedQueryInterceptor } from './auth/interceptors/scoped-query.interceptor';
+import { TextNormalizationInterceptor } from './interceptors/text-normalization.interceptor';
 import { Reflector } from '@nestjs/core';
 
 /**
@@ -114,13 +115,16 @@ async function bootstrap(): Promise<INestApplication> {
     // Interceptor para remover parâmetros vazios das requisições
     app.useGlobalInterceptors(new RemoveEmptyParamsInterceptor());
 
-    // ✅ NOVO: Sistema de logging unificado
+    // Interceptor de normalização de texto para campos nome e sobrenome
+    app.useGlobalInterceptors(new TextNormalizationInterceptor());
+
+    // Sistema de logging unificado
     const loggingService = app.get(LoggingService);
 
     // Interceptor de logging HTTP (substitui o RedactLogsInterceptor)
     app.useGlobalInterceptors(new LoggingInterceptor(loggingService));
 
-    // ✅ NOVO: Interceptor de tratamento de erros avançado
+    // Interceptor de tratamento de erros avançado
     app.useGlobalInterceptors(new ErrorHandlingInterceptor());
 
     // Interceptor para aplicar filtro de unidade automaticamente em GET
@@ -130,7 +134,7 @@ async function bootstrap(): Promise<INestApplication> {
     // Interceptor de resposta padronizada
     app.useGlobalInterceptors(new ResponseInterceptor());
 
-    // ✅ NOVO: Filtro de erros com logging estruturado
+    // Filtro de erros com logging estruturado
     app.useGlobalFilters(new ErrorLoggerFilter(loggingService));
 
     // Filtro de exceções unificado com catálogo de erros
@@ -178,7 +182,7 @@ async function bootstrap(): Promise<INestApplication> {
     // === LOGS DE INICIALIZAÇÃO ===
     logStartupInfo(port, environment, isDevelopment, configService);
 
-    // ✅ NOVO: Configurar logger contextualizado para logs de sistema
+    // Configurar logger contextualizado para logs de sistema
     loggingService.setContext('Application');
     loggingService.info('🎉 Aplicação PGBEN iniciada com sucesso', undefined, {
       port,

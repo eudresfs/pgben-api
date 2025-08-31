@@ -180,17 +180,6 @@ export class PermissionGuard implements CanActivate {
       }
       (request as any).scope = scopeContext;
 
-      this.logger.log(`[SCOPE-DEBUG] PermissionGuard definindo request.scope:`, {
-        effectiveScopeType,
-        scopeId,
-        bypassScope,
-        userUnidadeId: request.user?.unidade_id,
-        scopeContext,
-        url: request.url,
-        method: request.method,
-        timestamp: new Date().toISOString(),
-      });
-
       // Verificar permissões em memória primeiro
       let hasPermission = false;
       const userPermissions = request.user.permissions;
