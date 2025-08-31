@@ -973,7 +973,7 @@ export class ConcessaoService {
    * @param observacoes Observações adicionais sobre o cancelamento
    * @returns Concessão cancelada
    */
-  async cancelarConcessao(
+  async cessarConcessao(
     concessaoId: string,
     usuarioId: string,
     motivo: string,
@@ -988,9 +988,9 @@ export class ConcessaoService {
       throw new NotFoundException('Concessão não encontrada');
     }
 
-    if (concessao.status === StatusConcessao.CANCELADO) {
+    if (concessao.status === StatusConcessao.CESSADO) {
       throw new BadRequestException(
-        `A concessão ${concessaoId} já está com status cancelado`,
+        `A concessão ${concessaoId} já está com status cessado`,
       );
     }
 
@@ -1004,10 +1004,12 @@ export class ConcessaoService {
         try {
           // Só tenta cancelar se o pagamento não estiver cancelado ou confirmado
           if (pagamento.status !== StatusPagamentoEnum.CANCELADO && 
-              pagamento.status !== StatusPagamentoEnum.CONFIRMADO) {
+              pagamento.status !== StatusPagamentoEnum.CONFIRMADO &&
+              pagamento.status !== StatusPagamentoEnum.PAGO
+            ) {
             const pagamentoCancelado = await this.pagamentoService.cancelar(
               pagamento.id,
-              `Cancelamento automático - Concessão cancelada: ${motivo}`,
+              `Cancelamento automático - Concessão cessada: ${motivo}`,
               usuarioId
             );
             pagamentosCancelados.push(pagamentoCancelado);
@@ -1029,7 +1031,7 @@ export class ConcessaoService {
 
       // Atualizar status da concessão
       const statusAnterior = concessao.status;
-      concessao.status = StatusConcessao.CANCELADO;
+      concessao.status = StatusConcessao.CESSADO;
       concessao.dataEncerramento = new Date();
       concessao.motivoEncerramento = motivo;
 
@@ -1039,7 +1041,7 @@ export class ConcessaoService {
       const historico = this.historicoRepo.create({
         concessaoId: concessaoSalva.id,
         statusAnterior,
-        statusNovo: StatusConcessao.CANCELADO,
+        statusNovo: StatusConcessao.CESSADO,
         motivo,
         observacoes: observacoes ? 
           `${observacoes}. Pagamentos cancelados: ${pagamentosCancelados.length}/${pagamentos.length}` :
@@ -1049,7 +1051,7 @@ export class ConcessaoService {
       await this.historicoRepo.save(historico);
 
       this.logger.warn(
-        `Concessão ${concessaoId} cancelada por usuário ${usuarioId}. ` +
+        `Concessão ${concessaoId} cessada por usuário ${usuarioId}. ` +
         `${pagamentosCancelados.length} de ${pagamentos.length} pagamentos foram cancelados.`,
         ConcessaoService.name,
       );
@@ -1072,7 +1074,7 @@ export class ConcessaoService {
       
       // Para erros não tratados, lança um erro genérico mas informativo
       throw new BadRequestException(
-        `Erro interno ao cancelar concessão. Verifique os logs para mais detalhes.`,
+        `Erro interno ao cessar concessão. Verifique os logs para mais detalhes.`,
       );
     }
   }

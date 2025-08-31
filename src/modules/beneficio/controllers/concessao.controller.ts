@@ -18,7 +18,7 @@ import {
   SuspenderConcessaoDto,
   BloquearConcessaoDto,
   DesbloquearConcessaoDto,
-  CancelarConcessaoDto,
+  CessarConcessaoDto,
 } from '../dto/suspender-concessao.dto';
 import { StatusConcessao } from '../../../enums/status-concessao.enum';
 import {
@@ -718,15 +718,15 @@ export class ConcessaoController {
    * @body Dados para cancelamento
    * @returns Concessão cancelada
    */
-  @Patch(':id/cancelar')
-  @RequiresPermission({ permissionName: 'concessao.cancelar' })
+  @Patch(':id/cessar')
+  @RequiresPermission({ permissionName: 'concessao.cessar' })
   @ApiOperation({
     summary: 'Cancela uma concessão',
     description:
-      'Cancela uma concessão. Concessões com status CONCEDIDA, SUSPENSA ou BLOQUEADA podem ser canceladas.',
+      'Cancela uma concessão. Concessões com status ATIVO, SUSPENSA ou BLOQUEADA podem ser cessadas.',
   })
-  @ApiParam({ name: 'id', description: 'UUID da concessão a ser cancelada' })
-  @ApiBody({ type: CancelarConcessaoDto })
+  @ApiParam({ name: 'id', description: 'UUID da concessão a ser cessada' })
+  @ApiBody({ type: CessarConcessaoDto })
   @ApiResponse({
     status: 200,
     description: 'Concessão cancelada com sucesso',
@@ -736,27 +736,27 @@ export class ConcessaoController {
   @ApiResponse({ status: 404, description: 'Concessão não encontrada' })
   async cancelar(
     @Param('id') id: string,
-    @Body() dto: CancelarConcessaoDto,
+    @Body() dto: CessarConcessaoDto,
     @GetUser() usuario: Usuario,
     @ReqContext() ctx: any,
   ) {
-    const result = await this.concessaoService.cancelarConcessao(
+    const result = await this.concessaoService.cessarConcessao(
       id,
       usuario.id,
       dto.motivo,
       dto.observacoes,
     );
 
-    // Auditoria: Cancelamento de concessão
+    // Auditoria: Cessão de concessão
     await this.auditEventEmitter.emitEntityUpdated(
       'Concessao',
       id,
       {},
       {
-        action: 'cancelamento',
+        action: 'cessao',
         motivo: dto.motivo,
         observacoes: dto.observacoes,
-        status: 'CANCELADA',
+        status: 'CESSADO',
       },
       usuario.id,
     );
