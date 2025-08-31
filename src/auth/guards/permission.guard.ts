@@ -139,6 +139,14 @@ export class PermissionGuard implements CanActivate {
 
       // Se o usuário tem bypass de escopo via roles, tratar como escopo global
       const effectiveScopeType = bypassScope ? TipoEscopo.GLOBAL : scopeType;
+      
+      // DEBUG: Log para diagnóstico de escopo
+      this.logger.debug(
+        `[ESCOPO DEBUG] Usuário: ${request.user.username}, Roles: [${request.user.roles?.join(', ') || 'nenhuma'}], ` +
+        `Escopo Token: ${request.user.escopo}, ScopeType Decorador: ${scopeType}, ` +
+        `BypassScope: ${bypassScope}, EffectiveScopeType: ${effectiveScopeType}, ` +
+        `UnidadeId: ${request.user.unidade_id}, Endpoint: ${request.method} ${request.url}`
+      );
 
       // Preparar injeção de metadados de escopo no request
       interface RequestScope {
@@ -171,6 +179,17 @@ export class PermissionGuard implements CanActivate {
         scopeContext.unidadeId = scopeId;
       }
       (request as any).scope = scopeContext;
+
+      this.logger.log(`[SCOPE-DEBUG] PermissionGuard definindo request.scope:`, {
+        effectiveScopeType,
+        scopeId,
+        bypassScope,
+        userUnidadeId: request.user?.unidade_id,
+        scopeContext,
+        url: request.url,
+        method: request.method,
+        timestamp: new Date().toISOString(),
+      });
 
       // Verificar permissões em memória primeiro
       let hasPermission = false;

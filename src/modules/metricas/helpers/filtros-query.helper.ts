@@ -2,7 +2,7 @@ import { SelectQueryBuilder } from 'typeorm';
 import { MetricasFiltrosAvancadosDto, PeriodoPredefinido, PeriodoCalculador } from '../dto/metricas-filtros-avancados.dto';
 import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
-import { Solicitacao, Concessao, Pagamento } from '../../../entities';
+import { Solicitacao, Concessao, Pagamento, Usuario } from '../../../entities';
 
 /**
  * Helper para aplicar filtros avançados nas queries do TypeORM
@@ -69,7 +69,40 @@ export class FiltrosQueryHelper {
   }
 
   /**
-   * Aplica filtros de unidade nas queries
+   * Aplica escopo de unidade baseado no usuário logado
+   * Este método é usado pelos ScopedRepositories para garantir isolamento de dados
+   */
+  static aplicarEscopoUnidade<T>(
+    query: SelectQueryBuilder<T>,
+    usuario: Usuario,
+    alias: string = 'entity'
+  ): SelectQueryBuilder<T> {
+    // Se o usuário não tem unidade definida, não aplica filtro (admin global)
+    if (!usuario.unidade_id) {
+      return query;
+    }
+
+    // Para pagamentos, a unidade deve ser acessada através da solicitação
+    if (alias === 'pagamento') {
+      // Verifica se já existe join com solicitacao
+      const existingJoins = query.expressionMap.joinAttributes;
+      if (!existingJoins.some(join => join.alias?.name === 'solicitacao')) {
+        query.leftJoin(`${alias}.solicitacao`, 'solicitacao');
+      }
+      
+      return query.andWhere('solicitacao.unidade_id = :unidadeEscopo', {
+        unidadeEscopo: usuario.unidade_id
+      });
+    } else {
+      // Para outras entidades, usa o campo unidade_id diretamente
+      return query.andWhere(`${alias}.unidade_id = :unidadeEscopo`, {
+        unidadeEscopo: usuario.unidade_id
+      });
+    }
+  }
+
+  /**
+   * Aplica filtros de unidade nas queries (método original para filtros manuais)
    */
   static aplicarFiltroUnidade<T>(
     query: SelectQueryBuilder<T>,
@@ -396,6 +429,36 @@ export class FiltrosQueryHelper {
       .pipe(q => this.aplicarFiltroStatus(q, filtros, 'pagamento'))
       .pipe(q => this.aplicarFiltroUsuario(q, filtros, 'pagamento'))
       .pipe(q => this.aplicarFiltroBairro(q, filtros, 'pagamento', 'beneficiario', 'endereco'));
+  }
+
+  /**
+   * Aplica escopo automático para solicitações baseado no usuário logado
+   */
+  static aplicarEscopoSolicitacao(
+    query: SelectQueryBuilder<Solicitacao>,
+    usuario: Usuario
+  ): SelectQueryBuilder<Solicitacao> {
+    return this.aplicarEscopoUnidade(query, usuario, 'solicitacao');
+  }
+
+  /**
+   * Aplica escopo automático para concessões baseado no usuário logado
+   */
+  static aplicarEscopoConcessao(
+    query: SelectQueryBuilder<Concessao>,
+    usuario: Usuario
+  ): SelectQueryBuilder<Concessao> {
+    return this.aplicarEscopoUnidade(query, usuario, 'concessao');
+  }
+
+  /**
+   * Aplica escopo automático para pagamentos baseado no usuário logado
+   */
+  static aplicarEscopoPagamento(
+    query: SelectQueryBuilder<Pagamento>,
+    usuario: Usuario
+  ): SelectQueryBuilder<Pagamento> {
+    return this.aplicarEscopoUnidade(query, usuario, 'pagamento');
   }
 
   /**

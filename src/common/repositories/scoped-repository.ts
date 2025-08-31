@@ -694,17 +694,16 @@ export class ScopedRepository<Entity> extends Repository<Entity> {
       throw new ScopeContextRequiredException(operation);
     }
 
-    // Log de auditoria para operações com contexto válido
-    if (this.logger) {
-      this.logger.debug(
-        `Aplicando escopo ${context.tipo} para ${this.metadata.name}`,
-        {
-          userId: context.user_id,
-          unidadeId: context.unidade_id,
-          entity: this.metadata.name,
-        },
-      );
-    }
+    // Log essencial para auditoria de escopo
+    this.logger.debug(
+      `[SCOPE-DEBUG] Aplicando escopo ${context.tipo} para ${this.metadata.name}`,
+      {
+        entityName: this.metadata.name,
+        scopeType: context.tipo,
+        unidadeId: context.unidade_id,
+        alias: alias
+      },
+    );
 
     // Aplicar query hints se habilitado
     if (this.options.enableQueryHints) {
@@ -713,26 +712,40 @@ export class ScopedRepository<Entity> extends Repository<Entity> {
 
     switch (context.tipo) {
       case ScopeType.GLOBAL:
-        // Escopo global: sem filtros adicionais
+        // Escopo global - sem filtros adicionais
+        this.logger.debug(`[SCOPE-DEBUG] Escopo GLOBAL - nenhum filtro aplicado para ${this.metadata.name}`);
         break;
 
       case ScopeType.UNIDADE:
-        // Escopo de unidade: aplicar filtro baseado na entidade
         if (context.unidade_id) {
+          this.logger.debug(`[SCOPE-DEBUG] Aplicando filtro UNIDADE para ${this.metadata.name} com unidade_id: ${context.unidade_id}`);
           this.applyCidadaoScopeToQuery(
             queryBuilder,
             alias,
             context.unidade_id,
           );
+          
+          // Log da query final para debug
+          const finalSql = queryBuilder.getQuery();
+          const parameters = queryBuilder.getParameters();
+          this.logger.debug(`[SCOPE-DEBUG] Query final para ${this.metadata.name}:`, {
+            sql: finalSql,
+            parameters: parameters
+          });
+        } else {
+          this.logger.warn(
+            `Escopo UNIDADE sem unidade_id - fallback para GLOBAL`,
+            { entity: this.metadata.name },
+          );
         }
         break;
 
       case ScopeType.PROPRIO:
-        // Escopo próprio: filtrar por user_id (se a entidade possui esse campo)
         if (this.hasColumn('user_id')) {
           queryBuilder.andWhere(`${alias}.user_id = :userId`, {
             userId: context.user_id,
           });
+          this.logger.debug(`[SCOPE-DEBUG] Filtro PROPRIO aplicado para ${this.metadata.name} com user_id: ${context.user_id}`);
         }
         break;
 
@@ -850,6 +863,11 @@ export class ScopedRepository<Entity> extends Repository<Entity> {
     unidadeId: string,
   ): void {
     const entityName = this.metadata.name;
+
+    this.logger.debug(
+      `Aplicando filtro de unidade para ${entityName}`,
+      { entityName, unidadeId },
+    );
 
     switch (entityName) {
       case 'Solicitacao':

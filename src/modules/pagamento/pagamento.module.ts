@@ -52,9 +52,12 @@ import {
   GetPagamentosHandler,
 } from './handlers';
 
-// Repositórios
+// Repositories
 import { PagamentoRepository } from './repositories/pagamento.repository';
 import { ConfirmacaoRepository } from './repositories/confirmacao.repository';
+import { PagamentoSystemRepository } from './repositories/pagamento-system.repository';
+import { ScopedRepository } from '../../common/repositories/scoped-repository';
+import { DataSource } from 'typeorm';
 
 // Validadores
 import { PixValidator } from './validators/pix-validator';
@@ -134,6 +137,27 @@ import { CacheModule } from '../../shared/cache/cache.module';
     // Repositórios customizados
     PagamentoRepository,
     ConfirmacaoRepository,
+    PagamentoSystemRepository,
+    // Provider específico para operações de sistema (schedulers)
+    {
+      provide: 'PAGAMENTO_SYSTEM_REPOSITORY',
+      useFactory: (dataSource: DataSource) => {
+        const baseRepository = dataSource.getRepository(Pagamento);
+        return new ScopedRepository(
+          Pagamento,
+          baseRepository.manager,
+          baseRepository.queryRunner,
+          {
+            strictMode: false,
+            allowGlobalScope: true,
+            operationName: 'system-scheduler',
+            enableMetadataCache: true,
+            enableQueryHints: true,
+          },
+        );
+      },
+      inject: [DataSource],
+    },
 
     // Serviços principais
     PagamentoService,
@@ -192,6 +216,7 @@ import { CacheModule } from '../../shared/cache/cache.module';
     // Repositórios
     PagamentoRepository,
     ConfirmacaoRepository,
+    PagamentoSystemRepository,
 
     // Serviços principais
     PagamentoService,

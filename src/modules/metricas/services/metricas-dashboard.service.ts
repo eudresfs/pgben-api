@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import {
   Solicitacao,
   Concessao,
@@ -15,6 +15,9 @@ import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
 import { StatusConcessao } from '../../../enums/status-concessao.enum';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { SolicitacaoRepository } from '../../solicitacao/repositories/solicitacao.repository';
+import { RequestContextHolder } from '../../../common/services/request-context-holder.service';
+import { ScopeType } from '../../../enums/scope-type.enum';
+import { ScopeViolationException } from '../../../common/exceptions/scope.exceptions';
 import {
   ImpactoSocialData,
   ImpactoSocialMetricas,
@@ -48,6 +51,8 @@ import { FiltrosQueryHelper } from '../helpers/filtros-query.helper';
  */
 @Injectable()
 export class MetricasDashboardService {
+  private readonly logger = new Logger(MetricasDashboardService.name);
+
   constructor(
     @InjectRepository(Solicitacao)
     private readonly solicitacaoRepository: Repository<Solicitacao>,
@@ -68,32 +73,130 @@ export class MetricasDashboardService {
     private readonly solicitacaoScopedRepository: SolicitacaoRepository,
   ) {}
 
+  // Método removido - o ScopedRepository já aplica o escopo automaticamente
+
+  /**
+   * Aplica filtros de escopo ao QueryBuilder para pagamentos
+   * @param queryBuilder QueryBuilder da entidade Pagamento
+   * @param alias Alias da tabela principal
+   */
+  private applyScopeToPagamentoQuery(
+    queryBuilder: SelectQueryBuilder<Pagamento>,
+    alias: string = 'pagamento',
+  ): void {
+    const context = RequestContextHolder.get();
+
+    if (!context) {
+      return;
+    }
+
+    switch (context.tipo) {
+      case ScopeType.GLOBAL:
+        // Escopo global: sem filtros adicionais
+        break;
+
+      case ScopeType.UNIDADE:
+        // Escopo de unidade: filtrar através da relação com solicitação
+        if (context.unidade_id) {
+          const existingJoins = queryBuilder.expressionMap.joinAttributes;
+          const hasSolicitacaoJoin = existingJoins.some(
+            (join) =>
+              join.alias?.name === 'solicitacao' ||
+              (join.relation && join.relation.propertyName === 'solicitacao'),
+          );
+          const hasBeneficiarioJoin = existingJoins.some(
+            (join) =>
+              join.alias?.name === 'beneficiario' ||
+              (join.relation && join.relation.propertyName === 'beneficiario'),
+          );
+
+          if (!hasSolicitacaoJoin) {
+            queryBuilder.leftJoin(`${alias}.solicitacao`, 'solicitacao_scope');
+          }
+          if (!hasBeneficiarioJoin) {
+            const solicitacaoAlias = hasSolicitacaoJoin ? 'solicitacao' : 'solicitacao_scope';
+            queryBuilder.leftJoin(`${solicitacaoAlias}.beneficiario`, 'beneficiario_scope');
+          }
+
+          const beneficiarioAlias = hasBeneficiarioJoin ? 'beneficiario' : 'beneficiario_scope';
+          queryBuilder.andWhere(`${beneficiarioAlias}.unidade_id = :unidadeId`, {
+            unidadeId: context.unidade_id,
+          });
+        }
+        break;
+
+      case ScopeType.PROPRIO:
+        // Escopo próprio: filtrar por user_id do criador
+        if (context.user_id) {
+          queryBuilder.andWhere(`${alias}.criado_por = :userId`, {
+            userId: context.user_id,
+          });
+        }
+        break;
+
+      default:
+        throw new ScopeViolationException(
+          `Tipo de escopo não suportado: ${context.tipo}`,
+        );
+    }
+  }
+
+  /**
+   * Cria QueryBuilder com escopo aplicado para solicitações
+   * @param alias Alias da tabela
+   * @returns QueryBuilder com filtros de escopo aplicados
+   */
+  private createScopedSolicitacaoQueryBuilder(
+    alias: string = 'solicitacao',
+  ): SelectQueryBuilder<Solicitacao> {
+    // Usar o ScopedRepository que já aplica o escopo automaticamente
+    return this.solicitacaoScopedRepository.createScopedQueryBuilder(alias);
+  }
+
+  /**
+   * Cria QueryBuilder com escopo aplicado para pagamentos
+   * @param alias Alias da tabela
+   * @returns QueryBuilder com filtros de escopo aplicados
+   */
+  private createScopedPagamentoQueryBuilder(
+    alias: string = 'pagamento',
+  ): SelectQueryBuilder<Pagamento> {
+    const queryBuilder = this.pagamentoRepository.createQueryBuilder(alias);
+    this.applyScopeToPagamentoQuery(queryBuilder, alias);
+    return queryBuilder;
+  }
+
   /**
    * Obtém métricas de impacto social
    * Calcula dados sobre famílias beneficiadas, pessoas impactadas e investimento social
    */
   async getImpactoSocial(filtros?: MetricasFiltrosAvancadosDto): Promise<ImpactoSocialData> {
-    // Se não há filtros ou filtros estão vazios, usar comportamento padrão (últimos 30 dias)
-    const filtrosAtivos = this.normalizarFiltros(filtros);
-    const dataLimite = this.calcularDataLimite(filtrosAtivos.periodo);
+    const context = RequestContextHolder.get();
+    
+    // Garantir que o contexto seja preservado durante todas as operações assíncronas
+    return RequestContextHolder.runAsync(context, async () => {
+      // Se não há filtros ou filtros estão vazios, usar comportamento padrão (últimos 30 dias)
+      const filtrosAtivos = this.normalizarFiltros(filtros);
+      const dataLimite = this.calcularDataLimite(filtrosAtivos.periodo);
 
-    // Calcular métricas principais
-    const metricas = await this.calcularMetricasImpactoSocial(dataLimite, filtrosAtivos);
+      // Calcular métricas principais
+      const metricas = await this.calcularMetricasImpactoSocial(dataLimite, filtrosAtivos);
 
-    // Calcular indicadores
-    const indicadores = await this.calcularIndicadoresImpactoSocial(
-      metricas,
-      dataLimite,
-    );
+      // Calcular indicadores
+      const indicadores = await this.calcularIndicadoresImpactoSocial(
+        metricas,
+        dataLimite,
+      );
 
-    // Gerar dados para gráficos
-    const graficos = await this.gerarGraficosImpactoSocial(dataLimite, filtrosAtivos);
+      // Gerar dados para gráficos
+      const graficos = await this.gerarGraficosImpactoSocial(dataLimite, filtrosAtivos);
 
-    return {
-      metricas,
-      indicadores,
-      graficos,
-    };
+      return {
+        metricas,
+        indicadores,
+        graficos,
+      };
+    });
   }
 
   /**
@@ -101,38 +204,43 @@ export class MetricasDashboardService {
    * Calcula dados sobre eficiência dos processos e performance operacional
    */
   async getGestaoOperacional(filtros?: MetricasFiltrosAvancadosDto): Promise<GestaoOperacionalData> {
-    // Se não há filtros ou filtros estão vazios, usar comportamento padrão (últimos 30 dias)
-    const filtrosAtivos = this.normalizarFiltros(filtros);
-    const dataLimite = this.calcularDataLimite(filtrosAtivos.periodo);
+    const context = RequestContextHolder.get();
+    
+    // Garantir que o contexto seja preservado durante todas as operações assíncronas
+    return RequestContextHolder.runAsync(context, async () => {
+      // Se não há filtros ou filtros estão vazios, usar comportamento padrão (últimos 30 dias)
+      const filtrosAtivos = this.normalizarFiltros(filtros);
+      const dataLimite = this.calcularDataLimite(filtrosAtivos.periodo);
 
-    // Calcular métricas gerais
-    const metricas_gerais = await this.calcularMetricasGeraisOperacional(
-      dataLimite,
-      filtrosAtivos,
-    );
+      // Calcular métricas gerais
+      const metricas_gerais = await this.calcularMetricasGeraisOperacional(
+        dataLimite,
+        filtrosAtivos,
+      );
 
-    // Calcular status de tramitação
-    const solicitacoes_tramitacao = await this.calcularSolicitacoesTramitacao(
-      dataLimite,
-      filtrosAtivos,
-    );
+      // Calcular status de tramitação
+      const solicitacoes_tramitacao = await this.calcularSolicitacoesTramitacao(
+        dataLimite,
+        filtrosAtivos,
+      );
 
-    // Calcular performance
-    const performance = await this.calcularPerformanceOperacional(dataLimite, filtrosAtivos);
+      // Calcular performance
+      const performance = await this.calcularPerformanceOperacional(dataLimite, filtrosAtivos);
 
-    // Calcular taxa de concessão
-    const taxa_concessao = await this.calcularTaxaConcessao(dataLimite, filtrosAtivos);
+      // Calcular taxa de concessão
+      const taxa_concessao = await this.calcularTaxaConcessao(dataLimite, filtrosAtivos);
 
-    // Gerar dados para gráficos
-    const graficos = await this.gerarGraficosGestaoOperacional(dataLimite, filtrosAtivos);
+      // Gerar dados para gráficos
+      const graficos = await this.gerarGraficosGestaoOperacional(dataLimite, filtrosAtivos);
 
-    return {
-      metricas_gerais,
-      solicitacoes_tramitacao,
-      performance,
-      taxa_concessao,
-      graficos,
-    };
+      return {
+        metricas_gerais,
+        solicitacoes_tramitacao,
+        performance,
+        taxa_concessao,
+        graficos,
+      };
+    });
   }
 
   /**
@@ -199,9 +307,17 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<ImpactoSocialMetricas> {
-    // Contar famílias beneficiadas
-    const familiasBeneficiadasQuery = this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+    const context = RequestContextHolder.get();
+    
+    this.logger.debug('[METRICS-DEBUG] Calculando métricas de impacto social:', {
+      contextType: context?.tipo,
+      contextUnidadeId: context?.unidade_id,
+      dataLimite: dataLimite.toISOString(),
+      filtrosAplicados: filtros ? Object.keys(filtros).filter(k => filtros[k]) : 'nenhum'
+    });
+
+    // Contar famílias beneficiadas com escopo aplicado
+    const familiasBeneficiadasQuery = this.createScopedSolicitacaoQueryBuilder('solicitacao')
       .where('solicitacao.data_abertura >= :dataLimite', { dataLimite });
     
     // Aplicar filtros dinâmicos, incluindo status se fornecido
@@ -214,28 +330,65 @@ export class MetricasDashboardService {
       });
     }
     
+    // Log da query antes da execução
+    this.logger.debug('[METRICS-DEBUG] Query famílias beneficiadas:', {
+      sql: familiasBeneficiadasQuery.getQuery(),
+      parameters: familiasBeneficiadasQuery.getParameters()
+    });
+    
     const familiasBeneficiadas = await familiasBeneficiadasQuery.getCount();
+    
+    this.logger.debug('[METRICS-DEBUG] Resultado famílias beneficiadas:', {
+      total: familiasBeneficiadas,
+      contextType: context?.tipo
+    });
 
     // Calcular pessoas impactadas (assumindo média de 3 pessoas por família)
     const pessoasImpactadas = familiasBeneficiadas * 3;
 
-    // Contar bairros impactados
-    const bairrosResult = await this.enderecoRepository
-      .createQueryBuilder('endereco')
-      .innerJoin('endereco.cidadao', 'cidadao')
-      .innerJoin('cidadao.solicitacoes', 'solicitacao')
+    // Contar bairros impactados com escopo aplicado
+    const bairrosQuery = this.createScopedSolicitacaoQueryBuilder('solicitacao');
+    
+    // Para escopo GLOBAL, precisamos fazer o join manualmente
+    // Para escopo UNIDADE, o ScopedRepository já faz leftJoin com beneficiario usando alias 'cidadao'
+    if (context?.tipo === ScopeType.GLOBAL) {
+      bairrosQuery
+        .innerJoin('solicitacao.beneficiario', 'cidadao')
+        .innerJoin('cidadao.enderecos', 'endereco');
+    } else {
+      // Para escopo UNIDADE, o alias 'cidadao' já existe
+      bairrosQuery.innerJoin('cidadao.enderecos', 'endereco');
+    }
+    
+    bairrosQuery
       .where('solicitacao.status = :status', {
         status: StatusSolicitacao.APROVADA,
       })
       .andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite })
       .select('COUNT(DISTINCT endereco.bairro)', 'count')
-      .getRawOne();
+    
+    // Aplicar filtros dinâmicos se fornecidos
+    if (filtros && !this.filtrosEstaoVazios(filtros)) {
+      FiltrosQueryHelper.aplicarFiltrosSolicitacao(bairrosQuery, filtros);
+    }
+    
+    // Log da query de bairros
+    this.logger.debug('[METRICS-DEBUG] Query bairros impactados:', {
+      sql: bairrosQuery.getQuery(),
+      parameters: bairrosQuery.getParameters()
+    });
+    
+    const bairrosResult = await bairrosQuery.getRawOne();
     
     const bairrosImpactados = parseInt(bairrosResult?.count) || 0;
+    
+    this.logger.debug('[METRICS-DEBUG] Resultado bairros impactados:', {
+      total: bairrosImpactados,
+      contextType: context?.tipo
+    });
 
-    // Calcular investimento total
-    const investimentoResult = await this.pagamentoRepository
-      .createQueryBuilder('pagamento')
+    // Calcular investimento total com escopo aplicado
+    const investimentoResult = await this.createScopedPagamentoQueryBuilder('pagamento')
       .innerJoin('pagamento.solicitacao', 'solicitacao')
       .where('pagamento.status IN (:...status)', {
         status: [
@@ -250,12 +403,20 @@ export class MetricasDashboardService {
     
     const investimentoTotal = parseFloat(investimentoResult?.total) || 0;
 
-    return {
+    const resultado = {
       familias_beneficiadas: familiasBeneficiadas,
       pessoas_impactadas: pessoasImpactadas,
       bairros_impactados: bairrosImpactados,
       investimento_total: investimentoTotal,
     };
+    
+    this.logger.debug('[METRICS-DEBUG] Métricas de impacto social calculadas:', {
+      resultado,
+      contextType: context?.tipo,
+      contextUnidadeId: context?.unidade_id
+    });
+
+    return resultado;
   }
 
   /**
@@ -341,9 +502,8 @@ export class MetricasDashboardService {
     dataInicio.setMonth(dataInicio.getMonth() - 6);
     dataInicio.setDate(1); // Primeiro dia do mês
 
-    // Query para obter dados mensais de solicitações
-    const evolucaoQuery = this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+    // Query para obter dados mensais de solicitações com escopo aplicado
+    const evolucaoQuery = this.createScopedSolicitacaoQueryBuilder('solicitacao')
       .leftJoin('solicitacao.pagamentos', 'pagamento')
       .select([
         "TO_CHAR(solicitacao.data_abertura, 'Mon/YYYY') as mes",
@@ -386,8 +546,7 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<DistribuicaoBeneficiosItem[]> {
-    const distribuicaoQuery = this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+    const distribuicaoQuery = this.createScopedSolicitacaoQueryBuilder('solicitacao')
       .innerJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .where('solicitacao.data_abertura >= :dataLimite', { dataLimite })
       .groupBy('tipo_beneficio.nome')
@@ -427,9 +586,8 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<RecursosFaixaEtariaItem[]> {
-    // Query para obter recursos por faixa etária baseado na idade do beneficiário
-    const recursosQuery = this.pagamentoRepository
-      .createQueryBuilder('pagamento')
+    // Query para obter recursos por faixa etária baseado na idade do beneficiário com escopo aplicado
+    const recursosQuery = this.createScopedPagamentoQueryBuilder('pagamento')
       .innerJoin('pagamento.solicitacao', 'solicitacao')
       .innerJoin('solicitacao.beneficiario', 'cidadao')
       .select([
@@ -496,8 +654,7 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<RecursosTipoBeneficioItem[]> {
-    const recursosQuery = this.pagamentoRepository
-      .createQueryBuilder('pagamento')
+    const recursosQuery = this.createScopedPagamentoQueryBuilder('pagamento')
       .innerJoin('pagamento.solicitacao', 'solicitacao')
       .innerJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .where('pagamento.status IN (:...statusValidos)', {
@@ -540,9 +697,8 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<RecursosImpactoTipoItem[]> {
-    // Query para obter recursos e impacto por tipo de benefício
-    const recursosQuery = this.pagamentoRepository
-      .createQueryBuilder('pagamento')
+    // Query para obter recursos e impacto por tipo de benefício com escopo aplicado
+    const recursosQuery = this.createScopedPagamentoQueryBuilder('pagamento')
       .innerJoin('pagamento.solicitacao', 'solicitacao')
       .innerJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .leftJoin('solicitacao.beneficiario', 'beneficiario')
@@ -588,9 +744,8 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<RecursosBairrosItem[]> {
-    // Query para obter recursos por bairro baseado no endereço do beneficiário
-    const recursosQuery = this.pagamentoRepository
-      .createQueryBuilder('pagamento')
+    // Query para obter recursos por bairro baseado no endereço do beneficiário com escopo aplicado
+    const recursosQuery = this.createScopedPagamentoQueryBuilder('pagamento')
       .innerJoin('pagamento.solicitacao', 'solicitacao')
       .innerJoin('solicitacao.beneficiario', 'cidadao')
       .innerJoin('cidadao.enderecos', 'endereco', 'endereco.data_fim_vigencia IS NULL')
@@ -640,30 +795,39 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<GestaoOperacionalMetricasGerais> {
-    // Novos beneficiários (cidadãos com primeira solicitação aprovada)
-    const novosBeneficiarios = await this.cidadaoRepository
-      .createQueryBuilder('cidadao')
-      .innerJoin('cidadao.solicitacoes', 'solicitacao')
+    // Novos beneficiários (cidadãos com primeira solicitação aprovada) - aplicando escopo
+    const novosBeneficiarios = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .select('COUNT(DISTINCT solicitacao.beneficiario_id)', 'count')
       .where('solicitacao.status = :status', {
         status: StatusSolicitacao.APROVADA,
       })
       .andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite })
-      .groupBy('cidadao.id')
-      .having('COUNT(solicitacao.id) = 1')
-      .getCount();
+      .andWhere((qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select('COUNT(s2.id)')
+          .from(Solicitacao, 's2')
+          .where('s2.beneficiario_id = solicitacao.beneficiario_id')
+          .andWhere('s2.status = :approvedStatus', { approvedStatus: StatusSolicitacao.APROVADA })
+          .getQuery();
+        return `(${subQuery}) = 1`;
+      })
+      .getRawOne()
+      .then(result => parseInt(result.count) || 0);
 
-    // Solicitações iniciadas
-    const solicitacoesIniciadas = await this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+    // Solicitações iniciadas com escopo aplicado
+    const solicitacoesIniciadas = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
       .where('solicitacao.data_abertura >= :dataLimite', { dataLimite })
       .getCount();
 
-    // Concessões
-    const concessoes = await this.concessaoRepository
-      .createQueryBuilder('concessao')
+    // Concessões - aplicando escopo através de join com solicitações
+    const concessoes = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .innerJoin('solicitacao.concessao', 'concessao')
       .where('concessao.status = :status', { status: StatusConcessao.ATIVO })
       .andWhere('concessao.dataInicio >= :dataLimite', { dataLimite })
-      .getCount();
+      .select('COUNT(DISTINCT concessao.id)', 'count')
+      .getRawOne()
+      .then(result => parseInt(result.count) || 0);
 
     // Concessões judicializadas (assumindo campo específico)
     const concessoesJudicializadas = 8; // Mock - implementar consulta real
@@ -683,26 +847,22 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<SolicitacoesTramitacao> {
-    const emAnalise = await this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+    const emAnalise = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
       .where('solicitacao.status = :status', { status: StatusSolicitacao.EM_ANALISE })
       .andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite })
       .getCount();
 
-    const pendentes = await this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+    const pendentes = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
       .where('solicitacao.status = :status', { status: StatusSolicitacao.PENDENTE })
       .andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite })
       .getCount();
 
-    const aprovadas = await this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+    const aprovadas = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
       .where('solicitacao.status = :status', { status: StatusSolicitacao.APROVADA })
       .andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite })
       .getCount();
 
-    const indeferidas = await this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+    const indeferidas = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
       .where('solicitacao.status = :status', { status: StatusSolicitacao.INDEFERIDA })
       .andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite })
       .getCount();
@@ -738,16 +898,14 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<TaxaConcessao> {
-    const totalSolicitacoes = await this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+    const totalSolicitacoes = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
       .where('solicitacao.data_abertura >= :dataLimite', { dataLimite })
       .andWhere('solicitacao.status IN (:...status)', {
         status: [StatusSolicitacao.APROVADA, StatusSolicitacao.INDEFERIDA],
       })
       .getCount();
 
-    const aprovadas = await this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+    const aprovadas = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
       .where('solicitacao.status = :status', { status: StatusSolicitacao.APROVADA })
       .andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite })
       .getCount();
@@ -893,8 +1051,7 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<SolicitacoesUnidadeItem[]> {
-    const resultadoQuery = this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+    const resultadoQuery = this.createScopedSolicitacaoQueryBuilder('solicitacao')
       .innerJoin('solicitacao.unidade', 'unidade')
       .select('unidade.nome', 'unidade')
       .addSelect('COUNT(solicitacao.id)', 'quantidade')
@@ -942,6 +1099,65 @@ export class MetricasDashboardService {
       };
     } catch (error) {
       throw new Error(`Erro ao obter contagem de solicitações por status: ${error.message}`);
+    }
+  }
+
+  /**
+   * Método de debug para validação do sistema de escopo
+   * Retorna informações detalhadas sobre dados visíveis no contexto atual
+   */
+  async debugEscopo(): Promise<{
+    totalSolicitacoes: number;
+    distribuicaoPorUnidade: Array<{
+      unidadeId: string;
+      nomeUnidade: string;
+      quantidade: number;
+    }>;
+  }> {
+    try {
+      const contexto = RequestContextHolder.get();
+      this.logger.debug(`[debugEscopo] Contexto atual: ${JSON.stringify(contexto)}`);
+      
+      // Obter total de solicitações visíveis no escopo atual
+      const totalQuery = this.createScopedSolicitacaoQueryBuilder('solicitacao');
+      const totalSolicitacoes = await totalQuery.getCount();
+      
+      this.logger.debug(`[debugEscopo] Total de solicitações no escopo: ${totalSolicitacoes}`);
+      
+      // Obter distribuição por unidade (sempre visível para debug)
+      const distribuicaoQuery = this.createScopedSolicitacaoQueryBuilder('solicitacao')
+        .innerJoin('solicitacao.unidade', 'unidade')
+        .select([
+          'unidade.id as unidadeId',
+          'unidade.nome as nomeUnidade',
+          'COUNT(solicitacao.id) as quantidade'
+        ])
+        .groupBy('unidade.id')
+        .addGroupBy('unidade.nome')
+        .orderBy('quantidade', 'DESC');
+      
+      const [sql, params] = distribuicaoQuery.getQueryAndParameters();
+      this.logger.debug(`[debugEscopo] Query distribuição: ${sql}`);
+      this.logger.debug(`[debugEscopo] Parâmetros: ${JSON.stringify(params)}`);
+      
+      const distribuicaoPorUnidade = await distribuicaoQuery.getRawMany();
+      
+      // Converter quantidade para número
+      const distribuicaoFormatada = distribuicaoPorUnidade.map(item => ({
+        unidadeId: item.unidadeId,
+        nomeUnidade: item.nomeUnidade,
+        quantidade: parseInt(item.quantidade, 10)
+      }));
+      
+      this.logger.debug(`[debugEscopo] Distribuição por unidade: ${JSON.stringify(distribuicaoFormatada)}`);
+      
+      return {
+        totalSolicitacoes,
+        distribuicaoPorUnidade: distribuicaoFormatada
+      };
+    } catch (error) {
+      this.logger.error('[debugEscopo] Erro ao executar debug do escopo:', error);
+      throw error;
     }
   }
 }

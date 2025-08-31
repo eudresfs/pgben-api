@@ -9,6 +9,7 @@ import {
   HttpException,
   Logger,
 } from '@nestjs/common';
+import { RequestContextHolder } from '@/common/services/request-context-holder.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { ImpactoSocialResponse } from '../interfaces/impacto-social.interface';
 import { GestaoOperacionalResponse } from '../interfaces/gestao-operacional.interface';
@@ -17,6 +18,8 @@ import { MetricasDashboardService } from '../services/metricas-dashboard.service
 import { PermissionGuard } from '@/auth/guards/permission.guard';
 import { RequiresPermission } from '@/auth/decorators/requires-permission.decorator';
 import { MetricasFiltrosAvancadosDto } from '../dto/metricas-filtros-avancados.dto';
+import { Public } from '@/auth';
+import { TipoEscopo } from '@/entities/user-permission.entity';
 
 @ApiTags('Dashboard de Métricas')
 @Controller('dashboard')
@@ -31,8 +34,11 @@ export class MetricasDashboardController {
 
 
 
-  @Post('impacto-social')
-  @RequiresPermission({permissionName: 'dashboard.impacto_social'})
+  @Post('impacto-social/filtros-avancados')
+  @RequiresPermission({
+    permissionName: 'dashboard.impacto_social',
+    scopeType: TipoEscopo.UNIDADE
+  })
   @ApiOperation({
     summary: 'Obter métricas de impacto social com filtros avançados',
     description: `Retorna métricas consolidadas sobre o impacto social dos benefícios concedidos.
@@ -121,8 +127,11 @@ export class MetricasDashboardController {
     }
   }
 
-  @Post('gestao-operacional')
-  @RequiresPermission({permissionName: 'dashboard.gestao_operacional'})
+  @Post('gestao-operacional/filtros-avancados')
+  @RequiresPermission({
+    permissionName: 'dashboard.gestao_operacional',
+    scopeType: TipoEscopo.UNIDADE
+  })
   @ApiOperation({
     summary: 'Obter métricas de gestão operacional com filtros avançados',
     description: `Retorna métricas sobre a gestão operacional do sistema de benefícios.
@@ -238,6 +247,133 @@ export class MetricasDashboardController {
     } catch (error) {
       throw new HttpException(
         'Erro ao obter contagem de solicitações por status',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Endpoint de debug para validação do sistema de escopo
+   * Retorna informações detalhadas sobre o contexto atual e dados filtrados
+   */
+  @Get('debug/escopo')
+  @ApiOperation({
+    summary: 'Debug do sistema de escopo',
+    description: `Endpoint de debug para validação do sistema de escopo.
+    
+    **Informações retornadas:**
+    - Contexto atual do usuário (tipo e unidade)
+    - Contagem total de solicitações (GLOBAL vs UNIDADE)
+    - Distribuição de dados por unidade
+    - Validação de integridade do escopo
+    
+    **Uso recomendado:**
+    - Validação de funcionamento do sistema de escopo
+    - Diagnóstico de problemas de contexto
+    - Verificação de consistência de dados
+    - Monitoramento contínuo do sistema`
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Informações de debug do sistema de escopo',
+    schema: {
+      type: 'object',
+      properties: {
+        contexto: {
+          type: 'object',
+          properties: {
+            tipo: { type: 'string', description: 'Tipo do escopo (GLOBAL ou UNIDADE)' },
+            unidadeId: { type: 'string', description: 'ID da unidade (se escopo UNIDADE)' },
+            hasContext: { type: 'boolean', description: 'Se existe contexto ativo' }
+          }
+        },
+        dados: {
+          type: 'object',
+          properties: {
+            totalSolicitacoes: { type: 'number', description: 'Total de solicitações visíveis' },
+            distribuicaoPorUnidade: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  unidadeId: { type: 'string' },
+                  nomeUnidade: { type: 'string' },
+                  quantidade: { type: 'number' }
+                }
+              }
+            }
+          }
+        },
+        validacao: {
+          type: 'object',
+          properties: {
+            escopoFuncionando: { type: 'boolean', description: 'Se o sistema de escopo está funcionando corretamente' },
+            observacoes: {
+              type: 'array',
+              items: { type: 'string' }
+            }
+          }
+        },
+        timestamp: { type: 'string', description: 'Timestamp da consulta' }
+      }
+    }
+  })
+  async debugEscopo(): Promise<any> {
+    try {
+      // Obter contexto atual
+      const contexto = RequestContextHolder.get();
+      const hasContext = RequestContextHolder.hasContext();
+      
+      this.logger.debug('=== DEBUG ESCOPO ===');
+      this.logger.debug(`Contexto ativo: ${hasContext}`);
+      this.logger.debug(`Contexto: ${JSON.stringify(contexto)}`);
+      
+      // Obter dados do dashboard
+      const dadosDashboard = await this.metricasDashboardService.debugEscopo();
+      
+      // Validações
+      const observacoes: string[] = [];
+      let escopoFuncionando = true;
+      
+      if (!hasContext) {
+        observacoes.push('ATENÇÃO: Nenhum contexto ativo detectado');
+        escopoFuncionando = false;
+      }
+      
+      if (contexto?.tipo === 'UNIDADE' && !contexto?.unidade_id) {
+        observacoes.push('ERRO: Escopo UNIDADE sem unidadeId definido');
+        escopoFuncionando = false;
+      }
+      
+      if (contexto?.tipo === 'GLOBAL' && dadosDashboard.totalSolicitacoes < 100) {
+        observacoes.push('ATENÇÃO: Escopo GLOBAL com poucos dados (possível problema)');
+      }
+      
+      if (contexto?.tipo === 'UNIDADE' && dadosDashboard.totalSolicitacoes > 500) {
+        observacoes.push('ATENÇÃO: Escopo UNIDADE com muitos dados (possível vazamento)');
+      }
+      
+      const resultado = {
+        contexto: {
+          tipo: contexto?.tipo || 'INDEFINIDO',
+          unidadeId: contexto?.unidade_id || null,
+          hasContext
+        },
+        dados: dadosDashboard,
+        validacao: {
+          escopoFuncionando,
+          observacoes
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      this.logger.debug(`Resultado debug: ${JSON.stringify(resultado, null, 2)}`);
+      
+      return resultado;
+    } catch (error) {
+      this.logger.error('Erro no debug do escopo:', error);
+      throw new HttpException(
+        'Erro interno do servidor no debug',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
