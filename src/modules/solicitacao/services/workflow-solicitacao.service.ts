@@ -23,10 +23,8 @@ import { TipoDocumentoEnum, TipoContextoNatalidade } from '../../../enums';
 import { TransicaoEstadoService } from './transicao-estado.service';
 import { ValidacaoSolicitacaoService } from './validacao-solicitacao.service';
 import { PrazoSolicitacaoService } from './prazo-solicitacao.service';
-import { NotificacaoService } from '../../notificacao/services/notificacao.service';
-import { TemplateMappingService } from './template-mapping.service';
 import { ConcessaoService } from '../../beneficio/services/concessao.service';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventosService } from './eventos.service';
 import { DadosBeneficioFactoryService } from '../../beneficio/services/dados-beneficio-factory.service';
 import { BeneficioService } from '../../beneficio/services/beneficio.service';
 import { DocumentoService } from '../../documento/services/documento.service';
@@ -71,9 +69,7 @@ export class WorkflowSolicitacaoService {
     private readonly transicaoEstadoService: TransicaoEstadoService,
     private readonly validacaoService: ValidacaoSolicitacaoService,
     private readonly prazoService: PrazoSolicitacaoService,
-    private readonly notificacaoService: NotificacaoService,
-    private readonly templateMappingService: TemplateMappingService,
-    private readonly eventEmitter: EventEmitter2,
+    private readonly eventosService: EventosService,
     @Inject(forwardRef(() => DadosBeneficioFactoryService))
     private readonly dadosBeneficioFactoryService: DadosBeneficioFactoryService,
     @Inject(forwardRef(() => BeneficioService))
@@ -225,27 +221,22 @@ export class WorkflowSolicitacaoService {
         `Transição da solicitação ${solicitacaoId} para ${novoEstado} concluída com sucesso`,
       );
 
-      // Emitir notificação SSE para transição de estado
+      // Emitir evento de mudança de status usando EventosService
       if (resultado.sucesso && resultado.solicitacao) {
         try {
-          this.eventEmitter.emit('sse.notificacao', {
-            userId: resultado.solicitacao.tecnico_id,
-            tipo: 'transicao_estado',
-            dados: {
-              solicitacaoId: resultado.solicitacao.id,
-              protocolo: resultado.solicitacao.protocolo,
-              statusAnterior: estadoAtual,
-              statusAtual: novoEstado,
-              observacao:
-                observacao || `Transição de ${estadoAtual} para ${novoEstado}`,
-              prioridade: this.determinarPrioridadeTransicao(novoEstado),
-              dataTransicao: new Date(),
-            },
-          });
-        } catch (sseError) {
+          this.eventosService.emitirEventoAlteracaoStatus(
+            resultado.solicitacao,
+            estadoAtual,
+            usuarioId,
+            observacao
+          );
+          this.logger.debug(
+            `Evento de mudança de status emitido para solicitação ${solicitacaoId}: ${estadoAtual} -> ${novoEstado}`
+          );
+        } catch (eventError) {
           this.logger.error(
-            `Erro ao emitir notificação SSE para transição ${solicitacaoId}: ${sseError.message}`,
-            sseError.stack,
+            `Erro ao emitir evento de mudança de status: ${eventError.message}`,
+            eventError.stack,
           );
         }
       }
@@ -324,26 +315,17 @@ export class WorkflowSolicitacaoService {
 
     const solicitacaoSalva = await this.solicitacaoRepository.save(solicitacao);
 
-    // Emitir notificação SSE para criação de rascunho
-    if (solicitacaoSalva.tecnico_id) {
-      try {
-        this.eventEmitter.emit('sse.notificacao', {
-          userId: solicitacaoSalva.tecnico_id,
-          tipo: 'rascunho_criado',
-          dados: {
-            solicitacaoId: solicitacaoSalva.id,
-            protocolo: solicitacaoSalva.protocolo,
-            status: StatusSolicitacao.RASCUNHO,
-            prioridade: 'low',
-            dataCriacao: new Date(),
-          },
-        });
-      } catch (sseError) {
-        this.logger.error(
-          `Erro ao emitir notificação SSE para criação de rascunho ${solicitacaoSalva.id}: ${sseError.message}`,
-          sseError.stack,
-        );
-      }
+    // Emitir evento de rascunho criado usando EventosService
+    try {
+      this.eventosService.emitirEventoCriacao(solicitacaoSalva);
+      this.logger.debug(
+        `Evento de rascunho criado emitido para solicitação ${solicitacaoSalva.id}`
+      );
+    } catch (eventError) {
+      this.logger.error(
+        `Erro ao emitir evento de rascunho criado: ${eventError.message}`,
+        eventError.stack,
+      );
     }
 
     return solicitacaoSalva;
@@ -728,66 +710,24 @@ export class WorkflowSolicitacaoService {
         // Não falhar a aprovação por erro na concessão
       }
 
-      // Enviar notificação para o técnico responsável
-      if (resultado.sucesso && solicitacao.tecnico_id) {
+      // Emitir evento de aprovação processada usando EventosService
+      if (resultado.sucesso && resultado.solicitacao) {
         try {
-          // Buscar template de notificação
-          const templateData =
-          await this.templateMappingService.prepararDadosTemplate(
-            'APROVACAO',
+          this.eventosService.emitirEventoAlteracaoStatus(
+            resultado.solicitacao,
+            resultado.solicitacao.status,
+            usuarioId,
+            observacao
           );
-
-        await this.notificacaoService.criarEBroadcast({
-          destinatario_id: solicitacao.tecnico_id,
-            tipo: 'SOLICITACAO_APROVADA',
-            titulo: 'Solicitação Aprovada',
-            conteudo: `A solicitação ${solicitacao.protocolo} foi aprovada.`,
-            dados: {
-              solicitacao_id: solicitacaoId,
-              protocolo: solicitacao.protocolo,
-              status: StatusSolicitacao.APROVADA,
-              observacao,
-              parecer_semtas: parecerSemtas,
-            },
-          });
-
-          if (templateData.templateEncontrado) {
-            this.logger.log(
-              `Notificação de aprovação enviada para técnico ${solicitacao.tecnico_id}`,
-            );
-          } else {
-            this.logger.warn(
-              'Template de notificação para aprovação não encontrado',
-            );
-          }
-        } catch (notificationError) {
+          this.logger.debug(
+            `Evento de aprovação emitido para solicitação ${solicitacaoId}`
+          );
+        } catch (eventError) {
           this.logger.error(
-            `Erro ao enviar notificação de aprovação: ${notificationError.message}`,
-            notificationError.stack,
+            `Erro ao emitir evento de aprovação processada: ${eventError.message}`,
+            eventError.stack,
           );
         }
-      }
-
-      // Emitir notificação SSE
-      try {
-        this.eventEmitter.emit('sse.notificacao', {
-          userId: solicitacao.tecnico_id,
-          tipo: 'solicitacao_aprovada',
-          dados: {
-            solicitacaoId: solicitacao.id,
-            protocolo: solicitacao.protocolo,
-            status: StatusSolicitacao.APROVADA,
-            observacao,
-            parecer_semtas: parecerSemtas,
-            prioridade: 'high',
-            dataAprovacao: new Date(),
-          },
-        });
-      } catch (sseError) {
-        this.logger.error(
-          `Erro ao emitir notificação SSE para aprovação ${solicitacaoId}: ${sseError.message}`,
-          sseError.stack,
-        );
       }
 
       // Emitir evento de auditoria
@@ -839,64 +779,24 @@ export class WorkflowSolicitacaoService {
       motivo,
     );
 
-    // Enviar notificação para o técnico responsável
-    if (resultado.sucesso && solicitacao.tecnico_id) {
+    // Emitir evento de rejeição processada usando EventosService
+    if (resultado.sucesso && resultado.solicitacao) {
       try {
-        // Buscar template de notificação
-        const templateData =
-          await this.templateMappingService.prepararDadosTemplate(
-            'INDEFERIMENTO',
-          );
-
-        await this.notificacaoService.criarEBroadcast({
-          destinatario_id: solicitacao.tecnico_id,
-          tipo: 'SOLICITACAO_REJEITADA',
-          titulo: 'Solicitação Rejeitada',
-          conteudo: `A solicitação ${solicitacao.protocolo} foi rejeitada.`,
-          dados: {
-            solicitacao_id: solicitacaoId,
-            protocolo: solicitacao.protocolo,
-            status: StatusSolicitacao.INDEFERIDA,
-            motivo,
-          },
-        });
-
-        if (templateData.templateEncontrado) {
-          this.logger.log(
-            `Notificação de rejeição enviada para técnico ${solicitacao.tecnico_id}`,
-          );
-        } else {
-          this.logger.warn(
-            'Template de notificação para rejeição não encontrado',
-          );
-        }
-      } catch (notificationError) {
+        this.eventosService.emitirEventoAlteracaoStatus(
+          resultado.solicitacao,
+          resultado.solicitacao.status,
+          usuarioId,
+          motivo
+        );
+        this.logger.debug(
+          `Evento de rejeição emitido para solicitação ${solicitacaoId}`
+        );
+      } catch (eventError) {
         this.logger.error(
-          `Erro ao enviar notificação de rejeição: ${notificationError.message}`,
-          notificationError.stack,
+          `Erro ao emitir evento de rejeição processada: ${eventError.message}`,
+          eventError.stack,
         );
       }
-    }
-
-    // Emitir notificação SSE
-    try {
-      this.eventEmitter.emit('sse.notificacao', {
-        userId: solicitacao.tecnico_id,
-        tipo: 'solicitacao_rejeitada',
-        dados: {
-          solicitacaoId: solicitacao.id,
-          protocolo: solicitacao.protocolo,
-          status: StatusSolicitacao.INDEFERIDA,
-          motivo,
-          prioridade: 'high',
-          dataRejeicao: new Date(),
-        },
-      });
-    } catch (sseError) {
-      this.logger.error(
-        `Erro ao emitir notificação SSE para rejeição ${solicitacaoId}: ${sseError.message}`,
-        sseError.stack,
-      );
     }
 
     // Emitir evento de auditoria
@@ -946,65 +846,24 @@ export class WorkflowSolicitacaoService {
       motivo,
     );
 
-    // Enviar notificação para o técnico responsável
-    if (resultado.sucesso && solicitacao.tecnico_id) {
+    // Emitir evento de cancelamento processado usando EventosService
+    if (resultado.sucesso && resultado.solicitacao) {
       try {
-        // Buscar template de notificação
-        const templateData =
-          await this.templateMappingService.prepararDadosTemplate(
-            'CANCELAMENTO',
-          );
-
-        await this.notificacaoService.criarEBroadcast({
-          destinatario_id: solicitacao.tecnico_id,
-          tipo: 'SOLICITACAO_CANCELADA',
-          titulo: 'Solicitação Cancelada',
-          conteudo: `A solicitação ${solicitacao.protocolo} foi cancelada.`,
-          dados: {
-            solicitacao_id: solicitacaoId,
-            protocolo: solicitacao.protocolo,
-            status: StatusSolicitacao.CANCELADA,
-            motivo,
-          },
-          template_id: templateData.template_id,
-        });
-
-        if (templateData.templateEncontrado) {
-          this.logger.log(
-            `Notificação de cancelamento enviada para técnico ${solicitacao.tecnico_id}`,
-          );
-        } else {
-          this.logger.warn(
-            'Template de notificação para cancelamento não encontrado',
-          );
-        }
-      } catch (notificationError) {
+        this.eventosService.emitirEventoAlteracaoStatus(
+          resultado.solicitacao,
+          resultado.solicitacao.status,
+          usuarioId,
+          motivo
+        );
+        this.logger.debug(
+          `Evento de cancelamento emitido para solicitação ${solicitacaoId}`
+        );
+      } catch (eventError) {
         this.logger.error(
-          `Erro ao enviar notificação de cancelamento: ${notificationError.message}`,
-          notificationError.stack,
+          `Erro ao emitir evento de cancelamento processado: ${eventError.message}`,
+          eventError.stack,
         );
       }
-    }
-
-    // Emitir notificação SSE
-    try {
-      this.eventEmitter.emit('sse.notificacao', {
-        userId: solicitacao.tecnico_id,
-        tipo: 'solicitacao_cancelada',
-        dados: {
-          solicitacaoId: solicitacao.id,
-          protocolo: solicitacao.protocolo,
-          status: StatusSolicitacao.CANCELADA,
-          motivo,
-          prioridade: 'medium',
-          dataCancelamento: new Date(),
-        },
-      });
-    } catch (sseError) {
-      this.logger.error(
-        `Erro ao emitir notificação SSE para cancelamento ${solicitacaoId}: ${sseError.message}`,
-        sseError.stack,
-      );
     }
 
     // Emitir evento de auditoria

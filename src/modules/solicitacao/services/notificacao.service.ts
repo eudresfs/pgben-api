@@ -73,7 +73,7 @@ export class NotificacaoService {
         titulo: 'Nova pendência criada',
         conteudo: `Pendência criada para a solicitação ${solicitacao.protocolo}`,
         solicitacao_id: solicitacao.id,
-        link: `${this.configService.get('FRONTEND_URL') || 'https://pgben-front.kemosoft.com.br'}/solicitacoes/${solicitacao.id}`,
+        link: `${this.configService.get('FRONTEND_URL') || 'https://semtas-natal.pgben.com.br'}/solicitacoes/detalhes/${solicitacao.id}`,
       });
     } catch (error) {
       this.logger.error(
@@ -101,7 +101,7 @@ export class NotificacaoService {
         titulo: 'Pendência resolvida',
         conteudo: `Pendência resolvida para a solicitação ${solicitacao.protocolo}`,
         solicitacao_id: solicitacao.id,
-        link: `${this.configService.get('FRONTEND_URL') || 'http://localhost:3000'}/solicitacoes/${solicitacao.id}`,
+        link: `${this.configService.get('FRONTEND_URL') || 'https://semtas-natal.pgben.com.br'}/solicitacoes/detalhes/${solicitacao.id}`,
       });
     } catch (error) {
       this.logger.error(

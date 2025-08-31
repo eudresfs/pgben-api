@@ -64,6 +64,7 @@ import { CidadaoService } from '../../cidadao/services/cidadao.service';
 import { Logger } from '@nestjs/common';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
+import { EventosService } from './eventos.service';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface FindAllOptions {
@@ -131,6 +132,7 @@ export class SolicitacaoService {
 
     private readonly auditEventEmitter: AuditEventEmitter,
     private readonly filtrosAvancadosService: FiltrosAvancadosService,
+    private readonly eventosService: EventosService,
   ) {
     this.logger = new Logger('SolicitacaoService');
   }
@@ -953,6 +955,10 @@ export class SolicitacaoService {
         },
         user.id
       );
+
+      // Emitir evento CREATED para notificacoes
+      this.eventosService.emitirEventoCriacao(solicitacaoCompleta);
+      this.logger.debug(`Evento CREATED emitido para solicitacao: ${solicitacaoCompleta.id}`);
 
       // Solicitacao criada com sucesso
       this.logger.log(`Solicitacao criada com sucesso: ${solicitacaoCompleta.id}`);
