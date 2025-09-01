@@ -386,6 +386,40 @@ export class WorkflowSolicitacaoService {
   }
 
   /**
+   * Verifica se a solicitação possui prioridade máxima (nível 0) que permite bypass de validações
+   * @param solicitacaoId ID da solicitação a ser verificada
+   * @returns Promise<boolean> true se a solicitação tem prioridade 0, false caso contrário
+   * @private
+   */
+  private async verificarBypassPrioridadeMaxima(solicitacaoId: string): Promise<boolean> {
+    this.logger.debug(
+      `Verificando bypass de prioridade máxima para solicitação ${solicitacaoId}`,
+    );
+
+    const solicitacao = await this.solicitacaoRepository.findOne({
+      where: { id: solicitacaoId },
+      select: ['id', 'prioridade', 'protocolo'],
+    });
+
+    if (!solicitacao) {
+      this.logger.warn(
+        `Solicitação ${solicitacaoId} não encontrada durante verificação de bypass`,
+      );
+      return false;
+    }
+
+    const temBypass = solicitacao.prioridade === 0;
+    
+    if (temBypass) {
+      this.logger.warn(
+        `BYPASS ATIVADO: Solicitação ${solicitacaoId} (protocolo: ${solicitacao.protocolo}) possui prioridade máxima (0) - validações padrão serão ignoradas`,
+      );
+    }
+
+    return temBypass;
+  }
+
+  /**
    * Valida se uma solicitação pode ser enviada para análise
    * Verifica se todos os requisitos obrigatórios foram atendidos
    * Considera documentos já apresentados pelo cidadão em solicitações anteriores
@@ -571,6 +605,13 @@ export class WorkflowSolicitacaoService {
 
   /**
    * Envia uma solicitação para análise
+   * 
+   * FUNCIONALIDADE DE BYPASS:
+   * - Solicitações com prioridade 0 (máxima) ignoram todas as validações padrão
+   * - Permite envio direto para análise mesmo sem dados específicos ou documentos
+   * - Mantém todas as validações para solicitações com prioridade diferente de 0
+   * - Registra logs de auditoria específicos quando o bypass é utilizado
+   * 
    * @param solicitacaoId ID da solicitação
    * @param usuarioId ID do usuário
    * @returns Resultado da transição
@@ -584,30 +625,61 @@ export class WorkflowSolicitacaoService {
     );
 
     try {
-      // Validar se a solicitação pode ser enviada para análise
-      await this.validarEnvioParaAnalise(solicitacaoId);
+      // Verificar se a solicitação possui prioridade máxima (0) para bypass
+      const temBypassPrioridadeMaxima = await this.verificarBypassPrioridadeMaxima(solicitacaoId);
+      
+      if (temBypassPrioridadeMaxima) {
+        // BYPASS ATIVADO: Pular validações padrão para prioridade máxima
+        this.logger.warn(
+          `Solicitação ${solicitacaoId} com prioridade máxima (0) - enviando diretamente para análise`,
+        );
+        
+        // Emitir evento de auditoria específico para bypass
+        await this.auditEventEmitter.emitEntityUpdated(
+          'Solicitacao',
+          solicitacaoId,
+          {
+            status: StatusSolicitacao.ABERTA,
+            observacao: 'Bypass de validações ativado por prioridade máxima'
+          },
+          {
+            status: StatusSolicitacao.EM_ANALISE,
+            observacao: 'Enviado para análise com bypass de prioridade máxima (nível 0)'
+          },
+          usuarioId,
+        );
+      } else {
+        // Executar validações padrão para solicitações com prioridade diferente de 0
+        await this.validarEnvioParaAnalise(solicitacaoId);
+      }
 
       // Realizar a transição de estado
+      const observacaoTransicao = temBypassPrioridadeMaxima 
+        ? 'Solicitação enviada para análise com bypass de prioridade máxima (nível 0)'
+        : 'Solicitação enviada para análise';
+        
       const resultado = await this.realizarTransicao(
         solicitacaoId,
         StatusSolicitacao.EM_ANALISE,
         usuarioId,
-        'Solicitação enviada para análise',
+        observacaoTransicao,
       );
 
       if (resultado.sucesso) {
-        // Emitir evento de auditoria
-      await this.auditEventEmitter.emitEntityUpdated(
-        'Solicitacao',
-        solicitacaoId,
-        {
-          status: StatusSolicitacao.RASCUNHO,
-        },
-        {
-          status: StatusSolicitacao.EM_ANALISE,
-        },
-        usuarioId,
-      );
+        // Emitir evento de auditoria padrão apenas se não foi bypass (para evitar duplicação)
+        if (!temBypassPrioridadeMaxima) {
+          await this.auditEventEmitter.emitEntityUpdated(
+            'Solicitacao',
+            solicitacaoId,
+            {
+              status: StatusSolicitacao.ABERTA,
+            },
+            {
+              status: StatusSolicitacao.EM_ANALISE,
+            },
+            usuarioId,
+          );
+        }
       } else {
         this.logger.error(
           `Falha ao enviar solicitação ${solicitacaoId} para análise: ${resultado.mensagem}`,
