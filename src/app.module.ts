@@ -37,6 +37,7 @@ import { EmailModule } from './shared/modules/email.module';
 import { ConfiguracaoModule } from './modules/configuracao/configuracao.module';
 import { NotificacaoModule } from './modules/notificacao/notificacao.module';
 import { EasyUploadModule } from './modules/easy-upload/easy-upload.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { addTransactionalDataSource } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
@@ -183,6 +184,8 @@ import { CommonModule } from './common/common.module';
     MonitoramentoModule,
     // Módulo de upload facilitado
     EasyUploadModule,
+    // Módulo de feedback
+    FeedbackModule,
   ],
   controllers: [AppController],
   providers: [

@@ -130,6 +130,11 @@ import {
   UploadToken,
 } from './entities';
 
+// Entidades do módulo de feedback
+import { Feedback } from './modules/feedback/entities/feedback.entity';
+import { FeedbackAnexo } from './modules/feedback/entities/feedback-anexo.entity';
+import { Tag } from './modules/feedback/entities/tag.entity';
+
 // Entidades do Sistema de Aprovação removidas - sistema antigo de aprovação
 
 /**
@@ -256,6 +261,11 @@ export const AppDataSource = new DataSource({
     SolicitacaoAprovacao,
     ConfiguracaoAprovador,
     SolicitacaoAprovador,
+
+    // Entidades do módulo de feedback
+    Feedback,
+    FeedbackAnexo,
+    Tag,
   ],
   migrations: [__dirname + '/database/migrations/**/*{.ts,.js}'],
   migrationsTableName: 'migrations',
