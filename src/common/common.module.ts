@@ -1,6 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EmailController } from './controllers/email.controller';
+import { FiltrosAvancadosModule } from './filtros-avancados.module';
 
 /**
  * Módulo Comum
@@ -8,9 +9,8 @@ import { EmailController } from './controllers/email.controller';
  */
 @Global()
 @Module({
-  imports: [ConfigModule],
-  providers: [],
+  imports: [ConfigModule, FiltrosAvancadosModule],
   controllers: [EmailController],
-  exports: [],
+  exports: [FiltrosAvancadosModule],
 })
 export class CommonModule {}

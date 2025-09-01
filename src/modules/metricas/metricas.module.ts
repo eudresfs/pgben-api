@@ -23,6 +23,7 @@ import { MetricaCalculoService } from './services/metrica-calculo.service';
 import { MetricasCacheService } from './services/metricas-cache.service';
 import { DashboardService } from './services/dashboard.service';
 import { MetricasAnomaliasService } from './services/metricas-anomalia.service';
+import { MetricasDashboardService } from './services/metricas-dashboard.service';
 
 // Middleware
 import { MetricasMiddleware } from './middlewares/metricas.middleware';
@@ -42,6 +43,8 @@ import {
   Concessao,
   Pagamento,
   Pendencia,
+  Cidadao,
+  Endereco,
 } from '../../entities';
 
 // Módulos externos
@@ -49,6 +52,9 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 // Serviços compartilhados
 import { RequestContextHolder } from '../../common/services/request-context-holder.service';
+
+// Módulos internos
+import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
 
 /**
  * Módulo responsável pelo monitoramento, observabilidade e análise de métricas do sistema
@@ -92,10 +98,15 @@ import { RequestContextHolder } from '../../common/services/request-context-hold
       TipoBeneficio,
       Unidade,
       Usuario,
+      Cidadao,
+      Endereco,
     ]),
 
     // Importa o módulo compartilhado de autenticação
     AuthModule,
+
+    // Módulo de solicitação para acesso ao SolicitacaoRepository
+    SolicitacaoModule,
   ],
 
   // Controladores para API
@@ -122,6 +133,7 @@ import { RequestContextHolder } from '../../common/services/request-context-hold
     MetricasCacheService,
     MetricasAnomaliasService,
     DashboardService,
+    MetricasDashboardService,
 
     // Serviço de health check compartilhado
     HealthCheckService,

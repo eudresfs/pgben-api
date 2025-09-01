@@ -21,6 +21,17 @@ import { TemplateRendererService } from './services/template-renderer.service';
 import { NotificacaoPreferenciasService } from './services/notificacao-preferencias.service';
 import { NotificacaoProativaService } from './services/notificacao-proativa.service';
 
+// Novos serviços padronizados
+import { BaseNotificationService } from './services/base-notification.service';
+import { TemplateValidationService } from './services/template-validation.service';
+import { AblyNotificationService } from './services/ably-notification.service';
+import { NotificationContextFactory } from './services/notification-context.factory';
+
+// Configuração
+import { NotificationConfig } from './config/notification.config';
+import { NotificationLoggerService } from './services/notification-logger.service';
+import { NotificationMetricsService } from './services/notification-metrics.service';
+
 // Listener
 import { NotificationEmailListener } from './listeners/notification-email.listener';
 import { NotificationMetricsListener } from './listeners/notification-metrics.listener';
@@ -118,6 +129,15 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
     NotificacaoProativaService,
     NotificacaoPreferenciasService,
 
+    // Novos serviços padronizados
+    BaseNotificationService,
+    TemplateValidationService,
+    AblyNotificationService,
+    NotificationContextFactory,
+    NotificationConfig,
+    NotificationLoggerService,
+    NotificationMetricsService,
+
     // Listeners
     NotificationEmailListener,
     NotificationMetricsListener,
@@ -140,6 +160,14 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
     NotificacaoProativaService,
     NotificacaoPreferenciasService,
     TemplateRendererService,
+    // Novos serviços padronizados exportados
+    BaseNotificationService,
+    TemplateValidationService,
+    AblyNotificationService,
+    NotificationContextFactory,
+    NotificationConfig,
+    NotificationLoggerService,
+    NotificationMetricsService,
   ],
 })
 export class NotificacaoModule {}

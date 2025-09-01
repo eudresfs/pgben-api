@@ -11,7 +11,12 @@ import { SetorRepository } from '../repositories/setor.repository';
 import { CreateUnidadeDto } from '../dto/create-unidade.dto';
 import { UpdateUnidadeDto } from '../dto/update-unidade.dto';
 import { UpdateStatusUnidadeDto } from '../dto/update-status-unidade.dto';
+import {
+  UnidadeFiltrosAvancadosDto,
+  UnidadeFiltrosResponseDto,
+} from '../dto/unidade-filtros-avancados.dto';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
+import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
 
 /**
  * Serviço de unidades
@@ -26,6 +31,7 @@ export class UnidadeService {
     private readonly dataSource: DataSource,
     private readonly unidadeRepository: UnidadeRepository,
     private readonly setorRepository: SetorRepository,
+    private readonly filtrosAvancadosService: FiltrosAvancadosService,
   ) {}
 
   /**
@@ -77,7 +83,9 @@ export class UnidadeService {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
+        pages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
+        hasPrev: page > 1,
       },
     };
   }
@@ -257,6 +265,62 @@ export class UnidadeService {
       }
       throwUnidadeOperationFailed({ unidadeId: id });
     }
+  }
+
+  /**
+   * Busca avançada de unidades com filtros complexos
+   * @param filtros Filtros avançados para busca
+   * @returns Resultado da busca com metadados
+   */
+  async filtrosAvancados(
+    filtros: UnidadeFiltrosAvancadosDto,
+  ): Promise<Omit<UnidadeFiltrosResponseDto, 'execution_time_ms'>> {
+    this.logger.log(
+      `Iniciando busca avançada de unidades: ${JSON.stringify(filtros)}`,
+    );
+
+    // Construir query base
+    const queryBuilder = this.dataSource
+      .getRepository('unidade')
+      .createQueryBuilder('unidade');
+
+    // Aplicar filtros usando o serviço de filtros avançados
+    const queryComFiltros = await this.filtrosAvancadosService.aplicarFiltros(
+      queryBuilder,
+      filtros
+    );
+
+    // Executar query para obter resultados
+    const [unidades, total] = await queryComFiltros.getManyAndCount();
+
+    // Calcular metadados de paginação
+    const pages = Math.ceil(total / filtros.limit);
+    const hasNext = filtros.page < pages;
+    const hasPrev = filtros.page > 1;
+
+    this.logger.log(
+      `Busca avançada concluída: ${unidades.length} unidades encontradas de ${total} total`,
+    );
+
+    return {
+      items: unidades,
+      total,
+      filtros_aplicados: {
+        status: filtros.status || [],
+        tipo: filtros.tipo || [],
+        search: filtros.search || null,
+      },
+      meta: {
+        page: filtros.page,
+        offset: (filtros.page - 1) * filtros.limit,
+        limit: filtros.limit,
+        pages: pages,
+        total,
+        hasNext,
+        hasPrev,
+      },
+      tempo_execucao: 0,
+    };
   }
 
   /**

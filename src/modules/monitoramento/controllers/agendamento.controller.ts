@@ -11,7 +11,8 @@ import {
   ParseUUIDPipe,
   ValidationPipe,
   ParseIntPipe,
-  ParseBoolPipe
+  ParseBoolPipe,
+  Req
 } from '@nestjs/common';
 import { PagePipe, LimitPipe } from '../../../shared/pipes/optional-parse-int.pipe';
 import {
@@ -27,21 +28,31 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { AgendamentoService } from '../services';
-import { CriarAgendamentoDto, AgendamentoResponseDto } from '../dto';
+import { AgendamentoBatchService } from '../services/agendamento-batch.service';
+import { CriarAgendamentoDto } from '../dto/criar-agendamento.dto';
+import { AgendamentoResponseDto } from '../dto/agendamento-response.dto';
+import { SuccessResponseDto } from '../../../shared/dtos/success-response.dto';
 import { TipoVisita, PrioridadeVisita } from '../enums';
 import { Usuario } from '@/entities';
 import { GetUser } from '@/auth/decorators/get-user.decorator';
+import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
+import { PaginatedResponseDto } from '../../../shared/dtos/pagination.dto';
+import { PaginationHelper } from '../helpers/pagination.helper';
+import { AgendamentoFiltrosAvancadosDto, AgendamentoFiltrosResponseDto } from '../dto/agendamento-filtros-avancados.dto';
 
 /**
  * Controller para gerenciamento de agendamentos de visitas domiciliares
  * Responsável por operações CRUD e funcionalidades específicas de agendamento
  */
-@ApiTags('Monitoramento - Agendamentos')
+@ApiTags('Agendamentos')
 @Controller('monitoramento/agendamentos')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class AgendamentoController {
-  constructor(private readonly agendamentoService: AgendamentoService) {}
+  constructor(
+    private readonly agendamentoService: AgendamentoService,
+    private readonly agendamentoBatchService: AgendamentoBatchService,
+  ) {}
 
   /**
    * Cria um novo agendamento de visita domiciliar
@@ -124,10 +135,11 @@ export class AgendamentoController {
     }
   })
   async criarAgendamento(
+    @GetUser() usuario: Usuario,
     @Body(ValidationPipe) dto: CriarAgendamentoDto
   ): Promise<{ message: string; data: AgendamentoResponseDto }> {
     try {
-      const agendamento = await this.agendamentoService.criarAgendamento(dto);
+      const agendamento = await this.agendamentoService.criarAgendamento(dto, usuario);
 
       return {
         message: 'Agendamento criado com sucesso',
@@ -151,6 +163,8 @@ export class AgendamentoController {
   })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (padrão: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página (padrão: 10)' })
+  @ApiQuery({ name: 'orderBy', required: false, type: String, description: 'Campo para ordenação (padrão: created_at)' })
+  @ApiQuery({ name: 'orderDirection', required: false, enum: ['ASC', 'DESC'], description: 'Direção da ordenação (padrão: DESC)' })
   @ApiQuery({ name: 'beneficiario_id', required: false, type: String, description: 'ID do beneficiário' })
   @ApiQuery({ name: 'tecnico_id', required: false, type: String, description: 'ID do técnico responsável' })
   @ApiQuery({ name: 'unidade_id', required: false, type: String, description: 'ID da unidade' })
@@ -162,7 +176,7 @@ export class AgendamentoController {
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Lista de agendamentos retornada com sucesso',
-    type: [AgendamentoResponseDto],
+    type: PaginatedResponseDto,
     example: {
       data: [
         {
@@ -179,14 +193,18 @@ export class AgendamentoController {
           updated_at: '2024-02-10T10:00:00.000Z'
         }
       ],
-      total: 1,
-      page: 1,
-      limit: 10
+      meta: {
+        total: 1,
+        page: 1,
+        limit: 10,
+        pages: 1,
+        hasNext: false,
+        hasPrev: false
+      }
     }
   })
   async listarAgendamentos(
-    @Query('page', PagePipe) page: number = 1,
-    @Query('limit', LimitPipe) limit: number = 10,
+    @Query() paginationParams: PaginationParamsDto,
     @Query('beneficiario_id') beneficiarioId?: string,
     @Query('tecnico_id') tecnicoId?: string,
     @Query('unidade_id') unidadeId?: string,
@@ -195,8 +213,11 @@ export class AgendamentoController {
     @Query('data_inicio') dataInicio?: string,
     @Query('data_fim') dataFim?: string,
     @Query('apenas_em_atraso', new ParseBoolPipe({ optional: true })) apenasEmAtraso?: boolean
-  ): Promise<{ data: AgendamentoResponseDto[]; total: number; page: number; limit: number }> {
+  ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
     try {
+      // Validar e aplicar valores padrão para paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+
       const filtros = {
         beneficiario_id: beneficiarioId,
         tecnico_id: tecnicoId,
@@ -213,18 +234,12 @@ export class AgendamentoController {
         filtros[key] === undefined && delete filtros[key]
       );
 
-      const { agendamentos, total } = await this.agendamentoService.buscarTodos(
+      const resultado = await this.agendamentoService.buscarTodos(
         filtros,
-        page,
-        limit
+        validatedParams
       );
 
-      return {
-        data: agendamentos,
-        total,
-        page,
-        limit
-      };
+      return resultado;
     } catch (error) {
       // Filtros globais tratarão BadRequestException para parâmetros inválidos
       throw error;
@@ -304,12 +319,14 @@ export class AgendamentoController {
     type: [AgendamentoResponseDto]
   })
   async listarAgendamentosEmAtraso(
-    @Query('page', PagePipe) page: number = 1,
-    @Query('limit', LimitPipe) limit: number = 10,
+    @Query() paginationParams: PaginationParamsDto,
     @Query('unidade_id') unidadeId?: string,
     @Query('tecnico_id') tecnicoId?: string
-  ): Promise<{ data: AgendamentoResponseDto[]; total: number; page: number; limit: number }> {
+  ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
     try {
+      // Validar e aplicar valores padrão para paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+
       const filtros = { unidade_id: unidadeId, tecnico_id: tecnicoId };
       
       // Remove filtros undefined
@@ -317,16 +334,12 @@ export class AgendamentoController {
         filtros[key] === undefined && delete filtros[key]
       );
 
-      const { agendamentos, total } = await this.agendamentoService.buscarEmAtraso(
-        filtros
+      const resultado = await this.agendamentoService.buscarEmAtraso(
+        filtros,
+        validatedParams
       );
 
-      return {
-        data: agendamentos,
-        total,
-        page,
-        limit
-      };
+      return resultado;
     } catch (error) {
       // Filtros globais tratarão erros de validação e consulta
       throw error;
@@ -345,39 +358,37 @@ export class AgendamentoController {
   @ApiParam({ name: 'tecnicoId', description: 'ID do técnico responsável' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (padrão: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página (padrão: 10)' })
+  @ApiQuery({ name: 'orderBy', required: false, type: String, description: 'Campo para ordenação (padrão: created_at)' })
+  @ApiQuery({ name: 'orderDirection', required: false, enum: ['ASC', 'DESC'], description: 'Direção da ordenação (padrão: DESC)' })
   @ApiQuery({ name: 'data_inicio', required: false, type: String, description: 'Data de início (YYYY-MM-DD)' })
   @ApiQuery({ name: 'data_fim', required: false, type: String, description: 'Data de fim (YYYY-MM-DD)' })
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Lista de agendamentos do técnico retornada com sucesso',
-    type: [AgendamentoResponseDto]
+    type: PaginatedResponseDto
   })
   async listarAgendamentosPorTecnico(
     @Param('tecnicoId', ParseUUIDPipe) tecnicoId: string,
-    @Query('page', PagePipe) page: number = 1,
-    @Query('limit', LimitPipe) limit: number = 10,
+    @Query() paginationParams: PaginationParamsDto,
     @Query('data_inicio') dataInicio?: string,
     @Query('data_fim') dataFim?: string
-  ): Promise<{ data: AgendamentoResponseDto[]; total: number; page: number; limit: number }> {
+  ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
     try {
-      const filtros = { data_inicio: dataInicio, data_fim: dataFim };
+      // Valida e aplica valores padrão para paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+      
+      const filtros = { 
+        data_inicio: dataInicio, 
+        data_fim: dataFim,
+        tecnico_id: tecnicoId
+      };
       
       // Remove filtros undefined
       Object.keys(filtros).forEach(key => 
         filtros[key] === undefined && delete filtros[key]
       );
 
-      const { agendamentos, total } = await this.agendamentoService.buscarPorTecnico(
-        tecnicoId,
-        filtros
-      );
-
-      return {
-        data: agendamentos,
-        total,
-        page,
-        limit
-      };
+      return await this.agendamentoService.buscarTodos(filtros, validatedParams);
     } catch (error) {
       // Filtros globais tratarão NotFoundException se técnico não existir
       throw error;
@@ -385,44 +396,39 @@ export class AgendamentoController {
   }
 
   /**
-   * Lista agendamentos por beneficiário
+   * Lista agendamentos por pagamento
    */
-  @Get('beneficiario/:beneficiarioId')
+  @Get('pagamento/:pagamentoId')
   @RequiresPermission({ permissionName: 'monitoramento.agendamento.listar' })
   @ApiOperation({ 
-    summary: 'Listar agendamentos por beneficiário',
-    description: 'Lista todos os agendamentos de um beneficiário específico'
+    summary: 'Listar agendamentos por pagamento',
+    description: 'Lista todos os agendamentos de um pagamento específico'
   })
-  @ApiParam({ name: 'beneficiarioId', description: 'ID do beneficiário' })
+  @ApiParam({ name: 'pagamentoId', description: 'ID do pagamento' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (padrão: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página (padrão: 10)' })
+  @ApiQuery({ name: 'orderBy', required: false, type: String, description: 'Campo para ordenação (padrão: created_at)' })
+  @ApiQuery({ name: 'orderDirection', required: false, enum: ['ASC', 'DESC'], description: 'Direção da ordenação (padrão: DESC)' })
   @ApiResponse({ 
     status: HttpStatus.OK, 
-    description: 'Lista de agendamentos do beneficiário retornada com sucesso',
-    type: [AgendamentoResponseDto]
+    description: 'Lista de agendamentos do pagamento retornada com sucesso',
+    type: PaginatedResponseDto
   })
-  async listarAgendamentosPorBeneficiario(
-    @Param('beneficiarioId', ParseUUIDPipe) beneficiarioId: string,
-    @Query('page', PagePipe) page: number = 1,
-    @Query('limit', LimitPipe) limit: number = 10
-  ): Promise<{ data: AgendamentoResponseDto[]; total: number; page: number; limit: number }> {
+  async listarAgendamentosPorPagamento(
+    @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string,
+    @Query() paginationParams: PaginationParamsDto
+  ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
     try {
-      const { agendamentos, total } = await this.agendamentoService.buscarPorBeneficiario(
-        beneficiarioId,
-        {
-          page,
-          limit
-        },
-      );
-
-      return {
-        data: agendamentos,
-        total,
-        page,
-        limit
+      // Valida e aplica valores padrão para paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+      
+      const filtros = { 
+        pagamento_id: pagamentoId
       };
+
+      return await this.agendamentoService.buscarPorPagamento(pagamentoId, filtros, validatedParams);
     } catch (error) {
-      // Filtros globais tratarão NotFoundException se beneficiário não existir
+      // Filtros globais tratarão NotFoundException se pagamento não existir
       throw error;
     }
   }
@@ -451,10 +457,11 @@ export class AgendamentoController {
     description: 'Agendamento não pode ser confirmado no status atual' 
   })
   async confirmarAgendamento(
-    @Param('id', ParseUUIDPipe) id: string
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() usuario: Usuario
   ): Promise<{ message: string; data: AgendamentoResponseDto }> {
     try {
-      const agendamento = await this.agendamentoService.confirmarAgendamento(id);
+      const agendamento = await this.agendamentoService.confirmarAgendamento(id, usuario.id);
 
       return {
         message: 'Agendamento confirmado com sucesso',
@@ -537,6 +544,7 @@ export class AgendamentoController {
   })
   async reagendarVisita(
     @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() user: Usuario,
     @Body('nova_data', ValidationPipe) novaData: Date,
     @Body('motivo_reagendamento') motivoReagendamento?: string
   ): Promise<{ message: string; data: AgendamentoResponseDto }> {
@@ -544,7 +552,8 @@ export class AgendamentoController {
       const agendamento = await this.agendamentoService.reagendarVisita(
         id,
         novaData,
-        motivoReagendamento
+        motivoReagendamento,
+        user.id
       );
 
       return {
@@ -643,6 +652,301 @@ export class AgendamentoController {
       };
     } catch (error) {
       // Filtros globais tratarão NotFoundException e BadRequestException
+      throw error;
+    }
+  }
+
+  /**
+   * Endpoint para criação de agendamentos em lote
+   * Processa múltiplos agendamentos de forma otimizada com controle de concorrência
+   */
+  @Post('batch')
+  @RequiresPermission({ permissionName: 'monitoramento.agendamento.criar' })
+  @ApiOperation({
+    summary: 'Criar agendamentos em lote',
+    description: 'Cria múltiplos agendamentos de visita domiciliar de forma otimizada com controle de concorrência e transações'
+  })
+  @ApiBody({
+    type: [CriarAgendamentoDto],
+    description: 'Array de dados para criação dos agendamentos em lote',
+    examples: {
+      'lote-agendamentos': {
+        summary: 'Lote de agendamentos diversos',
+        description: 'Exemplo de criação em lote com diferentes tipos de visita',
+        value: [
+          {
+            beneficiario_id: '550e8400-e29b-41d4-a716-446655440000',
+            tecnico_id: '550e8400-e29b-41d4-a716-446655440001',
+            unidade_id: '550e8400-e29b-41d4-a716-446655440002',
+            tipo_visita: 'inicial',
+            data_hora: '2024-02-15T14:30:00.000Z',
+            prioridade: 'alta',
+            observacoes: 'Primeira visita domiciliar para avaliação inicial'
+          },
+          {
+            beneficiario_id: '550e8400-e29b-41d4-a716-446655440003',
+            tecnico_id: '550e8400-e29b-41d4-a716-446655440004',
+            unidade_id: '550e8400-e29b-41d4-a716-446655440005',
+            tipo_visita: 'acompanhamento',
+            data_hora: '2024-02-20T09:00:00.000Z',
+            prioridade: 'media',
+            observacoes: 'Visita de acompanhamento mensal'
+          }
+        ]
+      }
+    }
+  })
+  @ApiQuery({
+    name: 'batchSize',
+    required: false,
+    type: Number,
+    description: 'Tamanho do lote para processamento (padrão: 10, máximo: 100)',
+    example: 10
+  })
+  @ApiQuery({
+    name: 'maxConcurrency',
+    required: false,
+    type: Number,
+    description: 'Máximo de operações concorrentes (padrão: 3, máximo: 10)',
+    example: 3
+  })
+  @ApiQuery({
+    name: 'useTransaction',
+    required: false,
+    type: Boolean,
+    description: 'Usar transação para garantir atomicidade (padrão: true)',
+    example: true
+  })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Agendamentos criados em lote com sucesso',
+    example: {
+      message: 'Processamento em lote concluído',
+      data: {
+        sucessos: 2,
+        erros: 0,
+        detalhes: {
+          agendamentos_criados: [
+            {
+              id: '550e8400-e29b-41d4-a716-446655440006',
+              beneficiario_id: '550e8400-e29b-41d4-a716-446655440000',
+              tecnico_id: '550e8400-e29b-41d4-a716-446655440001',
+              status: 'agendado'
+            }
+          ],
+          erros_processamento: []
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dados inválidos ou parâmetros de lote incorretos',
+    example: {
+      statusCode: 400,
+      message: ['batchSize deve ser entre 1 e 100', 'Array de agendamentos não pode estar vazio'],
+      error: 'Bad Request'
+    }
+  })
+  @ApiResponse({
+    status: HttpStatus.PARTIAL_CONTENT,
+    description: 'Processamento parcial - alguns agendamentos falharam',
+    example: {
+      message: 'Processamento em lote concluído com erros',
+      data: {
+        sucessos: 1,
+        erros: 1,
+        detalhes: {
+          agendamentos_criados: [
+            {
+              id: '550e8400-e29b-41d4-a716-446655440006',
+              beneficiario_id: '550e8400-e29b-41d4-a716-446655440000'
+            }
+          ],
+          erros_processamento: [
+            {
+              index: 1,
+              erro: 'Técnico não encontrado ou indisponível no horário solicitado',
+              dados: {
+                beneficiario_id: '550e8400-e29b-41d4-a716-446655440003',
+                tecnico_id: '550e8400-e29b-41d4-a716-446655440004'
+              }
+            }
+          ]
+        }
+      }
+    }
+  })
+  async criarAgendamentosEmLote(
+    @Body(ValidationPipe) agendamentos: CriarAgendamentoDto[],
+    @GetUser() user: Usuario,
+    @Query('batchSize', new ParseIntPipe({ optional: true })) batchSize: number = 10,
+    @Query('maxConcurrency', new ParseIntPipe({ optional: true })) maxConcurrency: number = 3,
+    @Query('useTransaction', new ParseBoolPipe({ optional: true })) useTransaction: boolean = true
+  ): Promise<SuccessResponseDto> {
+    try {
+      // Validação dos parâmetros de entrada
+      if (!agendamentos || agendamentos.length === 0) {
+        throw new Error('Array de agendamentos não pode estar vazio');
+      }
+
+      if (batchSize < 1 || batchSize > 100) {
+        throw new Error('batchSize deve ser entre 1 e 100');
+      }
+
+      if (maxConcurrency < 1 || maxConcurrency > 10) {
+        throw new Error('maxConcurrency deve ser entre 1 e 10');
+      }
+
+      // Processamento em lote usando o serviço especializado
+      const resultado = await this.agendamentoBatchService.createAgendamentosInBatch(
+        agendamentos,
+        user.id,
+        {
+          batchSize,
+          maxConcurrency,
+          useTransaction,
+          continueOnError: true
+        }
+      );
+
+      // Determinar status da resposta baseado nos resultados
+      const statusCode = resultado.errors.length > 0 ? HttpStatus.PARTIAL_CONTENT : HttpStatus.CREATED;
+      const message = resultado.errors.length > 0 
+        ? 'Processamento em lote concluído com erros'
+        : 'Processamento em lote concluído';
+
+      return {
+        statusCode,
+        message,
+        data: resultado,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      // Filtros globais tratarão as exceções apropriadamente
+      throw error;
+    }
+  }
+
+  /**
+   * Aplica filtros avançados para busca de agendamentos
+   * Endpoint especializado para filtros complexos com múltiplos critérios
+   */
+  @Post('filtros-avancados')
+  @RequiresPermission({ permissionName: 'monitoramento.agendamento.listar' })
+  @ApiOperation({
+    summary: 'Aplicar filtros avançados em agendamentos',
+    description: 'Endpoint para aplicação de filtros avançados em agendamentos, permitindo busca por múltiplos critérios, períodos predefinidos e ordenação customizada. Ideal para relatórios gerenciais e análises detalhadas.'
+  })
+  @ApiBody({
+    type: AgendamentoFiltrosAvancadosDto,
+    description: 'Filtros avançados para busca de agendamentos',
+    examples: {
+      'filtro-basico': {
+        summary: 'Filtro básico por unidade e status',
+        description: 'Exemplo de filtro simples por unidade e status',
+        value: {
+          unidades: ['550e8400-e29b-41d4-a716-446655440000'],
+          status: ['agendado', 'em_andamento'],
+          page: 1,
+          limit: 20
+        }
+      },
+      'filtro-periodo': {
+        summary: 'Filtro por período predefinido',
+        description: 'Exemplo usando período predefinido',
+        value: {
+          periodo: 'ultimos_30_dias',
+          tipos_visita: ['inicial', 'acompanhamento'],
+          prioridades: ['alta', 'media'],
+          include_relations: true
+        }
+      },
+      'filtro-avancado': {
+        summary: 'Filtro avançado completo',
+        description: 'Exemplo com múltiplos filtros e busca textual',
+        value: {
+          unidades: ['550e8400-e29b-41d4-a716-446655440000', '660e8400-e29b-41d4-a716-446655440001'],
+          tecnicos: ['550e8400-e29b-41d4-a716-446655440002'],
+          status: ['agendado'],
+          tipos_visita: ['inicial'],
+          prioridades: ['alta'],
+          search: 'João Silva',
+          data_inicio: '2024-01-01T00:00:00.000Z',
+          data_fim: '2024-12-31T23:59:59.999Z',
+          em_atraso: false,
+          incluir_cancelados: false,
+          include_relations: true,
+          sort_by: 'data_agendamento',
+          sort_order: 'ASC',
+          page: 1,
+          limit: 50
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Filtros aplicados com sucesso',
+    type: AgendamentoFiltrosResponseDto,
+    example: {
+      message: 'Filtros aplicados com sucesso',
+      data: {
+        unidades: [
+          { id: '550e8400-e29b-41d4-a716-446655440000', nome: 'CRAS Centro', total_agendamentos: 45 }
+        ],
+        status: [
+          { status: 'agendado', total: 120 },
+          { status: 'em_andamento', total: 45 }
+        ],
+        tipos_visita: [
+          { tipo: 'inicial', total: 85 },
+          { tipo: 'acompanhamento', total: 150 }
+        ],
+        prioridades: [
+          { prioridade: 'alta', total: 25 },
+          { prioridade: 'media', total: 180 }
+        ],
+        tecnicos: [
+          { id: '550e8400-e29b-41d4-a716-446655440002', nome: 'Maria Santos', total_agendamentos: 28 }
+        ],
+        estatisticas: {
+          total_agendamentos: 395,
+          agendamentos_em_atraso: 12,
+          agendamentos_hoje: 8,
+          agendamentos_proximos_7_dias: 45
+        },
+        periodos_disponiveis: ['hoje', 'ultimos_7_dias', 'ultimos_30_dias', 'ultimo_mes', 'ultimos_3_meses']
+      }
+    }
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Parâmetros de filtro inválidos',
+    example: {
+      statusCode: 400,
+      message: ['unidades deve ser um array de UUIDs válidos', 'data_inicio deve ser uma data válida'],
+      error: 'Bad Request'
+    }
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Usuário não possui permissão para listar agendamentos',
+    example: {
+      statusCode: 403,
+      message: 'Acesso negado: permissão monitoramento.agendamento.listar requerida',
+      error: 'Forbidden'
+    }
+  })
+  async aplicarFiltrosAvancados(
+    @Body(ValidationPipe) filtros: AgendamentoFiltrosAvancadosDto
+  ): Promise<AgendamentoFiltrosResponseDto> {
+    try {
+      const resultado = await this.agendamentoService.aplicarFiltrosAvancados(filtros);
+
+      return resultado;
+    } catch (error) {
+      // Os filtros de exceção globais irão capturar e tratar adequadamente
       throw error;
     }
   }

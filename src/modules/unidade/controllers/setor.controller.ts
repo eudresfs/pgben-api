@@ -22,6 +22,10 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { ScopeType } from '@/entities/user-permission.entity';
+import { AuditEntity } from '../../auditoria/decorators/audit-entity.decorator';
+import { AuditOperation } from '../../auditoria/decorators/audit-operation.decorator';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
+import { RiskLevel } from '../../auditoria/events/types/audit-event.types';
 
 /**
  * Controlador de setores
@@ -32,6 +36,10 @@ import { ScopeType } from '@/entities/user-permission.entity';
 @Controller('setor')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
+@AuditEntity({
+  entity: 'Setor',
+  operation: 'controller'
+})
 export class SetorController {
   private readonly logger = new Logger(SetorController.name);
 
@@ -44,6 +52,13 @@ export class SetorController {
   @RequiresPermission({
     permissionName: 'setor.criar',
     scopeType: ScopeType.GLOBAL,
+  })
+  @AuditOperation({
+    tipo: TipoOperacao.CREATE,
+    entidade: 'Setor',
+    descricao: 'Criação de novo setor',
+    riskLevel: RiskLevel.MEDIUM,
+    sensitiveFields: ['responsavel_matricula'],
   })
   @ApiOperation({ summary: 'Criar novo setor' })
   @ApiResponse({ status: 201, description: 'Setor criado com sucesso' })
@@ -70,6 +85,13 @@ export class SetorController {
     permissionName: 'setor.atualizar',
     scopeType: ScopeType.GLOBAL,
   })
+  @AuditOperation({
+    tipo: TipoOperacao.UPDATE,
+    entidade: 'Setor',
+    descricao: 'Atualização de dados do setor',
+    riskLevel: RiskLevel.MEDIUM,
+    sensitiveFields: ['responsavel_matricula'],
+  })
   @ApiOperation({ summary: 'Atualizar setor existente' })
   @ApiResponse({ status: 200, description: 'Setor atualizado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -88,6 +110,13 @@ export class SetorController {
   @RequiresPermission({
     permissionName: 'setor.listar',
     scopeType: ScopeType.GLOBAL,
+  })
+  @AuditOperation({
+    tipo: TipoOperacao.READ,
+    entidade: 'Setor',
+    descricao: 'Consulta detalhes de setor',
+    riskLevel: RiskLevel.LOW,
+    sensitiveFields: ['responsavel_matricula'],
   })
   @ApiOperation({ summary: 'Obter detalhes de um setor' })
   @ApiResponse({ status: 200, description: 'Setor encontrado com sucesso' })

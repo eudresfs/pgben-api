@@ -37,12 +37,15 @@ import { EmailModule } from './shared/modules/email.module';
 import { ConfiguracaoModule } from './modules/configuracao/configuracao.module';
 import { NotificacaoModule } from './modules/notificacao/notificacao.module';
 import { EasyUploadModule } from './modules/easy-upload/easy-upload.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { addTransactionalDataSource } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 import { ScopeContextInterceptor } from './common/interceptors/scope-context.interceptor';
 import { AuditContextInterceptor } from './common/interceptors/audit-context.interceptor';
+import { GlobalAuditInterceptor } from './modules/auditoria/interceptors/global-audit.interceptor';
 import { RequestContextHolder } from './common/services/request-context-holder.service';
+import { CommonModule } from './common/common.module';
 
 
 @Module({
@@ -134,6 +137,7 @@ import { RequestContextHolder } from './common/services/request-context-holder.s
     MonitoringModule,
 
     // Módulos compartilhados
+    CommonModule,
     EmailModule,
     PermissionSharedModule,
     LoggingModule,
@@ -180,6 +184,8 @@ import { RequestContextHolder } from './common/services/request-context-holder.s
     MonitoramentoModule,
     // Módulo de upload facilitado
     EasyUploadModule,
+    // Módulo de feedback
+    // FeedbackModule,
   ],
   controllers: [AppController],
   providers: [
@@ -200,6 +206,10 @@ import { RequestContextHolder } from './common/services/request-context-holder.s
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditContextInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: GlobalAuditInterceptor,
     },
 
   ],

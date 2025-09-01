@@ -41,12 +41,19 @@ import { AuditoriaSignatureService } from './services/auditoria-signature.servic
 import { AuditoriaQueueService } from './services/auditoria-queue.service';
 import { AuditoriaExportacaoService } from './services/auditoria-exportacao.service';
 import { AuditoriaMonitoramentoService } from './services/auditoria-monitoramento.service';
+import { AuditMetricsService } from './services/audit-metrics.service';
+import { AuditHealthService } from './services/audit-health.service';
+import { RequestDeduplicationService } from './services/request-deduplication.service';
 
 // Controllers
 import { AuditoriaController } from './controllers/auditoria.controller';
+import { AuditMetricsController } from './controllers/audit-metrics.controller';
 
 // Middleware
 import { AuditoriaMiddleware } from './middlewares/auditoria.middleware';
+
+// Interceptors
+import { GlobalAuditInterceptor } from './interceptors/global-audit.interceptor';
 
 // Legacy Repository
 import { LogAuditoriaRepository } from './repositories/log-auditoria.repository';
@@ -99,7 +106,7 @@ import { SystemContextService } from '../../common/services/system-context.servi
     AuthGuardsModule,
     ScheduleAdapterModule,
   ],
-  controllers: [AuditoriaController],
+  controllers: [AuditoriaController, AuditMetricsController],
   providers: [
     // Core Components
     AuditCoreRepository,
@@ -119,9 +126,15 @@ import { SystemContextService } from '../../common/services/system-context.servi
     AuditoriaQueueService,
     AuditoriaExportacaoService,
     AuditoriaMonitoramentoService,
+    AuditMetricsService,
+    AuditHealthService,
+    RequestDeduplicationService,
 
     // Middleware
     AuditoriaMiddleware,
+
+    // Interceptors
+    GlobalAuditInterceptor,
 
     // Legacy Repository
     LogAuditoriaRepository,
@@ -148,9 +161,15 @@ import { SystemContextService } from '../../common/services/system-context.servi
     AuditoriaQueueService,
     AuditoriaExportacaoService,
     AuditoriaMonitoramentoService,
+    AuditMetricsService,
+    AuditHealthService,
+    RequestDeduplicationService,
 
     // Middleware
     AuditoriaMiddleware,
+
+    // Interceptors
+    GlobalAuditInterceptor,
 
     // Legacy Repository
     LogAuditoriaRepository,
@@ -158,15 +177,10 @@ import { SystemContextService } from '../../common/services/system-context.servi
 })
 export class AuditoriaModule implements OnModuleInit {
   constructor() {
-    console.log('🚨 AUDITORIA MODULE INICIALIZADO');
-    console.log('🚨 AuditProcessor deve estar registrado agora');
     console.log('✅ AuditoriaModule inicializado - arquitetura consolidada');
   }
 
-  onModuleInit() {
-    console.log('🚨 AUDITORIA MODULE INIT COMPLETO');
-    console.log('🚨 Todos os providers foram inicializados');
-    console.log('🚨 BullModule configurado para fila "auditoria"');
-    console.log('🚨 AuditProcessor pronto para consumir jobs');
+ async onModuleInit() {
+    // Módulo de auditoria inicializado com sucesso
   }
 }

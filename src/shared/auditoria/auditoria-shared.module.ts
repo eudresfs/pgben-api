@@ -10,6 +10,7 @@ import { AuditEventEmitter } from '../../modules/auditoria/events/emitters/audit
 import { AuditoriaQueueService } from '../../modules/auditoria/services/auditoria-queue.service';
 import { LogAuditoriaRepository } from '../../modules/auditoria/repositories/log-auditoria.repository';
 import { AuditoriaSignatureService } from '../../modules/auditoria/services/auditoria-signature.service';
+import { AuditMetricsService } from '../../modules/auditoria/services/audit-metrics.service';
 
 /**
  * Módulo compartilhado de Auditoria
@@ -56,6 +57,7 @@ import { AuditoriaSignatureService } from '../../modules/auditoria/services/audi
     AuditoriaQueueService,
     LogAuditoriaRepository,
     AuditoriaSignatureService,
+    AuditMetricsService,
   ],
   exports: [
     // Exporta os serviços principais para uso em outros módulos
@@ -64,6 +66,7 @@ import { AuditoriaSignatureService } from '../../modules/auditoria/services/audi
     AuditoriaQueueService,
     LogAuditoriaRepository,
     AuditoriaSignatureService,
+    AuditMetricsService,
   ],
 })
 export class AuditoriaSharedModule {}

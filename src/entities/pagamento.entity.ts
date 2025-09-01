@@ -214,6 +214,14 @@ export class Pagamento {
   observacoes: string;
 
   /**
+   * Indica se o pagamento já passou por monitoramento
+   * Atualizado para true quando uma visita é concluída com resultado 'conforme'
+   */
+  @Column({ name: 'monitorado', default: false })
+  @IsOptional()
+  monitorado: boolean;
+
+  /**
    * Data de criação do registro
    */
   @CreateDateColumn({ name: 'created_at' })

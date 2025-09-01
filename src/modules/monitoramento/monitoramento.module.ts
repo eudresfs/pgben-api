@@ -14,6 +14,7 @@ import {
   Cidadao,
   Unidade,
   Concessao,
+  Pagamento,
 } from '../../entities';
 import { AvaliacaoVisita } from './entities/avaliacao-visita.entity';
 import { HistoricoMonitoramento } from './entities/historico-monitoramento.entity';
@@ -22,19 +23,23 @@ import { HistoricoMonitoramento } from './entities/historico-monitoramento.entit
 import {
   AgendamentoController,
   VisitaController,
+  HistoricoAgendamentoController,
+  RelatorioMonitoramentoController,
 } from './controllers';
-import { RelatorioMonitoramentoController } from './controllers/relatorio-monitoramento.controller';
 
 // Services
 import {
   AgendamentoService,
   VisitaService,
 } from './services';
+import { AgendamentoBatchService } from './services/agendamento-batch.service';
 import { RelatorioMonitoramentoService } from './services/relatorio-monitoramento.service';
+import { HistoricoAgendamentoService } from './services/historico-agendamento.service';
 
 // Repositories
 import { AgendamentoRepository } from './repositories/agendamento.repository';
 import { VisitaRepository } from './repositories/visita.repository';
+import { HistoricoAgendamentoRepository } from './repositories/historico-agendamento.repository';
 
 /**
  * Módulo de Monitoramento Domiciliar do PGBen
@@ -63,6 +68,7 @@ import { VisitaRepository } from './repositories/visita.repository';
       Cidadao,
       Unidade,
       Concessao,
+      Pagamento,
     ]),
     // Módulo compartilhado para serviços utilitários
     SharedModule,
@@ -77,15 +83,19 @@ import { VisitaRepository } from './repositories/visita.repository';
     AgendamentoController,
     VisitaController,
     RelatorioMonitoramentoController,
+    HistoricoAgendamentoController,
   ],
   providers: [
     // Repositories
     AgendamentoRepository,
     VisitaRepository,
-    // Serviços principais
+    HistoricoAgendamentoRepository,
+    // Services
     AgendamentoService,
+    AgendamentoBatchService,
     VisitaService,
     RelatorioMonitoramentoService,
+    HistoricoAgendamentoService,
   ],
   exports: [
     // Exportamos os serviços para uso em outros módulos

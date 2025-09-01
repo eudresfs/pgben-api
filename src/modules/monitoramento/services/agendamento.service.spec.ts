@@ -295,7 +295,7 @@ describe('AgendamentoService', () => {
         total: mockTotal,
         page: 1,
         limit: 10,
-        totalPages: 1,
+        pages: 1,
       });
     });
   });
@@ -481,7 +481,7 @@ describe('AgendamentoService', () => {
         total: mockTotal,
         page: 1,
         limit: 10,
-        totalPages: 1,
+        pages: 1,
       });
     });
   });
@@ -503,7 +503,7 @@ describe('AgendamentoService', () => {
         total: mockTotal,
         page: 1,
         limit: 10,
-        totalPages: 1,
+        pages: 1,
       });
     });
   });

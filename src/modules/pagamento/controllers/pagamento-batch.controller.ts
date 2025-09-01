@@ -29,6 +29,7 @@ import { CancelarPagamentoDto } from '../dtos/cancelar-pagamento.dto';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { UserRole } from '../../../enums';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
+import { AuditoriaPagamento } from '../decorators/auditoria.decorator';
 
 /**
  * Controller para operações em lote de pagamentos
@@ -45,6 +46,7 @@ export class PagamentoBatchController {
   constructor(private readonly batchService: PagamentoBatchService) {}
 
   @Post('create')
+  @AuditoriaPagamento.Criacao('Criação em lote de pagamentos')
   @RequiresPermission({ permissionName: 'pagamento.criar' })
   @ApiOperation({
     summary: 'Criar múltiplos pagamentos em lote',
@@ -138,6 +140,7 @@ export class PagamentoBatchController {
   }
 
   @Post('liberar')
+  @AuditoriaPagamento.LiberacaoLote('Liberação em lote de pagamentos')
   @RequiresPermission({ permissionName: 'pagamento.liberar' })
   @ApiOperation({
     summary: 'Liberar múltiplos pagamentos em lote',
@@ -212,6 +215,7 @@ export class PagamentoBatchController {
   }
 
   @Post('update-status')
+  @AuditoriaPagamento.AtualizacaoStatus('Atualização de status em lote')
   @RequiresPermission({ permissionName: 'pagamento.atualizar_status' })
   @ApiOperation({
     summary: 'Atualizar status de múltiplos pagamentos em lote',
@@ -295,6 +299,7 @@ export class PagamentoBatchController {
   }
 
   @Post('validar-comprovantes')
+  @AuditoriaPagamento.ValidacaoLimites('Validação de comprovantes em lote')
   @RequiresPermission({ permissionName: 'pagamento.validar_comprovantes' })
   @ApiOperation({
     summary: 'Validar múltiplos comprovantes em lote',
@@ -359,6 +364,7 @@ export class PagamentoBatchController {
   }
 
   @Get('status')
+  @AuditoriaPagamento.Consulta('Consulta de status de operações em lote')
   @RequiresPermission({ permissionName: 'pagamento.visualizar_status' })
   @ApiOperation({
     summary: 'Obter status das operações em lote',

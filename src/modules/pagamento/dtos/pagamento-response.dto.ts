@@ -45,7 +45,11 @@ export class PagamentoResponseDto extends PagamentoResponseBaseDto {
   })
   solicitacao?: {
     id: string;
-    beneficiario: string;
+    beneficiario: {
+      id: string;
+      nome: string;
+      cpf: string;
+    };
     tipo_beneficio: {
       id: string;
       nome: string;
@@ -115,10 +119,10 @@ export class PagamentoResponseDto extends PagamentoResponseBaseDto {
     },
   })
   responsavel_liberacao: {
-    id: string;
-    nome: string;
-    role: string;
-  };
+    id?: string;
+    nome?: string;
+    role?: string;
+  } = {};
 
   /**
    * Quantidade de comprovantes anexados

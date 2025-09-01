@@ -104,7 +104,7 @@ export class LogsService {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
+        pages: Math.ceil(total / limit),
       },
     };
   }

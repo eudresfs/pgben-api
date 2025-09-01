@@ -3,11 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In, SelectQueryBuilder } from 'typeorm';
 import { AgendamentoVisita } from '../entities/agendamento-visita.entity';
 import { StatusAgendamento, TipoVisita, PrioridadeVisita } from '../../../enums';
+import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
+import { PaginationHelper } from '../helpers/pagination.helper';
 
 /**
  * Interface para filtros de busca de agendamentos
  */
 export interface AgendamentoFilters {
+  pagamento_id?: string;
   beneficiario_id?: string;
   tecnico_id?: string;
   unidade_id?: string;
@@ -17,6 +20,16 @@ export interface AgendamentoFilters {
   data_inicio?: Date;
   data_fim?: Date;
   em_atraso?: boolean;
+}
+
+/**
+ * Interface para resultado de busca paginada
+ */
+export interface PaginatedAgendamentoResult {
+  items: AgendamentoVisita[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 /**
@@ -71,13 +84,31 @@ export class AgendamentoRepository {
   async findByIdWithRelations(id: string): Promise<AgendamentoVisita | null> {
     return this.repository
       .createQueryBuilder('agendamento')
-      .leftJoinAndSelect('agendamento.beneficiario', 'beneficiario')
-      .leftJoinAndSelect('agendamento.concessao', 'concessao')
-      .leftJoinAndSelect('concessao.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
-      .leftJoinAndSelect('agendamento.tecnico_responsavel', 'tecnico')
-      .leftJoinAndSelect('tecnico.role', 'role')
-      .leftJoinAndSelect('agendamento.unidade', 'unidade')
+      .leftJoinAndSelect('agendamento.pagamento', 'pagamento')
+      .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+      .leftJoin('solicitacao.beneficiario', 'beneficiario')
+      .addSelect([
+        'beneficiario.id',
+        'beneficiario.nome',
+        'beneficiario.cpf',
+      ])
+      .leftJoin('solicitacao.tecnico', 'tecnico')
+      .addSelect([
+        'tecnico.id',
+        'tecnico.nome',
+        'tecnico.email',
+      ])
+      .leftJoinAndSelect('solicitacao.unidade', 'unidade')
+      .addSelect([
+        'unidade.id',
+        'unidade.nome',
+      ])
+      .leftJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
+      .addSelect([
+        'tipo_beneficio.id',
+        'tipo_beneficio.nome',
+        'tipo_beneficio.codigo',
+      ])
       .leftJoinAndSelect('agendamento.visitas', 'visita')
       .where('agendamento.id = :id', { id })
       .getOne();
@@ -106,28 +137,52 @@ export class AgendamentoRepository {
   }
 
   /**
-   * Busca agendamentos com paginação
+   * Busca agendamentos com filtros e paginação
    * 
+   * @param filters Filtros de busca
+   * @param paginationParams Parâmetros de paginação
+   * @returns Lista paginada de agendamentos
+   */
+  async findWithPagination(
+    filters?: AgendamentoFilters,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedAgendamentoResult> {
+    // Aplica valores padrão e valida parâmetros
+    const params = PaginationHelper.applyDefaults(paginationParams || {});
+    PaginationHelper.validatePaginationParams(params);
+    
+    // Converte para parâmetros de repository
+    const { page, limit, offset } = PaginationHelper.convertToRepositoryParams(params);
+    
+    const queryBuilder = this.createBaseQueryBuilder();
+    this.applyFilters(queryBuilder, filters);
+    queryBuilder.where('agendamento.removed_at IS NULL');
+    
+    const [items, total] = await queryBuilder
+      .skip(offset)
+      .take(limit)
+      .getManyAndCount();
+
+    return { items, total, page, limit };
+  }
+  
+  /**
+   * Busca agendamentos com paginação (método legado)
+   * 
+   * @deprecated Use findWithPagination com PaginationParamsDto
    * @param filters Filtros de busca
    * @param page Página
    * @param limit Limite por página
    * @returns Lista paginada de agendamentos
    */
-  async findWithPagination(
+  async findWithPaginationLegacy(
     filters?: AgendamentoFilters,
     page: number = 1,
     limit: number = 10,
   ): Promise<{ agendamentos: AgendamentoVisita[]; total: number }> {
-    const queryBuilder = this.createBaseQueryBuilder();
-    this.applyFilters(queryBuilder, filters);
-    queryBuilder.where('agendamento.removed_at IS NULL');
-    
-    const [agendamentos, total] = await queryBuilder
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-
-    return { agendamentos, total };
+    const paginationParams = PaginationHelper.applyDefaults({ page, limit });
+    const result = await this.findWithPagination(filters, paginationParams);
+    return { agendamentos: result.items, total: result.total };
   }
 
   /**
@@ -153,21 +208,31 @@ export class AgendamentoRepository {
     dataInicio?: Date,
     dataFim?: Date,
   ): Promise<AgendamentoVisita[]> {
-    return this.findWithFilters({
-      tecnico_id: tecnicoId,
-      data_inicio: dataInicio,
-      data_fim: dataFim,
-    });
+    const queryBuilder = this.repository.createQueryBuilder('agendamento')
+      .leftJoinAndSelect('agendamento.pagamento', 'pagamento')
+      .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+      .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
+      .where('tecnico.id = :tecnicoId', { tecnicoId });
+
+    if (dataInicio) {
+      queryBuilder.andWhere('agendamento.data_agendamento >= :dataInicio', { dataInicio });
+    }
+
+    if (dataFim) {
+      queryBuilder.andWhere('agendamento.data_agendamento <= :dataFim', { dataFim });
+    }
+
+    return queryBuilder.getMany();
   }
 
   /**
-   * Busca agendamentos por beneficiário
+   * Busca agendamentos por pagamento
    * 
-   * @param beneficiarioId ID do beneficiário
-   * @returns Lista de agendamentos do beneficiário
+   * @param pagamentoId ID do pagamento
+   * @returns Lista de agendamentos do pagamento
    */
-  async findByBeneficiario(beneficiarioId: string): Promise<AgendamentoVisita[]> {
-    return this.findWithFilters({ beneficiario_id: beneficiarioId });
+  async findByPagamento(pagamentoId: string): Promise<AgendamentoVisita[]> {
+    return this.findWithFilters({ pagamento_id: pagamentoId });
   }
 
   /**
@@ -188,7 +253,10 @@ export class AgendamentoRepository {
 
     const queryBuilder = this.repository
       .createQueryBuilder('agendamento')
-      .where('agendamento.tecnico_id = :tecnico_id', {
+      .leftJoinAndSelect('agendamento.pagamento', 'pagamento')
+      .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+      .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
+      .where('tecnico.id = :tecnico_id', {
         tecnico_id: tecnicoId,
       })
       .andWhere('agendamento.status IN (:...status)', {
@@ -210,15 +278,15 @@ export class AgendamentoRepository {
   }
 
   /**
-   * Busca agendamento recente para um beneficiário
+   * Busca agendamento recente para um pagamento
    * 
-   * @param beneficiarioId ID do beneficiário
+   * @param pagamentoId ID do pagamento
    * @param dataReferencia Data de referência
    * @param diasTolerance Dias de tolerância (padrão: 7)
    * @returns Agendamento recente ou null
    */
-  async findRecentScheduleForBeneficiario(
-    beneficiarioId: string,
+  async findRecentScheduleForPagamento(
+    pagamentoId: string,
     dataReferencia: Date,
     diasTolerance: number = 7,
   ): Promise<AgendamentoVisita | null> {
@@ -227,7 +295,7 @@ export class AgendamentoRepository {
 
     return this.repository.findOne({
       where: {
-        beneficiario_id: beneficiarioId,
+        pagamento_id: pagamentoId,
         status: In([StatusAgendamento.AGENDADO, StatusAgendamento.CONFIRMADO]),
         data_agendamento: Between(inicioJanela, fimJanela),
       },
@@ -271,15 +339,32 @@ export class AgendamentoRepository {
   private createBaseQueryBuilder(): SelectQueryBuilder<AgendamentoVisita> {
     return this.repository
       .createQueryBuilder('agendamento')
-      .leftJoinAndSelect('agendamento.beneficiario', 'beneficiario')
-      .leftJoinAndSelect('agendamento.concessao', 'concessao')
-      .leftJoinAndSelect('concessao.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
-      .leftJoinAndSelect('agendamento.tecnico_responsavel', 'tecnico')
-      .leftJoinAndSelect('tecnico.role', 'role')
-      .leftJoinAndSelect('agendamento.unidade', 'unidade')
-      .leftJoinAndSelect('agendamento.visitas', 'visita')
-      .orderBy('agendamento.data_agendamento', 'ASC');
+      .leftJoinAndSelect('agendamento.pagamento', 'pagamento')
+      .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
+      .leftJoinAndSelect('solicitacao.unidade', 'unidade')
+      .leftJoinAndSelect('agendamento.criado_por', 'tecnico')
+  }
+
+  /**
+   * Cria um query builder público para consultas customizadas
+   * 
+   * @returns Query builder configurado
+   */
+  createQueryBuilder(): SelectQueryBuilder<AgendamentoVisita> {
+    return this.createBaseQueryBuilder();
+  }
+
+  /**
+   * Conta o total de agendamentos com filtros opcionais
+   * 
+   * @param filters Filtros opcionais
+   * @returns Número total de agendamentos
+   */
+  async count(filters?: AgendamentoFilters): Promise<number> {
+    const queryBuilder = this.createBaseQueryBuilder();
+    this.applyFilters(queryBuilder, filters);
+    return queryBuilder.getCount();
   }
 
   /**
@@ -295,22 +380,9 @@ export class AgendamentoRepository {
   ): void {
     if (!filters) return;
 
-    if (filters.beneficiario_id) {
-      queryBuilder.andWhere('agendamento.beneficiario_id = :beneficiario_id', {
-        beneficiario_id: filters.beneficiario_id,
-      });
-    }
-
-    if (filters.tecnico_id) {
-      queryBuilder.andWhere(
-        'agendamento.tecnico_id = :tecnico_id',
-        { tecnico_id: filters.tecnico_id },
-      );
-    }
-
-    if (filters.unidade_id) {
-      queryBuilder.andWhere('agendamento.unidade_id = :unidade_id', {
-        unidade_id: filters.unidade_id,
+    if (filters.pagamento_id) {
+      queryBuilder.andWhere('agendamento.pagamento_id = :pagamento_id', {
+        pagamento_id: filters.pagamento_id,
       });
     }
 

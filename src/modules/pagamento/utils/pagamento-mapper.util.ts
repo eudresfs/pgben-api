@@ -2,6 +2,7 @@ import { Pagamento } from '../../../entities/pagamento.entity';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { PagamentoResponseDto } from '../dtos/pagamento-response.dto';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
+import { number } from 'joi';
 
 /**
  * Utilitário para mapeamento de dados de pagamento
@@ -57,11 +58,13 @@ export class PagamentoMapper {
       total_parcelas: pagamento.total_parcelas || 1,
       data_liberacao: pagamento.data_liberacao,
       data_pagamento: pagamento.data_pagamento,
-      responsavel_liberacao: {
-        id: pagamento.liberado_por || 'sistema',
-        nome: 'Sistema',
-        role: 'Sistema',
-      },
+      responsavel_liberacao: pagamento.responsavel_liberacao
+        ? {
+            id: pagamento.responsavel_liberacao?.id,
+            nome: pagamento.responsavel_liberacao?.nome,
+            role: pagamento.responsavel_liberacao?.role?.toString(),
+          }
+        : null,
       quantidade_comprovantes: 0,
       created_at: pagamento.created_at,
       updated_at: pagamento.updated_at,
@@ -78,7 +81,11 @@ export class PagamentoMapper {
     if (pagamento.solicitacao) {
       dto.solicitacao = {
         id: pagamento.solicitacao.id,
-        beneficiario: pagamento.solicitacao.beneficiario?.nome || 'N/A',
+        beneficiario: {
+          id: pagamento.solicitacao.beneficiario?.id || '',
+          nome: pagamento.solicitacao.beneficiario?.nome || 'N/A',
+          cpf: pagamento.solicitacao.beneficiario?.cpf || 'N/A',
+        },
         tipo_beneficio: {
           id: pagamento.solicitacao.tipo_beneficio?.id || '',
           nome: pagamento.solicitacao.tipo_beneficio?.nome || 'N/A',
@@ -152,12 +159,12 @@ export class PagamentoMapper {
       page: number;
       itemsPerPage: number;
       totalItems: number;
-      totalPages: number;
-      hasNextPage: boolean;
-      hasPreviousPage: boolean;
+      pages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
     };
   } {
-    const totalPages = Math.ceil(total / limit);
+    const pages = Math.ceil(total / limit);
 
     return {
       data: items,
@@ -165,9 +172,9 @@ export class PagamentoMapper {
         page: page,
         itemsPerPage: limit,
         totalItems: total,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1,
+        pages,
+        hasNext: page < pages,
+        hasPrev: page > 1,
       },
     };
   }

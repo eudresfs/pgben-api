@@ -18,8 +18,10 @@ import { Usuario } from '../../../entities';
 import { ConfirmacaoService } from '../services/confirmacao.service';
 import { ConfirmacaoRecebimentoDto } from '../dtos/confirmacao-recebimento.dto';
 import { DataMaskingResponseInterceptor } from '../interceptors/data-masking-response.interceptor';
+import { AuditoriaInterceptor } from '../interceptors/auditoria.interceptor';
 import { ConfirmacaoResponseDto } from '../dtos/confirmacao-response.dto';
 import { PagamentoUnifiedMapper as ConfirmacaoMapper } from '../mappers';
+import { AuditoriaPagamento } from '../decorators/auditoria.decorator';
 
 /**
  * Controller para gerenciamento de confirmações de recebimento
@@ -28,7 +30,7 @@ import { PagamentoUnifiedMapper as ConfirmacaoMapper } from '../mappers';
 @ApiTags('Pagamentos - Confirmações')
 @Controller('pagamentos/:pagamentoId/confirmacao')
 @UseGuards(JwtAuthGuard, PermissionGuard)
-@UseInterceptors(DataMaskingResponseInterceptor)
+@UseInterceptors(DataMaskingResponseInterceptor, AuditoriaInterceptor)
 export class ConfirmacaoController {
   constructor(private readonly confirmacaoService: ConfirmacaoService) {}
 
@@ -36,6 +38,7 @@ export class ConfirmacaoController {
    * Lista confirmações de um pagamento
    */
   @Get()
+  @AuditoriaPagamento.Consulta('Consulta de confirmações de pagamento')
   @ApiOperation({
     summary: 'Lista confirmações de recebimento de um pagamento',
     description:
@@ -91,6 +94,7 @@ export class ConfirmacaoController {
    * Obtém detalhes de uma confirmação específica
    */
   @Get(':id')
+  @AuditoriaPagamento.Consulta('Consulta de confirmação específica')
   @ApiOperation({
     summary: 'Obtém detalhes de uma confirmação específica',
     description:
@@ -142,6 +146,7 @@ export class ConfirmacaoController {
    * Registra nova confirmação de recebimento
    */
   @Post()
+  @AuditoriaPagamento.Criacao('Registro de confirmação de recebimento')
   @ApiOperation({
     summary: 'Registra confirmação de recebimento',
     description:

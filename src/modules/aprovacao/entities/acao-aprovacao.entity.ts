@@ -8,8 +8,8 @@ import {
 } from 'typeorm';
 import { TipoAcaoCritica, EstrategiaAprovacao } from '../enums';
 import { SolicitacaoAprovacao } from './solicitacao-aprovacao.entity';
-
 import { ConfiguracaoAprovador } from './configuracao-aprovador.entity';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * Entidade que combina configuração de ação crítica e suas regras de aprovação
@@ -81,11 +81,12 @@ export class AcaoAprovacao {
   permissao_aprovacao?: string;
 
   @Column({
-    type: 'boolean',
-    default: true,
-    comment: 'Indica se a configuração está ativa'
+    type: 'enum',
+    enum: Status,
+    default: Status.ATIVO,
+    comment: 'Status da configuração de aprovação'
   })
-  ativo: boolean;
+  status: Status;
 
   @CreateDateColumn({
     type: 'timestamp',

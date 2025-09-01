@@ -8,6 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
   Index,
+  OneToOne,
 } from 'typeorm';
 import {
   IsNotEmpty,
@@ -15,6 +16,11 @@ import {
   IsEnum,
   IsOptional,
   IsArray,
+  IsString,
+  IsNumber,
+  Min,
+  Max,
+  Matches,
 } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
 import { PublicoPrioritarioAluguel, EspecificacaoAluguel } from '../enums';
@@ -35,7 +41,7 @@ export class DadosAluguelSocial {
   @IsNotEmpty({ message: 'ID da solicitação é obrigatório' })
   solicitacao_id: string;
 
-  @ManyToOne(() => Solicitacao, { onDelete: 'CASCADE' })
+  @OneToOne(() => Solicitacao, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'solicitacao_id' })
   solicitacao: Solicitacao;
 
@@ -74,6 +80,37 @@ export class DadosAluguelSocial {
   @Column('text', { nullable: true })
   @IsOptional()
   observacoes?: string;
+
+  @Column('varchar', { length: 20, nullable: true })
+  @IsOptional()
+  @IsString({ message: 'Valor do aluguel pretendido deve ser uma string' })
+  valor_aluguel_pretendido?: string;
+
+  @Column('text', { nullable: true })
+  @IsOptional()
+  @IsString({ message: 'Endereço do imóvel pretendido deve ser uma string' })
+  endereco_imovel_pretendido?: string;
+
+  @Column('varchar', { length: 255, nullable: true })
+  @IsOptional()
+  @IsString({ message: 'Nome do locador deve ser uma string' })
+  nome_locador?: string;
+
+  @Column('varchar', { length: 14, nullable: true })
+  @IsOptional()
+  @IsString({ message: 'CPF do locador deve ser uma string' })
+  @Matches(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, {
+    message: 'CPF do locador deve estar no formato XXX.XXX.XXX-XX',
+  })
+  cpf_locador?: string;
+
+  @Column('varchar', { length: 15, nullable: true })
+  @IsOptional()
+  @IsString({ message: 'Telefone do locador deve ser uma string' })
+  @Matches(/^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/, {
+    message: 'Telefone do locador deve estar em formato válido',
+  })
+  telefone_locador?: string;
 
   @CreateDateColumn()
   created_at: Date;

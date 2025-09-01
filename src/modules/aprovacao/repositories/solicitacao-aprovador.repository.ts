@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
 import { SolicitacaoAprovador } from '../entities/solicitacao-aprovador.entity';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * Repositório para gerenciar aprovadores de solicitações específicas
@@ -15,15 +16,29 @@ export class SolicitacaoAprovadorRepository extends Repository<SolicitacaoAprova
    * Busca aprovadores de uma solicitação específica
    */
   async buscarPorSolicitacao(solicitacaoId: string): Promise<SolicitacaoAprovador[]> {
-    return this.find({
-      where: {
-        solicitacao_aprovacao_id: solicitacaoId,
-        ativo: true
-      },
-      order: {
-        ordem_aprovacao: 'ASC'
-      }
-    });
+    return this.createQueryBuilder('aprovador')
+      .select([
+        'aprovador.id',
+        'aprovador.usuario_id',
+        'aprovador.aprovado',
+        'aprovador.justificativa_decisao',
+        'aprovador.anexos_decisao',
+        'aprovador.decidido_em',
+        'aprovador.ordem_aprovacao',
+        'aprovador.ativo',
+        'aprovador.observacoes',
+        'aprovador.created_at',
+        'aprovador.updated_at',
+        'aprovador.solicitacao_aprovacao_id'
+      ])
+      .leftJoin('aprovador.usuario', 'usuario')
+      .addSelect(['usuario.id', 'usuario.nome'])
+      .leftJoin('usuario.unidade', 'unidade')
+      .addSelect(['unidade.id', 'unidade.nome'])
+      .where('aprovador.solicitacao_aprovacao_id = :solicitacaoId', { solicitacaoId })
+      .andWhere('aprovador.ativo = true')
+      .orderBy('aprovador.ordem_aprovacao', 'ASC')
+      .getMany();
   }
 
   /**
@@ -33,13 +48,29 @@ export class SolicitacaoAprovadorRepository extends Repository<SolicitacaoAprova
     usuarioId: string, 
     solicitacaoId: string
   ): Promise<SolicitacaoAprovador | null> {
-    return this.findOne({
-      where: {
-        usuario_id: usuarioId,
-        solicitacao_aprovacao_id: solicitacaoId,
-        ativo: true
-      }
-    });
+    return this.createQueryBuilder('aprovador')
+      .select([
+        'aprovador.id',
+        'aprovador.usuario_id',
+        'aprovador.aprovado',
+        'aprovador.justificativa_decisao',
+        'aprovador.anexos_decisao',
+        'aprovador.decidido_em',
+        'aprovador.ordem_aprovacao',
+        'aprovador.ativo',
+        'aprovador.observacoes',
+        'aprovador.created_at',
+        'aprovador.updated_at',
+        'aprovador.solicitacao_aprovacao_id'
+      ])
+      .leftJoin('aprovador.usuario', 'usuario')
+      .addSelect(['usuario.id', 'usuario.nome'])
+      .leftJoin('usuario.unidade', 'unidade')
+      .addSelect(['unidade.id', 'unidade.nome'])
+      .where('aprovador.usuario_id = :usuarioId', { usuarioId })
+      .andWhere('aprovador.solicitacao_aprovacao_id = :solicitacaoId', { solicitacaoId })
+      .andWhere('aprovador.ativo = true')
+      .getOne();
   }
 
   /**
@@ -47,6 +78,24 @@ export class SolicitacaoAprovadorRepository extends Repository<SolicitacaoAprova
    */
   async buscarAprovadoresQueDecidiram(solicitacaoId: string): Promise<SolicitacaoAprovador[]> {
     return this.createQueryBuilder('aprovador')
+      .select([
+        'aprovador.id',
+        'aprovador.usuario_id',
+        'aprovador.aprovado',
+        'aprovador.justificativa_decisao',
+        'aprovador.anexos_decisao',
+        'aprovador.decidido_em',
+        'aprovador.ordem_aprovacao',
+        'aprovador.ativo',
+        'aprovador.observacoes',
+        'aprovador.created_at',
+        'aprovador.updated_at',
+        'aprovador.solicitacao_aprovacao_id'
+      ])
+      .leftJoin('aprovador.usuario', 'usuario')
+      .addSelect(['usuario.id', 'usuario.nome'])
+      .leftJoin('usuario.unidade', 'unidade')
+      .addSelect(['unidade.id', 'unidade.nome'])
       .where('aprovador.solicitacao_aprovacao_id = :solicitacaoId', { solicitacaoId })
       .andWhere('aprovador.ativo = true')
       .andWhere('aprovador.aprovado IS NOT NULL')
@@ -59,6 +108,24 @@ export class SolicitacaoAprovadorRepository extends Repository<SolicitacaoAprova
    */
   async buscarAprovadoresPendentes(solicitacaoId: string): Promise<SolicitacaoAprovador[]> {
     return this.createQueryBuilder('aprovador')
+      .select([
+        'aprovador.id',
+        'aprovador.usuario_id',
+        'aprovador.aprovado',
+        'aprovador.justificativa_decisao',
+        'aprovador.anexos_decisao',
+        'aprovador.decidido_em',
+        'aprovador.ordem_aprovacao',
+        'aprovador.ativo',
+        'aprovador.observacoes',
+        'aprovador.created_at',
+        'aprovador.updated_at',
+        'aprovador.solicitacao_aprovacao_id'
+      ])
+      .leftJoin('aprovador.usuario', 'usuario')
+      .addSelect(['usuario.id', 'usuario.nome'])
+      .leftJoin('usuario.unidade', 'unidade')
+      .addSelect(['unidade.id', 'unidade.nome'])
       .where('aprovador.solicitacao_aprovacao_id = :solicitacaoId', { solicitacaoId })
       .andWhere('aprovador.ativo = true')
       .andWhere('aprovador.aprovado IS NULL')
@@ -74,7 +141,7 @@ export class SolicitacaoAprovadorRepository extends Repository<SolicitacaoAprova
       where: {
         solicitacao_aprovacao_id: solicitacaoId,
         aprovado: true,
-        ativo: true
+        status: Status.ATIVO
       }
     });
   }
@@ -87,7 +154,7 @@ export class SolicitacaoAprovadorRepository extends Repository<SolicitacaoAprova
       where: {
         solicitacao_aprovacao_id: solicitacaoId,
         aprovado: false,
-        ativo: true
+        status: Status.ATIVO
       }
     });
   }
@@ -104,17 +171,43 @@ export class SolicitacaoAprovadorRepository extends Repository<SolicitacaoAprova
    * Busca solicitações pendentes de aprovação para um usuário
    */
   async buscarSolicitacoesPendentesParaUsuario(usuarioId: string): Promise<SolicitacaoAprovador[]> {
-    return this.find({
-      where: {
-        usuario_id: usuarioId,
-        aprovado: null,
-        ativo: true
-      },
-      relations: ['solicitacao_aprovacao'],
-      order: {
-        created_at: 'ASC'
-      }
-    });
+    return this.createQueryBuilder('aprovador')
+      .select([
+        'aprovador.id',
+        'aprovador.usuario_id',
+        'aprovador.aprovado',
+        'aprovador.justificativa_decisao',
+        'aprovador.anexos_decisao',
+        'aprovador.decidido_em',
+        'aprovador.ordem_aprovacao',
+        'aprovador.ativo',
+        'aprovador.observacoes',
+        'aprovador.created_at',
+        'aprovador.updated_at',
+        'aprovador.solicitacao_aprovacao_id'
+      ])
+      .leftJoin('aprovador.solicitacao_aprovacao', 'solicitacao')
+      .addSelect([
+        'solicitacao.id',
+        'solicitacao.codigo',
+        'solicitacao.status',
+        'solicitacao.justificativa',
+        'solicitacao.dados_acao',
+        'solicitacao.created_at'
+      ])
+      .leftJoin('solicitacao.solicitante', 'solicitante')
+      .addSelect(['solicitante.id', 'solicitante.nome'])
+      .leftJoin('solicitante.unidade', 'unidade_solicitante')
+      .addSelect(['unidade_solicitante.id', 'unidade_solicitante.nome'])
+      .leftJoin('aprovador.usuario', 'usuario')
+      .addSelect(['usuario.id', 'usuario.nome'])
+      .leftJoin('usuario.unidade', 'unidade_aprovador')
+      .addSelect(['unidade_aprovador.id', 'unidade_aprovador.nome'])
+      .where('aprovador.usuario_id = :usuarioId', { usuarioId })
+      .andWhere('aprovador.aprovado IS NULL')
+      .andWhere('aprovador.ativo = true')
+      .orderBy('aprovador.created_at', 'ASC')
+      .getMany();
   }
 
   /**
@@ -130,7 +223,7 @@ export class SolicitacaoAprovadorRepository extends Repository<SolicitacaoAprova
         solicitacao_aprovacao_id: solicitacaoId
       },
       {
-        ativo: false
+        status: Status.INATIVO
       }
     );
   }
@@ -142,7 +235,7 @@ export class SolicitacaoAprovadorRepository extends Repository<SolicitacaoAprova
     return this.count({
       where: {
         solicitacao_aprovacao_id: solicitacaoId,
-        ativo: true
+        status: Status.ATIVO
       }
     });
   }
@@ -158,7 +251,7 @@ export class SolicitacaoAprovadorRepository extends Repository<SolicitacaoAprova
       where: {
         usuario_id: usuarioId,
         solicitacao_aprovacao_id: solicitacaoId,
-        ativo: true
+        status: Status.ATIVO
       }
     });
     return count > 0;

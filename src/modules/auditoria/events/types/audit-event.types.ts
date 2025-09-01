@@ -49,6 +49,11 @@ export enum AuditEventType {
   EXPORT_COMPLETED = 'export.completed',
   EXPORT_FAILED = 'export.failed',
 
+  // Eventos de Operação (Global Audit)
+  OPERATION_START = 'operation.start',
+  OPERATION_SUCCESS = 'operation.success',
+  OPERATION_ERROR = 'operation.error',
+
   // Eventos de Integração
   INTEGRATION_SUCCESS = 'integration.success',
   INTEGRATION_FAILED = 'integration.failed',
@@ -69,11 +74,12 @@ export enum RiskLevel {
  * Interface base para todos os eventos de auditoria
  */
 export interface BaseAuditEvent {
-  /** Tipo do evento */
+  /** ID único do evento */
+  eventId: string;
   eventType: AuditEventType;
 
   /** Nome da entidade afetada */
-  entityName: string;
+  entityName?: string;
 
   /** ID da entidade afetada (opcional) */
   entityId?: string;
@@ -84,13 +90,13 @@ export interface BaseAuditEvent {
   /** Timestamp do evento */
   timestamp: Date;
 
-  /** Nível de risco do evento */
+  /** Nível de risco da operação */
   riskLevel?: RiskLevel;
 
   /** Se o evento é relevante para LGPD */
   lgpdRelevant?: boolean;
 
-  /** Metadados adicionais específicos do evento */
+  /** Metadados adicionais */
   metadata?: Record<string, any>;
 
   /** Contexto da requisição */
@@ -101,6 +107,18 @@ export interface BaseAuditEvent {
     endpoint?: string;
     method?: string;
   };
+
+  /** IP do cliente */
+  ip?: string;
+
+  /** User Agent */
+  userAgent?: string;
+
+  /** ID de correlação para rastreamento */
+  correlationId?: string;
+
+  /** Operação realizada */
+  operation?: string;
 }
 
 /**
@@ -184,13 +202,58 @@ export interface SensitiveDataAuditEvent extends BaseAuditEvent {
 }
 
 /**
- * Union type para todos os tipos de eventos
+ * Interface para eventos de operação (Global Interceptor)
+ */
+export interface OperationAuditEvent extends BaseAuditEvent {
+  eventType:
+    | AuditEventType.OPERATION_START
+    | AuditEventType.OPERATION_SUCCESS
+    | AuditEventType.OPERATION_ERROR;
+
+  /** Controlador que processou a requisição */
+  controller?: string;
+
+  /** Método que processou a requisição */
+  method?: string;
+
+  /** URL da requisição */
+  url?: string;
+
+  /** Método HTTP */
+  httpMethod?: string;
+
+  /** Duração da operação em ms */
+  duration?: number;
+
+  /** Parâmetros da requisição */
+  params?: Record<string, any>;
+
+  /** Query parameters */
+  query?: Record<string, any>;
+
+  /** Corpo da requisição (sanitizado) */
+  body?: any;
+
+  /** Resposta (sanitizada) */
+  response?: any;
+
+  /** Erro (se houver) */
+  error?: {
+    message: string;
+    status: number;
+    stack?: string;
+  };
+}
+
+/**
+ * Union type para todos os eventos de auditoria
  */
 export type AuditEvent =
   | EntityAuditEvent
   | SecurityAuditEvent
   | SystemAuditEvent
   | SensitiveDataAuditEvent
+  | OperationAuditEvent
   | BaseAuditEvent;
 
 /**

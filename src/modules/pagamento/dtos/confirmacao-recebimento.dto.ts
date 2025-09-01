@@ -21,28 +21,32 @@ import { MetodoConfirmacaoEnum } from '../../../enums/metodo-confirmacao.enum';
 export class ConfirmacaoRecebimentoDto {
   /**
    * Data em que a confirmação foi registrada
+   * Se não fornecida, será utilizada a data atual
    */
   @ApiProperty({
-    description: 'Data da confirmação de recebimento',
+    description: 'Data da confirmação de recebimento (opcional, padrão: data atual)',
     example: '2025-05-18T14:30:00.000Z',
     type: Date,
+    required: false,
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsDate()
   @Type(() => Date)
-  dataConfirmacao: Date;
+  data_confirmacao?: Date;
 
   /**
    * Método utilizado para confirmar o recebimento
+   * Se não fornecido, será utilizado 'assinatura' como padrão
    */
   @ApiProperty({
-    description: 'Método de confirmação utilizado',
+    description: 'Método de confirmação utilizado (opcional, padrão: assinatura)',
     enum: MetodoConfirmacaoEnum,
     example: MetodoConfirmacaoEnum.ASSINATURA,
+    required: false,
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsEnum(MetodoConfirmacaoEnum)
-  metodoConfirmacao: MetodoConfirmacaoEnum;
+  metodo_confirmacao?: MetodoConfirmacaoEnum;
 
   /**
    * Referência ao cidadão que recebeu o benefício, se diferente do beneficiário original
@@ -55,7 +59,7 @@ export class ConfirmacaoRecebimentoDto {
   })
   @IsOptional()
   @IsUUID('4')
-  destinatarioId?: string;
+  destinatario_id?: string;
 
   /**
    * Observações adicionais sobre a confirmação

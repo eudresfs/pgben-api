@@ -22,28 +22,12 @@ import {
  */
 export class CriarAgendamentoDto {
   @ApiProperty({
-    description: 'ID do beneficiário',
-    example: 'uuid-beneficiario',
+    description: 'ID do pagamento',
+    example: 'uuid-pagamento',
   })
   @IsUUID()
   @IsNotEmpty()
-  beneficiario_id: string;
-
-  @ApiProperty({
-    description: 'ID do técnico responsável',
-    example: 'uuid-tecnico',
-  })
-  @IsUUID()
-  @IsNotEmpty()
-  tecnico_id: string;
-
-  @ApiProperty({
-    description: 'ID da unidade',
-    example: 'uuid-unidade',
-  })
-  @IsUUID()
-  @IsNotEmpty()
-  unidade_id: string;
+  pagamento_id: string;
 
   @ApiProperty({
     description: 'Data e hora do agendamento',
@@ -139,40 +123,41 @@ export class AgendamentoResponseDto {
   id: string;
 
   @ApiProperty({
-    description: 'ID do beneficiário',
-    example: 'uuid-beneficiario',
+    description: 'ID do pagamento',
+    example: 'uuid-pagamento',
   })
-  beneficiario_id: string;
+  pagamento_id: string;
 
   @ApiProperty({
-    description: 'Nome do beneficiário',
-    example: 'João Silva',
+    description: 'Dados do pagamento',
+    example: {
+      valor: 500.00,
+      parcela: 1,
+      total_parcelas: 12,
+      data: '2025-01-15'
+    },
   })
-  beneficiario_nome: string;
+  pagamento: {
+    id: string;
+    valor: number;
+    parcela: number;
+    total_parcelas: number;
+    data: Date;
+  };
 
   @ApiProperty({
-    description: 'ID do técnico responsável',
-    example: 'uuid-tecnico',
+    description: 'Dados do beneficiário',
+    example: {
+      id: 'uuid-beneficiario',
+      nome: 'João Silva',
+      cpf: '123.456.789-00'
+    },
   })
-  tecnico_id: string;
-
-  @ApiProperty({
-    description: 'Nome do técnico responsável',
-    example: 'Maria Santos',
-  })
-  tecnico_nome: string;
-
-  @ApiProperty({
-    description: 'ID da unidade',
-    example: 'uuid-unidade',
-  })
-  unidade_id: string;
-
-  @ApiProperty({
-    description: 'Nome da unidade',
-    example: 'CRAS Centro',
-  })
-  unidade_nome: string;
+  beneficiario: {
+    id: string;
+    nome: string;
+    cpf: string;
+  };
 
   @ApiProperty({
     description: 'Data e hora do agendamento',
@@ -225,28 +210,12 @@ export class AgendamentoResponseDto {
  */
 export class FiltrosAgendamentoDto extends PaginationParamsDto {
   @ApiPropertyOptional({
-    description: 'ID do beneficiário',
-    example: 'uuid-beneficiario',
+    description: 'ID do pagamento',
+    example: 'uuid-pagamento',
   })
   @IsUUID()
   @IsOptional()
-  beneficiario_id?: string;
-
-  @ApiPropertyOptional({
-    description: 'ID do técnico responsável',
-    example: 'uuid-tecnico',
-  })
-  @IsUUID()
-  @IsOptional()
-  tecnico_id?: string;
-
-  @ApiPropertyOptional({
-    description: 'ID da unidade',
-    example: 'uuid-unidade',
-  })
-  @IsUUID()
-  @IsOptional()
-  unidade_id?: string;
+  pagamento_id?: string;
 
   @ApiPropertyOptional({
     description: 'Data de início do período',

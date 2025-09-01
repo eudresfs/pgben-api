@@ -204,21 +204,21 @@ export class DadosCestaBasicaService extends AbstractDadosBeneficioService<
       } else if (data.quantidade_cestas_solicitadas > rules.MAX_CESTAS) {
         errorBuilder.add(
           'quantidade_cestas_solicitadas',
-          `Quantidade de cestas não pode exceder ${rules.MAX_CESTAS}. Validação de limite falhou.`,
+          BENEFICIO_TECH_MESSAGES.CESTA_BASICA.QUANTIDADE_CESTAS_MAX,
         );
       }
 
       if (!data.quantidade_parcelas || data.quantidade_parcelas <= 0) {
         errorBuilder.add(
           'quantidade_parcelas',
-          'Campo quantidade_parcelas é obrigatório. Validação de campo obrigatório falhou.',
+          BENEFICIO_TECH_MESSAGES.CESTA_BASICA.QUANTIDADE_PARCELAS_REQUIRED,
         );
       }
 
       if (!data.origem_atendimento?.trim()) {
         errorBuilder.add(
           'origem_atendimento',
-          'Campo origem_atendimento é obrigatório. Validação de campo obrigatório falhou.',
+          BENEFICIO_TECH_MESSAGES.CESTA_BASICA.ORIGEM_ATENDIMENTO_REQUIRED,
         );
       }
 
@@ -230,7 +230,7 @@ export class DadosCestaBasicaService extends AbstractDadosBeneficioService<
       } else if (data.numero_pessoas_familia > rules.MAX_PESSOAS_FAMILIA) {
         errorBuilder.add(
           'numero_pessoas_familia',
-          `Número de pessoas na família não pode exceder ${rules.MAX_PESSOAS_FAMILIA}. Validação de limite falhou.`,
+          BENEFICIO_TECH_MESSAGES.CESTA_BASICA.NUMERO_PESSOAS_MAX,
         );
       }
 

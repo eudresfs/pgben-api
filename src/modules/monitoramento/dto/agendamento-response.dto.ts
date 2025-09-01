@@ -26,6 +26,13 @@ export class AgendamentoResponseDto {
   })
   id: string;
 
+  @ApiProperty({
+    description: 'Identificador único do pagamento',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    format: 'uuid',
+  })
+  pagamento_id: string;
+
   /**
    * Dados básicos do beneficiário
    */
@@ -73,7 +80,7 @@ export class AgendamentoResponseDto {
       data_fim: '2025-06-30T23:59:59.999Z',
     },
   })
-  concessao: {
+  concessao?: {
     id: string;
     numero_protocolo: string;
     tipo_beneficio: string;
@@ -100,11 +107,11 @@ export class AgendamentoResponseDto {
       cargo: 'Assistente Social',
     },
   })
-  tecnico_responsavel: {
+  tecnico: {
     id: string;
     nome: string;
     matricula: string;
-    cargo: string;
+    email: string;
   };
 
   /**
@@ -129,8 +136,6 @@ export class AgendamentoResponseDto {
   unidade: {
     id: string;
     nome: string;
-    codigo: string;
-    endereco: string;
   };
 
   /**
@@ -150,7 +155,7 @@ export class AgendamentoResponseDto {
   @ApiProperty({
     description: 'Tipo da visita que foi agendada',
     enum: TipoVisita,
-    example: TipoVisita.ACOMPANHAMENTO,
+    example: TipoVisita.CONTINUIDADE,
     enumName: 'TipoVisita',
   })
   tipo_visita: TipoVisita;
@@ -285,7 +290,7 @@ export class AgendamentoResponseDto {
     type: 'string',
     format: 'date-time',
   })
-  prazo_limite?: string;
+  prazo_limite?: Date;
 
   /**
    * Dados da visita realizada (se houver)
@@ -325,7 +330,7 @@ export class AgendamentoResponseDto {
     type: 'string',
     format: 'date-time',
   })
-  created_at: string;
+  created_at: Date;
 
   /**
    * Data da última atualização
@@ -336,7 +341,7 @@ export class AgendamentoResponseDto {
     type: 'string',
     format: 'date-time',
   })
-  updated_at: string;
+  updated_at: Date;
 
   /**
    * Dados complementares

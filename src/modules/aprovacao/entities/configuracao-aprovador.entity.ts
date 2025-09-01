@@ -9,6 +9,7 @@ import {
   Index
 } from 'typeorm';
 import { AcaoAprovacao } from './acao-aprovacao.entity';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * Entidade para configuração de aprovadores
@@ -34,11 +35,12 @@ export class ConfiguracaoAprovador {
   ordem_aprovacao: number;
 
   @Column({
-    type: 'boolean',
-    default: true,
-    comment: 'Indica se o aprovador está ativo na configuração'
+    type: 'enum',
+    enum: Status,
+    default: Status.ATIVO,
+    comment: 'Status do aprovador na configuração'
   })
-  ativo: boolean;
+  status: Status;
 
   @Column({
     type: 'text',
@@ -74,20 +76,20 @@ export class ConfiguracaoAprovador {
    * Verifica se a configuração está ativa
    */
   estaAtivo(): boolean {
-    return this.ativo;
+    return this.status === Status.ATIVO;
   }
 
   /**
    * Ativa a configuração do aprovador
    */
   ativar(): void {
-    this.ativo = true;
+    this.status = Status.ATIVO;
   }
 
   /**
    * Desativa a configuração do aprovador
    */
   desativar(): void {
-    this.ativo = false;
+    this.status = Status.INATIVO;
   }
 }

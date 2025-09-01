@@ -104,6 +104,7 @@ describe('ComprovanteService - Geração de PDF', () => {
         }],
       } as Cidadao,
       tipo_beneficio: {
+        codigo: 'cesta-basica',
         nome: 'Cesta Básica',
         descricao: 'Benefício de segurança alimentar',
       } as TipoBeneficio,
@@ -167,7 +168,6 @@ describe('ComprovanteService - Geração de PDF', () => {
 
   describe('gerarComprovantePdf', () => {
     const gerarComprovanteDto: GerarComprovanteDto = {
-      tipo: TipoComprovante.CESTA_BASICA,
       formato: 'pdf',
     };
 
@@ -190,7 +190,6 @@ describe('ComprovanteService - Geração de PDF', () => {
     it('deve gerar comprovante em base64 quando solicitado', async () => {
       // Arrange
       const dtoBase64: GerarComprovanteDto = {
-        tipo: TipoComprovante.CESTA_BASICA,
         formato: 'base64',
       };
 
@@ -206,8 +205,25 @@ describe('ComprovanteService - Geração de PDF', () => {
 
     it('deve gerar comprovante de aluguel social', async () => {
       // Arrange
+      const mockPagamentoAluguel = {
+        ...mockPagamento,
+        solicitacao: {
+          ...mockPagamento.solicitacao,
+          tipo_beneficio: {
+            codigo: 'aluguel-social',
+            nome: 'Aluguel Social',
+            descricao: 'Benefício de aluguel social',
+          },
+        },
+      };
+      
+      mockPagamentoRepository.createScopedQueryBuilder.mockReturnValue({
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(mockPagamentoAluguel),
+      });
+      
       const dtoAluguel: GerarComprovanteDto = {
-        tipo: TipoComprovante.ALUGUEL_SOCIAL,
         formato: 'pdf',
       };
 
@@ -253,9 +269,7 @@ describe('ComprovanteService - Geração de PDF', () => {
 
     it('deve usar formato padrão PDF quando não especificado', async () => {
       // Arrange
-      const dtoSemFormato: GerarComprovanteDto = {
-        tipo: TipoComprovante.CESTA_BASICA,
-      };
+      const dtoSemFormato: GerarComprovanteDto = {};
 
       // Act
       const resultado = await service.gerarComprovantePdf(

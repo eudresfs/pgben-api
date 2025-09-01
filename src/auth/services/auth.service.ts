@@ -177,8 +177,8 @@ export class AuthService {
         // Incrementar contador de tentativas de login
         await this.usuarioService.incrementLoginAttempts(usuario.id);
 
-        // Buscar usuário atualizado para obter o contador atual
-        const usuarioAtualizado = await this.usuarioService.findById(
+        // Buscar usuário atualizado para obter o contador atual (sem escopo para autenticação)
+        const usuarioAtualizado = await this.usuarioService.findByIdForNotification(
           usuario.id,
         );
         const consecutiveFailures = usuarioAtualizado?.tentativas_login || 1;
@@ -268,8 +268,8 @@ export class AuthService {
     // Obter o token de autenticação
     const tokens = this.getAuthToken(ctx, ctx.user!);
 
-    // Criar e salvar o refresh token
-    const usuario = await this.usuarioService.findById(ctx.user!.id as string);
+    // Criar e salvar o refresh token (sem escopo para operações de autenticação)
+    const usuario = await this.usuarioService.findByIdForNotification(ctx.user!.id as string);
     if (!usuario) {
       throw new UnauthorizedException('Usuário não encontrado');
     }
@@ -346,8 +346,8 @@ export class AuthService {
     //   ipAddress,
     // );
 
-    // Obter o usuário
-    const usuario = await this.usuarioService.findById(refreshToken.usuario.id);
+    // Obter o usuário (sem escopo para operações de autenticação)
+    const usuario = await this.usuarioService.findByIdForNotification(refreshToken.usuario.id);
     if (!usuario) {
       throw new UnauthorizedException('Usuário não encontrado');
     }

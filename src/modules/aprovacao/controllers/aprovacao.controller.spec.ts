@@ -5,6 +5,7 @@ import { AprovacaoController } from './aprovacao.controller';
 import { AprovacaoService } from '../services';
 import { CriarSolicitacaoDto, ProcessarAprovacaoDto } from '../dtos';
 import { TipoAcaoCritica, StatusSolicitacao, EstrategiaAprovacao } from '../enums';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * Mock do AprovacaoService
@@ -37,6 +38,36 @@ const mockSolicitacao = {
   codigo: 'SOL-2024-001',
   status: StatusSolicitacao.PENDENTE,
   solicitante_id: '123e4567-e89b-12d3-a456-426614174000',
+  solicitante: {
+    id: '123e4567-e89b-12d3-a456-426614174000',
+    nome: 'Usuário Teste',
+    email: 'test@example.com',
+    senhaHash: 'hash123',
+    cpf: '12345678901',
+    telefone: '84999999999',
+    matricula: 'MAT001',
+    role_id: 'role-123',
+    role: null,
+    unidade_id: 'unidade-123',
+    unidade: null,
+    setor_id: 'setor-123',
+    setor: null,
+    status: Status.ATIVO,
+    primeiro_acesso: false,
+    tentativas_login: 0,
+    ultimo_login: null,
+    refreshTokens: [],
+    created_at: new Date(),
+    updated_at: new Date(),
+    removed_at: null,
+    isAtivo: jest.fn().mockReturnValue(true),
+    ativar: jest.fn(),
+    desativar: jest.fn(),
+    isPrimeiroAcesso: jest.fn().mockReturnValue(false),
+    marcarPrimeiroAcessoRealizado: jest.fn(),
+    getNomeFormatado: jest.fn().mockReturnValue('Usuário Teste'),
+    podeSerDeletado: jest.fn().mockReturnValue(true)
+  },
   justificativa: 'Teste de aprovação',
   dados_acao: { teste: 'dados' },
   metodo_execucao: 'POST /api/test',
@@ -51,7 +82,7 @@ const mockSolicitacao = {
       descricao: 'Ação para exclusão de registros',
       estrategia: EstrategiaAprovacao.SIMPLES,
       min_aprovadores: 1,
-      ativo: true,
+      status: Status.ATIVO,
       created_at: new Date(),
       updated_at: new Date(),
       solicitacoes: [],
@@ -151,9 +182,17 @@ describe('AprovacaoController', () => {
 
   describe('listarSolicitacoes', () => {
     it('should list approval requests', async () => {
+      const mockSolicitacaoResponse = {
+        ...mockSolicitacao,
+        acao: mockSolicitacao.acao_aprovacao,
+        aprovadores: []
+      };
+      
       const mockResult = {
-        solicitacoes: [mockSolicitacao],
-        total: 1
+        solicitacoes: [mockSolicitacaoResponse],
+        total: 1,
+        pagina: 1,
+        limite: 10
       };
 
       service.listarSolicitacoes.mockResolvedValue(mockResult);
@@ -179,7 +218,7 @@ describe('AprovacaoController', () => {
           total: 1,
           page: 1,
           limit: 10,
-          totalPages: 1
+          pages: 1
         }
       });
     });

@@ -77,10 +77,14 @@ export class RequestContextHolder {
    * Limpa o contexto atual
    *
    * @description
-   * Útil para testes ou situações onde é necessário limpar o estado
+   * Útil para testes ou situações onde é necessário limpar o estado.
+   * ATENÇÃO: Este método deve ser usado com cuidado em produção,
+   * pois pode afetar outras operações assíncronas em andamento.
    */
   static clear(): void {
-    this.asyncLocalStorage.disable();
+    // Em vez de disable(), que afeta globalmente,
+    // vamos usar enterWith(undefined) para limpar apenas o contexto atual
+    this.asyncLocalStorage.enterWith(undefined as any);
   }
 
   /**

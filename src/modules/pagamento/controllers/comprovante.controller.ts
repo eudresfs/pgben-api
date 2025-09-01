@@ -34,23 +34,27 @@ import { ComprovanteService } from '../services/comprovante.service';
 import { ComprovanteUploadDto } from '../dtos/comprovante-upload.dto';
 import { ComprovanteResponseDto } from '../dtos/comprovante-response.dto';
 import { GerarComprovanteDto, ComprovanteGeradoDto } from '../dtos/gerar-comprovante.dto';
+import { GerarComprovanteLoteDto } from '../dtos/gerar-comprovante-lote.dto';
 import { DataMaskingResponseInterceptor } from '../interceptors/data-masking-response.interceptor';
+import { AuditoriaInterceptor } from '../interceptors/auditoria.interceptor';
+import { AuditoriaPagamento } from '../decorators/auditoria.decorator';
 
 /**
  * Controller para gerenciamento de comprovantes de pagamento
  * Implementa endpoints otimizados seguindo padrão prepare-then-execute
  */
 @ApiTags('Pagamentos')
-@Controller('pagamentos/:pagamentoId/comprovantes')
+@Controller('pagamentos')
 @UseGuards(JwtAuthGuard, PermissionGuard)
-@UseInterceptors(DataMaskingResponseInterceptor)
+@UseInterceptors(DataMaskingResponseInterceptor, AuditoriaInterceptor)
 export class ComprovanteController {
   constructor(private readonly comprovanteService: ComprovanteService) {}
 
   /**
    * Lista comprovantes de um pagamento
    */
-  @Get()
+  @Get(':pagamentoId/comprovantes')
+  @AuditoriaPagamento.Consulta('Consulta de comprovantes de pagamento')
   @ApiOperation({ summary: 'Lista comprovantes de um pagamento' })
   @ApiParam({
     name: 'pagamentoId',
@@ -81,7 +85,8 @@ export class ComprovanteController {
   /**
    * Upload de comprovante
    */
-  @Post()
+  @Post(':pagamentoId/comprovantes')
+  @AuditoriaPagamento.Criacao('Upload de comprovante de pagamento')
   @UseInterceptors(FileInterceptor('arquivo'))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Faz upload de comprovante' })
@@ -120,7 +125,8 @@ export class ComprovanteController {
   /**
    * Gera comprovante em PDF pré-preenchido
    */
-  @Get('gerar-comprovante')
+  @Get(':pagamentoId/comprovantes/gerar-comprovante')
+  @AuditoriaPagamento.Consulta('Geração de comprovante PDF')
   @ApiOperation({ 
     summary: 'Gera comprovante em PDF pré-preenchido',
     description: 'Gera um comprovante em PDF com dados pré-preenchidos do pagamento para assinatura. Quando formato=pdf, retorna o arquivo para download direto.'
@@ -191,7 +197,8 @@ export class ComprovanteController {
   /**
    * Busca comprovante por ID
    */
-  @Get(':id')
+  @Get(':pagamentoId/comprovantes/:id')
+  @AuditoriaPagamento.Consulta('Consulta de comprovante específico')
   @ApiOperation({ summary: 'Busca comprovante por ID' })
   @ApiParam({
     name: 'pagamentoId',
@@ -222,10 +229,16 @@ export class ComprovanteController {
   /**
    * Download de comprovante
    */
-  @Get(':id/download')
+  @Get(':pagamentoId/comprovantes/:id/download')  
+  @AuditoriaPagamento.Consulta('Download de comprovante')
   @ApiOperation({ summary: 'Faz download de comprovante' })
   @RequiresPermission({
     permissionName: 'pagamento.comprovante.download',
+  })
+  @ApiParam({
+    name: 'pagamentoId',
+    type: 'string',
+    description: 'ID do pagamento',
   })
   @ApiParam({
     name: 'id',
@@ -260,7 +273,8 @@ export class ComprovanteController {
   /**
    * Remove comprovante
    */
-  @Delete(':id')
+  @Delete(':pagamentoId/comprovantes/:id')
+  @AuditoriaPagamento.Exclusao('Exclusão de comprovante')
   @ApiOperation({ summary: 'Remove comprovante' })
   @ApiParam({
     name: 'pagamentoId',
@@ -288,6 +302,88 @@ export class ComprovanteController {
     return {
       message: 'Comprovante removido com sucesso',
     };
+  }
+
+  /**
+   * Gera comprovantes em lote para múltiplos pagamentos
+   */
+  @Post('comprovantes/gerar-lote')
+  @AuditoriaPagamento.Criacao('Geração de comprovantes em lote')
+  @ApiOperation({
+    summary: 'Gerar comprovantes em lote',
+    description: 'Gera comprovantes para múltiplos pagamentos em um único PDF ou retorna dados em JSON',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Comprovantes em lote gerados com sucesso',
+    content: {
+      'application/pdf': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+      'application/json': {
+        schema: {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/ComprovanteGeradoDto' },
+            },
+            meta: {
+              type: 'object',
+              properties: {
+                total: { type: 'number' },
+                nomeArquivo: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos ou lista vazia',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Erro interno do servidor',
+  })
+  @RequiresPermission({
+    permissionName: 'pagamento.comprovante.gerar',
+  })
+  async gerarComprovantesLote(
+    @Body() gerarLoteDto: GerarComprovanteLoteDto,
+    @Res() res: Response,
+    @GetUser() usuario: Usuario,
+  ): Promise<void> {
+    if (gerarLoteDto.formato === 'pdf') {
+      // Retorna PDF combinado para download direto
+      const pdfBuffer = await this.comprovanteService.gerarLotePdfBuffer(
+        gerarLoteDto,
+        usuario.id,
+      );
+
+      const nomeArquivo = `recibos_${new Date().toISOString().split('T')[0]}.pdf`;
+
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${nomeArquivo}"`,
+        'Content-Length': pdfBuffer.length.toString(),
+      });
+
+      res.send(pdfBuffer);
+    } else {
+      // Retorna dados dos comprovantes em JSON
+      const resultado = await this.comprovanteService.gerarComprovantesLote(
+        gerarLoteDto,
+        usuario.id,
+      );
+
+      res.status(201).json(resultado);
+    }
   }
 
   // ========== MÉTODO AUXILIAR PRIVADO ==========

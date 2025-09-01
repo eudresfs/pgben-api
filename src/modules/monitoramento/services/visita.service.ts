@@ -3,12 +3,19 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VisitaDomiciliar } from '../entities/visita-domiciliar.entity';
 import { AgendamentoVisita } from '../entities/agendamento-visita.entity';
+import { Pagamento } from '../../../entities/pagamento.entity';
 import { RegistrarVisitaDto } from '../dto/registrar-visita.dto';
 import { VisitaResponseDto, AtualizarVisitaDto } from '../dtos/visita.dto';
 import { ResultadoVisita, TipoVisita, StatusAgendamento } from '../enums';
 import { getResultadoVisitaCor, getResultadoVisitaLabel } from '../../../enums/resultado-visita.enum';
 import { getTipoVisitaLabel } from '../../../enums/tipo-visita.enum';
 import { VisitaRepository } from '../repositories/visita.repository';
+import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
+import { PaginatedResponseDto } from '../../../shared/dtos/pagination.dto';
+import { PaginationHelper } from '../helpers/pagination.helper';
+import { VisitaFiltrosAvancadosDto, VisitaFiltrosResponseDto } from '../dto/visita-filtros-avancados.dto';
+import { PeriodoPredefinido } from '../../../enums/periodo-predefinido.enum';
+import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
 
 
 
@@ -29,9 +36,14 @@ export class VisitaService {
 
   constructor(
     private readonly visitaRepository: VisitaRepository,
+    @InjectRepository(VisitaDomiciliar)
+    private readonly visitaEntityRepository: Repository<VisitaDomiciliar>,
     @InjectRepository(AgendamentoVisita)
     private readonly agendamentoRepository: Repository<AgendamentoVisita>,
-  ) {}
+    @InjectRepository(Pagamento)
+    private readonly pagamentoRepository: Repository<Pagamento>,
+    private readonly filtrosAvancadosService: FiltrosAvancadosService,
+  ) { }
 
   /**
    * Registra uma nova visita domiciliar
@@ -55,9 +67,6 @@ export class VisitaService {
       // Criar a visita
       const visita = this.visitaRepository.create({
         agendamento_id: registrarDto.agendamento_id,
-        beneficiario_id: agendamento.beneficiario_id,
-        tecnico_id: agendamento.tecnico_id,
-        unidade_id: agendamento.unidade_id,
         tipo_visita: registrarDto.tipo_visita,
         resultado: registrarDto.resultado,
         beneficiario_presente: registrarDto.beneficiario_presente,
@@ -261,13 +270,13 @@ export class VisitaService {
         throw new NotFoundException(`Visita com ID ${id} não encontrada`);
       }
 
-     // Validar regras de negócio se resultado foi alterado
+      // Validar regras de negócio se resultado foi alterado
       if (updateVisitaDto.resultado) {
         // Criar um objeto compatível com RegistrarVisitaDto para validação
         const visitaParaValidacao = {
           ...updateVisitaDto,
           agendamento_id: visita.agendamento_id,
-    
+
         } as RegistrarVisitaDto;
         this.validateBusinessRules(visitaParaValidacao);
       }
@@ -421,18 +430,87 @@ export class VisitaService {
     agendamento.updated_at = new Date();
 
     await this.agendamentoRepository.save(agendamento);
+
+    // Atualizar campo 'monitorado' do pagamento quando visita tem resultado 'conforme'
+    if (resultado === ResultadoVisita.CONFORME && agendamento.pagamento_id) {
+      await this.updatePagamentoMonitorado(agendamento.pagamento_id);
+    }
+  }
+
+  /**
+   * Atualiza o campo 'monitorado' do pagamento para true
+   * 
+   * @param pagamentoId ID do pagamento a ser atualizado
+   * @private
+   */
+  private async updatePagamentoMonitorado(pagamentoId: string): Promise<void> {
+    try {
+      await this.pagamentoRepository.update(
+        { id: pagamentoId },
+        {
+          monitorado: true,
+          updated_at: new Date()
+        }
+      );
+
+      this.logger.log(
+        `Campo 'monitorado' atualizado para true no pagamento: ${pagamentoId}`
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erro ao atualizar campo 'monitorado' do pagamento ${pagamentoId}: ${error.message}`,
+        error.stack
+      );
+      // Não propagar o erro para não afetar o fluxo principal da visita
+    }
   }
 
   /**
    * Busca todas as visitas com paginação
    */
-  async buscarTodas(filters: any, page?: number, limit?: number): Promise<{ visitas: VisitaResponseDto[]; total: number }> {
+  /**
+   * Busca todas as visitas com paginação
+   */
+  async buscarTodas(
+    filters: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<VisitaResponseDto>> {
+    try {
+      // Aplicar valores padrão e validar parâmetros de paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+
+      const filtrosRepository = this.convertToRepositoryFilters(filters);
+
+      const { items, total } = await this.visitaRepository.findWithFiltersAndPagination(
+        filtrosRepository,
+        validatedParams,
+      );
+
+      const visitasDto = items.map(visita => this.buildResponseDto(visita));
+
+      return PaginationHelper.createPaginatedResponse(
+        visitasDto,
+        validatedParams.page,
+        validatedParams.limit,
+        total,
+      );
+    } catch (error) {
+      this.logger.error(`Erro ao buscar todas as visitas: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca todas as visitas (método legado para compatibilidade)
+   * @deprecated Use buscarTodas com PaginationParamsDto
+   */
+  async buscarTodasLegacy(filters: any, page?: number, limit?: number): Promise<{ visitas: VisitaResponseDto[]; total: number }> {
     try {
       const filtrosRepository = this.convertToRepositoryFilters(filters);
       const result = await this.visitaRepository.findWithFilters(filtrosRepository);
-      
+
       const visitasDto = result.map(visita => this.buildResponseDto(visita));
-      
+
       return { visitas: visitasDto, total: visitasDto.length };
     } catch (error) {
       this.logger.error(`Erro ao buscar todas as visitas: ${error.message}`);
@@ -445,33 +523,74 @@ export class VisitaService {
    */
   async buscarPorId(id: string): Promise<VisitaResponseDto> {
     const visita = await this.visitaRepository.findByIdWithRelations(id);
-    
+
     if (!visita) {
       throw new NotFoundException(`Visita com ID ${id} não encontrada`);
     }
-    
+
     return this.buildResponseDto(visita);
   }
 
   /**
-   * Busca visitas por técnico
+   * Busca visitas por técnico com paginação
    */
-  async buscarPorTecnico(tecnicoId: string, filters: any, page?: number, limit?: number): Promise<{ visitas: VisitaResponseDto[]; total: number }> {
-    return this.buscarTodas({ ...filters, tecnico_id: tecnicoId }, page, limit);
+  async buscarPorTecnico(
+    tecnicoId: string,
+    filters: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<VisitaResponseDto>> {
+    return this.buscarTodas({ ...filters, tecnico_id: tecnicoId }, paginationParams);
   }
 
   /**
-   * Busca visitas por beneficiário
+   * Busca visitas por técnico (método legado para compatibilidade)
+   * @deprecated Use buscarPorTecnico com PaginationParamsDto
    */
-  async buscarPorBeneficiario(beneficiarioId: string, filters: any, page?: number, limit?: number): Promise<{ visitas: VisitaResponseDto[]; total: number }> {
-    return this.buscarTodas({ ...filters, beneficiario_id: beneficiarioId }, page, limit);
+  async buscarPorTecnicoLegacy(tecnicoId: string, filters: any, page?: number, limit?: number): Promise<{ visitas: VisitaResponseDto[]; total: number }> {
+    return this.buscarTodasLegacy({ ...filters, tecnico_id: tecnicoId }, page, limit);
   }
 
   /**
-   * Busca visitas por status
+   * Busca visitas por beneficiário com paginação
    */
-  async buscarPorStatus(status: string, filters: any): Promise<{ visitas: VisitaResponseDto[]; total: number }> {
-    return this.buscarTodas({ ...filters, resultado: status });
+  async buscarPorBeneficiario(
+    beneficiarioId: string,
+    filters: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<VisitaResponseDto>> {
+    return this.buscarTodas({ ...filters, beneficiario_id: beneficiarioId }, paginationParams);
+  }
+
+  /**
+   * Busca visitas por beneficiário (método legado para compatibilidade)
+   * @deprecated Use buscarPorBeneficiario com PaginationParamsDto
+   */
+  async buscarPorBeneficiarioLegacy(beneficiarioId: string, filters: any, page?: number, limit?: number): Promise<{ visitas: VisitaResponseDto[]; total: number }> {
+    return this.buscarTodasLegacy({ ...filters, beneficiario_id: beneficiarioId }, page, limit);
+  }
+
+  /**
+   * Busca visitas por status com paginação
+   */
+  async buscarPorStatus(
+    status: string,
+    filters: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<VisitaResponseDto>> {
+    return this.buscarTodas({ ...filters, resultado: status }, paginationParams);
+  }
+
+  /**
+   * Busca visitas por status (método legado para compatibilidade)
+   * @deprecated Use buscarPorStatus com PaginationParamsDto
+   */
+  async buscarPorStatusLegacy(
+    status: string,
+    filters: any,
+    page?: number,
+    limit?: number
+  ): Promise<{ visitas: VisitaResponseDto[]; total: number }> {
+    return this.buscarTodasLegacy({ ...filters, resultado: status }, page, limit);
   }
 
   /**
@@ -483,7 +602,7 @@ export class VisitaService {
    */
   private convertToRepositoryFilters(filtros?: any): any {
     if (!filtros) return {};
-    
+
     return {
       beneficiario_id: filtros.beneficiario_id,
       tecnico_id: filtros.tecnico_id || filtros.tecnico_id,
@@ -517,7 +636,46 @@ export class VisitaService {
   /**
    * Busca visitas que recomendam renovação
    */
+  /**
+   * Busca visitas que recomendam renovação com paginação
+   */
   async buscarQueRecomendamRenovacao(
+    filtros: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<VisitaResponseDto>> {
+    try {
+      // Aplicar valores padrão e validar parâmetros de paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+
+      const filtrosRepository = {
+        ...this.convertToRepositoryFilters(filtros),
+        recomenda_renovacao: true,
+      };
+
+      const { items, total } = await this.visitaRepository.findWithFiltersAndPagination(
+        filtrosRepository,
+        validatedParams,
+      );
+
+      const visitasDto = items.map(visita => this.buildResponseDto(visita));
+
+      return PaginationHelper.createPaginatedResponse(
+        visitasDto,
+        validatedParams.page,
+        validatedParams.limit,
+        total,
+      );
+    } catch (error) {
+      this.logger.error(`Erro ao buscar visitas que recomendam renovação: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca visitas que recomendam renovação (método legado para compatibilidade)
+   * @deprecated Use buscarQueRecomendamRenovacao com PaginationParamsDto
+   */
+  async buscarQueRecomendamRenovacaoLegacy(
     filtros: any,
     page: number = 1,
     limit: number = 10
@@ -553,9 +711,45 @@ export class VisitaService {
   }
 
   /**
-   * Busca visitas que necessitam nova visita
+   * Busca visitas que necessitam nova visita com paginação
    */
   async buscarQueNecessitamNovaVisita(
+    filtros: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<VisitaResponseDto>> {
+    try {
+      // Aplicar valores padrão e validar parâmetros de paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+
+      const filtrosRepository = {
+        ...this.convertToRepositoryFilters(filtros),
+        necessita_nova_visita: true,
+      };
+
+      const { items, total } = await this.visitaRepository.findWithFiltersAndPagination(
+        filtrosRepository,
+        validatedParams,
+      );
+
+      const visitasDto = items.map(visita => this.buildResponseDto(visita));
+
+      return PaginationHelper.createPaginatedResponse(
+        visitasDto,
+        validatedParams.page,
+        validatedParams.limit,
+        total,
+      );
+    } catch (error) {
+      this.logger.error(`Erro ao buscar visitas que necessitam nova visita: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca visitas que necessitam nova visita (método legado para compatibilidade)
+   * @deprecated Use buscarQueNecessitamNovaVisita com PaginationParamsDto
+   */
+  async buscarQueNecessitamNovaVisitaLegacy(
     filtros: any,
     page: number = 1,
     limit: number = 10
@@ -587,9 +781,45 @@ export class VisitaService {
   }
 
   /**
-   * Busca visitas com problemas de elegibilidade
+   * Busca visitas com problemas de elegibilidade com paginação
    */
   async buscarComProblemasElegibilidade(
+    filtros: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<VisitaResponseDto>> {
+    try {
+      // Aplicar valores padrão e validar parâmetros de paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+
+      const filtrosRepository = {
+        ...this.convertToRepositoryFilters(filtros),
+        problemas_elegibilidade: true,
+      };
+
+      const { items, total } = await this.visitaRepository.findWithFiltersAndPagination(
+        filtrosRepository,
+        validatedParams,
+      );
+
+      const visitasDto = items.map(visita => this.buildResponseDto(visita));
+
+      return PaginationHelper.createPaginatedResponse(
+        visitasDto,
+        validatedParams.page,
+        validatedParams.limit,
+        total,
+      );
+    } catch (error) {
+      this.logger.error(`Erro ao buscar visitas com problemas de elegibilidade: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca visitas com problemas de elegibilidade (método legado para compatibilidade)
+   * @deprecated Use buscarComProblemasElegibilidade com PaginationParamsDto
+   */
+  async buscarComProblemasElegibilidadeLegacy(
     filtros: any,
     page: number = 1,
     limit: number = 10
@@ -656,17 +886,35 @@ export class VisitaService {
    * @param visita Entidade da visita
    * @returns DTO de resposta formatado
    */
+  /**
+   * Mapeia uma visita domiciliar para o formato de resposta
+   * 
+   * @param visita Entidade da visita domiciliar
+   * @returns DTO de resposta da visita
+   */
+  private mapearVisitaParaResponse(visita: VisitaDomiciliar): VisitaResponseDto {
+    return this.buildResponseDto(visita);
+  }
+
   private buildResponseDto(visita: VisitaDomiciliar): VisitaResponseDto {
     return {
       id: visita.id,
       agendamento_id: visita.agendamento_id,
-      beneficiario_id: visita.beneficiario_id,
-      beneficiario_nome: visita.beneficiario?.nome || 'N/A',
-      tecnico_id: visita.tecnico_id,
-      tecnico_nome: visita.tecnico_responsavel?.nome || 'N/A',
-      unidade_id: visita.unidade_id,
-      unidade_nome: visita.unidade?.nome || 'N/A',
-
+      beneficiario: {
+        id: visita.beneficiario_id,
+        nome: visita.beneficiario?.nome || 'N/A',
+        cpf: visita.beneficiario?.cpf || 'N/A'
+      },
+      tecnico: {
+        id: visita.tecnico_id,
+        nome: visita.tecnico_responsavel?.nome || 'N/A',
+        email: visita.tecnico_responsavel?.email || 'N/A',
+        role: visita.tecnico_responsavel?.role?.toString() || 'N/A'
+      },
+      unidade: {
+        id: visita.unidade_id,
+        nome: visita.unidade?.nome || 'N/A',
+      },
       tipo_visita: visita.tipo_visita,
       tipo_visita_label: getTipoVisitaLabel(visita.tipo_visita),
       status: visita.status,
@@ -701,6 +949,346 @@ export class VisitaService {
       created_at: visita.created_at.toISOString(),
       updated_at: visita.updated_at.toISOString(),
       dados_complementares: visita.dados_complementares,
+    };
+  }
+
+  /**
+   * Aplica filtros avançados para busca de visitas domiciliares
+   * 
+   * @param filtros Critérios de filtros avançados
+   * @returns Resultado da busca com estatísticas e opções de filtro
+   */
+  async aplicarFiltrosAvancados(filtros: VisitaFiltrosAvancadosDto): Promise<VisitaFiltrosResponseDto> {
+    try {
+      // Criar QueryBuilder com abordagem mais robusta
+      const queryBuilder = this.visitaEntityRepository.createQueryBuilder('visita');
+      
+      // Carregar apenas relações essenciais
+      if (filtros.include_relations) {
+        queryBuilder
+          .leftJoinAndSelect('visita.beneficiario', 'beneficiario')
+          .leftJoinAndSelect('visita.tecnico_responsavel', 'tecnico')
+          .leftJoinAndSelect('visita.agendamento', 'agendamento');
+      }
+      
+      // Usar leftJoin (sem Select) para filtros que não precisam carregar dados
+      queryBuilder
+        .leftJoin('visita.agendamento', 'agendamento_filter')
+        .leftJoin('agendamento_filter.pagamento', 'pagamento')
+        .leftJoin('pagamento.solicitacao', 'solicitacao')
+        .leftJoin('solicitacao.unidade', 'unidade');
+
+      // Aplicar filtros condicionais
+      if (filtros.unidades?.length) {
+        queryBuilder.andWhere('unidade.id IN (:...unidades)', { unidades: filtros.unidades });
+      }
+
+      if (filtros.tipos_visita?.length) {
+        queryBuilder.andWhere('visita.tipo_visita IN (:...tipos)', { tipos: filtros.tipos_visita });
+      }
+
+      if (filtros.resultados?.length) {
+        queryBuilder.andWhere('visita.resultado IN (:...resultados)', { resultados: filtros.resultados });
+      }
+
+      if (filtros.tecnicos?.length) {
+        queryBuilder.andWhere('visita.tecnico_id IN (:...tecnicos)', { tecnicos: filtros.tecnicos });
+      }
+
+      if (filtros.beneficiarios?.length) {
+        queryBuilder.andWhere('visita.beneficiario_id IN (:...beneficiarios)', { beneficiarios: filtros.beneficiarios });
+      }
+
+      // Filtros de período
+      if (filtros.periodo) {
+        const { dataInicio, dataFim } = this.filtrosAvancadosService.calcularPeriodoPredefinido(filtros.periodo);
+        queryBuilder.andWhere('visita.data_visita BETWEEN :dataInicio AND :dataFim', {
+          dataInicio,
+          dataFim
+        });
+      } else if (filtros.data_inicio && filtros.data_fim) {
+        queryBuilder.andWhere('visita.data_visita BETWEEN :dataInicio AND :dataFim', {
+          dataInicio: filtros.data_inicio,
+          dataFim: filtros.data_fim
+        });
+      }
+
+      // Filtro de busca textual - usar subquery para evitar problemas de join
+      if (filtros.search) {
+        queryBuilder.andWhere(
+          '(visita.observacoes_gerais ILIKE :search OR visita.parecer_tecnico ILIKE :search OR ' +
+          'EXISTS (SELECT 1 FROM cidadao c WHERE c.id = visita.beneficiario_id AND (c.nome ILIKE :search OR c.cpf ILIKE :search)))',
+          { search: `%${filtros.search}%` }
+        );
+      }
+
+      // Filtros booleanos
+      if (filtros.recomenda_renovacao !== undefined) {
+        queryBuilder.andWhere('visita.recomenda_renovacao = :recomenda', { recomenda: filtros.recomenda_renovacao });
+      }
+
+      if (filtros.necessita_nova_visita !== undefined) {
+        queryBuilder.andWhere('visita.necessita_nova_visita = :necessita', { necessita: filtros.necessita_nova_visita });
+      }
+
+      if (filtros.beneficiario_presente !== undefined) {
+        queryBuilder.andWhere('visita.beneficiario_presente = :presente', { presente: filtros.beneficiario_presente });
+      }
+
+      // Ordenação com validação mais robusta
+      const sortBy = filtros.sort_by || 'data_visita';
+      const sortOrder = (filtros.sort_order?.toUpperCase() === 'ASC') ? 'ASC' : 'DESC';
+      
+      // Campos válidos para ordenação - usando apenas campos da entidade principal
+      const validSortFields = {
+        'data_visita': 'visita.data_visita',
+        'data_criacao': 'visita.created_at',
+        'data_atualizacao': 'visita.updated_at',
+        'resultado': 'visita.resultado',
+        'tipo_visita': 'visita.tipo_visita',
+        'pontuacao_risco': 'visita.pontuacao_risco'
+      };
+      
+      const sortField = validSortFields[sortBy] || 'visita.data_visita';
+      queryBuilder.orderBy(sortField, sortOrder);
+
+      // Paginação
+      const page = Math.max(1, filtros.page || 1);
+      const limit = Math.min(100, Math.max(1, filtros.limit || 20));
+      const offset = (page - 1) * limit;
+
+      queryBuilder.skip(offset).take(limit);
+
+      // Executar consulta com tratamento de erro
+      const [visitas, total] = await queryBuilder.getManyAndCount();
+
+      // Calcular estatísticas
+      const estatisticas = await this.calcularEstatisticasVisitas();
+
+      // Obter opções de filtro
+      const opcoesFilter = await this.obterOpcoesFilterVisitas();
+
+      // Calcular metadados de paginação
+      const pages = Math.ceil(total / limit);
+      const hasNext = page < pages;
+      const hasPrev = page > 1;
+
+      return {
+        data: visitas.map(visita => this.mapearVisitaParaResponse(visita)),
+        meta: {
+          limit,
+          total,
+          page,
+          pages,
+          hasNext,
+          hasPrev
+        },
+        estatisticas,
+        opcoes_filtro: opcoesFilter
+      };
+    } catch (error) {
+      this.logger.error('Erro ao aplicar filtros avançados de visitas', {
+        error: error.message,
+        stack: error.stack,
+        filtros
+      });
+      
+      // Se for erro de conexão/database, tentar abordagem mais simples
+      if (error.message?.includes('databaseName') || error.message?.includes('connection')) {
+        return await this.aplicarFiltrosAvancadosSimplificado(filtros);
+      }
+      
+      throw new BadRequestException('Erro ao processar filtros avançados. Verifique os parâmetros fornecidos.');
+    }
+  }
+
+  /**
+   * Método simplificado para filtros avançados como fallback
+   */
+  private async aplicarFiltrosAvancadosSimplificado(filtros: VisitaFiltrosAvancadosDto): Promise<VisitaFiltrosResponseDto> {
+    try {
+      // QueryBuilder mais simples sem relações complexas
+      const queryBuilder = this.visitaEntityRepository.createQueryBuilder('visita');
+      
+      // Aplicar apenas filtros básicos
+      if (filtros.tipos_visita?.length) {
+        queryBuilder.andWhere('visita.tipo_visita IN (:...tipos)', { tipos: filtros.tipos_visita });
+      }
+
+      if (filtros.resultados?.length) {
+        queryBuilder.andWhere('visita.resultado IN (:...resultados)', { resultados: filtros.resultados });
+      }
+
+      if (filtros.tecnicos?.length) {
+        queryBuilder.andWhere('visita.tecnico_id IN (:...tecnicos)', { tecnicos: filtros.tecnicos });
+      }
+
+      if (filtros.beneficiarios?.length) {
+        queryBuilder.andWhere('visita.beneficiario_id IN (:...beneficiarios)', { beneficiarios: filtros.beneficiarios });
+      }
+
+      // Filtros de período
+      if (filtros.data_inicio && filtros.data_fim) {
+        queryBuilder.andWhere('visita.data_visita BETWEEN :dataInicio AND :dataFim', {
+          dataInicio: filtros.data_inicio,
+          dataFim: filtros.data_fim
+        });
+      }
+
+      // Filtros booleanos
+      if (filtros.recomenda_renovacao !== undefined) {
+        queryBuilder.andWhere('visita.recomenda_renovacao = :recomenda', { recomenda: filtros.recomenda_renovacao });
+      }
+
+      if (filtros.necessita_nova_visita !== undefined) {
+        queryBuilder.andWhere('visita.necessita_nova_visita = :necessita', { necessita: filtros.necessita_nova_visita });
+      }
+
+      // Ordenação simples
+      queryBuilder.orderBy('visita.data_visita', 'DESC');
+
+      // Paginação
+      const page = Math.max(1, filtros.page || 1);
+      const limit = Math.min(100, Math.max(1, filtros.limit || 20));
+      const offset = (page - 1) * limit;
+
+      queryBuilder.skip(offset).take(limit);
+
+      const [visitas, total] = await queryBuilder.getManyAndCount();
+
+      // Carregar relações manualmente se necessário
+      const visitasComRelacoes = filtros.include_relations 
+        ? await Promise.all(visitas.map(async (visita) => {
+            return await this.visitaEntityRepository.findOne({
+              where: { id: visita.id },
+              relations: ['beneficiario', 'tecnico_responsavel', 'agendamento']
+            });
+          }))
+        : visitas;
+
+      const pages = Math.ceil(total / limit);
+      const hasNext = page < pages;
+      const hasPrev = page > 1;
+
+      return {
+        data: visitasComRelacoes.map(visita => this.mapearVisitaParaResponse(visita)),
+        meta: {
+          limit,
+          total,
+          page,
+          pages,
+          hasNext,
+          hasPrev
+        },
+        estatisticas: await this.calcularEstatisticasVisitas(),
+        opcoes_filtro: await this.obterOpcoesFilterVisitas()
+      };
+    } catch (error) {
+      this.logger.error('Erro no método simplificado de filtros avançados', {
+        error: error.message,
+        stack: error.stack
+      });
+      throw new BadRequestException('Erro ao processar filtros. Tente novamente ou contate o suporte.');
+    }
+  }
+
+  /**
+   * Calcula estatísticas gerais das visitas
+   */
+  private async calcularEstatisticasVisitas() {
+    const hoje = new Date();
+    const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    const fimHoje = new Date(inicioHoje.getTime() + 24 * 60 * 60 * 1000 - 1);
+
+    const [totalVisitas, visitasRealizadas, visitasNaoLocalizadas, visitasHoje, renovacoesRecomendadas, novasVisitasNecessarias] = await Promise.all([
+      this.visitaRepository.count(),
+      this.visitaRepository.count({ resultado: [ResultadoVisita.REALIZADA_COM_SUCESSO] }),
+      this.visitaRepository.count({ resultado: [ResultadoVisita.ENDERECO_NAO_LOCALIZADO] }),
+      this.visitaRepository.count({
+        data_inicio: inicioHoje,
+        data_fim: fimHoje
+      }),
+      this.visitaRepository.count({ recomenda_renovacao: true }),
+      this.visitaRepository.count({ necessita_nova_visita: true })
+    ]);
+
+    return {
+      total_visitas: totalVisitas,
+      visitas_realizadas: visitasRealizadas,
+      visitas_nao_localizadas: visitasNaoLocalizadas,
+      visitas_hoje: visitasHoje,
+      renovacoes_recomendadas: renovacoesRecomendadas,
+      novas_visitas_necessarias: novasVisitasNecessarias
+    };
+  }
+
+  /**
+   * Obtém opções disponíveis para filtros
+   */
+  private async obterOpcoesFilterVisitas() {
+    // Obter unidades com contagem de visitas
+    const unidades = await this.visitaRepository
+      .createQueryBuilder('visita')
+      .leftJoin('visita.agendamento', 'agendamento')
+      .leftJoin('agendamento.pagamento', 'pagamento')
+      .leftJoin('pagamento.solicitacao', 'solicitacao')
+      .leftJoin('solicitacao.unidade', 'unidade')
+      .select('unidade.id', 'id')
+      .addSelect('unidade.nome', 'nome')
+      .addSelect('COUNT(visita.id)', 'total_visitas')
+      .where('unidade.id IS NOT NULL')
+      .groupBy('unidade.id')
+      .addGroupBy('unidade.nome')
+      .getRawMany();
+
+    // Obter tipos de visita com contagem
+    const tiposVisita = await this.visitaRepository
+      .createQueryBuilder('visita')
+      .select('visita.tipo_visita', 'tipo')
+      .addSelect('COUNT(*)', 'total')
+      .groupBy('visita.tipo_visita')
+      .getRawMany();
+
+    // Obter resultados com contagem
+    const resultados = await this.visitaRepository
+      .createQueryBuilder('visita')
+      .select('visita.resultado', 'resultado')
+      .addSelect('COUNT(*)', 'total')
+      .groupBy('visita.resultado')
+      .getRawMany();
+
+    // Obter técnicos com contagem de visitas
+    const tecnicos = await this.visitaRepository
+      .createQueryBuilder('visita')
+      .leftJoin('visita.tecnico_responsavel', 'tecnico')
+      .select('tecnico.id', 'id')
+      .addSelect('tecnico.nome', 'nome')
+      .addSelect('COUNT(visita.id)', 'total_visitas')
+      .where('tecnico.id IS NOT NULL')
+      .groupBy('tecnico.id')
+      .addGroupBy('tecnico.nome')
+      .getRawMany();
+
+    return {
+      unidades: unidades.map(u => ({
+        id: u.id,
+        nome: u.nome,
+        total_visitas: parseInt(u.total_visitas)
+      })),
+      tipos_visita: tiposVisita.map(t => ({
+        tipo: t.tipo,
+        total: parseInt(t.total)
+      })),
+      resultados: resultados.map(r => ({
+        resultado: r.resultado,
+        total: parseInt(r.total)
+      })),
+      tecnicos: tecnicos.map(t => ({
+        id: t.id,
+        nome: t.nome,
+        total_visitas: parseInt(t.total_visitas)
+      })),
+      periodos_disponiveis: Object.values(PeriodoPredefinido)
     };
   }
 }

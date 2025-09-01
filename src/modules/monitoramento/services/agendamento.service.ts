@@ -8,13 +8,13 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Between } from 'typeorm';
 import { AgendamentoVisita } from '../entities/agendamento-visita.entity';
-import { Cidadao } from '../../../entities/cidadao.entity';
-import { Concessao } from '../../../entities/concessao.entity';
-import { Usuario } from '../../../entities/usuario.entity';
-import { Unidade } from '../../../entities/unidade.entity';
+import { Pagamento } from '../../../entities/pagamento.entity';
 import { AgendamentoRepository } from '../repositories/agendamento.repository';
 import { CriarAgendamentoDto } from '../dto/criar-agendamento.dto';
 import { AgendamentoResponseDto } from '../dto/agendamento-response.dto';
+import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
+import { PaginatedResponseDto } from '../../../shared/dtos/pagination.dto';
+import { PaginationHelper } from '../helpers/pagination.helper';
 import {
   StatusAgendamento,
   TipoVisita,
@@ -26,6 +26,11 @@ import {
   getPrioridadeVisitaPrazo,
   isStatusAgendamentoAtivo,
 } from '../../../enums';
+import { Usuario } from '@/entities';
+import { HistoricoAgendamentoService } from './historico-agendamento.service';
+import { AgendamentoFiltrosAvancadosDto, AgendamentoFiltrosResponseDto } from '../dto/agendamento-filtros-avancados.dto';
+import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
+import { PeriodoPredefinido } from '../../../enums/periodo-predefinido.enum';
 
 /**
  * Serviço responsável pelo gerenciamento de agendamentos de visitas domiciliares.
@@ -43,14 +48,10 @@ export class AgendamentoService {
 
   constructor(
     private agendamentoRepository: AgendamentoRepository,
-    @InjectRepository(Cidadao)
-    private cidadaoRepository: Repository<Cidadao>,
-    @InjectRepository(Concessao)
-    private concessaoRepository: Repository<Concessao>,
-    @InjectRepository(Usuario)
-    private usuarioRepository: Repository<Usuario>,
-    @InjectRepository(Unidade)
-    private unidadeRepository: Repository<Unidade>,
+    @InjectRepository(Pagamento)
+    private pagamentoRepository: Repository<Pagamento>,
+    private historicoAgendamentoService: HistoricoAgendamentoService,
+    private filtrosAvancadosService: FiltrosAvancadosService,
   ) {}
 
   /**
@@ -62,10 +63,10 @@ export class AgendamentoService {
    * @throws ConflictException se houver conflito de horário
    * @throws NotFoundException se entidades relacionadas não forem encontradas
    */
-  async criarAgendamento(createDto: CriarAgendamentoDto): Promise<AgendamentoResponseDto> {
+  async criarAgendamento(createDto: CriarAgendamentoDto, user: Usuario): Promise<AgendamentoResponseDto> {
     try {
       this.logger.log(
-        `Iniciando criação de agendamento para beneficiário ${createDto.beneficiario_id}`,
+        `Iniciando criação de agendamento para pagamento ${createDto.pagamento_id}`,
       );
 
       // Validar entidades relacionadas
@@ -79,15 +80,15 @@ export class AgendamentoService {
 
       // Criar o agendamento através do repository
       const agendamento = await this.agendamentoRepository.create({
-        beneficiario_id: createDto.beneficiario_id,
-        tecnico_id: createDto.tecnico_id,
-        unidade_id: createDto.unidade_id,
+        pagamento_id: createDto.pagamento_id,
         data_agendamento: new Date(createDto.data_agendamento),
         tipo_visita: createDto.tipo_visita,
         prioridade: createDto.prioridade,
         observacoes: createDto.observacoes,
         endereco_visita: createDto.endereco_visita,
         dados_complementares: createDto.dados_complementares,
+        created_by: user.id,
+        updated_by: user.id,
         status: StatusAgendamento.AGENDADO,
         notificar_beneficiario: createDto.notificar_beneficiario || false,
       });
@@ -102,14 +103,14 @@ export class AgendamentoService {
       }
 
       this.logger.log(
-        `Agendamento criado com sucesso: ${savedAgendamento.id} para beneficiário ${createDto.beneficiario_id}`,
+        `Agendamento criado com sucesso: ${savedAgendamento.id} para pagamento ${createDto.pagamento_id}`,
       );
 
       return this.buildResponseDto(agendamentoCompleto);
     } catch (error) {
       // Log detalhado do erro original com contexto completo
       this.logger.error(
-        `Falha ao criar agendamento para beneficiário ${createDto.beneficiario_id}`,
+        `Falha ao criar agendamento para pagamento ${createDto.pagamento_id}`,
         {
           error: error.message,
           stack: error.stack,
@@ -119,8 +120,7 @@ export class AgendamentoService {
           constraint: error.constraint,
           table: error.table,
           column: error.column,
-          beneficiario_id: createDto.beneficiario_id,
-          tecnico_id: createDto.tecnico_id,
+          pagamento_id: createDto.pagamento_id,
           data_agendamento: createDto.data_agendamento,
           tipo_visita: createDto.tipo_visita,
           originalError: error,
@@ -174,11 +174,13 @@ export class AgendamentoService {
    * Cria um novo agendamento de visita domiciliar
    * 
    * @param createDto Dados do agendamento a ser criado
+   * @param usuarioId ID do usuário que criou o agendamento
    * @returns Dados do agendamento criado
    * @throws BadRequestException se os dados forem inválidos
    * @throws ConflictException se houver conflito de horário
    */
-  async create(createDto: CriarAgendamentoDto): Promise<AgendamentoResponseDto> {
+  async create(createDto: CriarAgendamentoDto, usuarioId: string): Promise<AgendamentoResponseDto> {
+    const startTime = Date.now();
     try {
       // Validar entidades relacionadas
       await this.validateRelatedEntities(createDto);
@@ -200,14 +202,27 @@ export class AgendamentoService {
 
       const savedAgendamento = await this.agendamentoRepository.save(agendamento);
 
+      // Registrar histórico de criação
+      try {
+        await this.historicoAgendamentoService.registrarCriacao(
+          savedAgendamento,
+          usuarioId || 'sistema',
+          Date.now() - startTime,
+        );
+      } catch (historicoError) {
+        this.logger.warn(
+          `Erro ao registrar histórico de criação do agendamento ${savedAgendamento.id}: ${historicoError.message}`,
+        );
+      }
+
       this.logger.log(
-        `Agendamento criado com sucesso: ${savedAgendamento.id} para beneficiário ${createDto.beneficiario_id}`,
+        `Agendamento criado com sucesso: ${savedAgendamento.id} para pagamento ${createDto.pagamento_id}`,
       );
 
       return this.buildResponseDto(savedAgendamento);
     } catch (error) {
       this.logger.error(
-        `Erro ao criar agendamento para beneficiário ${createDto.beneficiario_id}: ${error.message}`,
+        `Erro ao criar agendamento para pagamento ${createDto.pagamento_id}: ${error.message}`,
         error.stack,
       );
       throw error;
@@ -282,13 +297,16 @@ export class AgendamentoService {
    * Confirma um agendamento
    * 
    * @param id ID do agendamento
+   * @param usuarioId ID do usuário que confirma
    * @returns Agendamento confirmado
    * @throws NotFoundException se não encontrado
    * @throws BadRequestException se não puder ser confirmado
    */
-  async confirmar(id: string): Promise<AgendamentoResponseDto> {
+  async confirmar(id: string, usuarioId: string): Promise<AgendamentoResponseDto> {
+    const startTime = Date.now();
     try {
       const agendamento = await this.agendamentoRepository.findByIdWithRelations(id);
+      const dadosAnteriores = { ...agendamento };
 
       if (!agendamento) {
         throw new NotFoundException(`Agendamento com ID ${id} não encontrado`);
@@ -302,8 +320,23 @@ export class AgendamentoService {
 
       agendamento.status = StatusAgendamento.CONFIRMADO;
       agendamento.updated_at = new Date();
+      agendamento.updated_by = usuarioId;
 
       const savedAgendamento = await this.agendamentoRepository.save(agendamento);
+
+      // Registrar histórico de confirmação
+      try {
+        await this.historicoAgendamentoService.registrarAtualizacao(
+          dadosAnteriores,
+          savedAgendamento,
+          usuarioId,
+          Date.now() - startTime,
+        );
+      } catch (historicoError) {
+        this.logger.warn(
+          `Erro ao registrar histórico de confirmação do agendamento ${id}: ${historicoError.message}`,
+        );
+      }
 
       this.logger.log(`Agendamento ${id} confirmado com sucesso`);
 
@@ -326,9 +359,12 @@ export class AgendamentoService {
     id: string,
     novaDataHora: Date,
     motivo?: string,
+    usuarioId?: string
   ): Promise<AgendamentoResponseDto> {
+    const startTime = Date.now();
     try {
       const agendamento = await this.agendamentoRepository.findByIdWithRelations(id);
+      const dadosAnteriores = { ...agendamento };
 
       if (!agendamento) {
         throw new NotFoundException(`Agendamento com ID ${id} não encontrado`);
@@ -342,7 +378,7 @@ export class AgendamentoService {
 
       // Verificar conflitos na nova data
       await this.checkSchedulingConflicts({
-        tecnico_id: agendamento.tecnico_id,
+        pagamento_id: agendamento.pagamento_id,
         data_agendamento: novaDataHora,
       } as CriarAgendamentoDto, id);
 
@@ -350,6 +386,7 @@ export class AgendamentoService {
       agendamento.data_agendamento = novaDataHora;
       agendamento.status = StatusAgendamento.REAGENDADO;
       agendamento.updated_at = new Date();
+      agendamento.updated_by = usuarioId;
 
       // Adicionar informações do reagendamento aos dados complementares
       agendamento.dados_complementares = {
@@ -366,6 +403,20 @@ export class AgendamentoService {
       };
 
       const savedAgendamento = await this.agendamentoRepository.save(agendamento);
+
+      // Registrar histórico de reagendamento
+      try {
+        await this.historicoAgendamentoService.registrarAtualizacao(
+          dadosAnteriores,
+          savedAgendamento,
+          usuarioId,
+          Date.now() - startTime,
+        );
+      } catch (historicoError) {
+        this.logger.warn(
+          `Erro ao registrar histórico de reagendamento do agendamento ${id}: ${historicoError.message}`,
+        );
+      }
 
       this.logger.log(`Agendamento ${id} reagendado de ${dataAnterior} para ${novaDataHora}`);
 
@@ -389,8 +440,10 @@ export class AgendamentoService {
     motivo: string,
     cancelado_por: string,
   ): Promise<AgendamentoResponseDto> {
+    const startTime = Date.now();
     try {
       const agendamento = await this.agendamentoRepository.findByIdWithRelations(id);
+      const dadosAnteriores = { ...agendamento };
 
       if (!agendamento) {
         throw new NotFoundException(`Agendamento com ID ${id} não encontrado`);
@@ -407,8 +460,23 @@ export class AgendamentoService {
       agendamento.cancelado_por = cancelado_por;
       agendamento.data_cancelamento = new Date();
       agendamento.updated_at = new Date();
+      agendamento.updated_by = cancelado_por;
 
       const savedAgendamento = await this.agendamentoRepository.save(agendamento);
+
+      // Registrar histórico de cancelamento
+      try {
+        await this.historicoAgendamentoService.registrarCancelamento(
+          savedAgendamento,
+          motivo,
+          cancelado_por,
+          Date.now() - startTime,
+        );
+      } catch (historicoError) {
+        this.logger.warn(
+          `Erro ao registrar histórico de cancelamento do agendamento ${id}: ${historicoError.message}`,
+        );
+      }
 
       this.logger.log(`Agendamento ${id} cancelado por ${cancelado_por}: ${motivo}`);
 
@@ -454,14 +522,14 @@ export class AgendamentoService {
   }
 
   /**
-   * Busca agendamentos por beneficiário
+   * Busca agendamentos por pagamento
    * 
-   * @param beneficiarioId ID do beneficiário
-   * @returns Lista de agendamentos do beneficiário
+   * @param pagamentoId ID do pagamento
+   * @returns Lista de agendamentos do pagamento
    */
-  async findByBeneficiario(beneficiarioId: string): Promise<AgendamentoResponseDto[]> {
+  async findByPagamento(pagamentoId: string): Promise<AgendamentoResponseDto[]> {
     const repositoryFilters = {
-      beneficiario_id: beneficiarioId,
+      pagamento_id: pagamentoId,
     };
 
     const agendamentos = await this.agendamentoRepository.findWithFilters(repositoryFilters);
@@ -475,91 +543,57 @@ export class AgendamentoService {
    * @param createDto Dados do agendamento
    */
   /**
-   * Valida se todas as entidades relacionadas existem e são válidas
+   * Valida se o pagamento existe e suas relações são válidas
    * 
    * @private
    * @param createDto Dados do agendamento
-   * @throws NotFoundException se alguma entidade não for encontrada
+   * @throws NotFoundException se o pagamento não for encontrado
    * @throws BadRequestException se houver inconsistência nos dados
    */
   private async validateRelatedEntities(createDto: CriarAgendamentoDto): Promise<void> {
-    const validationPromises = [];
-    const validationErrors: string[] = [];
+    // Validar pagamento e suas relações
+    const pagamento = await this.pagamentoRepository.findOne({
+      where: { id: createDto.pagamento_id },
+      relations: [
+        'solicitacao',
+        'solicitacao.beneficiario',
+        'solicitacao.tecnico',
+        'solicitacao.unidade'
+      ],
+    });
 
-    // Validar beneficiário
-    validationPromises.push(
-      this.cidadaoRepository.findOne({
-        where: { id: createDto.beneficiario_id },
-      }).then(beneficiario => {
-        if (!beneficiario) {
-          validationErrors.push(
-            `Beneficiário com ID '${createDto.beneficiario_id}' não foi encontrado no sistema.`
-          );
-        }
-        return beneficiario;
-      })
-    );
-
-    // Validar técnico responsável
-    validationPromises.push(
-      this.usuarioRepository.findOne({
-        where: { id: createDto.tecnico_id },
-      }).then(tecnico => {
-        if (!tecnico) {
-          validationErrors.push(
-            `Técnico com ID '${createDto.tecnico_id}' não foi encontrado no sistema.`
-          );
-        }
-        return tecnico;
-      })
-    );
-
-    // Validar unidade
-    validationPromises.push(
-      this.unidadeRepository.findOne({
-        where: { id: createDto.unidade_id },
-      }).then(unidade => {
-        if (!unidade) {
-          validationErrors.push(
-            `Unidade com ID '${createDto.unidade_id}' não foi encontrada no sistema.`
-          );
-        }
-        return unidade;
-      })
-    );
-
-    // Validar concessão (se fornecida)
-    if (createDto.concessao_id) {
-      validationPromises.push(
-        this.concessaoRepository.findOne({
-          where: { id: createDto.concessao_id },
-          relations: ['solicitacao', 'solicitacao.beneficiario'],
-        }).then(concessao => {
-          if (!concessao) {
-            validationErrors.push(
-              `Concessão com ID '${createDto.concessao_id}' não foi encontrada no sistema.`
-            );
-          } else if (concessao.solicitacao.beneficiario.id !== createDto.beneficiario_id) {
-            validationErrors.push(
-              'A concessão informada não pertence ao beneficiário selecionado. Verifique os dados e tente novamente.'
-            );
-          }
-          return concessao;
-        })
+    if (!pagamento) {
+      throw new NotFoundException(
+        `Pagamento com ID '${createDto.pagamento_id}' não foi encontrado no sistema.`
       );
     }
 
-    // Aguardar todas as validações
-    await Promise.all(validationPromises);
-
-    // Se houver erros, lançar exceção com todas as mensagens
-    if (validationErrors.length > 0) {
-      const errorMessage = validationErrors.length === 1 
-        ? validationErrors[0]
-        : `Foram encontrados os seguintes problemas:\n${validationErrors.map((error, index) => `${index + 1}. ${error}`).join('\n')}`;
-      
-      throw new NotFoundException(errorMessage);
+    if (!pagamento.solicitacao) {
+      throw new BadRequestException(
+        'O pagamento informado não possui uma solicitação associada válida.'
+      );
     }
+
+    if (!pagamento.solicitacao.beneficiario) {
+      throw new BadRequestException(
+        'A solicitação associada ao pagamento não possui um beneficiário válido.'
+      );
+    }
+
+    if (!pagamento.solicitacao.tecnico) {
+      throw new BadRequestException(
+        'A solicitação associada ao pagamento não possui um técnico responsável válido.'
+      );
+    }
+
+    if (!pagamento.solicitacao.unidade) {
+      throw new BadRequestException(
+        'A solicitação associada ao pagamento não possui uma unidade válida.'
+      );
+    }
+
+    // Armazenar as relações no DTO para uso posterior
+    createDto.pagamento_id = pagamento.id;
   }
 
   /**
@@ -625,8 +659,8 @@ export class AgendamentoService {
 
     // Verificar se não há agendamento muito próximo para o mesmo beneficiário
     try {
-      const agendamentoRecente = await this.agendamentoRepository.findRecentScheduleForBeneficiario(
-        createDto.beneficiario_id,
+      const agendamentoRecente = await this.agendamentoRepository.findRecentScheduleForPagamento(
+        createDto.pagamento_id,
         dataAgendamento,
         7
       );
@@ -651,7 +685,7 @@ export class AgendamentoService {
       }
       
       this.logger.warn(
-        `Erro ao verificar agendamentos recentes para beneficiário ${createDto.beneficiario_id}: ${error.message}`
+        `Erro ao verificar agendamentos recentes para pagamento ${createDto.pagamento_id}: ${error.message}`
       );
       // Continua o processo mesmo se a verificação falhar
     }
@@ -680,7 +714,7 @@ export class AgendamentoService {
 
     try {
       const conflito = await this.agendamentoRepository.findConflictingSchedule(
-         createDto.tecnico_id,
+         createDto.pagamento_id,
          dataAgendamento,
          excludeId,
        );
@@ -707,10 +741,10 @@ export class AgendamentoService {
       }
       
       this.logger.error(
-        `Erro ao verificar conflitos de agendamento para técnico ${createDto.tecnico_id}`,
+        `Erro ao verificar conflitos de agendamento para pagamento ${createDto.pagamento_id}`,
         {
           error: error.message,
-          tecnico_id: createDto.tecnico_id,
+          pagamento_id: createDto.pagamento_id,
           data_agendamento: createDto.data_agendamento,
         }
       );
@@ -726,11 +760,47 @@ export class AgendamentoService {
    * Busca todos os agendamentos com paginação
    * 
    * @param filtros Filtros de busca
+   * @param paginationParams Parâmetros de paginação
+   * @returns Lista paginada de agendamentos
+   */
+  async buscarTodos(
+    filtros?: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
+    try {
+      const repositoryFilters = this.convertToRepositoryFilters(filtros);
+      
+      const { items, total, page, limit } = await this.agendamentoRepository.findWithPagination(
+        repositoryFilters,
+        paginationParams,
+      );
+
+      const agendamentosDto = items.map(agendamento =>
+        this.buildResponseDto(agendamento),
+      );
+
+      return PaginationHelper.createPaginatedResponse(
+        agendamentosDto,
+        page,
+        limit,
+        total,
+      );
+    } catch (error) {
+      this.logger.error(`Erro ao buscar agendamentos: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+  
+  /**
+   * Busca todos os agendamentos com paginação (método legado)
+   * 
+   * @deprecated Use buscarTodos com PaginationParamsDto
+   * @param filtros Filtros de busca
    * @param page Página atual
    * @param limit Limite de itens por página
    * @returns Lista paginada de agendamentos
    */
-  async buscarTodos(
+  async buscarTodosLegacy(
     filtros?: any,
     page: number = 1,
     limit: number = 10,
@@ -739,32 +809,18 @@ export class AgendamentoService {
     total: number;
     page: number;
     limit: number;
-    totalPages: number;
+    pages: number;
   }> {
-    try {
-      const repositoryFilters = this.convertToRepositoryFilters(filtros);
-      
-      const { agendamentos, total } = await this.agendamentoRepository.findWithPagination(
-        filtros,
-        page,
-        limit,
-      );
-
-      const agendamentosDto = agendamentos.map(agendamento =>
-        this.buildResponseDto(agendamento),
-      );
-
-      return {
-        agendamentos: agendamentosDto,
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      };
-    } catch (error) {
-      this.logger.error(`Erro ao buscar agendamentos: ${error.message}`, error.stack);
-      throw error;
-    }
+    const paginationParams = PaginationHelper.applyDefaults({ page, limit });
+    const result = await this.buscarTodos(filtros, paginationParams);
+    
+    return {
+      agendamentos: result.items,
+      total: result.meta.total,
+      page: result.meta.page,
+      limit: result.meta.limit,
+      pages: result.meta.pages,
+    };
   }
 
   /**
@@ -789,9 +845,45 @@ export class AgendamentoService {
   }
 
   /**
-   * Busca agendamentos em atraso
+   * Busca agendamentos em atraso com paginação
    */
-  async buscarEmAtraso(filters: any): Promise<{ agendamentos: AgendamentoResponseDto[]; total: number }> {
+  async buscarEmAtraso(
+    filters: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
+    try {
+      // Aplicar valores padrão e validar parâmetros de paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+      
+      const repositoryFilters = {
+        ...this.convertToRepositoryFilters(filters),
+        em_atraso: true,
+      };
+      
+      const { items, total } = await this.agendamentoRepository.findWithPagination(
+        repositoryFilters,
+        validatedParams,
+      );
+      
+      const agendamentosDto = items.map(agendamento => this.buildResponseDto(agendamento));
+      
+      return PaginationHelper.createPaginatedResponse(
+        agendamentosDto,
+        validatedParams.page,
+        validatedParams.limit,
+        total,
+      );
+    } catch (error) {
+      this.logger.error(`Erro ao buscar agendamentos em atraso: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca agendamentos em atraso (método legado para compatibilidade)
+   * @deprecated Use buscarEmAtraso com PaginationParamsDto
+   */
+  async buscarEmAtrasoLegacy(filters: any): Promise<{ agendamentos: AgendamentoResponseDto[]; total: number }> {
     try {
       const repositoryFilters = {
         ...this.convertToRepositoryFilters(filters),
@@ -811,9 +903,46 @@ export class AgendamentoService {
   }
 
   /**
-   * Busca agendamentos por técnico
+   * Busca agendamentos por técnico com paginação
    */
-  async buscarPorTecnico(tecnicoId: string, filters: any): Promise<{ agendamentos: AgendamentoResponseDto[]; total: number }> {
+  async buscarPorTecnico(
+    tecnicoId: string,
+    filters: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
+    try {
+      // Aplicar valores padrão e validar parâmetros de paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+      
+      const repositoryFilters = {
+        ...this.convertToRepositoryFilters(filters),
+        tecnico_id: tecnicoId,
+      };
+      
+      const { items, total } = await this.agendamentoRepository.findWithPagination(
+        repositoryFilters,
+        validatedParams,
+      );
+      
+      const agendamentosDto = items.map(agendamento => this.buildResponseDto(agendamento));
+      
+      return PaginationHelper.createPaginatedResponse(
+        agendamentosDto,
+        validatedParams.page,
+        validatedParams.limit,
+        total,
+      );
+    } catch (error) {
+      this.logger.error(`Erro ao buscar agendamentos por técnico ${tecnicoId}: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca agendamentos por técnico (método legado para compatibilidade)
+   * @deprecated Use buscarPorTecnico com PaginationParamsDto
+   */
+  async buscarPorTecnicoLegacy(tecnicoId: string, filters: any): Promise<{ agendamentos: AgendamentoResponseDto[]; total: number }> {
     try {
       const repositoryFilters = {
         ...this.convertToRepositoryFilters(filters),
@@ -833,13 +962,50 @@ export class AgendamentoService {
   }
 
   /**
-   * Busca agendamentos por beneficiário
+   * Busca agendamentos por pagamento com paginação
    */
-  async buscarPorBeneficiario(beneficiarioId: string, filters: any): Promise<{ agendamentos: AgendamentoResponseDto[]; total: number }> {
+  async buscarPorPagamento(
+    pagamentoId: string,
+    filters: any,
+    paginationParams?: PaginationParamsDto,
+  ): Promise<PaginatedResponseDto<AgendamentoResponseDto>> {
+    try {
+      // Aplicar valores padrão e validar parâmetros de paginação
+      const validatedParams = PaginationHelper.applyDefaults(paginationParams);
+      
+      const repositoryFilters = {
+        ...this.convertToRepositoryFilters(filters),
+        pagamento_id: pagamentoId,
+      };
+      
+      const { items, total } = await this.agendamentoRepository.findWithPagination(
+        repositoryFilters,
+        validatedParams,
+      );
+      
+      const agendamentosDto = items.map(agendamento => this.buildResponseDto(agendamento));
+      
+      return PaginationHelper.createPaginatedResponse(
+        agendamentosDto,
+        validatedParams.page,
+        validatedParams.limit,
+        total,
+      );
+    } catch (error) {
+      this.logger.error(`Erro ao buscar agendamentos por pagamento ${pagamentoId}: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca agendamentos por pagamento (método legado para compatibilidade)
+   * @deprecated Use buscarPorPagamento com PaginationParamsDto
+   */
+  async buscarPorPagamentoLegacy(pagamentoId: string, filters: any): Promise<{ agendamentos: AgendamentoResponseDto[]; total: number }> {
     try {
       const repositoryFilters = {
         ...this.convertToRepositoryFilters(filters),
-        beneficiario_id: beneficiarioId,
+        pagamento_id: pagamentoId,
       };
       
       const agendamentos = await this.agendamentoRepository.findWithFilters(repositoryFilters);
@@ -849,7 +1015,7 @@ export class AgendamentoService {
         total: agendamentos.length,
       };
     } catch (error) {
-      this.logger.error(`Erro ao buscar agendamentos por beneficiário ${beneficiarioId}: ${error.message}`, error.stack);
+      this.logger.error(`Erro ao buscar agendamentos por pagamento ${pagamentoId}: ${error.message}`, error.stack);
       throw error;
     }
   }
@@ -857,15 +1023,15 @@ export class AgendamentoService {
   /**
    * Confirma um agendamento
    */
-  async confirmarAgendamento(id: string): Promise<AgendamentoResponseDto> {
-    return this.confirmar(id);
+  async confirmarAgendamento(id: string, usuarioId: string): Promise<AgendamentoResponseDto> {
+    return this.confirmar(id, usuarioId);
   }
 
   /**
    * Reagenda uma visita
    */
-  async reagendarVisita(id: string, novaData: Date, motivo?: string): Promise<AgendamentoResponseDto> {
-    return this.reagendar(id, novaData, motivo);
+  async reagendarVisita(id: string, novaData: Date, motivo?: string, user?: string): Promise<AgendamentoResponseDto> {
+    return this.reagendar(id, novaData, motivo, user);
   }
 
   /**
@@ -919,30 +1085,21 @@ export class AgendamentoService {
 
     return {
       id: agendamento.id,
+      pagamento_id: agendamento.pagamento_id,
       beneficiario: {
-        id: agendamento.beneficiario.id,
-        nome: agendamento.beneficiario.nome,
-        cpf: agendamento.beneficiario.cpf,
-        telefone: agendamento.beneficiario.contatos?.[0].telefone,
+        id: agendamento.pagamento?.solicitacao?.beneficiario?.id || '',
+        nome: agendamento.pagamento?.solicitacao?.beneficiario?.nome || '',
+        cpf: agendamento.pagamento?.solicitacao?.beneficiario?.cpf || '',
       },
-      concessao: {
-        id: null,
-        numero_protocolo: 'N/A',
-        tipo_beneficio: 'N/A',
-        data_inicio: null,
-        data_fim: null,
-      },
-      tecnico_responsavel: {
-        id: agendamento.tecnico_id,
-        nome: agendamento.tecnico_responsavel?.nome || 'N/A',
-        matricula: agendamento.tecnico_responsavel?.matricula || 'N/A',
-        cargo: agendamento.tecnico_responsavel?.role?.nome || 'Técnico',
+      tecnico: {
+        id: agendamento.criado_por?.id || '',
+        nome: agendamento.criado_por?.nome || '',
+        email: agendamento.criado_por?.email || '',
+        matricula: agendamento.criado_por?.matricula || '',
       },
       unidade: {
-        id: agendamento.unidade.id,
-        nome: agendamento.unidade.nome,
-        codigo: agendamento.unidade.codigo,
-        endereco: agendamento.unidade.endereco,
+        id: agendamento.pagamento?.solicitacao?.unidade?.id || '',
+        nome: agendamento.pagamento?.solicitacao?.unidade?.nome || ''
       },
       data_agendamento: agendamento.data_agendamento,
       tipo_visita: agendamento.tipo_visita,
@@ -954,15 +1111,315 @@ export class AgendamentoService {
       status_label: getStatusAgendamentoLabel(agendamento.status),
       observacoes: agendamento.observacoes,
       endereco_visita: agendamento.endereco_visita,
-      telefone_contato: agendamento.beneficiario?.contatos?.[0]?.telefone || null,
+      telefone_contato: agendamento.pagamento.solicitacao.beneficiario?.contatos?.[0]?.telefone || null,
       motivo_visita: agendamento.tipo_visita,
       notificar_beneficiario: agendamento.notificar_beneficiario || false,
       em_atraso: emAtraso,
       dias_atraso: diasAtraso > 0 ? diasAtraso : undefined,
-      prazo_limite: prazoLimite.toISOString(),
+      prazo_limite: prazoLimite,
       visita_realizada: null,
-      created_at: agendamento.created_at.toISOString(),
-      updated_at: agendamento.updated_at.toISOString(),
+      created_at: agendamento.created_at,
+      updated_at: agendamento.updated_at,
+    };
+  }
+
+  /**
+   * Aplica filtros avançados para busca de agendamentos
+   * 
+   * @param filtros Filtros avançados a serem aplicados
+   * @returns Dados paginados dos agendamentos com estatísticas e filtros disponíveis
+   */
+  async aplicarFiltrosAvancados(filtros: AgendamentoFiltrosAvancadosDto): Promise<AgendamentoFiltrosResponseDto> {
+    try {
+      // Aplicar valores padrão de paginação
+      const paginationParams = PaginationHelper.applyDefaults({
+        page: filtros.page,
+        limit: filtros.limit
+      });
+
+      // Criar query builder base com relacionamentos
+      const queryBuilder = this.agendamentoRepository
+        .createQueryBuilder()
+
+      // Aplicar filtros condicionalmente
+      if (filtros.unidades?.length) {
+        queryBuilder.andWhere('unidade.id IN (:...unidades)', { unidades: filtros.unidades });
+      }
+
+      if (filtros.status?.length) {
+        queryBuilder.andWhere('agendamento.status IN (:...status)', { status: filtros.status });
+      }
+
+      if (filtros.tipos_visita?.length) {
+        queryBuilder.andWhere('agendamento.tipo_visita IN (:...tipos_visita)', { tipos_visita: filtros.tipos_visita });
+      }
+
+      if (filtros.prioridades?.length) {
+        queryBuilder.andWhere('agendamento.prioridade IN (:...prioridades)', { prioridades: filtros.prioridades });
+      }
+
+      if (filtros.tecnicos?.length) {
+        queryBuilder.andWhere('tecnico.id IN (:...tecnicos)', { tecnicos: filtros.tecnicos });
+      }
+
+      if (filtros.beneficiarios?.length) {
+        queryBuilder.andWhere('beneficiario.id IN (:...beneficiarios)', { beneficiarios: filtros.beneficiarios });
+      }
+
+      if (filtros.pagamentos?.length) {
+        queryBuilder.andWhere('pagamento.id IN (:...pagamentos)', { pagamentos: filtros.pagamentos });
+      }
+
+      // Filtros de período
+      if (filtros.periodo) {
+        const { dataInicio, dataFim } = this.filtrosAvancadosService.calcularPeriodoPredefinido(filtros.periodo);
+        queryBuilder.andWhere('agendamento.data_agendamento BETWEEN :dataInicio AND :dataFim', {
+          dataInicio,
+          dataFim
+        });
+      } else {
+        if (filtros.data_inicio) {
+          queryBuilder.andWhere('agendamento.data_agendamento >= :dataInicio', {
+            dataInicio: new Date(filtros.data_inicio)
+          });
+        }
+        if (filtros.data_fim) {
+          queryBuilder.andWhere('agendamento.data_agendamento <= :dataFim', {
+            dataFim: new Date(filtros.data_fim)
+          });
+        }
+      }
+
+      // Filtro de busca textual
+      if (filtros.search) {
+        const searchTerm = `%${filtros.search.toLowerCase()}%`;
+        queryBuilder.andWhere(
+          '(LOWER(beneficiario.nome) LIKE :search OR LOWER(tecnico.nome) LIKE :search OR LOWER(agendamento.observacoes) LIKE :search)',
+          { search: searchTerm }
+        );
+      }
+
+      // Filtro de agendamentos em atraso
+      if (filtros.em_atraso === true) {
+        queryBuilder.andWhere('agendamento.data_agendamento < :agora', { agora: new Date() });
+        queryBuilder.andWhere('agendamento.status NOT IN (:...statusConcluidos)', {
+          statusConcluidos: [StatusAgendamento.REALIZADO, StatusAgendamento.CANCELADO]
+        });
+      }
+
+      // Filtro para incluir/excluir cancelados
+      if (filtros.incluir_cancelados === false) {
+        queryBuilder.andWhere('agendamento.status != :statusCancelado', {
+          statusCancelado: StatusAgendamento.CANCELADO
+        });
+      }
+
+      // Aplicar ordenação
+      const sortBy = filtros.sort_by || 'data_agendamento';
+      const sortOrder = filtros.sort_order || 'ASC';
+      queryBuilder.orderBy(`agendamento.${sortBy}`, sortOrder);
+
+      // Obter total de registros antes da paginação
+      const total = await queryBuilder.getCount();
+
+      // Aplicar paginação
+      const skip = (paginationParams.page - 1) * paginationParams.limit;
+      queryBuilder.skip(skip).take(paginationParams.limit);
+
+      // Executar query para obter dados paginados
+      const agendamentos = await queryBuilder.getMany();
+
+      // Converter para DTOs
+      const agendamentosDto = agendamentos.map(agendamento => this.buildResponseDto(agendamento));
+
+      // Construir resposta com dados paginados e estatísticas
+      const response: AgendamentoFiltrosResponseDto = {
+        data: agendamentosDto,
+        meta: {
+          total,
+          page: paginationParams.page,
+          limit: paginationParams.limit,
+          pages: Math.ceil(total / paginationParams.limit),
+          hasNext: paginationParams.page < Math.ceil(total / paginationParams.limit),
+          hasPrev: paginationParams.page > 1
+        },
+        unidades: await this.obterUnidadesDisponiveis(),
+        status: await this.obterStatusDisponiveis(),
+        tipos_visita: await this.obterTiposVisitaDisponiveis(),
+        prioridades: await this.obterPrioridadesDisponiveis(),
+        tecnicos: await this.obterTecnicosDisponiveis(),
+        estatisticas: await this.calcularEstatisticas(),
+        periodos_disponiveis: Object.values(PeriodoPredefinido)
+      };
+
+      return response;
+    } catch (error) {
+      this.logger.error(`Erro ao aplicar filtros avançados: ${error.message}`, error.stack);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new Error(`Erro interno ao aplicar filtros avançados: ${error.message}`);
+    }
+  }
+
+  /**
+   * Obtém unidades disponíveis para filtro
+   * 
+   * @private
+   * @returns Lista de unidades com contadores
+   */
+  private async obterUnidadesDisponiveis(): Promise<Array<{ id: string; nome: string; total_agendamentos: number }>> {
+    const result = await this.agendamentoRepository
+      .createQueryBuilder()
+      .select('unidade.id', 'id')
+      .addSelect('unidade.nome', 'nome')
+      .addSelect('COUNT(DISTINCT agendamento.id)', 'total_agendamentos')
+      .where('unidade.id IS NOT NULL')
+      .groupBy('unidade.id')
+      .addGroupBy('unidade.nome')
+      .getRawMany();
+
+    return result.map(item => ({
+      id: item.id,
+      nome: item.nome,
+      total_agendamentos: parseInt(item.total_agendamentos)
+    }));
+  }
+
+  /**
+   * Obtém status disponíveis para filtro
+   * 
+   * @private
+   * @returns Lista de status com contadores
+   */
+  private async obterStatusDisponiveis(): Promise<Array<{ status: string; total: number }>> {
+    const result = await this.agendamentoRepository
+      .createQueryBuilder()
+      .select('agendamento.status', 'status')
+      .addSelect('COUNT(agendamento.id)', 'total')
+      .groupBy('agendamento.status')
+      .getRawMany();
+
+    return result.map(item => ({
+      status: item.status,
+      total: parseInt(item.total)
+    }));
+  }
+
+  /**
+   * Obtém tipos de visita disponíveis para filtro
+   * 
+   * @private
+   * @returns Lista de tipos com contadores
+   */
+  private async obterTiposVisitaDisponiveis(): Promise<Array<{ tipo: string; total: number }>> {
+    const result = await this.agendamentoRepository
+      .createQueryBuilder()
+      .select('agendamento.tipo_visita', 'tipo')
+      .addSelect('COUNT(agendamento.id)', 'total')
+      .groupBy('agendamento.tipo_visita')
+      .getRawMany();
+
+    return result.map(item => ({
+      tipo: item.tipo,
+      total: parseInt(item.total)
+    }));
+  }
+
+  /**
+   * Obtém prioridades disponíveis para filtro
+   * 
+   * @private
+   * @returns Lista de prioridades com contadores
+   */
+  private async obterPrioridadesDisponiveis(): Promise<Array<{ prioridade: string; total: number }>> {
+    const result = await this.agendamentoRepository
+      .createQueryBuilder()
+      .select('agendamento.prioridade', 'prioridade')
+      .addSelect('COUNT(agendamento.id)', 'total')
+      .groupBy('agendamento.prioridade')
+      .getRawMany();
+
+    return result.map(item => ({
+      prioridade: item.prioridade,
+      total: parseInt(item.total)
+    }));
+  }
+
+  /**
+   * Obtém técnicos disponíveis para filtro
+   * 
+   * @private
+   * @returns Lista de técnicos com contadores
+   */
+  private async obterTecnicosDisponiveis(): Promise<Array<{ id: string; nome: string; total_agendamentos: number }>> {
+    const result = await this.agendamentoRepository
+      .createQueryBuilder()
+      // .leftJoin('agendamento.pagamento', 'pagamento')
+      // .leftJoin('pagamento.solicitacao', 'solicitacao')
+      // .leftJoin('solicitacao.tecnico', 'tecnico')
+      .select('tecnico.id', 'id')
+      .addSelect('tecnico.nome', 'nome')
+      .addSelect('COUNT(DISTINCT agendamento.id)', 'total_agendamentos')
+      .where('tecnico.id IS NOT NULL')
+      .groupBy('tecnico.id')
+      .addGroupBy('tecnico.nome')
+      .getRawMany();
+
+    return result.map(item => ({
+      id: item.id,
+      nome: item.nome,
+      total_agendamentos: parseInt(item.total_agendamentos)
+    }));
+  }
+
+  /**
+   * Calcula estatísticas gerais dos agendamentos
+   * 
+   * @private
+   * @returns Estatísticas dos agendamentos
+   */
+  private async calcularEstatisticas(): Promise<{
+    total_agendamentos: number;
+    agendamentos_em_atraso: number;
+    agendamentos_hoje: number;
+    agendamentos_proximos_7_dias: number;
+  }> {
+    const agora = new Date();
+    const inicioHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+    const fimHoje = new Date(inicioHoje.getTime() + 24 * 60 * 60 * 1000);
+    const proximos7Dias = new Date(agora.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    const [total, emAtraso, hoje, proximos7] = await Promise.all([
+      this.agendamentoRepository.count(),
+      this.agendamentoRepository
+        .createQueryBuilder()
+        .where('agendamento.data_agendamento < :agora', { agora })
+        .andWhere('agendamento.status NOT IN (:...statusConcluidos)', {
+          statusConcluidos: [StatusAgendamento.REALIZADO, StatusAgendamento.CANCELADO]
+        })
+        .getCount(),
+      this.agendamentoRepository
+        .createQueryBuilder()
+        .where('agendamento.data_agendamento BETWEEN :inicio AND :fim', {
+          inicio: inicioHoje,
+          fim: fimHoje
+        })
+        .getCount(),
+      this.agendamentoRepository
+        .createQueryBuilder()
+        .where('agendamento.data_agendamento BETWEEN :agora AND :proximos7', {
+          agora,
+          proximos7: proximos7Dias
+        })
+        .getCount()
+    ]);
+
+    return {
+      total_agendamentos: total,
+      agendamentos_em_atraso: emAtraso,
+      agendamentos_hoje: hoje,
+      agendamentos_proximos_7_dias: proximos7
     };
   }
 }

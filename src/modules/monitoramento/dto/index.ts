@@ -15,3 +15,7 @@ export { RegistrarVisitaDto } from './registrar-visita.dto';
 
 // DTOs de resposta
 export { AgendamentoResponseDto } from './agendamento-response.dto';
+
+// DTOs de filtros avançados
+export { VisitaFiltrosAvancadosDto, VisitaFiltrosResponseDto } from './visita-filtros-avancados.dto';
+export { AgendamentoFiltrosAvancadosDto, AgendamentoFiltrosResponseDto } from './agendamento-filtros-avancados.dto';

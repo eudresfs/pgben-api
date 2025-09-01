@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { FiltroConcessaoDto } from '../dto/filtro-concessao.dto';
+import { ConcessaoFiltrosAvancadosDto, ConcessaoFiltrosResponseDto } from '../dto/concessao-filtros-avancados.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Concessao } from '../../../entities/concessao.entity';
@@ -21,6 +22,9 @@ import {
   MotivoOperacao,
 } from '../../../enums/operacao-concessao.enum';
 import { SYSTEM_USER_UUID } from '../../../shared/constants/system.constants';
+import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
+import { PeriodoPredefinido } from '../../../enums/periodo-predefinido.enum';
+import { BeneficioEventosService } from './beneficio-eventos.service';
 
 @Injectable()
 export class ConcessaoService {
@@ -32,6 +36,8 @@ export class ConcessaoService {
     private readonly historicoRepo: Repository<HistoricoConcessao>,
     private readonly validacaoBeneficioService: ValidacaoBeneficioService,
     private readonly logger: LoggingService,
+    private readonly filtrosAvancadosService: FiltrosAvancadosService,
+    private readonly beneficioEventosService: BeneficioEventosService,
   ) {}
 
   /**
@@ -714,6 +720,31 @@ export class ConcessaoService {
         ConcessaoService.name,
       );
     });
+
+    // Emitir evento de suspensão para o sistema de notificações
+    try {
+      // Buscar concessão completa para emitir evento
+      const concessaoCompleta = await this.concessaoRepo.findOne({
+        where: { id: concessaoId },
+        relations: ['solicitacao', 'solicitacao.beneficiario'],
+      });
+      
+      if (concessaoCompleta) {
+        this.beneficioEventosService.emitirEventoConcessaoSuspensa(
+          concessaoCompleta,
+          motivo,
+          usuarioId,
+          dataRevisao ? `Data de revisão: ${dataRevisao.toLocaleDateString()}` : undefined,
+        );
+      }
+    } catch (eventError) {
+      this.logger.error(
+        `Erro ao emitir evento de suspensão para concessão ${concessaoId}: ${eventError.message}`,
+        eventError.stack,
+        ConcessaoService.name,
+      );
+      // Não falha a operação principal, apenas registra o erro
+    }
       
     return concessaoSalva;
   }
@@ -760,6 +791,23 @@ export class ConcessaoService {
       `Concessão ${concessaoId} bloqueada por ${usuarioId}. Motivo: ${motivo}`,
       ConcessaoService.name,
     );
+
+    // Emitir evento de bloqueio para o sistema de notificações
+    try {
+      this.beneficioEventosService.emitirEventoConcessaoBloqueada(
+        concessaoSalva,
+        motivo,
+        usuarioId,
+      );
+    } catch (eventError) {
+      this.logger.error(
+        `Erro ao emitir evento de bloqueio para concessão ${concessaoId}: ${eventError.message}`,
+        eventError.stack,
+        ConcessaoService.name,
+      );
+      // Não falha a operação principal, apenas registra o erro
+    }
+
     return concessaoSalva;
   }
 
@@ -839,6 +887,24 @@ export class ConcessaoService {
         `Concessão ${concessaoId} reativada por ${usuarioId}. Motivo: ${motivo}`,
         ConcessaoService.name,
       );
+
+      // Emitir evento de reativação para o sistema de notificações
+      try {
+        this.beneficioEventosService.emitirEventoConcessaoReativada(
+          concessaoSalva,
+          statusAnterior,
+          motivo,
+          usuarioId,
+        );
+      } catch (eventError) {
+        this.logger.error(
+          `Erro ao emitir evento de reativação para concessão ${concessaoId}: ${eventError.message}`,
+          eventError.stack,
+          ConcessaoService.name,
+        );
+        // Não falha a operação principal, apenas registra o erro
+      }
+
       return concessaoSalva;
     } catch (error) {
       // Log detalhado do erro para debugging
@@ -936,6 +1002,24 @@ export class ConcessaoService {
         `Concessão ${concessaoId} desbloqueada por ${usuarioId}. Motivo: ${motivo}`,
         ConcessaoService.name,
       );
+
+      // Emitir evento de reativação para o sistema de notificações (desbloqueio é uma forma de reativação)
+      try {
+        this.beneficioEventosService.emitirEventoConcessaoReativada(
+          concessaoSalva,
+          statusAnterior,
+          motivo,
+          usuarioId,
+        );
+      } catch (eventError) {
+        this.logger.error(
+          `Erro ao emitir evento de desbloqueio para concessão ${concessaoId}: ${eventError.message}`,
+          eventError.stack,
+          ConcessaoService.name,
+        );
+        // Não falha a operação principal, apenas registra o erro
+      }
+
       return concessaoSalva;
     } catch (error) {
       // Log detalhado do erro para debugging
@@ -969,7 +1053,7 @@ export class ConcessaoService {
    * @param observacoes Observações adicionais sobre o cancelamento
    * @returns Concessão cancelada
    */
-  async cancelarConcessao(
+  async cessarConcessao(
     concessaoId: string,
     usuarioId: string,
     motivo: string,
@@ -984,9 +1068,9 @@ export class ConcessaoService {
       throw new NotFoundException('Concessão não encontrada');
     }
 
-    if (concessao.status === StatusConcessao.CANCELADO) {
+    if (concessao.status === StatusConcessao.CESSADO) {
       throw new BadRequestException(
-        `A concessão ${concessaoId} já está com status cancelado`,
+        `A concessão ${concessaoId} já está com status cessado`,
       );
     }
 
@@ -1000,10 +1084,12 @@ export class ConcessaoService {
         try {
           // Só tenta cancelar se o pagamento não estiver cancelado ou confirmado
           if (pagamento.status !== StatusPagamentoEnum.CANCELADO && 
-              pagamento.status !== StatusPagamentoEnum.CONFIRMADO) {
+              pagamento.status !== StatusPagamentoEnum.CONFIRMADO &&
+              pagamento.status !== StatusPagamentoEnum.PAGO
+            ) {
             const pagamentoCancelado = await this.pagamentoService.cancelar(
               pagamento.id,
-              `Cancelamento automático - Concessão cancelada: ${motivo}`,
+              `Cancelamento automático - Concessão cessada: ${motivo}`,
               usuarioId
             );
             pagamentosCancelados.push(pagamentoCancelado);
@@ -1025,7 +1111,7 @@ export class ConcessaoService {
 
       // Atualizar status da concessão
       const statusAnterior = concessao.status;
-      concessao.status = StatusConcessao.CANCELADO;
+      concessao.status = StatusConcessao.CESSADO;
       concessao.dataEncerramento = new Date();
       concessao.motivoEncerramento = motivo;
 
@@ -1035,7 +1121,7 @@ export class ConcessaoService {
       const historico = this.historicoRepo.create({
         concessaoId: concessaoSalva.id,
         statusAnterior,
-        statusNovo: StatusConcessao.CANCELADO,
+        statusNovo: StatusConcessao.CESSADO,
         motivo,
         observacoes: observacoes ? 
           `${observacoes}. Pagamentos cancelados: ${pagamentosCancelados.length}/${pagamentos.length}` :
@@ -1045,7 +1131,7 @@ export class ConcessaoService {
       await this.historicoRepo.save(historico);
 
       this.logger.warn(
-        `Concessão ${concessaoId} cancelada por usuário ${usuarioId}. ` +
+        `Concessão ${concessaoId} cessada por usuário ${usuarioId}. ` +
         `${pagamentosCancelados.length} de ${pagamentos.length} pagamentos foram cancelados.`,
         ConcessaoService.name,
       );
@@ -1068,7 +1154,7 @@ export class ConcessaoService {
       
       // Para erros não tratados, lança um erro genérico mas informativo
       throw new BadRequestException(
-        `Erro interno ao cancelar concessão. Verifique os logs para mais detalhes.`,
+        `Erro interno ao cessar concessão. Verifique os logs para mais detalhes.`,
       );
     }
   }
@@ -1143,7 +1229,7 @@ export class ConcessaoService {
             statusAnterior,
             statusNovo: StatusConcessao.CESSADO,
             motivo: 'Encerramento automático - todos os pagamentos liberados',
-            alteradoPor: 'SISTEMA',
+            alteradoPor: SYSTEM_USER_UUID,
             dataAlteracao: new Date(),
           });
         } catch (historicoError) {
@@ -1242,6 +1328,235 @@ export class ConcessaoService {
       // Para erros não tratados, lança um erro genérico mas informativo
       throw new BadRequestException(
         `Erro interno ao buscar motivos. Verifique os logs para mais detalhes.`,
+      );
+    }
+  }
+
+  /**
+   * Aplica filtros avançados para busca de concessões
+   * Implementa busca otimizada com múltiplos critérios e paginação
+   * @param filtros Critérios de filtro avançados
+   * @returns Resultado paginado com metadados
+   */
+  async aplicarFiltrosAvancados(
+    filtros: ConcessaoFiltrosAvancadosDto,
+  ): Promise<ConcessaoFiltrosResponseDto> {
+    const startTime = Date.now();
+    this.logger.info('Iniciando aplicação de filtros avançados para concessões');
+
+    try {
+      // Construir query base com relacionamentos necessários
+      const queryBuilder = this.concessaoRepo
+        .createQueryBuilder('concessao')
+        .leftJoinAndSelect('concessao.solicitacao', 'solicitacao')
+        .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
+        .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
+        .leftJoinAndSelect('solicitacao.unidade', 'unidade')
+        .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
+        .select([
+          // Dados básicos da concessão
+          'concessao.id',
+          'concessao.dataInicio',
+          'concessao.status',
+          'concessao.created_at',
+          'concessao.updated_at',
+          // Dados básicos da solicitação
+          'solicitacao.id',
+          'solicitacao.protocolo',
+          'solicitacao.prioridade',
+          'solicitacao.determinacao_judicial_flag',
+          // Dados básicos do beneficiário
+          'beneficiario.id',
+          'beneficiario.nome',
+          'beneficiario.cpf',
+          // Dados básicos do tipo de benefício
+          'tipo_beneficio.id',
+          'tipo_beneficio.nome',
+          'tipo_beneficio.codigo',
+          // Dados básicos da unidade
+          'unidade.id',
+          'unidade.nome',
+          'unidade.codigo',
+          // Dados básicos do técnico
+          'tecnico.id',
+          'tecnico.nome',
+        ]);
+
+      // Aplicar filtros condicionalmente
+      if (filtros.unidades?.length > 0) {
+        queryBuilder.andWhere('solicitacao.unidade_id IN (:...unidades)', {
+          unidades: filtros.unidades,
+        });
+      }
+
+      if (filtros.status?.length > 0) {
+        queryBuilder.andWhere('concessao.status IN (:...status)', {
+          status: filtros.status,
+        });
+      }
+
+      if (filtros.beneficios?.length > 0) {
+        queryBuilder.andWhere('solicitacao.tipo_beneficio_id IN (:...beneficios)', {
+          beneficios: filtros.beneficios,
+        });
+      }
+
+      if (filtros.usuarios?.length > 0) {
+        queryBuilder.andWhere('solicitacao.tecnico_id IN (:...usuarios)', {
+          usuarios: filtros.usuarios,
+        });
+      }
+
+      if (filtros.prioridades?.length > 0) {
+        queryBuilder.andWhere('solicitacao.prioridade IN (:...prioridades)', {
+          prioridades: filtros.prioridades,
+        });
+      }
+
+      if (filtros.determinacao_judicial !== undefined) {
+        queryBuilder.andWhere('solicitacao.determinacao_judicial_flag = :determinacao_judicial', {
+          determinacao_judicial: filtros.determinacao_judicial,
+        });
+      }
+
+      // Aplicar filtros de período
+      if (filtros.periodo) {
+        const { dataInicio, dataFim } = this.filtrosAvancadosService.calcularPeriodoPredefinido(filtros.periodo);
+        queryBuilder.andWhere('concessao.dataInicio >= :dataInicio', { dataInicio });
+        queryBuilder.andWhere('concessao.dataInicio <= :dataFim', { dataFim });
+      } else {
+        if (filtros.data_inicio) {
+          queryBuilder.andWhere('concessao.dataInicio >= :data_inicio', {
+            data_inicio: filtros.data_inicio,
+          });
+        }
+        if (filtros.data_fim) {
+          queryBuilder.andWhere('concessao.dataInicio <= :data_fim', {
+            data_fim: filtros.data_fim,
+          });
+        }
+      }
+
+      // Aplicar busca textual
+      if (filtros.search?.trim()) {
+        const searchTerm = `%${filtros.search.toLowerCase().trim()}%`;
+        const cpfTerm = `%${filtros.search.replace(/\D/g, '')}%`;
+        queryBuilder.andWhere(
+          '(LOWER(beneficiario.nome) LIKE :searchTerm OR beneficiario.cpf LIKE :cpfTerm OR solicitacao.protocolo ILIKE :searchTerm)',
+          { searchTerm, cpfTerm },
+        );
+      }
+
+      // Obter contagem total
+      const total = await queryBuilder.getCount();
+
+      // Aplicar paginação
+      const page = filtros.page || 1;
+      const limit = Math.min(filtros.limit || 10, 100);
+      const offset = (page - 1) * limit;
+
+      queryBuilder.limit(limit).offset(offset);
+
+      // Aplicar ordenação
+      const sortBy = filtros.sort_by || 'created_at';
+      const sortOrder = filtros.sort_order || 'DESC';
+      
+      switch (sortBy) {
+        case 'data_inicio':
+          queryBuilder.orderBy('concessao.dataInicio', sortOrder);
+          break;
+        case 'status':
+          queryBuilder.orderBy('concessao.status', sortOrder);
+          break;
+        case 'protocolo':
+          queryBuilder.orderBy('solicitacao.protocolo', sortOrder);
+          break;
+        case 'beneficiario':
+          queryBuilder.orderBy('beneficiario.nome', sortOrder);
+          break;
+        case 'prioridade':
+          queryBuilder.orderBy('solicitacao.prioridade', sortOrder);
+          break;
+        default:
+          queryBuilder.orderBy('concessao.created_at', sortOrder);
+      }
+
+      // Executar query
+      const concessoes = await queryBuilder.getMany();
+
+      // Transformar dados para estrutura padronizada
+      const items = concessoes.map((concessao) => ({
+        id: concessao.id,
+        data_inicio: concessao.dataInicio,
+        status: concessao.status,
+        prioridade: concessao.solicitacao?.prioridade,
+        protocolo: concessao.solicitacao?.protocolo,
+        determinacao_judicial: concessao.solicitacao?.determinacao_judicial_flag || false,
+        created_at: concessao.created_at,
+        updated_at: concessao.updated_at,
+        beneficiario: concessao.solicitacao?.beneficiario
+          ? {
+              id: concessao.solicitacao.beneficiario.id,
+              nome: concessao.solicitacao.beneficiario.nome,
+              cpf: concessao.solicitacao.beneficiario.cpf,
+            }
+          : null,
+        tipo_beneficio: concessao.solicitacao?.tipo_beneficio
+          ? {
+              id: concessao.solicitacao.tipo_beneficio.id,
+              nome: concessao.solicitacao.tipo_beneficio.nome,
+              codigo: concessao.solicitacao.tipo_beneficio.codigo,
+            }
+          : null,
+        unidade: concessao.solicitacao?.unidade
+          ? {
+              id: concessao.solicitacao.unidade.id,
+              nome: concessao.solicitacao.unidade.nome,
+              codigo: concessao.solicitacao.unidade.codigo,
+            }
+          : null,
+        tecnico: concessao.solicitacao?.tecnico
+          ? {
+              id: concessao.solicitacao.tecnico.id,
+              nome: concessao.solicitacao.tecnico.nome,
+            }
+          : null,
+      }));
+
+      // Calcular metadados de paginação
+      const pages = Math.ceil(total / limit);
+      const hasNext = page < pages;
+      const hasPrev = page > 1;
+
+      const executionTime = Date.now() - startTime;
+
+      this.logger.info(
+        `Filtros avançados aplicados com sucesso - Total: ${total} registros em ${executionTime}ms`,
+      );
+
+      return {
+        items,
+        meta: {
+          page,
+          limit,
+          total,
+          pages: pages,
+          hasNext,
+          hasPrev: hasPrev,
+        },
+        performance: {
+          executionTime,
+          queryCount: 1,
+          cacheHit: false,
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `Erro ao aplicar filtros avançados para concessões: ${error.message}`,
+        error.stack,
+      );
+      throw new BadRequestException(
+        `Erro ao aplicar filtros: ${error.message}`,
       );
     }
   }

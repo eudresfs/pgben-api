@@ -419,6 +419,8 @@ export class AuditCoreService implements OnModuleInit {
       dto.metadata.sensitiveFields = event.sensitiveFields;
       dto.metadata.legalBasis = event.legalBasis;
       dto.metadata.purpose = event.purpose;
+      // Registra os campos sensíveis acessados na coluna específica
+      dto.dados_sensiveis_acessados = event.sensitiveFields;
     }
 
     return dto;

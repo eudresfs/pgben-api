@@ -29,6 +29,11 @@ import { SolicitacaoService } from '@/modules/solicitacao/services/solicitacao.s
 import { PagamentoUnifiedMapper } from '../mappers';
 import { PagamentoCacheService } from './pagamento-cache.service';
 import { PagamentoValidationService } from './pagamento-validation.service';
+import { PagamentoFiltrosAvancadosDto, PagamentoFiltrosResponseDto } from '../dto/pagamento-filtros-avancados.dto';
+import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
+import { PeriodoPredefinido } from '../../../enums/periodo-predefinido.enum';
+import { SelectQueryBuilder } from 'typeorm';
+import { PagamentoEventosService } from './pagamento-eventos.service';
 
 /**
  * Service simplificado para gerenciamento de pagamentos
@@ -49,7 +54,9 @@ export class PagamentoService {
     private readonly concessaoService: ConcessaoService,
     private readonly mapper: PagamentoUnifiedMapper,
     private readonly pagamentoCalculatorService: PagamentoCalculatorService,
-  ) {}
+    private readonly filtrosAvancadosService: FiltrosAvancadosService,
+    private readonly pagamentoEventosService: PagamentoEventosService,
+  ) { }
 
   /**
    * Cria um novo pagamento
@@ -88,12 +95,21 @@ export class PagamentoService {
       },
     });
 
+    // Emitir evento de pagamento criado
+    await this.pagamentoEventosService.emitirEventoPagamentoCriado({
+      concessaoId: pagamento.concessao_id,
+      valor: pagamento.valor,
+      dataVencimento: pagamento.data_vencimento,
+      usuarioCriadorId: pagamento.criado_por || 'sistema',
+      observacao: pagamento.observacoes,
+    });
+
     // Pagamento criado com sucesso
     return pagamento;
   }
 
   /**
-   * Busca pagamento por ID
+   * Busca pagamento por ID com cálculo de critérios de liberação
    */
   async findById(id: string): Promise<Pagamento> {
     const pagamento = await this.pagamentoRepository.findById(id);
@@ -101,6 +117,42 @@ export class PagamentoService {
     if (!pagamento) {
       throw new NotFoundException('Pagamento não encontrado');
     }
+
+    // Buscar dados necessários para cálculo dos critérios de liberação
+    let concessao = null;
+    let pagamentoAnterior = null;
+
+    try {
+      // Buscar concessão relacionada
+      if (pagamento.concessao_id) {
+        concessao = await this.concessaoService.findById(pagamento.concessao_id);
+      }
+
+      // Buscar pagamento anterior se não for a primeira parcela
+      if (pagamento.numero_parcela > 1) {
+        const pagamentosConcessao = await this.pagamentoRepository.findByConcessao(
+          pagamento.concessao_id,
+        );
+        pagamentoAnterior = pagamentosConcessao.find(
+          (p) => p.numero_parcela === pagamento.numero_parcela - 1,
+        );
+      }
+    } catch (error) {
+      this.logger.warn(
+        `Erro ao buscar dados para cálculo de critérios de liberação: ${error.message}`,
+      );
+    }
+
+    // Calcular critérios de liberação usando o mapper
+    const criterios = PagamentoUnifiedMapper.calcularCriteriosLiberacao(
+      pagamento,
+      pagamentoAnterior,
+      concessao,
+    );
+
+    // Adicionar as propriedades calculadas ao pagamento
+    (pagamento as any).pode_liberar = criterios.pode_liberar;
+    (pagamento as any).motivo_liberacao = criterios.motivo_liberacao;
 
     return pagamento;
   }
@@ -169,7 +221,7 @@ export class PagamentoService {
 
     // Buscar pagamento existente com relações necessárias
     const pagamento = await this.pagamentoRepository.findPagamentoComRelacoes(id);
-    
+
     if (!pagamento) {
       throw new NotFoundException('Pagamento não encontrado');
     }
@@ -221,12 +273,12 @@ export class PagamentoService {
     if (pagamento.numero_parcela === 1 && pagamento.concessao_id) {
       try {
         await this.concessaoService.atualizarStatus(
-           pagamento.concessao_id,
-           StatusConcessao.ATIVO,
-           usuarioId,
-           `Ativação automática - Primeira parcela do pagamento ${id} atualizada para ${updateDto.status}`,
-         );
-        
+          pagamento.concessao_id,
+          StatusConcessao.ATIVO,
+          usuarioId,
+          `Ativação automática - Primeira parcela do pagamento ${id} atualizada para ${updateDto.status}`,
+        );
+
         this.logger.log(
           `Status da concessão ${pagamento.concessao_id} atualizado para ATIVO devido à atualização da primeira parcela`,
         );
@@ -252,6 +304,15 @@ export class PagamentoService {
         updatedAt: new Date(),
         isFirstInstallment: pagamento.numero_parcela === 1,
       },
+    });
+
+    // Emitir evento de status atualizado
+    await this.pagamentoEventosService.emitirEventoStatusAtualizado({
+      statusAnterior: pagamento.status,
+      statusAtual: updateDto.status,
+      motivoMudanca: updateDto.observacoes,
+      usuarioId: usuarioId,
+      observacao: updateDto.observacoes,
     });
 
     this.logger.log(
@@ -310,6 +371,14 @@ export class PagamentoService {
       },
     });
 
+    // Emitir evento de pagamento cancelado
+    await this.pagamentoEventosService.emitirEventoPagamentoCancelado({
+      canceladoPorId: usuarioId,
+      motivoCancelamento: motivo,
+      dataCancelamento: new Date(),
+      observacao: motivo,
+    });
+
     // Pagamento cancelado com sucesso
     return pagamentoCancelado;
   }
@@ -326,6 +395,235 @@ export class PagamentoService {
    */
   async findByConcessao(concessao_id: string): Promise<Pagamento[]> {
     return await this.pagamentoRepository.findByConcessao(concessao_id);
+  }
+
+  /**
+   * Busca pagamentos pendentes de monitoramento
+   * Retorna pagamentos que ainda não têm agendamento/visita criado
+   * @param filtros Filtros opcionais para bairro, CPF e paginação
+   */
+  async findPendentesMonitoramento(filtros?: {
+    bairro?: string;
+    cpf?: string;
+    page?: number;
+    limit?: number;
+    offset?: number;
+  }) {
+    return this.pagamentoRepository.findPendentesMonitoramento(filtros);
+  }
+
+  /**
+   * Aplica filtros avançados para busca de pagamentos
+   * Implementa busca otimizada com múltiplos critérios e paginação
+   * @param filtros Critérios de filtro avançados
+   * @returns Resultado paginado com metadados
+   */
+  async aplicarFiltrosAvancados(
+    filtros: PagamentoFiltrosAvancadosDto,
+  ): Promise<PagamentoFiltrosResponseDto> {
+    const startTime = Date.now();
+
+    try {
+      // Construir query base com relacionamentos necessários
+      const queryBuilder = this.pagamentoRepository
+        .createScopedQueryBuilder('pagamento')
+        .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+        .leftJoinAndSelect('pagamento.concessao', 'concessao')
+        .leftJoin('solicitacao.tecnico', 'usuario')
+        .addSelect([
+          'usuario.id',
+          'usuario.email',
+          'unidade.nome',
+        ])
+        .leftJoinAndSelect('solicitacao.unidade', 'unidade')
+        .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
+        .leftJoinAndSelect('solicitacao.tipo_beneficio', 'beneficio');
+
+      // Aplicar filtros condicionalmente
+      if (filtros.unidades?.length > 0) {
+        queryBuilder.andWhere('solicitacao.unidade_id IN (:...unidades)', {
+          unidades: filtros.unidades,
+        });
+      }
+
+      if (filtros.beneficios?.length > 0) {
+        queryBuilder.andWhere('solicitacao.tipo_beneficio IN (:...beneficios)', {
+          beneficios: filtros.beneficios,
+        });
+      }
+
+      if (filtros.status?.length > 0) {
+        queryBuilder.andWhere('pagamento.status IN (:...status)', {
+          status: filtros.status,
+        });
+      }
+
+      if (filtros.metodos_pagamento?.length > 0) {
+        queryBuilder.andWhere('pagamento.metodo_pagamento IN (:...metodos)', {
+          metodos: filtros.metodos_pagamento,
+        });
+      }
+
+      if (filtros.solicitacoes?.length > 0) {
+        queryBuilder.andWhere('pagamento.solicitacao_id IN (:...solicitacoes)', {
+          solicitacoes: filtros.solicitacoes,
+        });
+      }
+
+      if (filtros.concessoes?.length > 0) {
+        queryBuilder.andWhere('pagamento.concessao_id IN (:...concessoes)', {
+          concessoes: filtros.concessoes,
+        });
+      }
+
+      // Filtro de busca textual
+      if (filtros.search) {
+        queryBuilder.andWhere(
+          '(cidadao.nome ILIKE :search OR cidadao.cpf ILIKE :search OR pagamento.observacoes ILIKE :search)',
+          { search: `%${filtros.search}%` },
+        );
+      }
+
+      // Aplicar filtros de período
+      this.aplicarFiltrosPeriodo(queryBuilder, filtros);
+
+      // Filtros de data específicos (sobrescrevem período se fornecidos)
+      if (filtros.data_inicio) {
+        queryBuilder.andWhere('pagamento.data_liberacao >= :dataInicio', {
+          dataInicio: filtros.data_inicio,
+        });
+      }
+
+      if (filtros.data_fim) {
+        queryBuilder.andWhere('pagamento.data_liberacao <= :dataFim', {
+          dataFim: filtros.data_fim,
+        });
+      }
+
+      if (filtros.data_pagamento_inicio) {
+        queryBuilder.andWhere('pagamento.data_pagamento >= :dataPagamentoInicio', {
+          dataPagamentoInicio: filtros.data_pagamento_inicio,
+        });
+      }
+
+      if (filtros.data_pagamento_fim) {
+        queryBuilder.andWhere('pagamento.data_pagamento <= :dataPagamentoFim', {
+          dataPagamentoFim: filtros.data_pagamento_fim,
+        });
+      }
+
+      // Filtros de valor
+      if (filtros.valor_min !== undefined) {
+        queryBuilder.andWhere('pagamento.valor >= :valorMin', {
+          valorMin: filtros.valor_min,
+        });
+      }
+
+      if (filtros.valor_max !== undefined) {
+        queryBuilder.andWhere('pagamento.valor <= :valorMax', {
+          valorMax: filtros.valor_max,
+        });
+      }
+
+      // Filtros de parcela
+      if (filtros.parcela_min !== undefined) {
+        queryBuilder.andWhere('pagamento.numero_parcela >= :parcelaMin', {
+          parcelaMin: filtros.parcela_min,
+        });
+      }
+
+      if (filtros.parcela_max !== undefined) {
+        queryBuilder.andWhere('pagamento.numero_parcela <= :parcelaMax', {
+          parcelaMax: filtros.parcela_max,
+        });
+      }
+
+      // Filtro de comprovante
+      if (filtros.com_comprovante !== undefined) {
+        if (filtros.com_comprovante) {
+          queryBuilder.andWhere('pagamento.comprovante_id IS NOT NULL');
+        } else {
+          queryBuilder.andWhere('pagamento.comprovante_id IS NULL');
+        }
+      }
+
+      // Incluir relacionamentos opcionais
+      if (filtros.include_relations?.includes('comprovante')) {
+        queryBuilder.leftJoinAndSelect('pagamento.comprovante', 'comprovante');
+      }
+
+      if (filtros.include_relations?.includes('monitoramento')) {
+        queryBuilder.leftJoinAndSelect('pagamento.agendamentos', 'agendamentos');
+        queryBuilder.leftJoinAndSelect('agendamentos.visitas', 'visitas');
+      }
+
+      // Aplicar ordenação
+      const sortField = filtros.sort_by || 'data_liberacao';
+      const sortOrder = filtros.sort_order || 'DESC';
+      queryBuilder.orderBy(`pagamento.${sortField}`, sortOrder);
+
+      // Aplicar paginação
+      const page = filtros.page || 1;
+      const limit = Math.min(filtros.limit || 20, 100);
+      const offset = (page - 1) * limit;
+
+      queryBuilder.skip(offset).take(limit);
+
+      // Executar query
+      const [items, total] = await queryBuilder.getManyAndCount();
+
+      // Remover campos sensíveis dos resultados
+      const sanitizedItems = items.map((item) => {
+        // Remover campos sensíveis dos usuários relacionados
+        if (item.solicitacao?.tecnico?.senhaHash) {
+          delete item.solicitacao.tecnico.senhaHash;
+        }
+        if (item.solicitacao?.aprovador?.senhaHash) {
+          delete item.solicitacao.aprovador.senhaHash;
+        }
+        if (item.solicitacao?.liberador?.senhaHash) {
+          delete item.solicitacao.liberador.senhaHash;
+        }
+        return item;
+      });
+
+      // Calcular tempo de execução
+      const tempoExecucao = Date.now() - startTime;
+
+      // Preparar metadados de paginação
+      const pages = Math.ceil(total / limit);
+      const meta = {
+        limit,
+        offset,
+        page,
+        pages,
+        hasNext: page < pages,
+        hasPrev: page > 1,
+      };
+
+      // Calcular período se fornecido
+      let periodoCalculado: any;
+      if (filtros.periodo && filtros.periodo !== 'personalizado') {
+        periodoCalculado = this.filtrosAvancadosService.calcularPeriodoPredefinido(filtros.periodo);
+      }
+
+      return {
+        items: sanitizedItems,
+        total,
+        filtros_aplicados: this.filtrosAvancadosService.normalizarFiltros(filtros),
+        periodo_calculado: periodoCalculado,
+        meta,
+        tempo_execucao: tempoExecucao,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Erro ao aplicar filtros avançados de pagamentos: ${error.message}`,
+        error.stack,
+      );
+      throw new BadRequestException(
+        'Erro ao processar filtros de pagamentos',
+      );
+    }
   }
 
   /**
@@ -371,7 +669,7 @@ export class PagamentoService {
 
       this.logger.log(
         `${pagamentosGerados.length} pagamentos gerados para concessão ${concessao.id} - ` +
-          `Total: R$ ${dadosPagamento.valor.toFixed(2)}`,
+        `Total: R$ ${dadosPagamento.valor.toFixed(2)}`,
       );
 
       // Emitir eventos de invalidação de cache para cada pagamento criado
@@ -462,7 +760,7 @@ export class PagamentoService {
 
     this.logger.log(
       `Criando ${quantidadeParcelas} parcelas de R$ ${valorParcela.toFixed(2)} ` +
-        `para ${solicitacao.tipo_beneficio?.nome}`,
+      `para ${solicitacao.tipo_beneficio?.nome}`,
     );
 
     for (let i = 1; i <= quantidadeParcelas; i++) {
@@ -582,5 +880,44 @@ export class PagamentoService {
       `Liberação: ${format(dataLiberacao, 'dd/MM/yyyy')} - ` +
       `Vencimento: ${format(dataVencimento, 'dd/MM/yyyy')}`
     );
+  }
+
+  /**
+   * Aplica filtros de período baseado em período predefinido ou datas customizadas
+   * @param queryBuilder Query builder do TypeORM
+   * @param filtros Filtros avançados contendo período
+   */
+  private aplicarFiltrosPeriodo(
+    queryBuilder: SelectQueryBuilder<Pagamento>,
+    filtros: PagamentoFiltrosAvancadosDto,
+  ): void {
+    // Se tem período predefinido, calcular as datas automaticamente
+    if (filtros.periodo && filtros.periodo !== PeriodoPredefinido.PERSONALIZADO) {
+      try {
+        const periodoCalculado = this.filtrosAvancadosService.calcularPeriodoPredefinido(filtros.periodo);
+        
+        // Aplicar filtro de data de liberação baseado no período
+        queryBuilder.andWhere('pagamento.data_liberacao >= :periodoInicio', {
+          periodoInicio: periodoCalculado.dataInicio,
+        });
+        
+        queryBuilder.andWhere('pagamento.data_liberacao <= :periodoFim', {
+          periodoFim: periodoCalculado.dataFim,
+        });
+        
+        this.logger.debug(
+          `Aplicado filtro de período ${filtros.periodo}: ${periodoCalculado.dataInicio} a ${periodoCalculado.dataFim}`,
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Erro ao calcular período ${filtros.periodo}: ${error.message}`,
+        );
+        throw new BadRequestException(
+          `Período inválido: ${filtros.periodo}`,
+        );
+      }
+    }
+    // Se é período personalizado, as datas específicas serão aplicadas posteriormente
+    // no método principal (data_liberacao_inicio, data_liberacao_fim, etc.)
   }
 }

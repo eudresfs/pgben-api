@@ -9,6 +9,10 @@ import { UploadMetadata } from './interfaces/documento-metadata.interface';
 import { LoggingService } from '../../../../shared/logging/logging.service';
 import { IDocumentoPersistenceService } from './interfaces/documento-persistence.interface';
 import { DocumentoUrlService } from '../documento-url.service';
+import { AuditEventEmitter } from '../../../auditoria/events/emitters/audit-event.emitter';
+import { AuditContextHolder } from '../../../../common/interceptors/audit-context.interceptor';
+import { AuditEventType } from '../../../auditoria/events/types/audit-event.types';
+import { SYSTEM_USER_UUID } from '../../../../shared/constants/system.constants';
 
 /**
  * Serviço especializado para persistência de documentos
@@ -23,6 +27,7 @@ export class DocumentoPersistenceService
     private readonly documentoRepository: Repository<Documento>,
     private readonly logger: LoggingService,
     private readonly documentoUrlService: DocumentoUrlService,
+    private readonly auditEventEmitter: AuditEventEmitter,
   ) {}
 
   /**
@@ -46,6 +51,9 @@ export class DocumentoPersistenceService
     metadata: UploadMetadata,
     uploadId: string,
   ): Promise<Documento> {
+    const startTime = Date.now();
+    const auditContext = this.getAuditContext();
+
     this.logger.debug(
       `Salvando documento no banco de dados [${uploadId}]`,
       DocumentoPersistenceService.name,
@@ -142,8 +150,71 @@ export class DocumentoPersistenceService
         uploadDocumentoDto,
       );
 
+      // Registrar evento de auditoria de sucesso
+      await this.auditEventEmitter.emitSecurityEvent(
+        AuditEventType.SUSPICIOUS_ACTIVITY,
+        auditContext.userId,
+        {
+          action: 'DOCUMENTO_PERSISTIDO_BANCO',
+          severity: 'INFO',
+          description: 'Documento persistido com sucesso no banco de dados',
+          userAgent: auditContext.userAgent,
+          ip: auditContext.ipAddress,
+          details: {
+            uploadId,
+            documentoId: savedDocument.id,
+            cidadaoId: uploadDocumentoDto.cidadao_id,
+            solicitacaoId: uploadDocumentoDto.solicitacao_id,
+            tipoDocumento: uploadDocumentoDto.tipo,
+            usuarioUploadId: usuarioId,
+            nomeArquivo: fileProcessing.fileName,
+            nomeOriginal: fileProcessing.originalName,
+            tamanhoBytes: fileProcessing.size,
+            mimeType: fileProcessing.mimetype,
+            hashArquivo: fileProcessing.fileHash,
+            caminhoStorage: storagePath,
+            urlPublica: savedDocument.url_publica,
+            uploadSessionId: uploadDocumentoDto.upload_session_id,
+            metadados: metadata,
+            duracaoMs: Date.now() - startTime,
+            timestampPersistencia: new Date().toISOString(),
+          },
+        }
+      );
+
       return documentWithRelations;
     } catch (error) {
+      // Registrar evento de auditoria de erro
+      await this.auditEventEmitter.emitSecurityEvent(
+        AuditEventType.SUSPICIOUS_ACTIVITY,
+        auditContext.userId,
+        {
+          action: 'ERRO_PERSISTIR_DOCUMENTO_BANCO',
+          severity: 'ERROR',
+          description: 'Erro ao persistir documento no banco de dados',
+          userAgent: auditContext.userAgent,
+          ip: auditContext.ipAddress,
+          details: {
+            uploadId,
+            cidadaoId: uploadDocumentoDto.cidadao_id,
+            solicitacaoId: uploadDocumentoDto.solicitacao_id,
+            tipoDocumento: uploadDocumentoDto.tipo,
+            usuarioUploadId: usuarioId,
+            nomeArquivo: fileProcessing.fileName,
+            nomeOriginal: fileProcessing.originalName,
+            tamanhoBytes: fileProcessing.size,
+            mimeType: fileProcessing.mimetype,
+            hashArquivo: fileProcessing.fileHash,
+            caminhoStorage: storagePath,
+            uploadSessionId: uploadDocumentoDto.upload_session_id,
+            erro: error.message,
+            stackTrace: error.stack,
+            duracaoMs: Date.now() - startTime,
+            timestampErro: new Date().toISOString(),
+          },
+        }
+      );
+
       this.logger.error(
         `Erro ao salvar documento no banco de dados [${uploadId}]`,
         error.stack,
@@ -288,5 +359,18 @@ export class DocumentoPersistenceService
     }
 
     return isValid;
+  }
+
+  /**
+   * Obtém o contexto de auditoria atual
+   * @returns Contexto de auditoria com informações do usuário e requisição
+   */
+  private getAuditContext() {
+    const context = AuditContextHolder.get();
+    return {
+      userAgent: context?.userAgent || 'unknown',
+      ipAddress: context?.ip || 'unknown',
+      userId: context?.userId || SYSTEM_USER_UUID,
+    };
   }
 }

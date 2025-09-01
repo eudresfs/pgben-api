@@ -2,6 +2,77 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0](https://github.com/kemosoft-team/pgben-server/compare/v0.1.15...v1.1.0) (2025-09-01)
+
+
+### Features
+
+* **feedback:** implement feedback module with entities, services and endpoints ([789f84d](https://github.com/kemosoft-team/pgben-server/commit/789f84d3946920414791529e1869fbac3e792548))
+* **interceptor:** add text normalization interceptor for name fields ([9a20e64](https://github.com/kemosoft-team/pgben-server/commit/9a20e64d38e10cabd3b625d55f8a9bf148c12e1b))
+* **notification:** implement standardized notification system ([c6654e9](https://github.com/kemosoft-team/pgben-server/commit/c6654e969d6ebf03b777fafe4f15c705dcc90043))
+* **notifications:** implement event-driven notification system ([c72b63b](https://github.com/kemosoft-team/pgben-server/commit/c72b63b5b75d37d71e7291fd6452ca0dcdfd3ce5))
+* **scoped-repository:** enhance scope context handling and logging ([b419a9a](https://github.com/kemosoft-team/pgben-server/commit/b419a9a678a4961ad9c920f3470dd690c7d71be2))
+* **workflow:** add priority bypass for analysis submission ([d6b81e8](https://github.com/kemosoft-team/pgben-server/commit/d6b81e8f24cb3844f94f2d34142518d0b2013935))
+
+### [0.1.15](https://github.com/kemosoft-team/pgben-server/compare/v0.1.14...v0.1.15) (2025-08-29)
+
+
+### Features
+
+* **concessao:** implement advanced filters for concession management ([dede910](https://github.com/kemosoft-team/pgben-server/commit/dede910ef2b370c8203ec1222044febcf66814a0))
+* **filters:** implement advanced filtering system across modules ([990a999](https://github.com/kemosoft-team/pgben-server/commit/990a99947b887c43012c633798f78c7e9da10128))
+* **monitoramento:** add agendamento history tracking system ([d6c2ad5](https://github.com/kemosoft-team/pgben-server/commit/d6c2ad5e1abb92790b64523a9ea6363bddef5842))
+* **monitoramento:** rename ACOMPANHAMENTO to CONTINUIDADE visit type ([334a5c6](https://github.com/kemosoft-team/pgben-server/commit/334a5c63bb7b3bbea40c18383a7928b083e9038b))
+* **pagamento:** add pagination to pending monitoring payments endpoint ([8a30c34](https://github.com/kemosoft-team/pgben-server/commit/8a30c349c9fc713da556d00fe5ef1821c5781931))
+* **pagamento:** add tipo_concessao field to payment response ([10da0b2](https://github.com/kemosoft-team/pgben-server/commit/10da0b2af6f5b98d0d5eb676339605438e2a93a6))
+* **pagamento:** enhance beneficiario data structure in response dto and mapper ([7f95650](https://github.com/kemosoft-team/pgben-server/commit/7f956504a1901745596c83f24f1ee67b354aa386))
+
+### [0.1.14](https://github.com/kemosoft-team/pgben-server/compare/v0.1.13...v0.1.14) (2025-08-26)
+
+
+### Features
+
+* **aluguel-social:** add locator fields and judicial determination ([995e1bf](https://github.com/kemosoft-team/pgben-server/commit/995e1bfde13e93f14385767f10d679af6e1a2e56))
+* **metrics:** implement real queries for dashboard metrics ([0fc4cf0](https://github.com/kemosoft-team/pgben-server/commit/0fc4cf02b3ab773d37b21d10271848f19808b2c3))
+* **pagamento:** add release criteria calculation to payment lookup ([e67af4c](https://github.com/kemosoft-team/pgben-server/commit/e67af4ca9546ef40fc6dc2ce8560ba9699751b58))
+
+### [0.1.13](https://github.com/kemosoft-team/pgben-server/compare/v0.1.12...v0.1.13) (2025-08-26)
+
+
+### Features
+
+* **metrics:** add endpoint to get solicitation count by status ([e64003e](https://github.com/kemosoft-team/pgben-server/commit/e64003e15efabe8a3f06e05c051ccb9e5b4b27a0))
+* **pagamento:** add batch receipt generation functionality ([43864fe](https://github.com/kemosoft-team/pgben-server/commit/43864fe47d794ef1b6b0301cc4ddc73dc9a13052))
+
+### [0.1.12](https://github.com/kemosoft-team/pgben-server/compare/v0.1.11...v0.1.12) (2025-08-26)
+
+
+### Features
+
+* **pagamento:** add filters for pending monitoring payments ([454c95b](https://github.com/kemosoft-team/pgben-server/commit/454c95bb16da8680c5e930c34c91ed8a4d64f63f))
+* **pagamento:** add related entity joins to payment query ([cfce632](https://github.com/kemosoft-team/pgben-server/commit/cfce632694809057dd171f0eb2ca906a5146eed6))
+* **pagamento:** make confirmation fields optional with defaults ([72fc4e1](https://github.com/kemosoft-team/pgben-server/commit/72fc4e15ed2eb1a31ff6e6f6be6e5f19401adc84))
+
+### [0.1.11](https://github.com/kemosoft-team/pgben-server/compare/v0.1.10...v0.1.11) (2025-08-26)
+
+
+### Features
+
+* **dashboard:** add metrics dashboard service and endpoints ([8b0f966](https://github.com/kemosoft-team/pgben-server/commit/8b0f966d0d89f8bec4c7786a9cd44afea05de1b3))
+* **metrics:** add advanced filtering support for dashboard metrics ([4439c0a](https://github.com/kemosoft-team/pgben-server/commit/4439c0acab603da5a4b592d0f0d4481da5853056))
+
+### [0.1.10](https://github.com/kemosoft-team/pgben-server/compare/v0.1.9...v0.1.10) (2025-08-25)
+
+
+### Features
+
+* **aprovacao:** replace boolean 'ativo' with enum 'status' and add user relations ([1f39ec9](https://github.com/kemosoft-team/pgben-server/commit/1f39ec97bbfc898803a9f09a3515f14657426394))
+* **audit:** add operation error handling in audit listener ([8712873](https://github.com/kemosoft-team/pgben-server/commit/8712873d97e468fc4345a954aa44df32ba4f6d2e))
+* **audit:** enhance audit system with global interceptor and deduplication ([306956a](https://github.com/kemosoft-team/pgben-server/commit/306956af7f841c888582e6eb24409e90a39d3f6d))
+* **auditoria:** add entity and operation decorators for audit logging ([1d00519](https://github.com/kemosoft-team/pgben-server/commit/1d00519a1ab410999235c87e2ef6cbf8291a2ad6))
+* **monitoramento:** refactor agendamento to use pagamento_id instead of beneficiario_id ([79ac536](https://github.com/kemosoft-team/pgben-server/commit/79ac5367129b0cd1d7061da923458efa0132bcac))
+* **pagination:** implement standardized pagination across repositories and services ([0416cd2](https://github.com/kemosoft-team/pgben-server/commit/0416cd27ce742c7d8662acdc277bb2cf792c8536))
+
 ### [0.1.9](https://github.com/kemosoft-team/pgben-server/compare/v0.1.8...v0.1.9) (2025-08-22)
 
 

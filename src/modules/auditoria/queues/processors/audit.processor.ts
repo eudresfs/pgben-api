@@ -30,6 +30,7 @@ import {
   BatchAuditProcessingResult,
 } from '../jobs/audit-processing.job';
 import { AuditEvent } from '../../events/types/audit-event.types';
+import { AuditMetricsService } from '../../services/audit-metrics.service';
 
 @Processor('auditoria')
 export class AuditProcessor
@@ -43,7 +44,10 @@ export class AuditProcessor
     averageProcessingTime: 0,
   };
 
-  constructor(private readonly auditProcessingJob: AuditProcessingJob) {
+  constructor(
+    private readonly auditProcessingJob: AuditProcessingJob,
+    private readonly auditMetricsService: AuditMetricsService,
+  ) {
     this.logger.log('🚨 AUDIT PROCESSOR CONSTRUTOR EXECUTADO');
     this.logger.log('🚨 AuditProcessor inicializado com sucesso');
   }
@@ -71,15 +75,13 @@ export class AuditProcessor
   async processAuditEvent(
     job: Job<AuditJobData>,
   ): Promise<AuditProcessingResult> {
-    const { data } = job;
     const startTime = Date.now();
+    const { data } = job;
 
-    // Log detalhado de tentativa de processamento
-    this.logger.log('AuditProcessor - processAuditEvent:', {
+    this.logger.debug(`Processing audit event job ${job.id}`, {
       jobId: job.id,
-      jobName: job.name,
+      eventType: job.data.event?.eventType,
       timestamp: new Date().toISOString(),
-      data: job.data,
     });
 
     try {
@@ -98,11 +100,20 @@ export class AuditProcessor
 
       // Atualiza métricas
       this.updateSuccessMetrics(Date.now() - startTime);
+      
+      // Registrar métricas de sucesso no processamento
+      this.auditMetricsService.recordProcessorEvent('audit', 'processed', Date.now() - startTime, data.event.eventType);
+      this.auditMetricsService.recordDatabaseSuccess();
+      
       await job.progress(100);
 
       return result;
     } catch (error) {
       this.updateFailureMetrics();
+      
+      // Registrar métricas de falha no processamento
+      this.auditMetricsService.recordProcessorEvent('audit', 'failed', Date.now() - startTime, data.event.eventType);
+      this.auditMetricsService.recordDatabaseFailure(error.message || 'Database error');
 
       // Log detalhado do erro
       this.logger.error(
@@ -258,8 +269,7 @@ export class AuditProcessor
    */
   @OnQueueWaiting()
   onWaiting(jobId: string) {
-    console.log('🚨 EVENTO QUEUE WAITING - JOB ESPERANDO:', jobId);
-    this.logger.log(`Job ${jobId} está esperando na fila`);
+    // this.logger.log(`Job ${jobId} está esperando na fila`);
   }
 
   /**

@@ -19,7 +19,6 @@ import { DeterminacaoJudicialController } from './controllers/determinacao-judic
 import { DeterminacaoJudicialService } from './services/determinacao-judicial.service';
 import { DeterminacaoJudicialAdapterService } from './services/determinacao-judicial-adapter.service';
 import { WorkflowSolicitacaoController } from './controllers/workflow-solicitacao.controller';
-import { MonitoramentoAluguelSocialController } from './controllers/monitoramento-aluguel-social.controller';
 import { PendenciaController } from './controllers/pendencia.controller';
 import { PendenciaService } from './services/pendencia.service';
 import { WorkflowSolicitacaoService } from './services/workflow-solicitacao.service';
@@ -41,7 +40,6 @@ import {
   ComposicaoFamiliar,
   TipoBeneficio,
 } from '../../entities';
-import { MonitoramentoAluguelSocialService } from './services/monitoramento-aluguel-social.service';
 import { TemplateMappingService } from './services/template-mapping.service';
 import { SolicitacaoRepository } from './repositories/solicitacao.repository';
 import { HistoricoSolicitacaoRepository } from './repositories/historico-solicitacao.repository';
@@ -97,7 +95,6 @@ import { SharedModule } from '../../shared/shared.module';
     SolicitacaoController,
     DeterminacaoJudicialController,
     WorkflowSolicitacaoController,
-    MonitoramentoAluguelSocialController,
     PendenciaController,
   ],
   providers: [
@@ -123,7 +120,7 @@ import { SharedModule } from '../../shared/shared.module';
     NotificacaoService,
     EventosService,
     ValidacaoExclusividadeService,
-    MonitoramentoAluguelSocialService,
+    // MonitoramentoAluguelSocialService removido - existe módulo específico
     PendenciaService,
     SolicitacaoEventListener,
     TemplateMappingService,
@@ -131,6 +128,7 @@ import { SharedModule } from '../../shared/shared.module';
   exports: [
     TypeOrmModule,
     SolicitacaoService,
+    SolicitacaoRepository,
     DeterminacaoJudicialService,
     DeterminacaoJudicialAdapterService,
     WorkflowSolicitacaoService,
@@ -138,7 +136,7 @@ import { SharedModule } from '../../shared/shared.module';
     PriorizacaoSolicitacaoService,
     NotificacaoService,
     EventosService,
-    MonitoramentoAluguelSocialService,
+    // MonitoramentoAluguelSocialService removido - existe módulo específico
     PendenciaService,
   ],
 })

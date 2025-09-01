@@ -608,8 +608,47 @@ export class AuditEventListener {
   }
 
   /**
-   * Mapeia o tipo de evento para o tipo de operação
+   * Processa eventos de erro de operação
    */
+  // @ts-ignore: TS1270 - Decorator compatibility issue with TypeScript 5.x
+  @OnEvent('OPERATION_ERROR')
+  async handleOperationError(event: BaseAuditEvent): Promise<void> {
+    try {
+      await this.auditCoreService.createAuditLog({
+        tipo_operacao: TipoOperacao.EXECUTION, // Mapeia erro de operação como execução
+        entidade_afetada: event.entityName || 'Sistema',
+        entidade_id: event.entityId,
+        usuario_id: event.userId,
+        descricao: `Erro na operação: ${event.metadata?.error?.message || 'Erro desconhecido'}`,
+        data_hora: event.timestamp,
+        ip_origem: event.metadata?.ip || event.requestContext?.ip,
+        user_agent: event.metadata?.userAgent || event.requestContext?.userAgent,
+        endpoint: event.metadata?.url || event.requestContext?.endpoint,
+        metodo_http: event.metadata?.httpMethod || event.requestContext?.method,
+        dados_novos: {
+          error: event.metadata?.error,
+          controller: event.metadata?.controller,
+          method: event.metadata?.method,
+          duration: event.metadata?.duration,
+          requestId: event.metadata?.requestId,
+        },
+        nivel_risco: event.riskLevel,
+      });
+      
+      this.logger.debug(
+        `Evento de erro de operação processado: ${event.entityName} - ${event.eventType}`,
+      );
+    } catch (error) {
+      this.logger.error('Erro ao processar evento de erro de operação:', {
+        error: error.message,
+        event,
+      });
+    }
+  }
+
+  /**
+  * Mapeia o tipo de evento para o tipo de operação
+  */
   private mapEventTypeToTipoOperacao(eventType: AuditEventType): TipoOperacao {
     switch (eventType) {
       case AuditEventType.ENTITY_CREATED:
@@ -624,6 +663,8 @@ export class AuditEventListener {
         return TipoOperacao.ACCESS;
       case AuditEventType.SENSITIVE_DATA_EXPORTED:
         return TipoOperacao.EXPORT;
+      case AuditEventType.OPERATION_ERROR:
+        return TipoOperacao.EXECUTION; 
       case AuditEventType.SYSTEM_ERROR:
       case AuditEventType.SYSTEM_WARNING:
       case AuditEventType.SYSTEM_INFO:

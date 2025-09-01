@@ -24,6 +24,10 @@ import { AuditoriaService } from '../services/auditoria.service';
 import { AuditProcessor } from '../queues/processors/audit.processor';
 import { CreateLogAuditoriaDto } from '../dto/create-log-auditoria.dto';
 import { QueryLogAuditoriaDto } from '../dto/query-log-auditoria.dto';
+import {
+  AuditoriaFiltrosAvancadosDto,
+  AuditoriaFiltrosResponseDto,
+} from '../dto/auditoria-filtros-avancados.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
@@ -203,6 +207,71 @@ export class AuditoriaController {
   @ApiResponse({ status: 403, description: 'Acesso negado' })
   findByUsuario(@Param('id', ParseUUIDPipe) id: string) {
     return this.auditoriaService.findByUsuario(id);
+  }
+
+  /**
+   * Busca avançada de logs de auditoria com filtros múltiplos
+   */
+  @Post('filtros-avancados')
+  @RequiresPermission({
+    permissionName: 'auditoria.log.filtros-avancados',
+    scopeType: ScopeType.GLOBAL,
+  })
+  @ApiOperation({
+    summary: 'Busca avançada de logs de auditoria',
+    description: `
+      Permite busca detalhada nos logs de auditoria com múltiplos critérios de filtro.
+      
+      **Funcionalidades:**
+      - Filtro por tipos de operação (CREATE, UPDATE, DELETE, etc.)
+      - Filtro por entidades afetadas
+      - Filtro por usuários
+      - Filtro por níveis de risco
+      - Filtro por métodos HTTP
+      - Busca textual livre
+      - Filtros de período (criação, atualização, data da operação)
+      - Paginação avançada
+      - Inclusão de relacionamentos
+      
+      **Exemplo de uso:**
+      \`\`\`json
+      {
+        "tipo_operacao": ["CREATE", "UPDATE"],
+        "entidade_afetada": ["Usuario", "Cidadao"],
+        "nivel_risco": ["HIGH", "CRITICAL"],
+        "search": "usuario criado",
+        "created_at_inicio": "2024-01-01T00:00:00.000Z",
+        "created_at_fim": "2024-12-31T23:59:59.999Z",
+        "page": 1,
+        "limit": 20
+      }
+      \`\`\`
+    `,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Busca realizada com sucesso',
+    type: AuditoriaFiltrosResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Parâmetros de filtro inválidos',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso negado - permissão insuficiente',
+  })
+  async filtrosAvancados(
+    @Body() filtros: AuditoriaFiltrosAvancadosDto,
+  ): Promise<AuditoriaFiltrosResponseDto> {
+    const startTime = Date.now();
+    
+    const resultado = await this.auditoriaService.filtrosAvancados(filtros);
+    
+    const endTime = Date.now();
+    resultado.tempo_execucao = endTime - startTime;
+    
+    return resultado;
   }
 
   /**

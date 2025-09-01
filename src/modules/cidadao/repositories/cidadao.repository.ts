@@ -138,12 +138,13 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect('cidadao.contatos', 'contato');
       query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
+      query.leftJoinAndSelect('cidadao.info_bancaria', 'info_bancaria');
       query.leftJoinAndSelect(
         'cidadao.composicao_familiar',
         'composicao_familiar',
       );
     } else {
-      // Sempre incluir unidade, contatos e apenas o último endereço
+      // Sempre incluir unidade e apenas o último endereço
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect(
         'cidadao.enderecos',
@@ -261,6 +262,7 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect('cidadao.contatos', 'contato');
       query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
+      query.leftJoinAndSelect('cidadao.info_bancaria', 'info_bancaria');
       query.leftJoinAndSelect(
         'cidadao.composicao_familiar',
         'composicao_familiar',
@@ -298,12 +300,14 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect('cidadao.contatos', 'contato');
       query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
+      query.leftJoinAndSelect('cidadao.info_bancaria', 'info_bancaria');
       query.leftJoinAndSelect(
         'cidadao.composicao_familiar',
         'composicao_familiar',
       );
     } else {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
+      query.leftJoinAndSelect('cidadao.info_bancaria', 'info_bancaria');
       query.leftJoinAndSelect(
         'cidadao.enderecos',
         'endereco',
@@ -335,6 +339,7 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect('cidadao.contatos', 'contato');
       query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
+      query.leftJoinAndSelect('cidadao.info_bancaria', 'info_bancaria');
       query.leftJoinAndSelect(
         'cidadao.composicao_familiar',
         'composicao_familiar',
@@ -414,6 +419,154 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
   async existsCidadao(id: string): Promise<boolean> {
     const cidadao = await this.findById(id);
     return !!cidadao;
+  }
+
+  /**
+   * Busca cidadãos com filtros avançados e escopo aplicado automaticamente
+   *
+   * @param filtros - Filtros avançados
+   * @returns Array de cidadãos e total de registros
+   */
+  async findWithAdvancedFilters(filtros: {
+    skip?: number;
+    take?: number;
+    search?: string;
+    includeRelations?: boolean;
+    unidades?: string[];
+    bairros?: string[];
+    status?: string[];
+    apenas_com_beneficios?: boolean;
+    idade_minima?: number;
+    idade_maxima?: number;
+    unidade_usuario?: string;
+  }): Promise<[Cidadao[], number]> {
+    const {
+      skip = 0,
+      take = 10,
+      search,
+      includeRelations = false,
+      unidades,
+      bairros,
+      status,
+      apenas_com_beneficios,
+      idade_minima,
+      idade_maxima,
+    } = filtros;
+
+    // Criar QueryBuilder com escopo aplicado automaticamente
+    const query = this.createScopedQueryBuilder('cidadao');
+
+    // JOIN com composição familiar para busca
+    query.leftJoin('cidadao.composicao_familiar', 'composicao_familiar_search');
+
+    // Filtro por unidades específicas
+    if (unidades && unidades.length > 0) {
+      query.andWhere('cidadao.unidade_id IN (:...unidades)', { unidades });
+    }
+
+    // Filtro por bairros
+    if (bairros && bairros.length > 0) {
+      query
+        .leftJoin('cidadao.enderecos', 'endereco_filter')
+        .andWhere('endereco_filter.bairro IN (:...bairros)', { bairros })
+        .andWhere('endereco_filter.data_fim_vigencia IS NULL');
+    }
+
+    // Filtro por status
+    if (status && status.length > 0) {
+      query.andWhere('cidadao.status IN (:...status)', { status });
+    }
+
+    // Filtro por idade
+    if (idade_minima !== undefined || idade_maxima !== undefined) {
+      if (idade_minima !== undefined) {
+        query.andWhere(
+          'EXTRACT(YEAR FROM AGE(CURRENT_DATE, cidadao.data_nascimento)) >= :idade_minima',
+          { idade_minima },
+        );
+      }
+      if (idade_maxima !== undefined) {
+        query.andWhere(
+          'EXTRACT(YEAR FROM AGE(CURRENT_DATE, cidadao.data_nascimento)) <= :idade_maxima',
+          { idade_maxima },
+        );
+      }
+    }
+
+    // Filtro apenas com benefícios (através das solicitações aprovadas)
+    if (apenas_com_beneficios) {
+      query
+        .leftJoin('cidadao.solicitacoes', 's')
+        .leftJoin('s.concessao', 'c')
+        .andWhere('c.id IS NOT NULL')
+        .andWhere('c.status = :statusAprovado', { statusAprovado: 'ativo' });
+    }
+
+    // Busca por nome/CPF/NIS
+    if (search && search.trim() !== '') {
+      const searchTerm = search.trim();
+      const searchClean = searchTerm.replace(/\D/g, '');
+
+      const conditions: string[] = [];
+      const parameters: any = {};
+
+      // Busca por nome (case insensitive)
+      conditions.push('LOWER(cidadao.nome) LIKE LOWER(:searchName)');
+      parameters.searchName = `%${searchTerm}%`;
+
+      // Busca por CPF (se o termo tem dígitos)
+      if (searchClean.length > 0) {
+        conditions.push('cidadao.cpf LIKE :searchCpf');
+        parameters.searchCpf = `%${searchClean}%`;
+      }
+
+      // Busca por NIS (se o termo tem dígitos)
+      if (searchClean.length > 0) {
+        conditions.push('cidadao.nis LIKE :searchNis');
+        parameters.searchNis = `%${searchClean}%`;
+      }
+
+      // Busca por CPF na composição familiar
+      if (searchClean.length > 0) {
+        conditions.push('composicao_familiar_search.cpf LIKE :searchCpfFamiliar');
+        parameters.searchCpfFamiliar = `%${searchClean}%`;
+      }
+
+      // Busca por NIS na composição familiar
+      if (searchClean.length > 0) {
+        conditions.push('composicao_familiar_search.nis LIKE :searchNisFamiliar');
+        parameters.searchNisFamiliar = `%${searchClean}%`;
+      }
+
+      // Aplicar condições OR
+      if (conditions.length > 0) {
+        query.andWhere(`(${conditions.join(' OR ')})`, parameters);
+      }
+    }
+
+    // Relacionamentos
+    if (includeRelations) {
+      query.leftJoinAndSelect('cidadao.unidade', 'unidade');
+      query.leftJoinAndSelect('cidadao.contatos', 'contato');
+      query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
+      query.leftJoinAndSelect('cidadao.info_bancaria', 'info_bancaria');
+      query.leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar');
+      query.leftJoinAndSelect('cidadao.solicitacoes', 'solicitacoes');
+    } else {
+      // Sempre incluir unidade e último endereço
+      query.leftJoinAndSelect('cidadao.unidade', 'unidade');
+      query.leftJoinAndSelect(
+        'cidadao.enderecos',
+        'endereco',
+        'endereco.data_fim_vigencia IS NULL',
+      );
+    }
+
+    return query
+      .orderBy('cidadao.created_at', 'DESC')
+      .skip(skip)
+      .take(Math.min(take, 100))
+      .getManyAndCount();
   }
 
   /**

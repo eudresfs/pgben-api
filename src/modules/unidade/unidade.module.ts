@@ -8,6 +8,7 @@ import { UnidadeRepository } from './repositories/unidade.repository';
 import { SetorRepository } from './repositories/setor.repository';
 import { Unidade, Setor } from '../../entities';
 import { AuthModule } from '../../auth/auth.module';
+import { AuditoriaModule } from '../auditoria/auditoria.module';
 
 /**
  * Módulo de unidades
@@ -20,6 +21,8 @@ import { AuthModule } from '../../auth/auth.module';
     TypeOrmModule.forFeature([Unidade, Setor]),
     // Importa o módulo compartilhado de autenticação
     AuthModule,
+    // Importa o módulo de auditoria para rastreamento de operações
+    AuditoriaModule,
   ],
   controllers: [UnidadeController, SetorController],
   providers: [UnidadeService, SetorService, UnidadeRepository, SetorRepository],

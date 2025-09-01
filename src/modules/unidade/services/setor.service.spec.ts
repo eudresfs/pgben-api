@@ -3,14 +3,12 @@ import { SetorService } from './setor.service';
 import { SetorRepository } from '../repositories/setor.repository';
 import { UnidadeRepository } from '../repositories/unidade.repository';
 import { DataSource } from 'typeorm';
+import { Status } from '../../../enums/status.enum';
+import { TipoUnidade, StatusUnidade } from '../../../entities/unidade.entity';
 import { CreateSetorDto } from '../dto/create-setor.dto';
 import { UpdateSetorDto } from '../dto/update-setor.dto';
 import { Setor } from '../../../entities/setor.entity';
-import {
-  Unidade,
-  TipoUnidade,
-  StatusUnidade,
-} from '../../../entities/unidade.entity';
+import { Unidade } from '../../../entities/unidade.entity';
 // Comentando as importações de funções de erro por enquanto
 // import {
 //   throwSetorNotFound,
@@ -58,12 +56,15 @@ describe('SetorService', () => {
   const mockSetor: Setor = {
     id: 'setor-123',
     nome: 'Atendimento Social',
+    sigla: 'AS',
     descricao: 'Setor responsável pelo atendimento social',
     unidade_id: 'unidade-123',
     unidade: mockUnidade,
+    status: true,
     usuarios: [],
     created_at: new Date('2024-01-01T10:00:00Z'),
     updated_at: new Date('2024-01-01T10:00:00Z'),
+    removed_at: null,
   };
 
   const mockCreateSetorDto: CreateSetorDto = {
@@ -81,7 +82,6 @@ describe('SetorService', () => {
     const mockSetorRepository = {
       findAll: jest.fn(),
       findById: jest.fn(),
-      findByNomeAndUnidade: jest.fn(),
       findByUnidadeId: jest.fn(),
       findOne: jest.fn(),
       create: jest.fn(),
@@ -95,7 +95,6 @@ describe('SetorService', () => {
       findById: jest.fn(),
       findAll: jest.fn(),
       findByCodigo: jest.fn(),
-      findBySigla: jest.fn(),
       findOne: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
@@ -108,7 +107,7 @@ describe('SetorService', () => {
     const mockDataSource = {
       transaction: jest
         .fn()
-        .mockImplementation((callbackOrIsolation, callback) => {
+        .mockImplementation(async (callback: any) => {
           const mockManager = {
             getRepository: jest.fn().mockImplementation((entity) => {
               if (entity === 'setor' || entity.name === 'Setor') {
@@ -119,10 +118,7 @@ describe('SetorService', () => {
               }
               return mockSetorRepository;
             }),
-          };
-          if (typeof callbackOrIsolation === 'function') {
-            return callbackOrIsolation(mockManager);
-          }
+          } as any;
           return callback(mockManager);
         }),
       getRepository: jest.fn(),
@@ -159,7 +155,23 @@ describe('SetorService', () => {
   describe('findByUnidadeId', () => {
     it('deve retornar lista de setores com paginação', async () => {
       const mockSetores = [mockSetor];
-      const mockUnidade = { id: 'unidade-id-1', nome: 'Unidade Teste' };
+      const mockUnidade = {
+        id: 'unidade-id-1',
+        nome: 'Unidade Teste',
+        codigo: 'UT001',
+        sigla: 'UT',
+        tipo: TipoUnidade.CRAS,
+        endereco: 'Endereço Teste',
+        telefone: '(11) 1234-5678',
+        email: 'teste@unidade.gov.br',
+        responsavel_matricula: 'RESP001',
+        status: StatusUnidade.ATIVO,
+        usuarios: [],
+        setores: [],
+        created_at: new Date(),
+        updated_at: new Date(),
+        removed_at: null,
+      };
 
       unidadeRepository.findById.mockResolvedValue(mockUnidade);
       setorRepository.findByUnidadeId.mockResolvedValue(mockSetores);
@@ -181,18 +193,12 @@ describe('SetorService', () => {
 
     it('deve aplicar filtros por unidade', async () => {
       const filtros = {
-        unidade_id: 'unidade-123',
-        page: 1,
-        limit: 10,
+        skip: 0,
+        take: 10,
+        where: { unidade_id: 'unidade-123' },
       };
 
-      setorRepository.findAll.mockResolvedValue({
-        data: [mockSetor],
-        total: 1,
-        page: 1,
-        limit: 10,
-        totalPages: 1,
-      });
+      setorRepository.findAll.mockResolvedValue([[mockSetor], 1]);
 
       await service.findAll(filtros);
 
@@ -201,18 +207,12 @@ describe('SetorService', () => {
 
     it('deve aplicar filtros por nome', async () => {
       const filtros = {
-        nome: 'Atendimento',
-        page: 1,
-        limit: 10,
+        skip: 0,
+        take: 10,
+        where: { nome: 'Atendimento' },
       };
 
-      setorRepository.findAll.mockResolvedValue({
-        data: [mockSetor],
-        total: 1,
-        page: 1,
-        limit: 10,
-        totalPages: 1,
-      });
+      setorRepository.findAll.mockResolvedValue([[mockSetor], 1]);
 
       await service.findAll(filtros);
 
@@ -222,13 +222,13 @@ describe('SetorService', () => {
 
   describe('findById', () => {
     it('deve retornar um setor quando encontrado', async () => {
-      setorRepository.findById.mockResolvedValue(mockSetor);
+        setorRepository.findById.mockResolvedValue(mockSetor);
 
-      const result = await service.findById('setor-123');
+        const result = await service.findById('setor-123');
 
-      expect(result).toEqual(mockSetor);
-      expect(setorRepository.findById).toHaveBeenCalledWith('setor-123');
-    });
+        expect(result).toEqual(mockSetor);
+        expect(setorRepository.findById).toHaveBeenCalledWith('setor-123');
+      });
 
     it('deve lançar erro quando setor não encontrado', async () => {
       setorRepository.findById.mockResolvedValue(null);
@@ -239,56 +239,59 @@ describe('SetorService', () => {
 
   describe('findByUnidade', () => {
     it('deve retornar setores de uma unidade específica', async () => {
-      const mockSetores = [mockSetor];
+      unidadeRepository.findById.mockResolvedValue(mockUnidade);
+      setorRepository.findByUnidadeId.mockResolvedValue([mockSetor]);
 
-      setorRepository.findAll.mockResolvedValue({
-        data: mockSetores,
-        total: 1,
-        page: 1,
-        limit: 10,
-        totalPages: 1,
-      });
-
-      const result = await service.findByUnidade('unidade-123');
+      const result = await service.findByUnidadeId('unidade-123');
 
       expect(result).toEqual({
-        data: mockSetores,
-        total: 1,
-        page: 1,
-        limit: 10,
-        totalPages: 1,
+        items: [mockSetor],
+        meta: {
+          total: 1,
+          unidadeId: 'unidade-123',
+        },
       });
-      expect(setorRepository.findAll).toHaveBeenCalledWith({
-        unidade_id: 'unidade-123',
-        page: 1,
-        limit: 100,
-      });
+      expect(setorRepository.findByUnidadeId).toHaveBeenCalledWith(
+        'unidade-123',
+      );
     });
   });
 
   describe('create', () => {
-    it('deve criar um novo setor com sucesso', async () => {
+    it('deve criar um setor com sucesso', async () => {
       const novoSetor = {
         ...mockSetor,
-        ...mockCreateSetorDto,
-        id: 'new-setor-id',
+        id: 'novo-setor-id',
+        nome: mockCreateSetorDto.nome,
+        descricao: mockCreateSetorDto.descricao,
+        unidade_id: mockCreateSetorDto.unidade_id,
       };
 
-      unidadeRepository.findById.mockResolvedValue(mockUnidade);
-      setorRepository.findByNomeAndUnidade.mockResolvedValue(null);
-      setorRepository.create.mockResolvedValue(novoSetor);
+      // Mock da transação para simular criação bem-sucedida
+      dataSource.transaction.mockImplementation(async (callback: any) => {
+        const mockManager = {
+          getRepository: jest.fn().mockImplementation((entity) => {
+            if (entity === 'unidade') {
+              return {
+                findOne: jest.fn().mockResolvedValue(mockUnidade),
+              };
+            }
+            if (entity === 'setor') {
+              return {
+                findOne: jest.fn().mockResolvedValue(null), // Não existe setor com mesmo nome
+                save: jest.fn().mockResolvedValue(novoSetor),
+              };
+            }
+            return {};
+          }),
+        } as any;
+        return callback(mockManager);
+      });
 
       const result = await service.create(mockCreateSetorDto);
 
       expect(result).toEqual(novoSetor);
-      expect(unidadeRepository.findById).toHaveBeenCalledWith(
-        mockCreateSetorDto.unidade_id,
-      );
-      expect(setorRepository.findByNomeAndUnidade).toHaveBeenCalledWith(
-        mockCreateSetorDto.nome,
-        mockCreateSetorDto.unidade_id,
-      );
-      expect(setorRepository.create).toHaveBeenCalledWith(mockCreateSetorDto);
+      expect(dataSource.transaction).toHaveBeenCalled();
     });
 
     it('deve lançar erro quando unidade não existe', async () => {
@@ -301,7 +304,15 @@ describe('SetorService', () => {
 
     it('deve lançar erro quando já existe setor com mesmo nome na unidade', async () => {
       unidadeRepository.findById.mockResolvedValue(mockUnidade);
-      setorRepository.findByNomeAndUnidade.mockResolvedValue(mockSetor);
+      // Mock da transação para simular setor existente
+      dataSource.transaction.mockImplementation(async (callback: any) => {
+        const mockManager = {
+          getRepository: jest.fn().mockReturnValue({
+            findOne: jest.fn().mockResolvedValue(mockSetor),
+          }),
+        } as any;
+        return callback(mockManager);
+      });
 
       await expect(service.create(mockCreateSetorDto)).rejects.toThrow();
 
@@ -326,17 +337,42 @@ describe('SetorService', () => {
         updated_at: new Date(),
       };
 
-      setorRepository.findById.mockResolvedValue(mockSetor);
-      setorRepository.update.mockResolvedValue(setorAtualizado);
+      // Mock da transação para simular atualização bem-sucedida
+        dataSource.transaction.mockImplementation(async (callback: any) => {
+          const mockManager = {
+            getRepository: jest.fn().mockImplementation((entity) => {
+              if (entity === 'setor') {
+                return {
+                  findOne: jest.fn().mockImplementation((options) => {
+                    if (options.where.id && !options.where.nome && !options.where.sigla) {
+                      // Busca final após update - retorna setor atualizado
+                      return Promise.resolve(setorAtualizado);
+                    }
+                    if (options.where.id) {
+                      // Busca inicial para verificar existência
+                      return Promise.resolve(mockSetor);
+                    }
+                    // Para busca por nome/sigla, não retorna nada (não encontra duplicata)
+                    return Promise.resolve(null);
+                  }),
+                  update: jest.fn().mockResolvedValue(undefined),
+                };
+              }
+              if (entity === 'unidade') {
+                return {
+                  findOne: jest.fn().mockResolvedValue(mockUnidade),
+                };
+              }
+              return {};
+            }),
+          } as any;
+          return callback(mockManager);
+        });
 
       const result = await service.update(mockSetor.id, mockUpdateSetorDto);
 
       expect(result).toEqual(setorAtualizado);
-      expect(setorRepository.findById).toHaveBeenCalledWith(mockSetor.id);
-      expect(setorRepository.update).toHaveBeenCalledWith(
-        mockSetor.id,
-        mockUpdateSetorDto,
-      );
+      expect(dataSource.transaction).toHaveBeenCalled();
     });
 
     it('deve lançar erro quando setor não encontrado', async () => {
@@ -356,10 +392,37 @@ describe('SetorService', () => {
       };
 
       setorRepository.findById.mockResolvedValue(mockSetor);
-      setorRepository.findByNomeAndUnidade.mockResolvedValue({
-        ...mockSetor,
-        id: 'outro-setor-id',
-        nome: 'Nome Existente',
+      // Mock da transação para simular setor existente com mesmo nome
+      dataSource.transaction.mockImplementation(async (callback: any) => {
+        const mockManager = {
+          getRepository: jest.fn().mockImplementation((entity) => {
+            if (entity === 'setor') {
+              return {
+                findOne: jest.fn().mockImplementation((options) => {
+                  if (options.where.id) {
+                    return Promise.resolve(mockSetor);
+                  }
+                  // Simula encontrar outro setor com mesmo nome
+                  if (options.where.nome || options.where.sigla) {
+                    return Promise.resolve({
+                      ...mockSetor,
+                      id: 'outro-setor-id',
+                      nome: 'Nome Existente',
+                    });
+                  }
+                  return Promise.resolve(null);
+                }),
+              };
+            }
+            if (entity === 'unidade') {
+              return {
+                findOne: jest.fn().mockResolvedValue(mockUnidade),
+              };
+            }
+            return {};
+          }),
+        } as any;
+        return callback(mockManager);
       });
 
       await expect(
@@ -381,14 +444,42 @@ describe('SetorService', () => {
         updated_at: new Date(),
       };
 
-      setorRepository.findById.mockResolvedValue(mockSetor);
-      setorRepository.findByNomeAndUnidade.mockResolvedValue(mockSetor);
-      setorRepository.update.mockResolvedValue(setorAtualizado);
+      // Mock da transação para permitir atualização com mesmo nome
+      dataSource.transaction.mockImplementation(async (callback: any) => {
+        const mockManager = {
+          getRepository: jest.fn().mockImplementation((entity) => {
+            if (entity === 'setor') {
+              return {
+                findOne: jest.fn().mockImplementation((options) => {
+                  if (options.where.id && !options.where.nome && !options.where.sigla) {
+                    // Busca final após update - retorna setor atualizado
+                    return Promise.resolve(setorAtualizado);
+                  }
+                  if (options.where.id) {
+                    // Busca inicial para verificar existência
+                    return Promise.resolve(mockSetor);
+                  }
+                  // Se for busca por nome com Not(id), não encontra outro setor
+                  return Promise.resolve(null);
+                }),
+                update: jest.fn().mockResolvedValue(undefined),
+              };
+            }
+            if (entity === 'unidade') {
+              return {
+                findOne: jest.fn().mockResolvedValue(mockUnidade),
+              };
+            }
+            return {};
+          }),
+        } as any;
+        return callback(mockManager);
+      });
 
       const result = await service.update(mockSetor.id, updateComMesmoNome);
 
       expect(result).toEqual(setorAtualizado);
-      expect(setorRepository.update).toHaveBeenCalled();
+      expect(dataSource.transaction).toHaveBeenCalled();
     });
   });
 
@@ -463,9 +554,8 @@ describe('SetorService', () => {
 
   describe('tratamento de erros', () => {
     it('deve tratar erro de transação no banco', async () => {
-      unidadeRepository.findById.mockResolvedValue(mockUnidade);
-      setorRepository.findByNomeAndUnidade.mockResolvedValue(null);
-      setorRepository.create.mockRejectedValue(new Error('Database error'));
+      // Mock da transação que falha
+      dataSource.transaction.mockRejectedValue(new Error('Database error'));
 
       await expect(service.create(mockCreateSetorDto)).rejects.toThrow();
     });
@@ -480,7 +570,7 @@ describe('SetorService', () => {
 
     it('deve tratar erro de violação de constraint', async () => {
       unidadeRepository.findById.mockResolvedValue(mockUnidade);
-      setorRepository.findByNomeAndUnidade.mockResolvedValue(null);
+      // Validação será feita na transação
 
       const constraintError = new Error('Constraint violation');
       (constraintError as any).code = '23505';

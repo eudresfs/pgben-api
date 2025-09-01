@@ -2,13 +2,19 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Solicitacao } from '../../../entities/solicitacao.entity';
+import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
 import { NotificacaoService } from '../services/notificacao.service';
 import { PrazoSolicitacaoService } from '../services/prazo-solicitacao.service';
 import {
   SolicitacaoEventType,
   SolicitacaoStatusChangedEvent,
   SolicitacaoDeadlineExpiredEvent,
+  SolicitacaoCreatedEvent,
+  DraftCreatedEventData,
+  ApprovalProcessedEventData,
+  RejectionProcessedEventData,
+  CancellationProcessedEventData,
+  AllPendenciesResolvedEventData,
 } from '../events/solicitacao-events';
 
 /**
@@ -27,6 +33,52 @@ export class SolicitacaoEventListener {
     private readonly notificacaoService: NotificacaoService,
     private readonly prazoService: PrazoSolicitacaoService,
   ) {}
+
+  /**
+   * Listener para evento de criação de solicitação
+   * @param evento Evento de criação de solicitação
+   */
+  @OnEvent(SolicitacaoEventType.CREATED)
+  async handleSolicitacaoCreatedEvent(
+    evento: SolicitacaoCreatedEvent,
+  ): Promise<void> {
+    try {
+      this.logger.log(
+        `Processando evento de criação de solicitação: ${evento.solicitacaoId}`,
+      );
+
+      // Buscar a solicitação criada com relacionamentos necessários
+      const solicitacao = await this.solicitacaoRepository.findOne({
+        where: { id: evento.solicitacaoId },
+        relations: ['requerente', 'tipo_beneficio', 'tecnico', 'unidade'],
+      });
+
+      if (!solicitacao) {
+        this.logger.warn(`Solicitação não encontrada: ${evento.solicitacaoId}`);
+        return;
+      }
+
+      // Enviar notificação sobre a criação da solicitação
+      // Nota: Como a solicitação foi criada, usamos notificarSolicitacaoAtribuida
+      // que é o método disponível no NotificacaoService
+      this.notificacaoService.notificarSolicitacaoAtribuida(
+        solicitacao,
+        evento.data.tecnicoId || 'sistema',
+      );
+
+      // Definir prazo de análise inicial para a solicitação
+      await this.prazoService.definirPrazoAnalise(evento.solicitacaoId);
+
+      this.logger.log(
+        `Evento de criação de solicitação processado: ${evento.solicitacaoId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erro ao processar evento de criação de solicitação: ${error.message}`,
+        error.stack,
+      );
+    }
+  }
 
   /**
    * Listener para evento de alteração de status de solicitação
@@ -170,14 +222,41 @@ export class SolicitacaoEventListener {
   async handlePendencyCreatedEvent(evento: any): Promise<void> {
     try {
       this.logger.log(
-        `Processando evento de pendência criada: ${evento.data.pendenciaId}`,
+        `Processando evento de pendência criada: ${evento.pendenciaId}`,
       );
 
-      // Aqui, poderíamos enviar notificações específicas, atualizar métricas, etc.
-      // Para o escopo atual, vamos apenas registrar o evento no log.
+      // Buscar a solicitação
+      const solicitacao = await this.solicitacaoRepository.findOne({
+        where: { id: evento.solicitacaoId },
+      });
+
+      if (!solicitacao) {
+        this.logger.warn(`Solicitação não encontrada: ${evento.solicitacaoId}`);
+        return;
+      }
+
+      // Criar objeto pendência com os dados do evento
+      const pendencia = {
+        id: evento.pendenciaId,
+        descricao: evento.descricao,
+        prazo: evento.prazo,
+      };
+
+      // Buscar dados do usuário que criou a pendência
+      const usuario = {
+        id: evento.usuarioId,
+        nome: evento.usuarioNome || 'Sistema',
+      };
+
+      // Enviar notificação sobre a pendência criada
+      await this.notificacaoService.notificarPendenciaCriada(
+        pendencia as any,
+        solicitacao,
+        usuario as any,
+      );
 
       this.logger.log(
-        `Evento de pendência criada processado: ${evento.data.pendenciaId}`,
+        `Evento de pendência criada processado: ${evento.pendenciaId}`,
       );
     } catch (error) {
       this.logger.error(
@@ -195,7 +274,7 @@ export class SolicitacaoEventListener {
   async handlePendencyResolvedEvent(evento: any): Promise<void> {
     try {
       this.logger.log(
-        `Processando evento de pendência resolvida: ${evento.data.pendenciaId}`,
+        `Processando evento de pendência resolvida: ${evento.pendenciaId}`,
       );
 
       // Buscar a solicitação
@@ -206,6 +285,29 @@ export class SolicitacaoEventListener {
       if (!solicitacao) {
         this.logger.warn(`Solicitação não encontrada: ${evento.solicitacaoId}`);
         return;
+      }
+
+      // Buscar a pendência resolvida com relacionamentos
+      const pendenciaResolvida = await this.solicitacaoRepository.manager
+        .getRepository('Pendencia')
+        .findOne({
+          where: { id: evento.pendenciaId },
+          relations: ['resolvido_por'],
+        });
+
+      if (pendenciaResolvida) {
+        // Criar objeto usuário com os dados do evento
+        const usuario = {
+          id: evento.usuarioId,
+          nome: evento.usuarioNome || 'Sistema',
+        };
+
+        // Enviar notificação sobre a pendência resolvida
+        await this.notificacaoService.notificarPendenciaResolvida(
+          pendenciaResolvida as any,
+          solicitacao,
+          usuario as any,
+        );
       }
 
       // Verificar se existem outras pendências abertas
@@ -225,7 +327,7 @@ export class SolicitacaoEventListener {
       }
 
       this.logger.log(
-        `Evento de pendência resolvida processado: ${evento.data.pendenciaId}`,
+        `Evento de pendência resolvida processado: ${evento.pendenciaId}`,
       );
     } catch (error) {
       this.logger.error(
@@ -234,6 +336,183 @@ export class SolicitacaoEventListener {
       );
     }
   }
+
+  /**
+   * Listener para evento de rascunho criado
+   * @param evento Evento de rascunho criado
+   */
+  @OnEvent(SolicitacaoEventType.DRAFT_CREATED)
+  async handleDraftCreatedEvent(evento: { data: DraftCreatedEventData }): Promise<void> {
+    try {
+      this.logger.log(
+        `Processando evento de rascunho criado: ${evento.data.solicitacaoId}`,
+      );
+
+      // Se há técnico atribuído, enviar notificação
+      // if (evento.data.tecnicoId) {
+      //   const solicitacao = await this.solicitacaoRepository.findOne({
+      //     where: { id: evento.data.solicitacaoId },
+      //   });
+
+      //   if (solicitacao) {
+      //     await this.notificacaoService.notificarSolicitacaoAtribuida(solicitacao);
+      //   }
+      // }
+
+      this.logger.log(
+        `Evento de rascunho criado processado: ${evento.data.solicitacaoId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erro ao processar evento de rascunho criado: ${error.message}`,
+        error.stack,
+      );
+    }
+  }
+
+  /**
+   * Listener para evento de aprovação processada
+   * @param evento Evento de aprovação processada
+   */
+  @OnEvent('solicitacao.approval_processed')
+  async handleApprovalProcessedEvent(evento: any): Promise<void> {
+    try {
+      this.logger.log(
+        `Processando evento de aprovação: ${evento.solicitacaoId}`,
+      );
+
+      const solicitacao = await this.solicitacaoRepository.findOne({
+        where: { id: evento.solicitacaoId.toString() },
+        relations: ['requerente', 'tipo_beneficio'],
+      });
+
+      if (solicitacao) {
+        // Notificar sobre a aprovação da solicitação
+        await this.notificacaoService.notificarAlteracaoStatus(
+          solicitacao,
+          StatusSolicitacao.EM_ANALISE,
+          evento.observacao || evento.parecerSemtas,
+        );
+      }
+
+      this.logger.log(
+        `Evento de aprovação processado: ${evento.solicitacaoId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erro ao processar evento de aprovação: ${error.message}`,
+        error.stack,
+      );
+    }
+  }
+
+  /**
+   * Listener para evento de rejeição processada
+   * @param evento Evento de rejeição processada
+   */
+  @OnEvent('solicitacao.rejection_processed')
+  async handleRejectionProcessedEvent(evento: any): Promise<void> {
+    try {
+      this.logger.log(
+        `Processando evento de rejeição: ${evento.solicitacaoId}`,
+      );
+
+      const solicitacao = await this.solicitacaoRepository.findOne({
+        where: { id: evento.solicitacaoId.toString() },
+        relations: ['requerente', 'tipo_beneficio'],
+      });
+
+      if (solicitacao) {
+        // Notificar sobre a rejeição da solicitação
+        await this.notificacaoService.notificarAlteracaoStatus(
+          solicitacao,
+          StatusSolicitacao.EM_ANALISE,
+          evento.motivo,
+        );
+      }
+
+      this.logger.log(
+        `Evento de rejeição processado: ${evento.solicitacaoId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erro ao processar evento de rejeição: ${error.message}`,
+        error.stack,
+      );
+    }
+  }
+
+  /**
+   * Listener para evento de cancelamento processado
+   * @param evento Evento de cancelamento processado
+   */
+  @OnEvent('solicitacao.cancellation_processed')
+  async handleCancellationProcessedEvent(evento: any): Promise<void> {
+    try {
+      this.logger.log(
+        `Processando evento de cancelamento: ${evento.solicitacaoId}`,
+      );
+
+      const solicitacao = await this.solicitacaoRepository.findOne({
+        where: { id: evento.solicitacaoId.toString() },
+        relations: ['requerente', 'tipo_beneficio'],
+      });
+
+      if (solicitacao) {
+        // Notificar sobre o cancelamento da solicitação
+        await this.notificacaoService.notificarAlteracaoStatus(
+          solicitacao,
+          solicitacao.status,
+          evento.motivo,
+        );
+      }
+
+      this.logger.log(
+        `Evento de cancelamento processado: ${evento.solicitacaoId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erro ao processar evento de cancelamento: ${error.message}`,
+        error.stack,
+      );
+    }
+  }
+
+  /**
+   * Listener para evento de todas as pendências resolvidas
+   * @param evento Evento de todas as pendências resolvidas
+   */
+  @OnEvent(SolicitacaoEventType.ALL_PENDENCIES_RESOLVED)
+  async handleAllPendenciesResolvedEvent(evento: any): Promise<void> {
+    try {
+      this.logger.log(
+        `Processando evento de todas pendências resolvidas: ${evento.solicitacaoId}`,
+      );
+
+      const solicitacao = await this.solicitacaoRepository.findOne({
+        where: { id: evento.solicitacaoId.toString() },
+      });
+
+      if (solicitacao) {
+        // Notificar que todas as pendências foram resolvidas
+        // Aqui poderia ser implementada uma notificação específica para este caso
+        this.logger.log(
+          `Todas as pendências foram resolvidas para a solicitação ${evento.solicitacaoId}`,
+        );
+      }
+
+      this.logger.log(
+        `Evento de todas pendências resolvidas processado: ${evento.solicitacaoId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erro ao processar evento de todas pendências resolvidas: ${error.message}`,
+        error.stack,
+      );
+    }
+  }
+
+
 
   /**
    * Verifica se existem pendências abertas para uma solicitação

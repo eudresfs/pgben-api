@@ -7,6 +7,7 @@ import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { ScopedRepository } from '../../../common/repositories/scoped-repository';
 import { InjectScopedRepository } from '../../../common/providers/scoped-repository.provider';
 import { UuidValidator } from '../../../common/utils/uuid-validator.util';
+import { raw } from 'express';
 
 /**
  * Repository para operações de banco de dados relacionadas a Pagamentos
@@ -17,7 +18,7 @@ export class PagamentoRepository {
   constructor(
     @InjectScopedRepository(Pagamento)
     private readonly scopedRepository: ScopedRepository<Pagamento>,
-  ) {}
+  ) { }
 
   /**
    * Cria um novo pagamento
@@ -43,6 +44,33 @@ export class PagamentoRepository {
     return await this.scopedRepository
       .createScopedQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+      .leftJoin('pagamento.responsavel_liberacao', 'responsavel_liberacao')
+      .addSelect([
+        'responsavel_liberacao.id',
+        'responsavel_liberacao.nome',
+        'responsavel_liberacao.role',
+      ])
+      .leftJoin('solicitacao.beneficiario', 'beneficiario')
+      .addSelect([
+        'beneficiario.id',
+        'beneficiario.nome',
+        'beneficiario.cpf',
+      ])
+      .leftJoin('solicitacao.unidade', 'unidade')
+      .addSelect([
+        'unidade.id',
+        'unidade.nome',
+      ])
+      .leftJoin('solicitacao.tecnico', 'tecnico')
+      .addSelect([
+        'tecnico.id',
+        'tecnico.nome',
+      ])
+      .leftJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
+      .addSelect([
+        'tipo_beneficio.id',
+        'tipo_beneficio.nome',
+      ])
       .leftJoinAndSelect('pagamento.concessao', 'concessao')
       .where('pagamento.id = :id', { id })
       .orderBy('pagamento.created_at', 'ASC')
@@ -278,6 +306,12 @@ export class PagamentoRepository {
       .leftJoinAndSelect('pagamento.concessao', 'concessao')
       .leftJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .leftJoin('solicitacao.beneficiario', 'beneficiario')
+      .addSelect([
+        'beneficiario.id',
+        'beneficiario.nome',
+        'beneficiario.cpf',
+      ])
+
       .leftJoin('solicitacao.unidade', 'unidade')
       .leftJoin('solicitacao.tecnico', 'tecnico')
       .leftJoin('pagamento.responsavel_liberacao', 'responsavel_liberacao')
@@ -287,10 +321,6 @@ export class PagamentoRepository {
         'tipo_beneficio.id',
         'tipo_beneficio.nome',
         'tipo_beneficio.codigo',
-        // Beneficiário
-        'beneficiario.id',
-        'beneficiario.nome',
-        'beneficiario.cpf',
         // Unidade
         'unidade.id',
         'unidade.nome',
@@ -300,14 +330,6 @@ export class PagamentoRepository {
         // Usuário liberador
         'responsavel_liberacao.id',
         'responsavel_liberacao.nome',
-        // Informações bancárias
-        'info_bancaria.id',
-        'info_bancaria.tipo_chave_pix',
-        'info_bancaria.chave_pix',
-        'info_bancaria.tipo_conta',
-        'info_bancaria.banco',
-        'info_bancaria.agencia',
-        'info_bancaria.conta',
       ]);
 
     // Aplicar filtros
@@ -377,7 +399,7 @@ export class PagamentoRepository {
       filtros.pagamento_ids.forEach((id, index) => {
         UuidValidator.validateOrThrow(id, `pagamento_ids[${index}]`);
       });
-      
+
       // Usar IN clause para buscar múltiplos IDs de forma eficiente
       queryBuilder.andWhere('pagamento.id IN (:...pagamento_ids)', {
         pagamento_ids: filtros.pagamento_ids,
@@ -425,7 +447,7 @@ export class PagamentoRepository {
     queryBuilder
       .skip(skip)
       .take(limit)
-      .orderBy( `pagamento.${filtros.sort_by}`, filtros.sort_order )
+      .orderBy(`pagamento.${filtros.sort_by}`, filtros.sort_order)
       .addOrderBy('pagamento.numero_parcela', 'ASC');
 
     const [items, total] = await queryBuilder.getManyAndCount();
@@ -522,17 +544,84 @@ export class PagamentoRepository {
   }
 
   /**
-   * Verifica se existe pagamento para solicitação
+   * Busca pagamentos pendentes de monitoramento
+   * Retorna pagamentos que ainda não têm agendamento/visita criado
+   * @param filtros Filtros opcionais para bairro, CPF e paginação
    */
-  async existsBySolicitacao(solicitacao_id: string): Promise<boolean> {
-    // Validar UUID antes de usar na query
-    UuidValidator.validateOrThrow(solicitacao_id, 'solicitacao_id');
-    const count = await this.scopedRepository
-      .createScopedQueryBuilder('pagamento')
-      .where('pagamento.solicitacao_id = :solicitacao_id', { solicitacao_id })
-      .getCount();
-    return count > 0;
+  async findPendentesMonitoramento(filtros?: {
+    bairro?: string;
+    cpf?: string;
+    page?: number;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ items: any[]; total: number }> {
+    const queryBuilder = this.scopedRepository
+      .createQueryBuilder('pagamento')
+      .distinct(true)
+      .leftJoin('pagamento.solicitacao', 'solicitacao')
+      .leftJoin('solicitacao.tipo_beneficio', 'beneficio')
+      .leftJoin('solicitacao.beneficiario', 'cidadao')
+      .leftJoin('cidadao.enderecos', 'endereco')
+      .leftJoin('solicitacao.unidade', 'unidade')
+      .leftJoin('solicitacao.tecnico', 'tecnico')
+      .leftJoin('agendamento_visita', 'agendamento', 'agendamento.pagamento_id = pagamento.id')
+      .where('agendamento.id IS NULL')
+      .andWhere('pagamento.status = :status', { status: 'pago' })
+      .andWhere('pagamento.monitorado = :monitorado', { monitorado: false })
+      .andWhere('beneficio.codigo = :beneficio', { beneficio: 'aluguel-social' })
+      .select([
+        'pagamento',
+        'cidadao.nome',
+        'cidadao.cpf',
+        'endereco.bairro',
+        'unidade.id',
+        'unidade.nome',
+        'tecnico.id',
+        'tecnico.nome'
+      ])
+      .addSelect(
+        `CASE 
+            WHEN solicitacao.solicitacao_original_id IS NOT NULL 
+            THEN 'renovacao' 
+            ELSE 'novo' 
+        END`,
+        'tipo_concessao'
+      );
+
+    // Aplicar filtros opcionais
+    if (filtros?.bairro) {
+      queryBuilder.andWhere('LOWER(endereco.bairro) LIKE LOWER(:bairro)', {
+        bairro: `%${filtros.bairro}%`
+      });
+    }
+
+    if (filtros?.cpf) {
+      // Remove formatação do CPF para busca apenas por números
+      const cpfNumeros = filtros.cpf.replace(/\D/g, '');
+      queryBuilder.andWhere('cidadao.cpf = :cpf', { cpf: cpfNumeros });
+    }
+
+    // Aplicar paginação se fornecida
+    const page = filtros?.page || 1;
+    const limit = filtros?.limit || 10;
+    const offset = filtros?.offset || (page - 1) * limit;
+
+    // Contar total de registros
+    const total = await queryBuilder.getCount();
+
+    // Aplicar paginação e buscar resultados
+    const items = await queryBuilder
+      .orderBy('pagamento.id')
+      .addOrderBy('pagamento.numero_parcela', 'ASC')
+      .offset(offset)
+      .limit(limit)
+      .getRawMany();
+
+    return { items, total };
   }
+
+
+
 
   /**
    * Busca estatísticas de pagamentos

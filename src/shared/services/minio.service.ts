@@ -962,4 +962,108 @@ export class MinioService implements OnModuleInit {
       );
     }
   }
+
+  /**
+   * Lista arquivos órfãos no bucket com base em um prefixo e conjunto de caminhos salvos
+   * @param prefixo Prefixo para filtrar arquivos (ex: 'feedback/')
+   * @param caminhosSalvos Set com caminhos de arquivos que devem ser mantidos
+   * @param idadeHoras Idade mínima em horas para considerar um arquivo órfão
+   * @returns Array com nomes dos arquivos órfãos
+   */
+  async listarArquivosOrfaos(
+    prefixo: string,
+    caminhosSalvos: Set<string>,
+    idadeHoras: number = 24,
+  ): Promise<string[]> {
+    try {
+      const arquivosOrfaos: string[] = [];
+      const ageLimitMs = Date.now() - (idadeHoras * 60 * 60 * 1000);
+
+      this.logger.debug(`Listando arquivos órfãos com prefixo: ${prefixo}`);
+
+      // Criar stream para listar objetos
+      const objectsStream = this.minioClient.listObjects(
+        this.bucketName,
+        prefixo,
+        true // recursive
+      );
+
+      // Processar cada objeto encontrado
+      for await (const obj of objectsStream) {
+        if (obj.name) {
+          // Verificar se o arquivo não está na lista de salvos
+          if (!caminhosSalvos.has(obj.name)) {
+            // Verificar idade do arquivo
+            const fileAge = obj.lastModified ? obj.lastModified.getTime() : 0;
+            if (fileAge < ageLimitMs) {
+              arquivosOrfaos.push(obj.name);
+              this.logger.debug(`Arquivo órfão encontrado: ${obj.name}`);
+            }
+          }
+        }
+      }
+
+      this.logger.log(`Encontrados ${arquivosOrfaos.length} arquivos órfãos`);
+      return arquivosOrfaos;
+    } catch (error) {
+      this.logger.error(`Erro ao listar arquivos órfãos: ${error.message}`);
+      throw new StorageIndisponivelException(
+        `Falha ao listar arquivos órfãos: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Obtém estatísticas de uso do storage para um prefixo específico
+   * @param prefixo Prefixo para filtrar arquivos (ex: 'feedback/')
+   * @returns Objeto com total de arquivos e tamanho total
+   */
+  async obterEstatisticasStorage(
+    prefixo: string = '',
+  ): Promise<{ totalFiles: number; totalSize: number }> {
+    try {
+      let totalFiles = 0;
+      let totalSize = 0;
+
+      this.logger.debug(`Obtendo estatísticas de storage com prefixo: ${prefixo}`);
+
+      // Criar stream para listar objetos
+      const objectsStream = this.minioClient.listObjects(
+        this.bucketName,
+        prefixo,
+        true // recursive
+      );
+
+      // Processar cada objeto encontrado
+      for await (const obj of objectsStream) {
+        if (obj.name && obj.size !== undefined) {
+          totalFiles++;
+          totalSize += obj.size;
+        }
+      }
+
+      this.logger.log(`Estatísticas de storage: ${totalFiles} arquivos, ${this.formatFileSize(totalSize)}`);
+      return { totalFiles, totalSize };
+    } catch (error) {
+      this.logger.error(`Erro ao obter estatísticas de storage: ${error.message}`);
+      throw new StorageIndisponivelException(
+        `Falha ao obter estatísticas de storage: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Formata o tamanho do arquivo em formato legível
+   * @param bytes Tamanho em bytes
+   * @returns String formatada (ex: '1.5 MB')
+   */
+  private formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
 }

@@ -69,7 +69,7 @@ describe('UnidadeController', () => {
     total: 1,
     page: 1,
     limit: 10,
-    totalPages: 1,
+    pages: 1,
   };
 
   // Mock para AuthGuard
@@ -86,13 +86,10 @@ describe('UnidadeController', () => {
     const mockUnidadeService = {
       findAll: jest.fn(),
       findById: jest.fn(),
-      findByCodigo: jest.fn(),
-      findBySigla: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       updateStatus: jest.fn(),
-      remove: jest.fn(),
-      getStats: jest.fn(),
+      findSetoresByUnidadeId: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -169,7 +166,7 @@ describe('UnidadeController', () => {
 
       service.findAll.mockResolvedValue(mockPaginatedResult);
 
-      await controller.findAll(filtrosComLimiteAlto);
+      await controller.findAll(1, 1000);
 
       expect(service.findAll).toHaveBeenCalledWith({
         page: 1,
@@ -182,7 +179,7 @@ describe('UnidadeController', () => {
     it('deve retornar uma unidade quando encontrada', async () => {
       service.findById.mockResolvedValue(mockUnidade);
 
-      const result = await controller.findById('unidade-123');
+      const result = await controller.findOne('unidade-123');
 
       expect(result).toEqual(mockUnidade);
       expect(service.findById).toHaveBeenCalledWith('unidade-123');
@@ -191,55 +188,17 @@ describe('UnidadeController', () => {
     it('deve propagar erro quando unidade não encontrada', async () => {
       service.findById.mockRejectedValue(new Error('Unidade não encontrada'));
 
-      await expect(controller.findById('invalid-id')).rejects.toThrow(
+      await expect(controller.findOne('invalid-id')).rejects.toThrow(
         'Unidade não encontrada',
       );
     });
 
     it('deve validar formato UUID do ID', async () => {
-      await expect(controller.findById('invalid-uuid')).rejects.toThrow();
+      await expect(controller.findOne('invalid-uuid')).rejects.toThrow();
     });
   });
 
-  describe('findByCodigo', () => {
-    it('deve retornar unidade por código', async () => {
-      service.findByCodigo.mockResolvedValue(mockUnidade);
-
-      const result = await controller.findByCodigo('CRAS001');
-
-      expect(result).toEqual(mockUnidade);
-      expect(service.findByCodigo).toHaveBeenCalledWith('CRAS001');
-    });
-
-    it('deve propagar erro quando código não encontrado', async () => {
-      service.findByCodigo.mockRejectedValue(
-        new Error('Código não encontrado'),
-      );
-
-      await expect(controller.findByCodigo('INVALID')).rejects.toThrow(
-        'Código não encontrado',
-      );
-    });
-  });
-
-  describe('findBySigla', () => {
-    it('deve retornar unidade por sigla', async () => {
-      service.findBySigla.mockResolvedValue(mockUnidade);
-
-      const result = await controller.findBySigla('CC');
-
-      expect(result).toEqual(mockUnidade);
-      expect(service.findBySigla).toHaveBeenCalledWith('CC');
-    });
-
-    it('deve propagar erro quando sigla não encontrada', async () => {
-      service.findBySigla.mockRejectedValue(new Error('Sigla não encontrada'));
-
-      await expect(controller.findBySigla('XX')).rejects.toThrow(
-        'Sigla não encontrada',
-      );
-    });
-  });
+  // Método findByCodigo não existe no UnidadeController
 
   describe('create', () => {
     it('deve criar uma nova unidade com sucesso', async () => {
@@ -384,70 +343,55 @@ describe('UnidadeController', () => {
     });
   });
 
-  describe('remove', () => {
-    it('deve remover uma unidade com sucesso', async () => {
-      service.remove.mockResolvedValue(undefined);
+  // Método remove não existe no UnidadeController
 
-      await controller.remove(mockUnidade.id);
+  describe('findSetores', () => {
+    it('deve retornar setores de uma unidade', async () => {
+      const mockSetores = {
+        items: [
+          {
+            id: 'setor-123',
+            nome: 'Setor Administrativo',
+            sigla: 'SA',
+            descricao: 'Setor responsável pela administração',
+            unidade_id: mockUnidade.id,
+            unidade: mockUnidade,
+            status: true,
+            usuarios: [],
+            created_at: new Date('2024-01-01T10:00:00Z'),
+            updated_at: new Date('2024-01-01T10:00:00Z'),
+            removed_at: null,
+          },
+        ],
+        meta: {
+          total: 1,
+        },
+      };
 
-      expect(service.remove).toHaveBeenCalledWith(mockUnidade.id);
+      service.findSetoresByUnidadeId.mockResolvedValue(mockSetores);
+
+      const result = await controller.findSetores(mockUnidade.id);
+
+      expect(result).toEqual(mockSetores);
+      expect(service.findSetoresByUnidadeId).toHaveBeenCalledWith(mockUnidade.id);
     });
 
     it('deve propagar erro quando unidade não encontrada', async () => {
-      service.remove.mockRejectedValue(new Error('Unidade não encontrada'));
+      service.findSetoresByUnidadeId.mockRejectedValue(
+        new Error('Unidade não encontrada'),
+      );
 
-      await expect(controller.remove('invalid-id')).rejects.toThrow(
+      await expect(controller.findSetores('invalid-id')).rejects.toThrow(
         'Unidade não encontrada',
       );
     });
 
     it('deve validar formato UUID do ID', async () => {
-      await expect(controller.remove('invalid-uuid')).rejects.toThrow();
-    });
-
-    it('deve propagar erro quando unidade tem dependências', async () => {
-      service.remove.mockRejectedValue(
-        new Error('Unidade possui usuários vinculados'),
-      );
-
-      await expect(controller.remove(mockUnidade.id)).rejects.toThrow(
-        'Unidade possui usuários vinculados',
-      );
+      await expect(controller.findSetores('invalid-uuid')).rejects.toThrow();
     });
   });
 
-  describe('getStats', () => {
-    it('deve retornar estatísticas das unidades', async () => {
-      const mockStats = {
-        total: 10,
-        ativas: 8,
-        inativas: 2,
-        porTipo: {
-          CRAS: 5,
-          CREAS: 3,
-          SEDE: 1,
-          OUTROS: 1,
-        },
-      };
-
-      service.getStats.mockResolvedValue(mockStats);
-
-      const result = await controller.getStats();
-
-      expect(result).toEqual(mockStats);
-      expect(service.getStats).toHaveBeenCalled();
-    });
-
-    it('deve propagar erro de acesso a estatísticas', async () => {
-      service.getStats.mockRejectedValue(
-        new Error('Erro ao buscar estatísticas'),
-      );
-
-      await expect(controller.getStats()).rejects.toThrow(
-        'Erro ao buscar estatísticas',
-      );
-    });
-  });
+  // Testes de estatísticas removidos pois o método getStats não existe no UnidadeController
 
   describe('validações de segurança', () => {
     it('deve exigir autenticação para todas as rotas', () => {
@@ -473,7 +417,7 @@ describe('UnidadeController', () => {
     it('deve retornar 404 para unidade não encontrada', async () => {
       service.findById.mockRejectedValue(new Error('Unidade não encontrada'));
 
-      await expect(controller.findById('invalid-id')).rejects.toThrow(
+      await expect(controller.findOne('invalid-id')).rejects.toThrow(
         'Unidade não encontrada',
       );
     });
@@ -497,7 +441,7 @@ describe('UnidadeController', () => {
     it('deve retornar 500 para erro interno', async () => {
       service.findAll.mockRejectedValue(new Error('Erro interno do servidor'));
 
-      await expect(controller.findAll({ page: 1, limit: 10 })).rejects.toThrow(
+      await expect(controller.findAll(1, 10)).rejects.toThrow(
         'Erro interno do servidor',
       );
     });
@@ -518,7 +462,7 @@ describe('UnidadeController', () => {
 
       service.findById.mockResolvedValue(unidadeComSetores as any);
 
-      const result = await controller.findById(mockUnidade.id);
+      const result = await controller.findOne(mockUnidade.id);
 
       expect(result.setores).toBeDefined();
       expect(result.setores).toHaveLength(1);
@@ -538,7 +482,7 @@ describe('UnidadeController', () => {
 
       service.findById.mockResolvedValue(unidadeComUsuarios as any);
 
-      const result = await controller.findById(mockUnidade.id);
+      const result = await controller.findOne(mockUnidade.id);
 
       expect(result.usuarios).toBeDefined();
       expect(result.usuarios).toHaveLength(1);

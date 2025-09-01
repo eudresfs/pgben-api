@@ -199,7 +199,7 @@ export class DeterminacaoJudicialConsolidadoService {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit),
+        pages: Math.ceil(total / limit),
       },
     };
   }

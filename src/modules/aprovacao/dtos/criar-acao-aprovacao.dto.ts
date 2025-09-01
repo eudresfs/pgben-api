@@ -1,6 +1,7 @@
-import { IsString, IsEnum, IsOptional, IsInt, IsBoolean, Min, IsArray } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsInt, Min, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TipoAcaoCritica, EstrategiaAprovacao } from '../enums';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * DTO para criação de configuração de ação de aprovação
@@ -44,12 +45,13 @@ export class CriarAcaoAprovacaoDto {
   min_aprovadores: number;
 
   @ApiPropertyOptional({
-    description: 'Indica se a configuração está ativa',
-    default: true
+    description: 'Status da configuração de aprovação',
+    enum: Status,
+    default: Status.ATIVO
   })
   @IsOptional()
-  @IsBoolean()
-  ativo?: boolean;
+  @IsEnum(Status)
+  status?: Status;
 
   @ApiPropertyOptional({
     description: 'Lista de perfis que podem se autoaprovar',

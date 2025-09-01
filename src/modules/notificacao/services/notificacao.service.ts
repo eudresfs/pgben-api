@@ -359,7 +359,7 @@ export class NotificacaoService {
     const dadosNormalizados = normalizeEnumFields({
       ...dados,
       status: StatusNotificacaoProcessamento.NAO_LIDA,
-      dados_contexto: dados.dados_contexto || {},
+      dados_contexto: dados.dados_contexto || dados || {},
       template_id: dados.template_id || undefined,
       metadados_adicionais: dados.metadados_adicionais || {},
     });
@@ -387,6 +387,7 @@ export class NotificacaoService {
     titulo: string;
     conteudo: string;
     link?: string;
+    dados_contexto?: Record<string, any>;
   }) {
     return this.criar({
       ...dados,
@@ -403,6 +404,7 @@ export class NotificacaoService {
     conteudo: string;
     solicitacao_id: string;
     link?: string;
+    dados_contexto?: Record<string, any>;
   }) {
     return this.criar({
       destinatario_id: dados.destinatario_id,
@@ -412,6 +414,7 @@ export class NotificacaoService {
       entidade_relacionada_id: dados.solicitacao_id,
       entidade_tipo: 'solicitacao',
       link: dados.link,
+      dados_contexto: dados.dados_contexto,
     });
   }
 
@@ -424,6 +427,7 @@ export class NotificacaoService {
     conteudo: string;
     solicitacao_id: string;
     link?: string;
+    dados_contexto?: Record<string, any>;
   }) {
     return this.criar({
       destinatario_id: dados.destinatario_id,
@@ -433,6 +437,7 @@ export class NotificacaoService {
       entidade_relacionada_id: dados.solicitacao_id,
       entidade_tipo: 'solicitacao',
       link: dados.link,
+      dados_contexto: dados.dados_contexto,
     });
   }
 
@@ -445,6 +450,7 @@ export class NotificacaoService {
     conteudo: string;
     solicitacao_id: string;
     link?: string;
+    dados_contexto?: Record<string, any>;
     metadados_adicionais?: Record<string, any>;
   }) {
     return this.criar({
@@ -456,6 +462,7 @@ export class NotificacaoService {
       entidade_tipo: 'solicitacao',
       link: dados.link,
       metadados_adicionais: dados.metadados_adicionais,
+      dados_contexto: dados.dados_contexto,
     });
   }
 
@@ -468,6 +475,7 @@ export class NotificacaoService {
     conteudo: string;
     solicitacao_id: string;
     link?: string;
+    dados_contexto?: Record<string, any>;
   }) {
     return this.criar({
       destinatario_id: dados.destinatario_id,
@@ -476,7 +484,8 @@ export class NotificacaoService {
       conteudo: dados.conteudo,
       entidade_relacionada_id: dados.solicitacao_id,
       entidade_tipo: 'solicitacao',
-      link: dados.link,
+      link: dados.link, 
+      dados_contexto: dados.dados_contexto,
     });
   }
 
@@ -490,6 +499,7 @@ export class NotificacaoService {
     entidade_relacionada_id?: string;
     entidade_tipo?: string;
     link?: string;
+    dados_contexto?: Record<string, any>;
   }) {
     return this.criar({
       ...dados,

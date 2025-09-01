@@ -2,8 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsuarioService } from './usuario.service';
 import { UsuarioRepository } from '../repositories/usuario.repository';
 import { DataSource } from 'typeorm';
-import { UsuarioError } from '../errors/usuario.errors';
-import { Usuario } from '../entities/usuario.entity';
+import { AppError } from '../../../shared/exceptions/error-catalog/AppError';
+import { throwUserNotFound } from '../../../shared/exceptions/error-catalog/domains/usuario.errors';
+import { Usuario } from '../../../entities/usuario.entity';
 
 // Mock do bcrypt
 jest.mock('bcrypt', () => ({
@@ -51,6 +52,14 @@ describe('UsuarioService', () => {
     updated_at: new Date(),
     removed_at: null,
     refreshTokens: [],
+    // Métodos da entidade Usuario
+    isAtivo: jest.fn().mockReturnValue(true),
+    ativar: jest.fn(),
+    desativar: jest.fn(),
+    isPrimeiroAcesso: jest.fn().mockReturnValue(true),
+    marcarPrimeiroAcessoRealizado: jest.fn(),
+    getNomeFormatado: jest.fn().mockReturnValue('João Silva'),
+    podeSerDeletado: jest.fn().mockReturnValue(false),
   } as any;
 
   beforeEach(async () => {
@@ -120,15 +129,15 @@ describe('UsuarioService', () => {
       );
     });
 
-    it('deve lançar UsuarioError quando usuário não encontrado', async () => {
+    it('deve lançar USUARIO_ERRORS quando usuário não encontrado', async () => {
       repository.findById.mockRejectedValue(
-        new UsuarioError('USUARIO_NOT_FOUND', 'Usuário não encontrado', {
-          id: 'invalid-id',
+        new AppError('USUARIO_NOT_FOUND', {
+          data: { identifier: 'invalid-id' },
         }),
       );
 
       await expect(service.findById('invalid-id')).rejects.toThrow(
-        UsuarioError,
+        AppError,
       );
     });
   });
@@ -174,7 +183,17 @@ describe('UsuarioService', () => {
     });
 
     it('deve retornar usuário quando credenciais são válidas', async () => {
-      const usuarioAtivo = { ...mockUsuario, tentativas_login: 0 };
+      const usuarioAtivo = { 
+        ...mockUsuario, 
+        tentativas_login: 0,
+        isAtivo: jest.fn().mockReturnValue(true),
+        ativar: jest.fn(),
+        desativar: jest.fn(),
+        isPrimeiroAcesso: jest.fn().mockReturnValue(true),
+        marcarPrimeiroAcessoRealizado: jest.fn(),
+        getNomeFormatado: jest.fn().mockReturnValue('João Silva'),
+        podeSerDeletado: jest.fn().mockReturnValue(false),
+      };
       repository.findByEmail.mockResolvedValue(usuarioAtivo);
       repository.updateStatus.mockResolvedValue(usuarioAtivo);
 
@@ -207,11 +226,18 @@ describe('UsuarioService', () => {
       expect(result).toBeNull();
     });
 
-    it('deve lançar UsuarioError quando usuário está bloqueado', async () => {
+    it('deve lançar USUARIO_ERRORS quando usuário está bloqueado', async () => {
       const usuarioBloqueado = {
         ...mockUsuario,
         tentativas_login: 5,
         ultimo_login: new Date(), // Tentativa recente
+        isAtivo: jest.fn().mockReturnValue(true),
+        ativar: jest.fn(),
+        desativar: jest.fn(),
+        isPrimeiroAcesso: jest.fn().mockReturnValue(true),
+        marcarPrimeiroAcessoRealizado: jest.fn(),
+        getNomeFormatado: jest.fn().mockReturnValue('João Silva'),
+        podeSerDeletado: jest.fn().mockReturnValue(false),
       };
       repository.findByEmail.mockResolvedValue(usuarioBloqueado);
 
@@ -220,7 +246,7 @@ describe('UsuarioService', () => {
           'joao.silva@semtas.natal.gov.br',
           'senha123',
         ),
-      ).rejects.toThrow(UsuarioError);
+      ).rejects.toThrow(AppError);
     });
 
     it('deve retornar null e incrementar tentativas quando senha é inválida', async () => {
@@ -296,7 +322,7 @@ describe('UsuarioService', () => {
       expect(dataSource.transaction).toHaveBeenCalled();
     });
 
-    it('deve lançar UsuarioError quando email já existe', async () => {
+    it('deve lançar USUARIO_ERRORS quando email já existe', async () => {
       const mockManager = {
         getRepository: jest.fn().mockImplementation((entity) => {
           if (entity === 'usuario') {
@@ -312,11 +338,11 @@ describe('UsuarioService', () => {
       );
 
       await expect(service.create(createUsuarioDto)).rejects.toThrow(
-        UsuarioError,
+        AppError,
       );
     });
 
-    it('deve lançar UsuarioError quando CPF já existe', async () => {
+    it('deve lançar USUARIO_ERRORS quando CPF já existe', async () => {
       const mockManager = {
         getRepository: jest.fn().mockImplementation((entity) => {
           if (entity === 'usuario') {
@@ -344,7 +370,7 @@ describe('UsuarioService', () => {
       );
     });
 
-    it('deve lançar UsuarioError quando matrícula já existe', async () => {
+    it('deve lançar USUARIO_ERRORS quando matrícula já existe', async () => {
       const mockManager = {
         getRepository: jest.fn().mockImplementation((entity) => {
           if (entity === 'usuario') {
@@ -371,7 +397,7 @@ describe('UsuarioService', () => {
       );
 
       await expect(service.create(createUsuarioDto)).rejects.toThrow(
-        UsuarioError,
+        AppError,
       );
     });
   });
@@ -388,14 +414,14 @@ describe('UsuarioService', () => {
       );
     });
 
-    it('deve lançar UsuarioError quando usuário não existe', async () => {
+    it('deve lançar USUARIO_ERRORS quando usuário não existe', async () => {
       repository.findById.mockRejectedValue(
-        new UsuarioError('USUARIO_NOT_FOUND', 'Usuário não encontrado', {
-          id: 'invalid-id',
+        new AppError('USUARIO_NOT_FOUND', {
+          data: { identifier: 'invalid-id' },
         }),
       );
 
-      await expect(service.remove('invalid-id')).rejects.toThrow(UsuarioError);
+      await expect(service.remove('invalid-id')).rejects.toThrow(AppError);
     });
   });
 

@@ -9,6 +9,8 @@ import {
   Index
 } from 'typeorm';
 import { SolicitacaoAprovacao } from './solicitacao-aprovacao.entity';
+import { Usuario } from '@/entities';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * Entidade para aprovadores específicos de uma solicitação
@@ -68,11 +70,12 @@ export class SolicitacaoAprovador {
   ordem_aprovacao: number;
 
   @Column({
-    type: 'boolean',
-    default: true,
-    comment: 'Indica se o aprovador está ativo para esta solicitação'
+    type: 'enum',
+    enum: Status,
+    default: Status.ATIVO,
+    comment: 'Status do aprovador na solicitação'
   })
-  ativo: boolean;
+  status: Status;
 
   @Column({
     type: 'text',
@@ -103,6 +106,10 @@ export class SolicitacaoAprovador {
     comment: 'ID da solicitação de aprovação'
   })
   solicitacao_aprovacao_id: string;
+
+  @ManyToOne(() => Usuario, usuario => usuario)
+  @JoinColumn({ name: 'usuario_id' })
+  usuario: Usuario;
 
   /**
    * Verifica se o aprovador já tomou uma decisão

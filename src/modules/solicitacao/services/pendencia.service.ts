@@ -23,7 +23,6 @@ import {
 import { PaginatedResponseDto } from '../../../shared/dtos/pagination.dto';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { EventosService } from './eventos.service';
-import { NotificacaoService } from './notificacao.service';
 import { PermissionService } from '../../../auth/services/permission.service';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { SolicitacaoEventType } from '../events/solicitacao-events';
@@ -50,7 +49,6 @@ export class PendenciaService {
     private readonly usuarioRepository: Repository<Usuario>,
     private readonly auditEmitter: AuditEventEmitter,
     private readonly eventosService: EventosService,
-    private readonly notificacaoService: NotificacaoService,
     private readonly permissionService: PermissionService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -149,24 +147,15 @@ export class PendenciaService {
       usuarioId,
     );
 
-    // Enviar notificação
-    await this.notificacaoService.notificarPendenciaCriada(
-      pendenciaSalva,
-      solicitacao,
-      usuario,
-    );
-
-    // Emitir notificação SSE para pendência criada
-    this.eventEmitter.emit('sse.notificacao', {
-      userId: solicitacao.tecnico_id,
-      tipo: 'pendencia_criada',
-      dados: {
-        pendenciaId: pendenciaSalva.id,
-        solicitacaoId: solicitacao.id,
-        protocolo: solicitacao.protocolo,
-        descricao: pendenciaSalva.descricao,
-        prioridade: 'high',
-      },
+    // Emitir evento de pendência criada (o listener processará as notificações)
+    this.eventEmitter.emit('solicitacao.pendency_created', {
+      pendenciaId: pendenciaSalva.id,
+      solicitacaoId: solicitacao.id,
+      descricao: createPendenciaDto.descricao,
+      prazo: createPendenciaDto.prazo_resolucao
+        ? new Date(createPendenciaDto.prazo_resolucao)
+        : undefined,
+      usuarioId: usuarioId,
     });
 
     // Buscar a pendência com os relacionamentos necessários
@@ -297,47 +286,27 @@ export class PendenciaService {
       usuarioId,
     );
 
-    // Enviar notificação
-    await this.notificacaoService.notificarPendenciaResolvida(
-      pendenciaAtualizada,
-      pendencia.solicitacao,
-      usuario,
-    );
+    // Buscar dados do usuário que resolveu a pendência
+    const usuarioResolveu = await this.pendenciaRepository.manager
+      .getRepository('Usuario')
+      .findOne({ where: { id: usuarioId } });
 
-    // Emitir notificação SSE para pendência resolvida
-    this.eventEmitter.emit('sse.notificacao', {
-      userId: pendencia.registrado_por_id,
-      tipo: 'pendencia_resolvida',
-      dados: {
-        pendenciaId: pendencia.id,
-        solicitacaoId: pendencia.solicitacao_id,
-        protocolo: pendencia.solicitacao?.protocolo,
-        resolucao: resolverPendenciaDto.observacao_resolucao,
-        prioridade: 'medium',
-        dataResolucao: new Date(),
-      },
+    // Emitir evento de pendência resolvida (o listener processará as notificações)
+    this.eventEmitter.emit('solicitacao.pendency_resolved', {
+      pendenciaId: pendencia.id,
+      solicitacaoId: pendencia.solicitacao_id,
+      resolucao: resolverPendenciaDto.observacao_resolucao,
+      usuarioId: usuarioId,
+      usuarioNome: usuarioResolveu?.nome || 'Sistema',
+      dataResolucao: new Date(),
     });
 
-    // Se todas as pendências foram sanadas, notificar técnico
+    // Se todas as pendências foram sanadas, emitir evento específico
     if (todasPendenciasSanadas) {
-      const solicitacao = await this.solicitacaoRepository.findOne({
-        where: { id: pendencia.solicitacao_id },
-        relations: ['tecnico'],
+      this.eventEmitter.emit('solicitacao.all_pendencies_resolved', {
+        solicitacaoId: pendencia.solicitacao_id,
+        timestamp: new Date(),
       });
-
-      if (solicitacao?.tecnico_id) {
-        this.eventEmitter.emit('sse.notificacao', {
-          userId: solicitacao.tecnico_id,
-          tipo: 'pendencias_sanadas',
-          dados: {
-            solicitacaoId: solicitacao.id,
-            protocolo: solicitacao.protocolo,
-            prioridade: 'high',
-            statusNovo: StatusSolicitacao.EM_ANALISE,
-            timestamp: new Date(),
-          },
-        });
-      }
     }
 
     return this.buscarPorId(pendencia.id);
@@ -451,40 +420,22 @@ export class PendenciaService {
       usuarioId,
     );
 
-    // Emitir notificação SSE para pendência cancelada
-    this.eventEmitter.emit('sse.notificacao', {
-      userId: pendencia.registrado_por_id,
-      tipo: 'pendencia_cancelada',
-      dados: {
-        pendenciaId: pendencia.id,
-        solicitacaoId: pendencia.solicitacao_id,
-        protocolo: pendencia.solicitacao?.protocolo,
-        motivo: cancelarPendenciaDto.motivo_cancelamento,
-        prioridade: 'medium',
-        dataCancelamento: new Date(),
-      },
+    // Emitir evento de pendência cancelada (o listener processará as notificações)
+    this.eventEmitter.emit('solicitacao.pendency_cancelled', {
+      pendenciaId: pendencia.id,
+      solicitacaoId: pendencia.solicitacao_id,
+      motivo: cancelarPendenciaDto.motivo_cancelamento,
+      observacao: cancelarPendenciaDto.observacao_cancelamento,
+      usuarioId: usuarioId,
+      dataCancelamento: new Date(),
     });
 
-    // Se todas as pendências foram sanadas após o cancelamento, notificar técnico
+    // Se todas as pendências foram sanadas após o cancelamento, emitir evento específico
     if (todasPendenciasSanadas) {
-      const solicitacao = await this.solicitacaoRepository.findOne({
-        where: { id: pendencia.solicitacao_id },
-        relations: ['tecnico'],
+      this.eventEmitter.emit('solicitacao.all_pendencies_resolved', {
+        solicitacaoId: pendencia.solicitacao_id,
+        timestamp: new Date(),
       });
-
-      if (solicitacao?.tecnico_id) {
-        this.eventEmitter.emit('sse.notificacao', {
-          userId: solicitacao.tecnico_id,
-          tipo: 'pendencias_sanadas',
-          dados: {
-            solicitacaoId: solicitacao.id,
-            protocolo: solicitacao.protocolo,
-            prioridade: 'high',
-            statusNovo: StatusSolicitacao.EM_ANALISE,
-            timestamp: new Date(),
-          },
-        });
-      }
     }
 
     return this.buscarPorId(pendencia.id);
@@ -543,14 +494,14 @@ export class PendenciaService {
       }),
     );
 
-    const totalPages = Math.ceil(total / limit);
+    const pages = Math.ceil(total / limit);
 
     return new PaginatedResponseDto(pendenciasDto, {
       page,
       limit,
       total,
-      pages: totalPages,
-      hasNext: page < totalPages,
+      pages: pages,
+      hasNext: page < pages,
       hasPrev: page > 1,
     });
   }

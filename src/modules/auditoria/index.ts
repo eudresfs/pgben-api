@@ -38,6 +38,26 @@ export {
   SystemAudit,
 } from './decorators/audit.decorators';
 
+// === ENTITY DECORATORS ===
+export {
+  AuditEntity as AuditEntityDecorator,
+  AuditEntityCreate,
+  AuditEntityUpdate,
+  AuditEntityDelete,
+  AuditEntityRead,
+} from './decorators/audit-entity.decorator';
+
+// === OPERATION DECORATORS ===
+export {
+  AuditOperation,
+  AuditCreate,
+  AuditRead,
+  AuditUpdate,
+  AuditDelete,
+  AuditSensitiveAccess,
+  AuditExport,
+} from './decorators/audit-operation.decorator';
+
 // === INTERCEPTORS E MIDDLEWARE ===
 export { AuditInterceptor } from './interceptors/audit.interceptor';
 export { AuditMiddleware } from './middleware/audit.middleware';

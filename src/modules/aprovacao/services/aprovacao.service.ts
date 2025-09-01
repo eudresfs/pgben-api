@@ -5,7 +5,10 @@ import { AcaoAprovacao, SolicitacaoAprovacao } from '../entities';
 import { ConfiguracaoAprovador } from '../entities/configuracao-aprovador.entity';
 import { SolicitacaoAprovador } from '../entities/solicitacao-aprovador.entity';
 import { CriarSolicitacaoDto, CriarAcaoAprovacaoDto } from '../dtos';
+import { AprovacaoFiltrosAvancadosDto, AprovacaoFiltrosResponseDto } from '../dto/aprovacao-filtros-avancados.dto';
 import { StatusSolicitacao, TipoAcaoCritica, EstrategiaAprovacao } from '../enums';
+import { PeriodoPredefinido } from '../../../enums/periodo-predefinido.enum';
+import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
 import { ConfiguracaoAprovacao } from '../decorators';
 import { UsuarioService } from '../../usuario/services/usuario.service';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
@@ -14,6 +17,9 @@ import { PermissionService } from '../../../auth/services/permission.service';
 import { SYSTEM_USER_UUID } from '../../../shared/constants/system.constants';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TipoEscopo } from '../../../entities/user-permission.entity';
+import { ListaAprovacoesPendentesResponseDto, SolicitacaoAprovacaoResponseDto } from '../dtos/response/aprovacao-response.dto';
+import { Status } from '../../../enums/status.enum';
+import { AprovacaoEventosService } from './aprovacao-eventos.service';
 
 /**
  * Serviço principal consolidado para gerenciamento de aprovações
@@ -43,7 +49,9 @@ export class AprovacaoService {
     private readonly eventEmitter: EventEmitter2,
     private readonly auditEventEmitter: AuditEventEmitter,
     private readonly execucaoAcaoService: ExecucaoAcaoService,
-    private readonly permissionService: PermissionService
+    private readonly permissionService: PermissionService,
+    private readonly filtrosAvancadosService: FiltrosAvancadosService,
+    private readonly aprovacaoEventosService: AprovacaoEventosService
   ) {}
 
   /**
@@ -61,7 +69,7 @@ export class AprovacaoService {
       }
 
       const configuracao = await this.acaoAprovacaoRepository.findOne({
-        where: { tipo_acao: tipoAcao, ativo: true }
+        where: { tipo_acao: tipoAcao, status: Status.ATIVO }
       });
       
       const requerAprovacao = !!configuracao;
@@ -96,7 +104,7 @@ export class AprovacaoService {
       }
 
       const configuracao = await this.acaoAprovacaoRepository.findOne({
-        where: { tipo_acao: tipoAcao, ativo: true },
+        where: { tipo_acao: tipoAcao, status: Status.ATIVO },
         relations: ['configuracao_aprovadores']
       });
 
@@ -289,6 +297,13 @@ export class AprovacaoService {
       timestamp: new Date()
     });
 
+    // Emitir evento de solicitação criada
+    await this.aprovacaoEventosService.emitirEventoSolicitacaoCriada(
+      solicitacaoSalva,
+      solicitanteId,
+      configuracao
+    );
+
     this.logger.log(`Solicitação criada: ${codigo} para ação: ${dto.tipo_acao}`);
     
     return this.obterSolicitacao(solicitacaoSalva.id);
@@ -371,13 +386,30 @@ export class AprovacaoService {
     }
 
     // Busca o aprovador
-    const aprovador = await this.solicitacaoAprovadorRepository.findOne({
-      where: {
-        solicitacao_aprovacao_id: solicitacaoId,
-        usuario_id: aprovadorId,
-        ativo: true
-      }
-    });
+    const aprovador = await this.solicitacaoAprovadorRepository
+      .createQueryBuilder('aprovador')
+      .select([
+        'aprovador.id',
+        'aprovador.usuario_id',
+        'aprovador.aprovado',
+        'aprovador.justificativa_decisao',
+        'aprovador.anexos_decisao',
+        'aprovador.decidido_em',
+        'aprovador.ordem_aprovacao',
+        'aprovador.status',
+        'aprovador.observacoes',
+        'aprovador.created_at',
+        'aprovador.updated_at',
+        'aprovador.solicitacao_aprovacao_id'
+      ])
+      .leftJoin('aprovador.usuario', 'usuario')
+      .addSelect(['usuario.id', 'usuario.nome'])
+      .leftJoin('usuario.unidade', 'unidade')
+      .addSelect(['unidade.id', 'unidade.nome'])
+      .where('aprovador.solicitacao_aprovacao_id = :solicitacaoId', { solicitacaoId })
+      .andWhere('aprovador.usuario_id = :aprovadorId', { aprovadorId })
+      .andWhere('aprovador.status = :status', { status: Status.ATIVO })
+      .getOne();
 
     if (!aprovador) {
       throw new NotFoundException('Aprovador não encontrado para esta solicitação');
@@ -449,6 +481,9 @@ export class AprovacaoService {
         justificativa,
         timestamp: new Date()
       });
+
+      // Emitir evento de solicitação aprovada
+      await this.aprovacaoEventosService.emitirEventoSolicitacaoAprovada(solicitacaoAtualizada, aprovadorId);
       
     } else if (solicitacaoAtualizada.status === StatusSolicitacao.REJEITADA) {
       // Evento específico de rejeição
@@ -459,6 +494,9 @@ export class AprovacaoService {
         justificativa,
         timestamp: new Date()
       });
+
+      // Emitir evento de solicitação rejeitada
+      await this.aprovacaoEventosService.emitirEventoSolicitacaoRejeitada(solicitacaoAtualizada, aprovadorId, justificativa);
     }
 
     this.logger.log(
@@ -472,10 +510,29 @@ export class AprovacaoService {
    * Obtém uma solicitação com todos os relacionamentos
    */
   async obterSolicitacao(id: string): Promise<SolicitacaoAprovacao> {
-    const solicitacao = await this.solicitacaoRepository.findOne({
-      where: { id },
-      relations: ['acao_aprovacao', 'solicitacao_aprovadores']
-    });
+    const solicitacao = await this.solicitacaoRepository
+      .createQueryBuilder('solicitacao')
+      .leftJoinAndSelect('solicitacao.acao_aprovacao', 'acao_aprovacao')
+      .leftJoinAndSelect('solicitacao.solicitacao_aprovadores', 'solicitacao_aprovadores')
+      .leftJoinAndSelect('solicitacao_aprovadores.usuario', 'aprovador_usuario', 'aprovador_usuario.id = solicitacao_aprovadores.usuario_id')
+      .leftJoinAndSelect('aprovador_usuario.unidade', 'aprovador_unidade', 'aprovador_unidade.id = aprovador_usuario.unidade_id')
+      .leftJoinAndSelect('solicitacao.solicitante', 'solicitante_usuario', 'solicitante_usuario.id = solicitacao.solicitante_id')
+      .leftJoinAndSelect('solicitante_usuario.unidade', 'solicitante_unidade', 'solicitante_unidade.id = solicitante_usuario.unidade_id')
+      .select([
+        'solicitacao',
+        'acao_aprovacao',
+        'solicitacao_aprovadores',
+        'aprovador_usuario.id',
+        'aprovador_usuario.nome',
+        'aprovador_unidade.id',
+        'aprovador_unidade.nome',
+        'solicitante_usuario.id',
+        'solicitante_usuario.nome',
+        'solicitante_unidade.id',
+        'solicitante_unidade.nome'
+      ])
+      .where('solicitacao.id = :id', { id })
+      .getOne();
 
     if (!solicitacao) {
       throw new NotFoundException('Solicitação não encontrada');
@@ -498,10 +555,29 @@ export class AprovacaoService {
       }
 
       // Busca a solicitação pelo código
-      const solicitacao = await this.solicitacaoRepository.findOne({
-        where: { codigo },
-        relations: ['acao_aprovacao', 'solicitacao_aprovadores']
-      });
+      const solicitacao = await this.solicitacaoRepository
+        .createQueryBuilder('solicitacao')
+        .leftJoinAndSelect('solicitacao.acao_aprovacao', 'acao_aprovacao')
+        .leftJoinAndSelect('solicitacao.solicitacao_aprovadores', 'solicitacao_aprovadores')
+        .leftJoinAndSelect('solicitacao_aprovadores.usuario', 'aprovador_usuario', 'aprovador_usuario.id = solicitacao_aprovadores.usuario_id')
+        .leftJoinAndSelect('aprovador_usuario.unidade', 'aprovador_unidade', 'aprovador_unidade.id = aprovador_usuario.unidade_id')
+        .leftJoinAndSelect('solicitacao.solicitante', 'solicitante_usuario', 'solicitante_usuario.id = solicitacao.solicitante_id')
+        .leftJoinAndSelect('solicitante_usuario.unidade', 'solicitante_unidade', 'solicitante_unidade.id = solicitante_usuario.unidade_id')
+        .select([
+          'solicitacao',
+          'acao_aprovacao',
+          'solicitacao_aprovadores',
+          'aprovador_usuario.id',
+          'aprovador_usuario.nome',
+          'aprovador_unidade.id',
+          'aprovador_unidade.nome',
+          'solicitante_usuario.id',
+          'solicitante_usuario.nome',
+          'solicitante_unidade.id',
+          'solicitante_unidade.nome'
+        ])
+        .where('solicitacao.codigo = :codigo', { codigo })
+        .getOne();
 
       if (!solicitacao) {
         this.logger.debug(`Solicitação com código ${codigo} não encontrada`);
@@ -523,12 +599,65 @@ export class AprovacaoService {
     filtros: any = {},
     paginacao: { page: number; limit: number } = { page: 1, limit: 10 },
     usuarioId?: string
-  ) {
+  ): Promise<ListaAprovacoesPendentesResponseDto> {
     const { page, limit } = paginacao;
     const queryBuilder = this.solicitacaoRepository
       .createQueryBuilder('solicitacao')
-      .leftJoinAndSelect('solicitacao.acao_aprovacao', 'acao')
-      .leftJoinAndSelect('solicitacao.solicitacao_aprovadores', 'aprovadores')
+      .select([
+        'solicitacao.id',
+        'solicitacao.codigo',
+        'solicitacao.status',
+        'solicitacao.justificativa',
+        'solicitacao.metodo_execucao',
+        'solicitacao.prazo_aprovacao',
+        'solicitacao.processado_em',
+        'solicitacao.processado_por',
+        'solicitacao.observacoes',
+        'solicitacao.anexos',
+        'solicitacao.executado_em',
+        'solicitacao.erro_execucao',
+        'solicitacao.created_at',
+        'solicitacao.updated_at',
+        'solicitacao.acao_aprovacao_id'
+      ])
+      .leftJoin('solicitacao.acao_aprovacao', 'acao')
+      .addSelect([
+        'acao.id',
+        'acao.tipo_acao',
+        'acao.nome',
+        'acao.descricao',
+        'acao.estrategia',
+        'acao.min_aprovadores',
+        'acao.perfil_auto_aprovacao',
+        'acao.setor_escalonamento',
+        'acao.permissao_aprovacao',
+        'acao.status',
+        'acao.created_at',
+        'acao.updated_at'
+      ])
+      .leftJoin('solicitacao.solicitacao_aprovadores', 'aprovadores')
+      .addSelect([
+        'aprovadores.id',
+        'aprovadores.usuario_id',
+        'aprovadores.aprovado',
+        'aprovadores.justificativa_decisao',
+        'aprovadores.anexos_decisao',
+        'aprovadores.decidido_em',
+        'aprovadores.ordem_aprovacao',
+        'aprovadores.status',
+        'aprovadores.observacoes',
+        'aprovadores.created_at',
+        'aprovadores.updated_at',
+        'aprovadores.solicitacao_aprovacao_id'
+      ])
+      .leftJoin('aprovadores.usuario', 'usuario')
+      .addSelect(['usuario.id', 'usuario.nome'])
+      .leftJoin('usuario.unidade', 'unidade_aprovador')
+      .addSelect(['unidade_aprovador.id', 'unidade_aprovador.nome'])
+      .leftJoin('solicitacao.solicitante', 'solicitante')
+      .addSelect(['solicitante.id', 'solicitante.nome'])
+      .leftJoin('solicitante.unidade', 'unidade_solicitante')
+      .addSelect(['unidade_solicitante.id', 'unidade_solicitante.nome'])
       .orderBy('solicitacao.created_at', 'DESC');
 
     if (filtros.status) {
@@ -556,9 +685,68 @@ export class AprovacaoService {
       .take(limit)
       .getManyAndCount();
 
+    // Mapear dados para resposta estruturada com DTOs
+    const solicitacoesMapeadas: SolicitacaoAprovacaoResponseDto[] = solicitacoes.map(solicitacao => ({
+      id: solicitacao.id,
+      codigo: solicitacao.codigo,
+      status: solicitacao.status,
+      dados_acao: solicitacao.dados_acao,
+      justificativa: solicitacao.justificativa,
+      created_at: solicitacao.created_at,
+      prazo_aprovacao: solicitacao.prazo_aprovacao,
+      processado_em: solicitacao.processado_em,
+      processado_por: solicitacao.processado_por,
+      observacoes: solicitacao.observacoes,
+      anexos: solicitacao.anexos,
+      executado_em: solicitacao.executado_em,
+      erro_execucao: solicitacao.erro_execucao,
+      metodo_execucao: solicitacao.metodo_execucao,
+      updated_at: solicitacao.updated_at,
+      acao: {
+        id: solicitacao.acao_aprovacao.id,
+        tipo_acao: solicitacao.acao_aprovacao.tipo_acao,
+        nome: solicitacao.acao_aprovacao.nome,
+        estrategia: solicitacao.acao_aprovacao.estrategia,
+        descricao: solicitacao.acao_aprovacao.descricao
+      },
+      aprovadores: solicitacao.solicitacao_aprovadores
+         ?.filter(aprovador => aprovador.status === Status.ATIVO)
+         .map(aprovador => ({
+           id: aprovador.id,
+           usuario_id: aprovador.usuario_id,
+           aprovado: aprovador.aprovado,
+           justificativa_decisao: aprovador.justificativa_decisao,
+           anexos_decisao: aprovador.anexos_decisao,
+           decidido_em: aprovador.decidido_em,
+           observacoes: aprovador.observacoes,
+           ordem_aprovacao: aprovador.ordem_aprovacao,
+           status: aprovador.status,
+           created_at: aprovador.created_at,
+           usuario: {
+             id: aprovador.usuario?.id,
+             nome: aprovador.usuario?.nome,
+             unidade: {
+               id: aprovador.usuario?.unidade?.id,
+               nome: aprovador.usuario?.unidade?.nome
+             }
+           }
+         })) || [],
+      // Incluir dados do solicitante claramente na resposta
+      solicitante: {
+        id: solicitacao.solicitante?.id,
+        nome: solicitacao.solicitante?.nome,
+        unidade: {
+          id: solicitacao.solicitante?.unidade?.id,
+          nome: solicitacao.solicitante?.unidade?.nome
+        }
+      }
+    }));
+
     return {
-      solicitacoes,
-      total
+      solicitacoes: solicitacoesMapeadas,
+      total,
+      pagina: page,
+      limite: limit
     };
   }
 
@@ -577,7 +765,7 @@ export class AprovacaoService {
 
     const acao = this.acaoAprovacaoRepository.create({
       ...dto,
-      ativo: dto.ativo ?? true
+      status: dto.status ?? Status.ATIVO
     });
 
     return this.acaoAprovacaoRepository.save(acao);
@@ -589,15 +777,70 @@ export class AprovacaoService {
   async listarSolicitacoesPendentes(
     aprovadorId: string,
     paginacao: { page: number; limit: number } = { page: 1, limit: 10 }
-  ) {
+  ): Promise<ListaAprovacoesPendentesResponseDto> {
     const { page, limit } = paginacao;
     const queryBuilder = this.solicitacaoRepository
       .createQueryBuilder('solicitacao')
-      .leftJoinAndSelect('solicitacao.acao_aprovacao', 'acao')
-      .leftJoinAndSelect('solicitacao.solicitacao_aprovadores', 'aprovadores')
+      .select([
+        'solicitacao.id',
+        'solicitacao.codigo',
+        'solicitacao.status',
+        'solicitacao.solicitante_id',
+        'solicitacao.justificativa',
+        'solicitacao.dados_acao',
+        'solicitacao.metodo_execucao',
+        'solicitacao.prazo_aprovacao',
+        'solicitacao.processado_em',
+        'solicitacao.processado_por',
+        'solicitacao.observacoes',
+        'solicitacao.anexos',
+        'solicitacao.executado_em',
+        'solicitacao.erro_execucao',
+        'solicitacao.created_at',
+        'solicitacao.updated_at',
+        'solicitacao.acao_aprovacao_id'
+      ])
+      .leftJoin('solicitacao.acao_aprovacao', 'acao')
+      .addSelect([
+        'acao.id',
+        'acao.tipo_acao',
+        'acao.nome',
+        'acao.descricao',
+        'acao.estrategia',
+        'acao.min_aprovadores',
+        'acao.perfil_auto_aprovacao',
+        'acao.setor_escalonamento',
+        'acao.permissao_aprovacao',
+        'acao.status',
+        'acao.created_at',
+        'acao.updated_at'
+      ])
+      .leftJoin('solicitacao.solicitacao_aprovadores', 'aprovadores')
+      .addSelect([
+        'aprovadores.id',
+        'aprovadores.usuario_id',
+        'aprovadores.aprovado',
+        'aprovadores.justificativa_decisao',
+        'aprovadores.anexos_decisao',
+        'aprovadores.decidido_em',
+        'aprovadores.ordem_aprovacao',
+        'aprovadores.status',
+        'aprovadores.observacoes',
+        'aprovadores.created_at',
+        'aprovadores.updated_at',
+        'aprovadores.solicitacao_aprovacao_id'
+      ])
+      .leftJoin('aprovadores.usuario', 'usuario_aprovador')
+      .addSelect(['usuario_aprovador.id', 'usuario_aprovador.nome'])
+      .leftJoin('usuario_aprovador.unidade', 'unidade_aprovador')
+      .addSelect(['unidade_aprovador.id', 'unidade_aprovador.nome'])
+      .leftJoin('usuario', 'solicitante', 'solicitante.id = solicitacao.solicitante_id')
+      .addSelect(['solicitante.id', 'solicitante.nome'])
+      .leftJoin('solicitante.unidade', 'unidade_solicitante')
+      .addSelect(['unidade_solicitante.id', 'unidade_solicitante.nome'])
       .where('solicitacao.status = :status', { status: StatusSolicitacao.PENDENTE })
       .andWhere('aprovadores.usuario_id = :aprovadorId', { aprovadorId })
-      .andWhere('aprovadores.ativo = true')
+      .andWhere('aprovadores.status = :status', { status: Status.ATIVO })
       .andWhere('aprovadores.aprovado IS NULL')
       .orderBy('solicitacao.created_at', 'DESC');
 
@@ -606,9 +849,65 @@ export class AprovacaoService {
       .take(limit)
       .getManyAndCount();
 
+    // Mapear as solicitações para o DTO de resposta
+    const solicitacoesMapeadas: SolicitacaoAprovacaoResponseDto[] = solicitacoes.map(solicitacao => ({
+      id: solicitacao.id,
+      codigo: solicitacao.codigo,
+      status: solicitacao.status,
+      justificativa: solicitacao.justificativa,
+      dados_acao: solicitacao.dados_acao,
+      prazo_aprovacao: solicitacao.prazo_aprovacao,
+      processado_em: solicitacao.processado_em,
+      processado_por: solicitacao.processado_por,
+      observacoes: solicitacao.observacoes,
+      anexos: solicitacao.anexos,
+      executado_em: solicitacao.executado_em,
+      erro_execucao: solicitacao.erro_execucao,
+      created_at: solicitacao.created_at,
+      metodo_execucao: solicitacao.metodo_execucao,
+      updated_at: solicitacao.updated_at,
+      acao: {
+        id: solicitacao.acao_aprovacao.id,
+        tipo_acao: solicitacao.acao_aprovacao.tipo_acao,
+        nome: solicitacao.acao_aprovacao.nome,
+        descricao: solicitacao.acao_aprovacao.descricao,
+        estrategia: solicitacao.acao_aprovacao.estrategia
+      },
+      aprovadores: solicitacao.solicitacao_aprovadores?.map(aprovador => ({
+        id: aprovador.id,
+        usuario_id: aprovador.usuario_id,
+        aprovado: aprovador.aprovado,
+        justificativa_decisao: aprovador.justificativa_decisao,
+        anexos_decisao: aprovador.anexos_decisao,
+        decidido_em: aprovador.decidido_em,
+        observacoes: aprovador.observacoes,
+        ordem_aprovacao: aprovador.ordem_aprovacao,
+        status: aprovador.status,
+        created_at: aprovador.created_at,
+        usuario: {
+          id: aprovador.usuario.id,
+          nome: aprovador.usuario.nome,
+          unidade: {
+            id: aprovador.usuario.unidade.id,
+            nome: aprovador.usuario.unidade.nome
+          }
+        }
+      })) || [],
+      solicitante: {
+        id: solicitacao.solicitante.id,
+        nome: solicitacao.solicitante.nome,
+        unidade: {
+          id: solicitacao.solicitante.unidade.id,
+          nome: solicitacao.solicitante.unidade.nome
+        }
+      }
+    }));
+
     return {
-      solicitacoes,
-      total
+      solicitacoes: solicitacoesMapeadas,
+      total,
+      pagina: page,
+      limite: limit
     };
   }
 
@@ -619,13 +918,43 @@ export class AprovacaoService {
   async listarAprovacoesPendentesPorEntidade(
     entidadeId: string,
     paginacao: { page: number; limit: number } = { page: 1, limit: 10 }
-  ) {
+  ): Promise<ListaAprovacoesPendentesResponseDto> {
     const { page, limit } = paginacao;
     
     const queryBuilder = this.solicitacaoRepository
        .createQueryBuilder('solicitacao')
-       .leftJoinAndSelect('solicitacao.acao_aprovacao', 'acao')
-       .leftJoinAndSelect('solicitacao.solicitacao_aprovadores', 'aprovadores')
+       .select([
+         'solicitacao.id',
+         'solicitacao.codigo',
+         'solicitacao.status',
+         'solicitacao.dados_acao',
+         'solicitacao.justificativa',
+         'solicitacao.created_at'
+       ])
+       .leftJoin('solicitacao.acao_aprovacao', 'acao')
+       .addSelect([
+         'acao.id',
+         'acao.tipo_acao',
+         'acao.estrategia',
+         'acao.descricao'
+       ])
+       .leftJoin('solicitacao.solicitacao_aprovadores', 'aprovadores')
+       .addSelect([
+         'aprovadores.id',
+         'aprovadores.usuario_id',
+         'aprovadores.aprovado',
+         'aprovadores.justificativa_decisao',
+         'aprovadores.decidido_em',
+         'aprovadores.status'
+       ])
+       .leftJoin('aprovadores.usuario', 'usuario_aprovador')
+       .addSelect(['usuario_aprovador.id', 'usuario_aprovador.nome'])
+       .leftJoin('usuario_aprovador.unidade', 'unidade_aprovador')
+       .addSelect(['unidade_aprovador.id', 'unidade_aprovador.nome'])
+       .leftJoin('solicitacao.solicitante', 'solicitante')
+       .addSelect(['solicitante.id', 'solicitante.nome'])
+       .leftJoin('solicitante.unidade', 'unidade_solicitante')
+       .addSelect(['unidade_solicitante.id', 'unidade_solicitante.nome'])
        .where('solicitacao.status = :status', { status: StatusSolicitacao.PENDENTE })
        .andWhere("solicitacao.dados_acao->'params'->>'id' = :entidadeId", { entidadeId })
        .orderBy('solicitacao.created_at', 'DESC');
@@ -635,35 +964,54 @@ export class AprovacaoService {
       .take(limit)
       .getManyAndCount();
 
-    // Mapear dados para resposta mais limpa
-    const solicitacoesMapeadas = solicitacoes.map(solicitacao => ({
+    // Mapear dados para resposta estruturada com DTOs
+    const solicitacoesMapeadas: SolicitacaoAprovacaoResponseDto[] = solicitacoes.map(solicitacao => ({
       id: solicitacao.id,
       codigo: solicitacao.codigo,
       status: solicitacao.status,
       dados_acao: solicitacao.dados_acao,
       justificativa: solicitacao.justificativa,
       created_at: solicitacao.created_at,
-      acao_aprovacao: {
+      acao: {
         id: solicitacao.acao_aprovacao.id,
         tipo_acao: solicitacao.acao_aprovacao.tipo_acao,
+        nome: solicitacao.acao_aprovacao.nome,
         estrategia: solicitacao.acao_aprovacao.estrategia,
         descricao: solicitacao.acao_aprovacao.descricao
       },
       aprovadores: solicitacao.solicitacao_aprovadores
-         .filter(aprovador => aprovador.ativo)
+         .filter(aprovador => aprovador.status === Status.ATIVO)
          .map(aprovador => ({
            id: aprovador.id,
            usuario_id: aprovador.usuario_id,
            aprovado: aprovador.aprovado,
            justificativa_decisao: aprovador.justificativa_decisao,
-           decidido_em: aprovador.decidido_em
-         }))
+           decidido_em: aprovador.decidido_em,
+           usuario: {
+             id: aprovador.usuario?.id,
+             nome: aprovador.usuario?.nome,
+             unidade: {
+               id: aprovador.usuario?.unidade?.id,
+               nome: aprovador.usuario?.unidade?.nome
+             }
+           }
+         })),
+      // Incluir dados do solicitante claramente na resposta
+      solicitante: {
+        id: solicitacao.solicitante?.id,
+        nome: solicitacao.solicitante?.nome,
+        unidade: {
+          id: solicitacao.solicitante?.unidade?.id,
+          nome: solicitacao.solicitante?.unidade?.nome
+        }
+      }
     }));
 
     return {
       solicitacoes: solicitacoesMapeadas,
       total,
-      entidade_id: entidadeId
+      pagina: page,
+      limite: limit
     };
   }
 
@@ -866,8 +1214,8 @@ export class AprovacaoService {
       .leftJoinAndSelect('acao.configuracao_aprovadores', 'aprovadores')
       .orderBy('acao.nome', 'ASC');
 
-    if (filtros.ativo !== undefined) {
-      queryBuilder.andWhere('acao.ativo = :ativo', { ativo: filtros.ativo });
+    if (filtros.status !== undefined) {
+      queryBuilder.andWhere('acao.status = :status', { status: filtros.status });
     }
 
     if (filtros.tipo_acao) {
@@ -928,7 +1276,7 @@ export class AprovacaoService {
       throw new BadRequestException('Não é possível remover configuração com solicitações pendentes');
     }
 
-    await this.acaoAprovacaoRepository.update(id, { ativo: false });
+    await this.acaoAprovacaoRepository.update(id, { status: Status.INATIVO });
     
     this.logger.log(`Configuração de aprovação ${id} removida`);
   }
@@ -1040,11 +1388,11 @@ export class AprovacaoService {
     });
 
     if (existente) {
-      if (existente.ativo) {
+      if (existente.status === Status.ATIVO) {
         throw new BadRequestException('Aprovador já cadastrado para esta ação');
       } else {
         // Reativa aprovador existente e cadastra permissões
-        existente.ativo = true;
+        existente.status = Status.ATIVO;
         const aprovadorReativado = await this.configuracaoAprovadorRepository.save(existente);
         
         // Cadastra as permissões necessárias para o aprovador
@@ -1058,7 +1406,7 @@ export class AprovacaoService {
       const aprovador = this.configuracaoAprovadorRepository.create({
         acao_aprovacao_id: acaoId,
         usuario_id: usuarioId,
-        ativo: true
+        status: Status.ATIVO
       });
 
       const novoAprovador = await this.configuracaoAprovadorRepository.save(aprovador);
@@ -1093,11 +1441,11 @@ export class AprovacaoService {
   /**
    * Lista aprovadores de uma configuração
    */
-  async listarAprovadores(acaoId: string, ativo?: boolean): Promise<ConfiguracaoAprovador[]> {
+  async listarAprovadores(acaoId: string, status?: Status): Promise<ConfiguracaoAprovador[]> {
     const where: any = { acao_aprovacao_id: acaoId };
     
-    if (ativo !== undefined) {
-      where.ativo = ativo;
+    if (status !== undefined) {
+      where.status = status;
     }
 
     return this.configuracaoAprovadorRepository.find({
@@ -1170,13 +1518,13 @@ export class AprovacaoService {
     }
 
     // Desativa o aprovador da configuração específica
-    await this.configuracaoAprovadorRepository.update(aprovadorId, { ativo: false });
+    await this.configuracaoAprovadorRepository.update(aprovadorId, { status: Status.INATIVO });
     
     // Verifica se o usuário ainda é aprovador de outras ações
     const outrasAcoes = await this.configuracaoAprovadorRepository.count({
       where: {
         usuario_id: aprovador.usuario_id,
-        ativo: true,
+        status: Status.ATIVO,
         id: Not(aprovadorId) // Exclui o aprovador que acabou de ser desativado
       }
     });
@@ -1303,7 +1651,7 @@ export class AprovacaoService {
         this.solicitacaoAprovadorRepository.create({
           solicitacao_aprovacao_id: solicitacaoId,
           usuario_id: usuario.id,
-          ativo: true
+          status: Status.ATIVO
         })
       );
 
@@ -1370,7 +1718,7 @@ export class AprovacaoService {
       const aprovador = this.solicitacaoAprovadorRepository.create({
         solicitacao_aprovacao_id: solicitacaoId,
         usuario_id: solicitanteId,
-        ativo: true
+        status: Status.ATIVO
       });
 
       await this.solicitacaoAprovadorRepository.save(aprovador);
@@ -1462,7 +1810,7 @@ export class AprovacaoService {
     }
 
     // Verificar se o usuário está ativo
-    if (solicitante.status !== 'ativo') {
+    if (solicitante.status !== Status.ATIVO) {
       return {
         podeAutoAprovar: false,
         perfilSolicitante: solicitante.role?.codigo,
@@ -1524,7 +1872,7 @@ export class AprovacaoService {
         nome: usuario.nome,
         email: usuario.email,
         perfil: usuario.role?.codigo,
-        status: usuario.status === 'ativo' ? 'ATIVO' : 'INATIVO',
+        status: usuario.status === Status.ATIVO ? 'ATIVO' : 'INATIVO',
         role: usuario.role
       };
     } catch (error) {
@@ -1575,7 +1923,7 @@ export class AprovacaoService {
     solicitacaoId: string,
     configuracao: AcaoAprovacao
   ): Promise<void> {
-    const aprovadoresConfig = await this.listarAprovadores(configuracao.id, true);
+    const aprovadoresConfig = await this.listarAprovadores(configuracao.id, Status.ATIVO);
     
     if (aprovadoresConfig.length === 0) {
       throw new BadRequestException('Nenhum aprovador configurado para esta ação');
@@ -1604,7 +1952,7 @@ export class AprovacaoService {
   ): Promise<void> {
     // Remove duplicatas baseado no usuario_id para evitar aprovadores duplicados
     const aprovadoresUnicos = aprovadoresConfig
-      .filter(a => a.ativo)
+      .filter(a => a.status === Status.ATIVO)
       .reduce((acc, aprovador) => {
         const existe = acc.find(a => a.usuario_id === aprovador.usuario_id);
         if (!existe) {
@@ -1619,7 +1967,7 @@ export class AprovacaoService {
       this.solicitacaoAprovadorRepository.create({
         solicitacao_aprovacao_id: solicitacaoId,
         usuario_id: aprovadorConfig.usuario_id,
-        ativo: true
+        status: Status.ATIVO
       })
     );
 
@@ -1666,7 +2014,7 @@ export class AprovacaoService {
     try {
       // Obter configuração da ação
       const configuracao = await this.acaoAprovacaoRepository.findOne({
-        where: { tipo_acao: tipoAcao, ativo: true }
+        where: { tipo_acao: tipoAcao, status: Status.ATIVO }
       });
 
       if (!configuracao) {
@@ -1723,5 +2071,344 @@ export class AprovacaoService {
       this.logger.error(`Erro ao obter usuário com perfis ${usuarioId}:`, error);
       return null;
     }
+  }
+
+  /**
+   * Aplica filtros avançados para busca de aprovações
+   * 
+   * Implementa o padrão de filtros avançados estabelecido no sistema,
+   * permitindo busca por múltiplos critérios e retornando estatísticas.
+   */
+  async aplicarFiltrosAvancados(
+    filtros: AprovacaoFiltrosAvancadosDto,
+    usuarioId: string
+  ): Promise<AprovacaoFiltrosResponseDto> {
+    try {
+      this.logger.log(`Aplicando filtros avançados para aprovações - Usuário: ${usuarioId}`);
+
+      // Construir query base com relacionamentos
+      const queryBuilder = this.solicitacaoRepository
+        .createQueryBuilder('aprovacao')
+        .leftJoinAndSelect('aprovacao.solicitante', 'solicitante')
+        .leftJoinAndSelect('aprovacao.acao_aprovacao', 'acao')
+        .leftJoinAndSelect('aprovacao.solicitacao_aprovadores', 'aprovadores')
+        .leftJoinAndSelect('solicitante.unidade', 'unidade');
+
+      // ========== APLICAR FILTROS ==========
+
+      // Filtro por unidades
+      if (filtros.unidades?.length) {
+        queryBuilder.andWhere('unidade.id IN (:...unidades)', {
+          unidades: filtros.unidades
+        });
+      }
+
+      // Filtro por status
+      if (filtros.status?.length) {
+        queryBuilder.andWhere('aprovacao.status IN (:...status)', {
+          status: filtros.status
+        });
+      }
+
+      // Filtro por tipos de ação
+      if (filtros.tipos_acao?.length) {
+        queryBuilder.andWhere('acao.tipo_acao IN (:...tipos)', {
+          tipos: filtros.tipos_acao
+        });
+      }
+
+      // Filtro por solicitantes
+      if (filtros.solicitantes?.length) {
+        queryBuilder.andWhere('aprovacao.solicitante_id IN (:...solicitantes)', {
+          solicitantes: filtros.solicitantes
+        });
+      }
+
+      // Filtro por aprovadores
+      if (filtros.aprovadores?.length) {
+        queryBuilder.andWhere('aprovadores.usuario_id IN (:...aprovadores)', {
+          aprovadores: filtros.aprovadores
+        });
+      }
+
+      // Filtro por período
+      const { dataInicio, dataFim } = this.calcularPeriodo(
+        filtros.periodo,
+        filtros.data_inicio,
+        filtros.data_fim
+      );
+
+      if (dataInicio) {
+        queryBuilder.andWhere('aprovacao.created_at >= :dataInicio', {
+          dataInicio
+        });
+      }
+
+      if (dataFim) {
+        queryBuilder.andWhere('aprovacao.created_at <= :dataFim', {
+          dataFim
+        });
+      }
+
+      // Filtro de busca textual
+      if (filtros.search) {
+        queryBuilder.andWhere(
+          '(aprovacao.codigo ILIKE :search OR ' +
+          'aprovacao.justificativa ILIKE :search OR ' +
+          'aprovacao.observacoes ILIKE :search OR ' +
+          'acao.nome ILIKE :search OR ' +
+          'solicitante.nome ILIKE :search)',
+          { search: `%${filtros.search}%` }
+        );
+      }
+
+      // Filtro por prazo vencido
+      if (filtros.prazo_vencido === true) {
+        queryBuilder.andWhere(
+          'aprovacao.prazo_aprovacao IS NOT NULL AND aprovacao.prazo_aprovacao < :agora',
+          { agora: new Date() }
+        );
+      }
+
+      // Filtro para incluir/excluir processadas
+      if (filtros.incluir_processadas === false) {
+        queryBuilder.andWhere(
+          'aprovacao.status NOT IN (:...statusProcessados)',
+          { statusProcessados: [StatusSolicitacao.APROVADA, StatusSolicitacao.REJEITADA] }
+        );
+      }
+
+      // ========== APLICAR ORDENAÇÃO ==========
+      const sortBy = filtros.sort_by || 'created_at';
+      const sortOrder = filtros.sort_order || 'DESC';
+      queryBuilder.orderBy(`aprovacao.${sortBy}`, sortOrder);
+
+      // ========== APLICAR PAGINAÇÃO ==========
+      const page = filtros.page || 1;
+      const limit = filtros.limit || 20;
+      const offset = (page - 1) * limit;
+
+      queryBuilder.skip(offset).take(limit);
+
+      // ========== EXECUTAR CONSULTA ==========
+      const [aprovacoes, total] = await queryBuilder.getManyAndCount();
+
+      // ========== OBTER DADOS PARA FILTROS ==========
+      const [unidades, statusList, tiposAcao, solicitantes, estatisticas] = await Promise.all([
+        this.obterUnidadesDisponiveis(),
+        this.obterStatusDisponiveis(),
+        this.obterTiposAcaoDisponiveis(),
+        this.obterSolicitantesDisponiveis(),
+        this.calcularEstatisticasAprovacoes()
+      ]);
+
+      // ========== CALCULAR METADADOS DE PAGINAÇÃO ==========
+      const pages = Math.ceil(total / limit);
+      const hasNext = page < pages;
+      const hasPrev = page > 1;
+
+      // ========== CONSTRUIR RESPOSTA ==========
+      return {
+        data: aprovacoes.map(aprovacao => this.mapearAprovacaoParaResposta(aprovacao)),
+        meta: {
+          limit,
+          total,
+          page,
+          pages,
+          hasNext,
+          hasPrev
+        },
+        estatisticas,
+        unidades,
+        status: statusList,
+        tipos_acao: tiposAcao,
+        solicitantes,
+        periodos_disponiveis: Object.values(PeriodoPredefinido)
+      };
+    } catch (error) {
+      this.logger.error('Erro ao aplicar filtros avançados:', error);
+      throw new BadRequestException('Erro ao aplicar filtros avançados');
+    }
+  }
+
+  /**
+   * Calcula período baseado em período predefinido ou datas específicas
+   */
+  private calcularPeriodo(
+    periodo?: PeriodoPredefinido,
+    dataInicio?: string,
+    dataFim?: string
+  ): { dataInicio?: Date; dataFim?: Date } {
+    if (periodo) {
+      return this.filtrosAvancadosService.calcularPeriodoPredefinido(periodo);
+    }
+
+    return {
+      dataInicio: dataInicio ? new Date(dataInicio) : undefined,
+      dataFim: dataFim ? new Date(dataFim) : undefined
+    };
+  }
+
+  /**
+   * Obtém unidades disponíveis para filtro
+   */
+  private async obterUnidadesDisponiveis() {
+    const resultado = await this.solicitacaoRepository
+      .createQueryBuilder('aprovacao')
+      .leftJoin('aprovacao.solicitante', 'solicitante')
+      .leftJoin('solicitante.unidade', 'unidade')
+      .select([
+        'unidade.id as id',
+        'unidade.nome as nome',
+        'COUNT(aprovacao.id) as total_aprovacoes'
+      ])
+      .where('unidade.id IS NOT NULL')
+      .groupBy('unidade.id, unidade.nome')
+      .orderBy('unidade.nome', 'ASC')
+      .getRawMany();
+
+    return resultado.map(item => ({
+      id: item.id,
+      nome: item.nome,
+      total_aprovacoes: parseInt(item.total_aprovacoes)
+    }));
+  }
+
+  /**
+   * Obtém status disponíveis para filtro
+   */
+  private async obterStatusDisponiveis() {
+    const resultado = await this.solicitacaoRepository
+      .createQueryBuilder('aprovacao')
+      .select([
+        'aprovacao.status as status',
+        'COUNT(aprovacao.id) as total'
+      ])
+      .groupBy('aprovacao.status')
+      .orderBy('aprovacao.status', 'ASC')
+      .getRawMany();
+
+    return resultado.map(item => ({
+      status: item.status,
+      total: parseInt(item.total)
+    }));
+  }
+
+  /**
+   * Obtém tipos de ação disponíveis para filtro
+   */
+  private async obterTiposAcaoDisponiveis() {
+    const resultado = await this.solicitacaoRepository
+      .createQueryBuilder('aprovacao')
+      .leftJoin('aprovacao.acao_aprovacao', 'acao')
+      .select([
+        'acao.tipo_acao as tipo_acao',
+        'COUNT(aprovacao.id) as total'
+      ])
+      .where('acao.tipo_acao IS NOT NULL')
+      .groupBy('acao.tipo_acao')
+      .orderBy('acao.tipo_acao', 'ASC')
+      .getRawMany();
+
+    return resultado.map(item => ({
+      tipo_acao: item.tipo_acao,
+      total: parseInt(item.total)
+    }));
+  }
+
+  /**
+   * Obtém solicitantes disponíveis para filtro
+   */
+  private async obterSolicitantesDisponiveis() {
+    const resultado = await this.solicitacaoRepository
+      .createQueryBuilder('aprovacao')
+      .leftJoin('aprovacao.solicitante', 'solicitante')
+      .select([
+        'solicitante.id as id',
+        'solicitante.nome as nome',
+        'COUNT(aprovacao.id) as total_solicitacoes'
+      ])
+      .where('solicitante.id IS NOT NULL')
+      .groupBy('solicitante.id, solicitante.nome')
+      .orderBy('solicitante.nome', 'ASC')
+      .getRawMany();
+
+    return resultado.map(item => ({
+      id: item.id,
+      nome: item.nome,
+      total_solicitacoes: parseInt(item.total_solicitacoes)
+    }));
+  }
+
+  /**
+   * Calcula estatísticas gerais das aprovações
+   */
+  private async calcularEstatisticasAprovacoes() {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const amanha = new Date(hoje);
+    amanha.setDate(amanha.getDate() + 1);
+
+    const [total, pendentes, vencidas, hoje_count] = await Promise.all([
+      this.solicitacaoRepository.count(),
+      this.solicitacaoRepository.count({
+        where: { status: StatusSolicitacao.PENDENTE }
+      }),
+      this.solicitacaoRepository
+        .createQueryBuilder('aprovacao')
+        .where('aprovacao.prazo_aprovacao IS NOT NULL')
+        .andWhere('aprovacao.prazo_aprovacao < :agora', { agora: new Date() })
+        .andWhere('aprovacao.status = :status', { status: StatusSolicitacao.PENDENTE })
+        .getCount(),
+      this.solicitacaoRepository
+        .createQueryBuilder('aprovacao')
+        .where('aprovacao.created_at >= :hoje', { hoje })
+        .andWhere('aprovacao.created_at < :amanha', { amanha })
+        .getCount()
+    ]);
+
+    return {
+      total_aprovacoes: total,
+      aprovacoes_pendentes: pendentes,
+      aprovacoes_vencidas: vencidas,
+      aprovacoes_hoje: hoje_count
+    };
+  }
+
+  /**
+   * Mapeia entidade de aprovação para formato de resposta
+   */
+  private mapearAprovacaoParaResposta(aprovacao: SolicitacaoAprovacao): any {
+    return {
+      id: aprovacao.id,
+      codigo: aprovacao.codigo,
+      tipo_acao: aprovacao.acao_aprovacao?.tipo_acao,
+      nome_acao: aprovacao.acao_aprovacao?.nome,
+      status: aprovacao.status,
+      justificativa: aprovacao.justificativa,
+      observacoes: aprovacao.observacoes,
+      prazo_aprovacao: aprovacao.prazo_aprovacao,
+      prazo_vencido: aprovacao.prazo_aprovacao ? new Date() > aprovacao.prazo_aprovacao : false,
+      solicitante: {
+        id: aprovacao.solicitante?.id,
+        nome: aprovacao.solicitante?.nome,
+        email: aprovacao.solicitante?.email,
+        unidade: {
+          id: aprovacao.solicitante?.unidade?.id,
+          nome: aprovacao.solicitante?.unidade?.nome
+        }
+      },
+      aprovadores: aprovacao.solicitacao_aprovadores?.map(sa => ({
+        id: sa.usuario?.id,
+        nome: sa.usuario?.nome,
+        decisao: sa.aprovado,
+        justificativa: sa.justificativa_decisao,
+        processado_em: sa.decidido_em
+      })) || [],
+      dados_acao: aprovacao.dados_acao,
+      metodo_execucao: aprovacao.metodo_execucao,
+      created_at: aprovacao.created_at,
+      updated_at: aprovacao.updated_at
+    };
   }
 }

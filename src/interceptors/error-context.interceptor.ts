@@ -195,7 +195,7 @@ export class ErrorContextInterceptor implements NestInterceptor {
     // Log com nível apropriado baseado no tipo de erro
     if (error.status >= 500 || !error.status) {
       this.logger.error(
-        'Erro interno do servidor',
+        'Erro interno do servidor. Contate o suporte se o problema persistir.',
         JSON.stringify(logData, null, 2),
       );
     } else if (error.status >= 400) {

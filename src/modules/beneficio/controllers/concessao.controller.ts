@@ -18,7 +18,7 @@ import {
   SuspenderConcessaoDto,
   BloquearConcessaoDto,
   DesbloquearConcessaoDto,
-  CancelarConcessaoDto,
+  CessarConcessaoDto,
 } from '../dto/suspender-concessao.dto';
 import { StatusConcessao } from '../../../enums/status-concessao.enum';
 import {
@@ -37,6 +37,7 @@ import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { Usuario } from '../../../entities/usuario.entity';
 import { FiltroConcessaoDto } from '../dto/filtro-concessao.dto';
 import { ConcessaoListResponseDto } from '../dto/concessao-response.dto';
+import { ConcessaoFiltrosAvancadosDto, ConcessaoFiltrosResponseDto } from '../dto/concessao-filtros-avancados.dto';
 import {
   PaginatedResponseDto,
   PaginationMetaDto,
@@ -266,8 +267,8 @@ export class ConcessaoController {
 
     // Calcular metadados de paginação seguindo o padrão do projeto
     const page = filtro.page || Math.floor(result.offset / result.limit) + 1;
-    const totalPages = Math.ceil(result.total / result.limit);
-    const hasNext = page < totalPages;
+    const pages = Math.ceil(result.total / result.limit);
+    const hasNext = page < pages;
     const hasPrevious = page > 1;
 
     // Criar metadados de paginação
@@ -275,7 +276,7 @@ export class ConcessaoController {
       page,
       limit: result.limit,
       total: result.total,
-      pages: totalPages,
+      pages: pages,
       hasNext,
       hasPrev: hasPrevious,
     };
@@ -285,6 +286,87 @@ export class ConcessaoController {
       result.data as ConcessaoListResponseDto[];
 
     return new PaginatedResponseDto(items, meta);
+  }
+
+  /**
+   * Lista concessões com filtros avançados
+   */
+  @Post('filtros-avancados')
+  @RequiresPermission({
+    permissionName: 'concessao.listar',
+    scopeType: ScopeType.UNIT,
+  })
+  @ApiOperation({ 
+    summary: 'Listar concessões com filtros avançados',
+    description: `Endpoint otimizado para consultas complexas de concessões com múltiplos critérios de filtro.
+    
+    **Funcionalidades principais:**
+    - Filtros por múltiplas unidades, benefícios e status
+    - Filtros por período de criação e início da concessão
+    - Busca textual em protocolo, nome do beneficiário e CPF
+    - Paginação otimizada com cache
+    - Ordenação por múltiplos campos
+    - Filtros por determinação judicial e prioridade
+    
+    **Casos de uso comuns:**
+    - Relatórios de concessões por período
+    - Auditoria de concessões por unidade
+    - Consulta de concessões por beneficiário
+    - Análise de concessões por status
+    - Controle de concessões prioritárias`
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista paginada de concessões com filtros aplicados',
+    type: ConcessaoFiltrosResponseDto,
+    schema: {
+      example: {
+        items: [
+          {
+            id: '550e8400-e29b-41d4-a716-446655440000',
+            data_inicio: '2024-01-15',
+            status: 'ATIVO',
+            prioridade: 1,
+            protocolo: 'SOL-2024-001',
+            determinacao_judicial: false,
+            beneficiario: {
+              id: '550e8400-e29b-41d4-a716-446655440001',
+              nome: 'João Silva Santos',
+              cpf: '12345678901'
+            },
+            tipo_beneficio: {
+              id: '550e8400-e29b-41d4-a716-446655440002',
+              nome: 'Auxílio Emergencial',
+              codigo: 'AUX-001'
+            },
+            unidade: {
+              id: '550e8400-e29b-41d4-a716-446655440003',
+              nome: 'CRAS Centro',
+              codigo: 'CRAS-01'
+            }
+          }
+        ],
+        meta: {
+          page: 1,
+          limit: 10,
+          total: 100,
+          pages: 10,
+          hasNext: true,
+          hasPrev: false
+        },
+        performance: {
+          executionTime: 150,
+          queryCount: 2,
+          cacheHit: false
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Parâmetros de filtro inválidos' })
+  async aplicarFiltrosAvancados(
+    @Body() filtros: ConcessaoFiltrosAvancadosDto,
+  ): Promise<ConcessaoFiltrosResponseDto> {
+    return await this.concessaoService.aplicarFiltrosAvancados(filtros);
   }
 
   /**
@@ -636,15 +718,15 @@ export class ConcessaoController {
    * @body Dados para cancelamento
    * @returns Concessão cancelada
    */
-  @Patch(':id/cancelar')
-  @RequiresPermission({ permissionName: 'concessao.cancelar' })
+  @Patch(':id/cessar')
+  @RequiresPermission({ permissionName: 'concessao.cessar' })
   @ApiOperation({
     summary: 'Cancela uma concessão',
     description:
-      'Cancela uma concessão. Concessões com status CONCEDIDA, SUSPENSA ou BLOQUEADA podem ser canceladas.',
+      'Cancela uma concessão. Concessões com status ATIVO, SUSPENSA ou BLOQUEADA podem ser cessadas.',
   })
-  @ApiParam({ name: 'id', description: 'UUID da concessão a ser cancelada' })
-  @ApiBody({ type: CancelarConcessaoDto })
+  @ApiParam({ name: 'id', description: 'UUID da concessão a ser cessada' })
+  @ApiBody({ type: CessarConcessaoDto })
   @ApiResponse({
     status: 200,
     description: 'Concessão cancelada com sucesso',
@@ -654,27 +736,27 @@ export class ConcessaoController {
   @ApiResponse({ status: 404, description: 'Concessão não encontrada' })
   async cancelar(
     @Param('id') id: string,
-    @Body() dto: CancelarConcessaoDto,
+    @Body() dto: CessarConcessaoDto,
     @GetUser() usuario: Usuario,
     @ReqContext() ctx: any,
   ) {
-    const result = await this.concessaoService.cancelarConcessao(
+    const result = await this.concessaoService.cessarConcessao(
       id,
       usuario.id,
       dto.motivo,
       dto.observacoes,
     );
 
-    // Auditoria: Cancelamento de concessão
+    // Auditoria: Cessão de concessão
     await this.auditEventEmitter.emitEntityUpdated(
       'Concessao',
       id,
       {},
       {
-        action: 'cancelamento',
+        action: 'cessao',
         motivo: dto.motivo,
         observacoes: dto.observacoes,
-        status: 'CANCELADA',
+        status: 'CESSADO',
       },
       usuario.id,
     );

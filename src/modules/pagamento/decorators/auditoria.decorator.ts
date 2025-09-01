@@ -229,4 +229,10 @@ export const AuditoriaPagamento = {
       mascarDados: false, // Processamento automático não expõe dados sensíveis
       capturarDadosAnteriores: false,
     }),
+
+  /**
+   * Auditoria para exclusão de pagamento
+   */
+  Exclusao: (descricao?: string) =>
+    AuditoriaExclusao('Pagamento', descricao || 'Exclusão de pagamento'),
 };

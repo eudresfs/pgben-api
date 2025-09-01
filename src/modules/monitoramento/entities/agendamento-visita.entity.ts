@@ -7,19 +7,16 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
-  OneToOne,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { Usuario } from '../../../entities/usuario.entity';
-import { Cidadao } from '../../../entities/cidadao.entity';
-import { Unidade } from '../../../entities/unidade.entity';
 import { VisitaDomiciliar } from './visita-domiciliar.entity';
 import {
   StatusAgendamento,
   TipoVisita,
   PrioridadeVisita,
 } from '../enums';
-import { Concessao } from '@/entities';
+import { Pagamento } from '../../../entities/pagamento.entity';
+import { Usuario } from '@/entities';
 
 @Entity('agendamento_visita')
 export class AgendamentoVisita {
@@ -121,6 +118,30 @@ export class AgendamentoVisita {
   data_cancelamento?: Date;
 
   @ApiProperty({
+    description: 'ID do usuário que criou o agendamento',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    required: false,
+  })
+  @Column({ type: 'uuid', nullable: true })
+  created_by?: string;
+
+  @ApiProperty({
+    description: 'ID do usuário que atualizou o agendamento',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    required: false,
+  })
+  @Column({ type: 'uuid', nullable: true })
+  updated_by?: string;
+
+  @ManyToOne(() => Usuario, { eager: true })
+  @JoinColumn({ name: 'updated_by' })
+  atualizado_por: Usuario;
+
+  @ManyToOne(() => Usuario, { eager: true })
+  @JoinColumn({ name: 'created_by' })
+  criado_por: Usuario;
+
+  @ApiProperty({
     description: 'Data de criação do registro',
     example: '2024-01-01T10:00:00Z',
   })
@@ -143,48 +164,15 @@ export class AgendamentoVisita {
 
   // Relacionamentos
   @ApiProperty({
-    description: 'ID do técnico responsável',
+    description: 'ID do pagamento vinculado ao agendamento',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @Column({ type: 'uuid' })
-  tecnico_id: string;
+  pagamento_id: string;
 
-  @ManyToOne(() => Usuario, { eager: true })
-  @JoinColumn({ name: 'tecnico_id' })
-  tecnico_responsavel: Usuario;
-
-  @ApiProperty({
-    description: 'ID do beneficiário',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @Column({ type: 'uuid' })
-  beneficiario_id: string;
-
-  @ManyToOne(() => Cidadao, { eager: true })
-  @JoinColumn({ name: 'beneficiario_id' })
-  beneficiario: Cidadao;
-
-  @ApiProperty({
-    description: 'ID da unidade responsável',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @Column({ type: 'uuid' })
-  unidade_id: string;
-
-  @ManyToOne(() => Unidade, { eager: true })
-  @JoinColumn({ name: 'unidade_id' })
-  unidade: Unidade;
-
-  @ApiProperty({
-    description: 'ID da concessão',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @Column({ type: 'uuid' })
-  concessao_id: string;
-
-  @ManyToOne(() => Concessao, { eager: true })
-  @JoinColumn({ name: 'concessao_id' })
-  concessao: Concessao;
+  @ManyToOne(() => Pagamento, { eager: true })
+  @JoinColumn({ name: 'pagamento_id' })
+  pagamento: Pagamento;
 
   @OneToMany(() => VisitaDomiciliar, (visita) => visita.agendamento)
   visitas: VisitaDomiciliar[];

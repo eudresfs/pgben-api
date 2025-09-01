@@ -14,7 +14,8 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable, tap, catchError, throwError } from 'rxjs';
-import { Request, Response } from 'express';
+import { Request as ExpressRequest, Response } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import { AuditEventEmitter } from '../events/emitters/audit-event.emitter';
 import {
   AUDIT_METADATA_KEY,
@@ -42,7 +43,7 @@ export class AuditInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const startTime = Date.now();
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest<ExpressRequest>();
     const response = context.switchToHttp().getResponse<Response>();
 
     // Extrair metadados dos decorators
@@ -101,7 +102,7 @@ export class AuditInterceptor implements NestInterceptor {
    */
   private prepareAuditContext(
     context: ExecutionContext,
-    request: Request,
+    request: ExpressRequest,
     auditConfig?: AuditDecoratorConfig,
     sensitiveConfig?: SensitiveDataConfig,
     autoAuditConfig?: AutoAuditConfig,
@@ -109,8 +110,8 @@ export class AuditInterceptor implements NestInterceptor {
     const controllerName = context.getClass().name;
     const methodName = context.getHandler().name;
     const userId = this.extractUserId(request);
-    const userAgent = request.headers['user-agent'];
-    const ip = this.extractClientIp(request);
+    const userAgent = this.extractUserAgent(request);
+    const ip = this.extractClientIP(request);
 
     return {
       controller: controllerName,
@@ -120,13 +121,14 @@ export class AuditInterceptor implements NestInterceptor {
       ip,
       url: request.url,
       httpMethod: request.method,
-      params: request.params,
-      query: request.query,
+      params: (request as unknown as ExpressRequest).params,
+      query: (request as unknown as ExpressRequest).query,
       body: this.sanitizeBody(request.body, sensitiveConfig),
       auditConfig,
       sensitiveConfig,
       autoAuditConfig,
       timestamp: new Date(),
+      request, // Adicionar o request completo para uso no normalizeEndpoint
     };
   }
 
@@ -136,6 +138,7 @@ export class AuditInterceptor implements NestInterceptor {
   private emitStartEvent(auditContext: any, startTime: number) {
     try {
       const baseEvent: BaseAuditEvent = {
+        eventId: uuidv4(),
         eventType: AuditEventType.SYSTEM_ERROR,
         entityName: auditContext.controller || 'unknown',
         timestamp: new Date(startTime),
@@ -144,14 +147,14 @@ export class AuditInterceptor implements NestInterceptor {
         requestContext: {
           ip: auditContext.ip,
           userAgent: auditContext.userAgent,
-          endpoint: auditContext.url,
+          endpoint: this.normalizeEndpoint(auditContext.request),
           method: auditContext.httpMethod,
         },
         metadata: {
           operation: 'method_start',
           controller: auditContext.controller,
           method: auditContext.method,
-          url: auditContext.url,
+          url: this.normalizeEndpoint(auditContext.request),
           httpMethod: auditContext.httpMethod,
         },
       };
@@ -212,6 +215,7 @@ export class AuditInterceptor implements NestInterceptor {
       const duration = Date.now() - startTime;
 
       const errorEvent: BaseAuditEvent = {
+        eventId: uuidv4(),
         eventType: AuditEventType.SYSTEM_ERROR,
         entityName: auditContext.controller || 'unknown',
         timestamp: new Date(),
@@ -220,7 +224,7 @@ export class AuditInterceptor implements NestInterceptor {
         requestContext: {
           ip: auditContext.ip,
           userAgent: auditContext.userAgent,
-          endpoint: auditContext.url,
+          endpoint: this.normalizeEndpoint(auditContext.request),
           method: auditContext.httpMethod,
         },
         metadata: {
@@ -252,6 +256,7 @@ export class AuditInterceptor implements NestInterceptor {
     duration: number,
   ) {
     const event: BaseAuditEvent = {
+      eventId: uuidv4(),
       eventType: config.eventType,
       entityName: config.entity || auditContext.controller || 'unknown',
       timestamp: new Date(),
@@ -260,7 +265,7 @@ export class AuditInterceptor implements NestInterceptor {
       requestContext: {
         ip: auditContext.ip,
         userAgent: auditContext.userAgent,
-        endpoint: auditContext.url,
+        endpoint: this.normalizeEndpoint(auditContext.request),
         method: auditContext.httpMethod,
       },
       metadata: {
@@ -294,6 +299,7 @@ export class AuditInterceptor implements NestInterceptor {
     duration: number,
   ) {
     const event: BaseAuditEvent = {
+      eventId: uuidv4(),
       eventType: AuditEventType.SENSITIVE_DATA_ACCESSED,
       entityName: auditContext.controller || 'unknown',
       timestamp: new Date(),
@@ -302,7 +308,7 @@ export class AuditInterceptor implements NestInterceptor {
       requestContext: {
         ip: auditContext.ip,
         userAgent: auditContext.userAgent,
-        endpoint: auditContext.url,
+        endpoint: this.normalizeEndpoint(auditContext.request),
         method: auditContext.httpMethod,
       },
       metadata: {
@@ -319,13 +325,15 @@ export class AuditInterceptor implements NestInterceptor {
       },
     };
 
-    this.auditEventEmitter.emitSensitiveDataEvent(
-      AuditEventType.SENSITIVE_DATA_ACCESSED,
-      'sensitive_data',
-      'unknown',
-      event.userId,
-      config.fields || [],
-    );
+    // NOTA: Evento de dados sensíveis desabilitado para evitar duplicação
+    // Os dados sensíveis são registrados no log principal pelo middleware
+    // this.auditEventEmitter.emitSensitiveDataEvent(
+    //   AuditEventType.SENSITIVE_DATA_ACCESSED,
+    //   'sensitive_data',
+    //   'unknown',
+    //   event.userId,
+    //   config.fields || [],
+    // );
   }
 
   /**
@@ -338,6 +346,7 @@ export class AuditInterceptor implements NestInterceptor {
     duration: number,
   ) {
     const event: BaseAuditEvent = {
+      eventId: uuidv4(),
       eventType: AuditEventType.SYSTEM_INFO,
       entityName: auditContext.controller || 'unknown',
       timestamp: new Date(),
@@ -379,27 +388,86 @@ export class AuditInterceptor implements NestInterceptor {
   /**
    * Extrai o ID do usuário da requisição
    */
-  private extractUserId(request: Request): string | undefined {
+  private extractUserId(request: ExpressRequest): string | undefined {
     // Tentar extrair de diferentes fontes
     return (
-      request.user?.['id'] ||
-      request.user?.['userId'] ||
+      (request as any).user?.['id'] ||
+      (request as any).user?.['userId'] ||
       (request.headers['x-user-id'] as string) ||
       undefined
     );
   }
 
   /**
-   * Extrai o IP do cliente
+   * Extrai o IP do cliente considerando proxies e load balancers
+   * Implementação padronizada para auditoria
    */
-  private extractClientIp(request: Request): string {
-    return (
-      (request.headers['x-forwarded-for'] as string)?.split(',')[0] ||
-      (request.headers['x-real-ip'] as string) ||
-      request.connection?.remoteAddress ||
-      request.socket?.remoteAddress ||
-      'unknown'
-    );
+  private extractClientIP(request: any): string {
+    // Ordem de prioridade para extração do IP real do cliente
+    const forwardedFor = request.headers['x-forwarded-for'] as string;
+    if (forwardedFor) {
+      // Pega o primeiro IP da lista (cliente original)
+      const firstIP = forwardedFor.split(',')[0].trim();
+      if (firstIP && firstIP !== 'unknown') {
+        return firstIP;
+      }
+    }
+
+    // Headers alternativos comuns em diferentes proxies
+    const realIP = request.headers['x-real-ip'] as string;
+    if (realIP && realIP !== 'unknown') {
+      return realIP;
+    }
+
+    const clientIP = request.headers['x-client-ip'] as string;
+    if (clientIP && clientIP !== 'unknown') {
+      return clientIP;
+    }
+
+    // Conexão direta
+    const connectionIP = request.connection?.remoteAddress;
+    if (connectionIP) {
+      return connectionIP;
+    }
+
+    const socketIP = request.socket?.remoteAddress;
+    if (socketIP) {
+      return socketIP;
+    }
+
+    // Fallback obrigatório
+    return 'unknown';
+  }
+
+  /**
+   * Extrai o User-Agent da requisição
+   * Implementação padronizada para auditoria
+   */
+  private extractUserAgent(request: any): string {
+    const userAgent = request.headers['user-agent'];
+    return userAgent && userAgent.trim() !== '' ? userAgent : 'unknown';
+  }
+
+  /**
+   * Normaliza o endpoint removendo parâmetros dinâmicos
+   * Implementação padronizada para auditoria
+   */
+  private normalizeEndpoint(request: ExpressRequest): string {
+    let endpoint = request.url || request.path || '/';
+    
+    // Remove query parameters
+    const queryIndex = endpoint.indexOf('?');
+    if (queryIndex !== -1) {
+      endpoint = endpoint.substring(0, queryIndex);
+    }
+    
+    // Normaliza IDs numéricos para :id
+    endpoint = endpoint.replace(/\/\d+/g, '/:id');
+    
+    // Normaliza UUIDs para :uuid
+    endpoint = endpoint.replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '/:uuid');
+    
+    return endpoint;
   }
 
   /**

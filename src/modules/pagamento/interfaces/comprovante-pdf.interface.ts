@@ -74,6 +74,23 @@ export interface IDadosBancariosComprovante {
 }
 
 /**
+ * Interface para dados do locador (específico para Aluguel Social)
+ */
+export interface ILocadorComprovante {
+  nome?: string;
+  cpf?: string;
+  telefone?: string;
+}
+
+/**
+ * Interface para dados do imóvel pretendido (específico para Aluguel Social)
+ */
+export interface IImovelComprovante {
+  endereco?: string;
+  valorAluguel?: string;
+}
+
+/**
  * Interface principal para dados do comprovante
  */
 export interface IDadosComprovante {
@@ -82,6 +99,8 @@ export interface IDadosComprovante {
   unidade: IUnidadeComprovante;
   tecnico?: ITecnicoComprovante;
   dadosBancarios?: IDadosBancariosComprovante;
+  locador?: ILocadorComprovante;
+  imovel?: IImovelComprovante;
   dataGeracao: Date;
   numeroComprovante?: string;
 }

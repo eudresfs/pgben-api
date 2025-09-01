@@ -25,7 +25,7 @@ import { DadosBeneficioController } from './controllers/dados-beneficio.controll
 
 // Services
 import { BeneficioService } from './services/beneficio.service';
-
+import { BeneficioEventosService } from './services/beneficio-eventos.service';
 import { DadosNatalidadeService } from './services/dados-natalidade.service';
 import { DadosAluguelSocialService } from './services/dados-aluguel-social.service';
 import { DadosAtaudeService } from './services/dados-ataude.service';
@@ -35,6 +35,9 @@ import { Concessao, HistoricoConcessao } from '../../entities';
 import { ConcessaoService } from './services/concessao.service';
 import { ValidacaoBeneficioService } from './services/validacao-beneficio.service';
 import { ConcessaoController } from './controllers/concessao.controller';
+
+// Listeners
+import { BeneficioEventListener } from './listeners/beneficio-event.listener';
 
 // Interceptors
 import { WorkflowInterceptor } from '../../interceptors/workflow.interceptor';
@@ -85,6 +88,9 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
     forwardRef(() =>
       import('../aprovacao/aprovacao.module').then((m) => m.AprovacaoModule),
     ), // Para AprovacaoService usado pelo AprovacaoInterceptor
+    forwardRef(() =>
+      import('../notificacao/notificacao.module').then((m) => m.NotificacaoModule),
+    ), // Para NotificacaoService usado pelo BeneficioEventListener
   ],
   controllers: [
     ConcessaoController,
@@ -94,12 +100,14 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
   providers: [
     ConcessaoService,
     BeneficioService,
+    BeneficioEventosService,
     ValidacaoBeneficioService,
     DadosNatalidadeService,
     DadosAluguelSocialService,
     DadosAtaudeService,
     DadosCestaBasicaService,
     DadosBeneficioFactoryService,
+    BeneficioEventListener,
     WorkflowInterceptor,
     TipoBeneficioRepository,
     TipoBeneficioSchemaRepository,
@@ -111,6 +119,7 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
   exports: [
     ConcessaoService,
     BeneficioService,
+    BeneficioEventosService,
     ValidacaoBeneficioService,
     DadosNatalidadeService,
     DadosAluguelSocialService,

@@ -28,31 +28,26 @@ export class ScopeContextInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest();
     const user = request.user as UserAccessTokenClaims;
 
+    this.logger.debug('[SCOPE-DEBUG] Interceptor executado', {
+      hasUser: !!user,
+      userId: user?.id,
+      userEscopo: user?.escopo,
+      userUnidadeId: user?.unidade_id,
+      url: request.url,
+      method: request.method
+    });
+
     // Setup do contexto de forma síncrona
     this.setupScopeContext(user);
 
-    // Executar o handler e garantir limpeza do contexto
+    // Executar o handler preservando o contexto durante operações assíncronas
+    // O AsyncLocalStorage já gerencia automaticamente a propagação do contexto
     return next.handle().pipe(
       tap({
-        next: () => {
-          this.logger.debug('Requisição processada com sucesso', {
-            userId: user?.id,
-            hasContext: RequestContextHolder.hasContext(),
-            timestamp: new Date().toISOString(),
-          });
-        },
         error: (error) => {
-          this.logger.error('Erro durante processamento da requisição', {
+          this.logger.error(`Erro durante processamento da requisição`, {
             error: error.message,
             userId: user?.id,
-            timestamp: new Date().toISOString(),
-          });
-        },
-        finalize: () => {
-          // Limpar o contexto apenas após todas as operações
-          RequestContextHolder.clear();
-          this.logger.debug('Contexto de escopo limpo', {
-            timestamp: new Date().toISOString(),
           });
         },
       }),
@@ -64,9 +59,6 @@ export class ScopeContextInterceptor implements NestInterceptor {
    */
   private setupScopeContext(user: UserAccessTokenClaims | undefined): void {
     if (!user) {
-      this.logger.warn('Nenhum usuário encontrado no contexto da requisição', {
-        timestamp: new Date().toISOString(),
-      });
       // Definir contexto GLOBAL quando não há usuário
       const globalContext: IScopeContext = {
         tipo: ScopeType.GLOBAL,
@@ -74,7 +66,7 @@ export class ScopeContextInterceptor implements NestInterceptor {
         unidade_id: null,
       };
       RequestContextHolder.set(globalContext);
-      this.logger.debug('Contexto GLOBAL definido para requisição sem usuário');
+      this.logger.debug('[SCOPE-DEBUG] Contexto GLOBAL definido (sem usuário)', globalContext);
       return;
     }
 
@@ -86,18 +78,17 @@ export class ScopeContextInterceptor implements NestInterceptor {
         throw new Error('Contexto de escopo inválido');
       }
 
-      this.logger.debug(
-        `[ScopeContextInterceptor] Configurando contexto: ${JSON.stringify(context)}`,
-      );
-
       RequestContextHolder.set(context);
-
-      this.logger.debug(
-        `[ScopeContextInterceptor] Contexto configurado com sucesso`,
-      );
+      this.logger.debug('[SCOPE-DEBUG] Contexto definido com sucesso', {
+        userId: user.id,
+        userEscopo: user.escopo,
+        userUnidadeId: user.unidade_id,
+        contextTipo: context.tipo,
+        contextUnidadeId: context.unidade_id
+      });
     } catch (error) {
       this.logger.error(
-        `[ScopeContextInterceptor] Erro ao configurar contexto: ${error.message}`,
+        `Erro ao configurar contexto: ${error.message}`,
       );
       // Em caso de erro, define contexto PROPRIO como fallback
       const fallbackContext = {
@@ -106,9 +97,7 @@ export class ScopeContextInterceptor implements NestInterceptor {
         unidade_id: null,
       };
       RequestContextHolder.set(fallbackContext);
-      this.logger.warn(
-        `[ScopeContextInterceptor] Contexto fallback configurado: ${JSON.stringify(fallbackContext)}`,
-      );
+      this.logger.warn('[SCOPE-DEBUG] Fallback para contexto PROPRIO', fallbackContext);
     }
   }
 
@@ -134,14 +123,6 @@ export class ScopeContextInterceptor implements NestInterceptor {
 
     // Aplicar fallback se escopo for UNIDADE mas não há unidade_id
     if (scopeType === ScopeType.UNIDADE && !user.unidade_id) {
-      this.logger.warn(
-        'Fallback aplicado: UNIDADE sem unidade_id, usando PROPRIO',
-        {
-          userId: user.id,
-          originalScope: user.escopo,
-          timestamp: new Date().toISOString(),
-        },
-      );
       scopeType = ScopeType.PROPRIO;
     }
 
@@ -153,14 +134,6 @@ export class ScopeContextInterceptor implements NestInterceptor {
 
     // Validação de integridade simplificada
     if (!this.validateScopeIntegritySync(context)) {
-      this.logger.warn(
-        'Contexto falhou na validação de integridade, aplicando fallback',
-        {
-          originalContext: context,
-          timestamp: new Date().toISOString(),
-        },
-      );
-
       // Fallback para PROPRIO em caso de falha na validação
       return {
         tipo: ScopeType.PROPRIO,
@@ -210,9 +183,7 @@ export class ScopeContextInterceptor implements NestInterceptor {
       return true;
     } catch (error) {
       this.logger.error('Erro na validação de integridade do escopo', {
-        context,
         error: error.message,
-        timestamp: new Date().toISOString(),
       });
       return false;
     }

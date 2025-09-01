@@ -35,7 +35,7 @@ export interface PaginatedAuditResult {
   total: number;
   page: number;
   limit: number;
-  totalPages: number;
+  pages: number;
 }
 
 /**
@@ -154,7 +154,7 @@ export class AuditCoreRepository {
         total,
         page: Math.floor(offset / limit) + 1,
         limit,
-        totalPages: Math.ceil(total / limit),
+        pages: Math.ceil(total / limit),
       };
     } catch (error) {
       this.logger.error(

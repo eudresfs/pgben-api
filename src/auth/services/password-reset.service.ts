@@ -226,8 +226,8 @@ export class PasswordResetService {
         throw new UnauthorizedException('Token inválido ou expirado');
       }
 
-      // Carregar usuário pelo ID
-      const usuario = await this.usuarioRepository.findById(
+      // Carregar usuário pelo ID (sem escopo para operações de reset de senha)
+      const usuario = await this.usuarioRepository.findByIdGlobal(
         resetToken.usuario_id,
       );
 

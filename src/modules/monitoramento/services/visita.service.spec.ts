@@ -305,7 +305,7 @@ describe('VisitaService', () => {
         total: mockTotal,
         page: 1,
         limit: 10,
-        totalPages: 1,
+        pages: 1,
       });
     });
   });
@@ -361,7 +361,7 @@ describe('VisitaService', () => {
         total: mockTotal,
         page: 1,
         limit: 10,
-        totalPages: 1,
+        pages: 1,
       });
     });
   });
@@ -383,7 +383,7 @@ describe('VisitaService', () => {
         total: mockTotal,
         page: 1,
         limit: 10,
-        totalPages: 1,
+        pages: 1,
       });
     });
   });
@@ -405,7 +405,7 @@ describe('VisitaService', () => {
         total: mockTotal,
         page: 1,
         limit: 10,
-        totalPages: 1,
+        pages: 1,
       });
     });
   });
@@ -432,7 +432,7 @@ describe('VisitaService', () => {
         total: mockTotal,
         page: 1,
         limit: 10,
-        totalPages: 1,
+        pages: 1,
       });
     });
   });
@@ -459,7 +459,7 @@ describe('VisitaService', () => {
         total: mockTotal,
         page: 1,
         limit: 10,
-        totalPages: 1,
+        pages: 1,
       });
     });
   });

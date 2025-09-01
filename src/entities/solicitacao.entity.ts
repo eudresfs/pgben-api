@@ -8,6 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  OneToOne,
   Index,
   BeforeInsert,
   AfterUpdate,
@@ -28,6 +29,7 @@ import { SubStatusSolicitacao } from '../enums/sub-status-solicitacao.enum';
 import { InfoBancaria } from './info-bancaria.entity';
 import { Pagamento } from './pagamento.entity';
 import { Concessao } from './concessao.entity';
+import { DadosAluguelSocial } from './dados-aluguel-social.entity';
 
 @Entity('solicitacao')
 @Index(['protocolo'], { unique: true })
@@ -46,33 +48,6 @@ export class Solicitacao {
   @Column({ unique: true })
   @IsNotEmpty({ message: 'Protocolo é obrigatório' })
   protocolo: string;
-
-  /**
-   * Gera o protocolo da solicitação no novo formato: Benefício-Ano-Código
-   * Este método deve ser chamado pelo serviço antes da criação da solicitação
-   * @param codigoBeneficio Código do tipo de benefício (3 caracteres)
-   * @param uniqueId ID único gerado previamente para usar como código
-   */
-  generateProtocol(codigoBeneficio?: string, uniqueId?: string) {
-    const date = new Date();
-    const ano = date.getFullYear();
-    
-    if (codigoBeneficio && codigoBeneficio.length >= 3 && uniqueId) {
-      // Usar os 3 primeiros caracteres do código do benefício
-      const prefixoBeneficio = codigoBeneficio.substring(0, 3).toUpperCase();
-      
-      // Usar os primeiros 8 caracteres do ID único como código
-      const codigo = uniqueId.substring(0, 8).toUpperCase();
-      
-      this.protocolo = `${prefixoBeneficio}-${ano}-${codigo}`;
-    } else {
-      // Fallback para formato padrão se não houver código do benefício ou ID
-      const random = Math.floor(Math.random() * 10000)
-        .toString()
-        .padStart(4, '0');
-      this.protocolo = `SOL-${ano}${(date.getMonth() + 1).toString().padStart(2, '0')}-${random}`;
-    }
-  }
 
   @Column({ 
     type: 'enum',
@@ -350,6 +325,12 @@ export class Solicitacao {
    */
   @Column({ name: 'prazo_processamento', type: 'timestamp', nullable: true })
   prazo_processamento: Date | null;
+
+  /**
+   * Dados específicos para solicitações de Aluguel Social
+   */
+  @OneToOne(() => DadosAluguelSocial, (dados) => dados.solicitacao, { nullable: true })
+  dados_aluguel_social?: DadosAluguelSocial;
 
   @CreateDateColumn()
   created_at: Date;

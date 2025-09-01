@@ -13,12 +13,14 @@ import { PagamentoRepository } from '../repositories/pagamento.repository';
 import { ComprovanteUploadDto } from '../dtos/comprovante-upload.dto';
 import { ComprovanteResponseDto } from '../dtos/comprovante-response.dto';
 import { GerarComprovanteDto, ComprovanteGeradoDto } from '../dtos/gerar-comprovante.dto';
+import { GerarComprovanteLoteDto, ComprovanteLoteGeradoDto } from '../dtos/gerar-comprovante-lote.dto';
 import { Documento } from '../../../entities/documento.entity';
 import { TipoDocumentoEnum } from '../../../enums/tipo-documento.enum';
 import { Pagamento } from '../../../entities/pagamento.entity';
 import { StatusPagamentoEnum } from '../../../enums';
 import { PdfGeneratorUtil } from '../utils/pdf-generator.util';
 import { ComprovanteDadosMapper } from '../mappers/comprovante-dados.mapper';
+import { PDFDocument } from 'pdf-lib';
 
 /**
  * Service simplificado para gerenciamento de comprovantes
@@ -26,6 +28,8 @@ import { ComprovanteDadosMapper } from '../mappers/comprovante-dados.mapper';
  */
 @Injectable()
 export class ComprovanteService {
+  // Configuração de paralelismo para evitar sobrecarga do sistema
+  private readonly MAX_CONCURRENT_PROCESSING = 10;
   private readonly logger = new Logger(ComprovanteService.name);
 
   // Configurações de validação
@@ -330,9 +334,6 @@ export class ComprovanteService {
     // Buscar pagamento com todos os relacionamentos necessários
     const pagamento = await this.buscarPagamentoCompleto(pagamentoId);
 
-    // Validar dados obrigatórios
-    ComprovanteDadosMapper.validarDadosObrigatorios(pagamento);
-
     // Determinar tipo de comprovante baseado no código do tipo de benefício
     const tipoComprovante = this.determinarTipoComprovante(pagamento.solicitacao.tipo_beneficio.codigo);
 
@@ -350,19 +351,223 @@ export class ComprovanteService {
   }
 
   /**
+    * Gera comprovantes em lote para múltiplos pagamentos
+    */
+   async gerarComprovantesLote(
+     gerarLoteDto: GerarComprovanteLoteDto,
+     usuarioId?: string,
+   ): Promise<ComprovanteLoteGeradoDto> {
+    this.logger.log(`Iniciando geração de comprovantes em lote para ${gerarLoteDto.pagamento_ids.length} pagamentos`);
+
+    const pagamentosProcessados = [];
+     const pagamentosFalharam = [];
+     const erros = [];
+    const pdfsBuffers = [];
+
+    // Gerar comprovantes individuais em lotes paralelos controlados
+    const resultados = await this.processarEmLotesParalelos(
+      gerarLoteDto.pagamento_ids,
+      async (pagamentoId) => {
+        try {
+          const pdfBuffer = await this.gerarPdfBuffer(pagamentoId, {
+            formato: 'pdf',
+          });
+          
+          return {
+            sucesso: true,
+            pagamentoId,
+            pdfBuffer,
+          };
+        } catch (error) {
+          this.logger.error(`Erro ao gerar comprovante para pagamento ${pagamentoId}:`, error);
+          return {
+            sucesso: false,
+            pagamentoId,
+            erro: error.message,
+          };
+        }
+      }
+    );
+
+    // Processar resultados
+    for (const resultado of resultados) {
+      if (resultado.status === 'fulfilled') {
+        const { sucesso, pagamentoId, pdfBuffer, erro } = resultado.value;
+        
+        if (sucesso) {
+          pagamentosProcessados.push(pagamentoId);
+          pdfsBuffers.push(pdfBuffer);
+        } else {
+          pagamentosFalharam.push(pagamentoId);
+          erros.push({
+            pagamentoId,
+            erro,
+          });
+        }
+      } else {
+        // Caso a promise seja rejeitada (erro não capturado)
+        this.logger.error('Erro não capturado durante processamento:', resultado.reason);
+      }
+    }
+
+    // Combinar PDFs
+     let pdfCombinado: Buffer | undefined;
+     if (pdfsBuffers.length > 0) {
+      try {
+        pdfCombinado = await this.combinarPdfs(pdfsBuffers);
+        this.logger.log(`PDFs combinados com sucesso. Total de páginas: ${pdfsBuffers.length}`);
+      } catch (error) {
+        this.logger.error('Erro ao combinar PDFs:', error);
+        erros.push({
+          pagamentoId: 'COMBINACAO',
+          erro: `Erro ao combinar PDFs: ${error.message}`,
+        });
+      }
+    }
+
+    const nomeArquivoLote = `comprovantes_lote_${new Date().toISOString().split('T')[0]}.pdf`;
+
+    this.logger.log(
+       `Geração de lote concluída. Sucessos: ${pagamentosProcessados.length}, Erros: ${pagamentosFalharam.length}`,
+     );
+
+    return {
+      nomeArquivo: nomeArquivoLote,
+      tipoMime: 'application/pdf',
+      dataGeracao: new Date(),
+      totalComprovantes: gerarLoteDto.pagamento_ids.length,
+        pagamentosProcessados,
+        pagamentosFalharam,
+        errosDetalhados: erros,
+      tamanho: pdfCombinado?.length || 0,
+      conteudoBase64: gerarLoteDto.formato === 'base64' && pdfCombinado 
+        ? pdfCombinado.toString('base64') 
+        : undefined,
+    };
+  }
+
+  /**
+    * Gera apenas o buffer do PDF combinado para download direto
+    */
+   async gerarLotePdfBuffer(
+     gerarLoteDto: GerarComprovanteLoteDto,
+     usuarioId?: string,
+   ): Promise<Buffer> {
+    this.logger.log(`Gerando buffer PDF em lote para ${gerarLoteDto.pagamento_ids.length} pagamentos`);
+
+    const pdfsBuffers = [];
+
+    // Gerar PDFs individuais em lotes paralelos controlados
+    const resultadosPdfs = await this.processarEmLotesParalelos(
+      gerarLoteDto.pagamento_ids,
+      async (pagamentoId) => {
+        try {
+          const pdfBuffer = await this.gerarPdfBuffer(pagamentoId, {
+            formato: 'pdf',
+          });
+          return pdfBuffer;
+        } catch (error) {
+          this.logger.error(`Erro ao gerar PDF para pagamento ${pagamentoId}:`, error);
+          return null; // Retorna null para PDFs que falharam
+        }
+      }
+    );
+
+    // Filtrar apenas os PDFs gerados com sucesso
+    for (const resultado of resultadosPdfs) {
+      if (resultado.status === 'fulfilled' && resultado.value !== null) {
+        pdfsBuffers.push(resultado.value);
+      }
+    }
+
+    if (pdfsBuffers.length === 0) {
+      throw new BadRequestException('Nenhum comprovante pôde ser gerado');
+    }
+
+    // Combinar PDFs
+    const pdfCombinado = await this.combinarPdfs(pdfsBuffers);
+    
+    this.logger.log(`Buffer PDF em lote gerado com sucesso. Total de PDFs: ${pdfsBuffers.length}`);
+    
+    return pdfCombinado;
+  }
+
+  /**
+   * Processa itens em lotes paralelos controlados para evitar sobrecarga
+   */
+  private async processarEmLotesParalelos<T, R>(
+    items: T[],
+    processFunction: (item: T) => Promise<R>
+  ): Promise<PromiseSettledResult<R>[]> {
+    const resultados: PromiseSettledResult<R>[] = [];
+    
+    // Processar em lotes de tamanho MAX_CONCURRENT_PROCESSING
+    for (let i = 0; i < items.length; i += this.MAX_CONCURRENT_PROCESSING) {
+      const lote = items.slice(i, i + this.MAX_CONCURRENT_PROCESSING);
+      
+      this.logger.log(
+        `Processando lote ${Math.floor(i / this.MAX_CONCURRENT_PROCESSING) + 1}/${Math.ceil(items.length / this.MAX_CONCURRENT_PROCESSING)} ` +
+        `(${lote.length} itens)`
+      );
+      
+      const promisesLote = lote.map(item => processFunction(item));
+      const resultadosLote = await Promise.allSettled(promisesLote);
+      
+      resultados.push(...resultadosLote);
+    }
+    
+    return resultados;
+  }
+
+  /**
+   * Combina múltiplos PDFs em um único documento
+   */
+  private async combinarPdfs(pdfsBuffers: Buffer[]): Promise<Buffer> {
+    if (pdfsBuffers.length === 0) {
+      throw new BadRequestException('Nenhum PDF para combinar');
+    }
+
+    if (pdfsBuffers.length === 1) {
+      return pdfsBuffers[0];
+    }
+
+    try {
+      // Criar documento PDF principal
+      const pdfCombinado = await PDFDocument.create();
+
+      // Adicionar cada PDF ao documento principal
+      for (const pdfBuffer of pdfsBuffers) {
+        const pdf = await PDFDocument.load(pdfBuffer);
+        const paginas = await pdfCombinado.copyPages(pdf, pdf.getPageIndices());
+        
+        paginas.forEach((pagina) => {
+          pdfCombinado.addPage(pagina);
+        });
+      }
+
+      // Gerar buffer do PDF combinado
+      const pdfBytes = await pdfCombinado.save();
+      return Buffer.from(pdfBytes);
+    } catch (error) {
+      this.logger.error('Erro ao combinar PDFs:', error);
+      throw new BadRequestException(`Erro ao combinar PDFs: ${error.message}`);
+    }
+  }
+
+  /**
    * Determina o tipo de comprovante baseado no código do tipo de benefício
    */
   private determinarTipoComprovante(codigoTipoBeneficio: string): string {
     const mapeamento = {
-      'cesta-basica': 'Cesta Básica',
-      'aluguel-social': 'Aluguel Social',
+      'cesta-basica': 'cesta_basica',
+      'aluguel-social': 'aluguel_social',
     };
 
     const tipoComprovante = mapeamento[codigoTipoBeneficio];
     
     if (!tipoComprovante) {
       throw new BadRequestException(
-        `Tipo de benefício não suportado para geração de comprovante: ${codigoTipoBeneficio}`,
+        `Não há um modelo de recibo disponível para o benefício: ${codigoTipoBeneficio}`,
       );
     }
 
@@ -398,9 +603,11 @@ export class ComprovanteService {
       .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade');
 
-    // Adiciona join com endereços apenas se for aluguel social
+    // Adiciona joins específicos para aluguel social
     if (isAluguelSocial) {
-      queryBuilder.leftJoinAndSelect('beneficiario.enderecos', 'enderecos');
+      queryBuilder
+        .leftJoinAndSelect('beneficiario.enderecos', 'enderecos')
+        .leftJoinAndSelect('solicitacao.dados_aluguel_social', 'dados_aluguel_social');
     }
 
     const pagamento = await queryBuilder

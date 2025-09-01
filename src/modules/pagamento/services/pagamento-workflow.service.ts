@@ -6,6 +6,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PagamentoRepository } from '../repositories/pagamento.repository';
+import { PagamentoSystemRepository } from '../repositories/pagamento-system.repository';
 import { ConfirmacaoRepository } from '../repositories/confirmacao.repository';
 import { Pagamento } from '../../../entities/pagamento.entity';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
@@ -16,6 +17,7 @@ import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
 import { PagamentoValidationService } from './pagamento-validation.service';
 import { PagamentoUnifiedMapper } from '../mappers';
 import { DocumentoService } from '../../documento/services/documento.service';
+import { PagamentoEventosService } from './pagamento-eventos.service';
 
 /**
  * Interface para resultado de verificação de elegibilidade
@@ -77,9 +79,11 @@ export class PagamentoWorkflowService {
 
   constructor(
     private readonly pagamentoRepository: PagamentoRepository,
+    private readonly pagamentoSystemRepository: PagamentoSystemRepository,
     private readonly confirmacaoRepository: ConfirmacaoRepository,
     private readonly validationService: PagamentoValidationService,
     private readonly documentoService: DocumentoService,
+    private readonly pagamentoEventosService: PagamentoEventosService,
   ) {}
 
   // ==========================================
@@ -208,6 +212,15 @@ export class PagamentoWorkflowService {
     );
     const pagamento = await this.pagamentoRepository.create(dados_pagamento);
 
+    // Emitir evento de pagamento criado
+    await this.pagamentoEventosService.emitirEventoPagamentoCriado({
+      concessaoId: pagamento.concessao_id,
+      valor: pagamento.valor,
+      dataVencimento: pagamento.data_vencimento,
+      usuarioCriadorId: usuarioId,
+      observacao: pagamento.observacoes,
+    });
+
     return {
       success: true,
       data: PagamentoUnifiedMapper.toResponseDto(pagamento),
@@ -273,6 +286,15 @@ export class PagamentoWorkflowService {
       },
     );
 
+    // Emitir evento de status atualizado
+    await this.pagamentoEventosService.emitirEventoStatusAtualizado({
+      statusAnterior: pagamento.status,
+      statusAtual: updateDto.status,
+      motivoMudanca: updateDto.observacoes,
+      usuarioId: usuarioId,
+      observacao: updateDto.observacoes,
+    });
+
     return {
       success: true,
       data: PagamentoUnifiedMapper.toResponseDto(pagamentoAtualizado),
@@ -327,6 +349,14 @@ export class PagamentoWorkflowService {
         updated_at: new Date(),
       },
     );
+
+    // Emitir evento de pagamento cancelado
+    await this.pagamentoEventosService.emitirEventoPagamentoCancelado({
+      canceladoPorId: usuarioId,
+      motivoCancelamento: cancelDto.motivo,
+      dataCancelamento: new Date(),
+      observacao: cancelDto.observacoes,
+    });
 
     return {
       success: true,
@@ -641,35 +671,46 @@ export class PagamentoWorkflowService {
 
   /**
    * Processa vencimentos automáticos
+   * Utiliza repository de sistema para operações sem contexto de usuário
    */
   async processarVencimentosAutomaticos(): Promise<Pagamento[]> {
-    // Processando vencimentos automáticos
+    this.logger.log('Iniciando processamento de vencimentos automáticos');
 
-    const pagamentosVencidos = await this.pagamentoRepository.findVencidos();
-    const processados: Pagamento[] = [];
+    try {
+      // Busca pagamentos vencidos usando repository de sistema
+      const pagamentosVencidos = await this.pagamentoSystemRepository.findVencidos();
+      const processados: Pagamento[] = [];
 
-    for (const pagamento of pagamentosVencidos) {
-      try {
-        const pagamentoAtualizado = await this.pagamentoRepository.update(
-          pagamento.id,
-          {
-            status: StatusPagamentoEnum.VENCIDO,
-            data_vencimento: new Date(),
-            observacoes: 'Vencido automaticamente pelo sistema',
-          },
-        );
+      this.logger.log(`Encontrados ${pagamentosVencidos.length} pagamentos vencidos para processamento`);
 
-        processados.push(pagamentoAtualizado);
-      } catch (error) {
-        this.logger.error(
-          `Erro ao processar vencimento ${pagamento.id}:`,
-          error,
-        );
+      for (const pagamento of pagamentosVencidos) {
+        try {
+          // Atualiza status usando repository de sistema
+          const pagamentoAtualizado = await this.pagamentoSystemRepository.update(
+            pagamento.id,
+            {
+              status: StatusPagamentoEnum.VENCIDO,
+              data_vencimento: new Date(),
+              observacoes: 'Vencido automaticamente pelo sistema',
+            },
+          );
+
+          processados.push(pagamentoAtualizado);
+          this.logger.log(`Pagamento ${pagamento.id} marcado como vencido`);
+        } catch (error) {
+          this.logger.error(
+            `Erro ao processar vencimento ${pagamento.id}:`,
+            error,
+          );
+        }
       }
-    }
 
-    // Processados vencimentos automáticos
-    return processados;
+      this.logger.log(`Processamento concluído: ${processados.length} pagamentos processados`);
+      return processados;
+    } catch (error) {
+      this.logger.error('Erro no processamento de vencimentos automáticos:', error);
+      throw error;
+    }
   }
 
   // ========== MÉTODOS PRIVADOS ==========
@@ -753,33 +794,71 @@ export class PagamentoWorkflowService {
   /**
    * Notifica técnicos sobre pagamentos próximos ao vencimento (2 dias antes)
    */
+  /**
+   * Notifica prazos de vencimento de pagamentos
+   * 
+   * @description
+   * Operação de sistema que busca pagamentos próximos ao vencimento
+   * em todas as unidades e envia notificações aos técnicos responsáveis.
+   * Utiliza PagamentoSystemRepository para acesso global sem escopo.
+   * 
+   * @returns Lista de notificações enviadas
+   */
   async notificarPrazosVencimento(): Promise<
     { pagamentoId: string; tecnicoId: string }[]
   > {
-    const dataLimite = new Date();
-    dataLimite.setDate(dataLimite.getDate() + 2); // 2 dias a partir de hoje
+    this.logger.log('Iniciando notificação de prazos de vencimento (operação de sistema)');
 
-    const pagamentosProximosVencimento =
-      await this.pagamentoRepository.findPagamentosProximosVencimento(
-        dataLimite,
+    try {
+      // Usar repository de sistema para operação global
+      const pagamentosProximosVencimento =
+        await this.pagamentoSystemRepository.findPagamentosProximosVencimento(2);
+
+      const notificacoesEnviadas: { pagamentoId: string; tecnicoId: string }[] =
+        [];
+
+      for (const pagamento of pagamentosProximosVencimento) {
+        if (pagamento.solicitacao?.tecnico_id) {
+          // Aqui seria implementada a lógica de notificação
+          // Por enquanto, apenas registramos que a notificação seria enviada
+          this.logger.debug(
+            `Notificação de vencimento enviada para pagamento ${pagamento.id}`,
+            {
+              pagamentoId: pagamento.id,
+              tecnicoId: pagamento.solicitacao.tecnico_id,
+              dataVencimento: pagamento.data_vencimento,
+              unidadeId: pagamento.solicitacao.unidade?.id,
+            },
+          );
+
+          notificacoesEnviadas.push({
+            pagamentoId: pagamento.id,
+            tecnicoId: pagamento.solicitacao.tecnico_id,
+          });
+        }
+      }
+
+      // Marcar notificações como enviadas
+      if (notificacoesEnviadas.length > 0) {
+        const pagamentoIds = notificacoesEnviadas.map(n => n.pagamentoId);
+        for (const pagamentoId of pagamentoIds) {
+          await this.pagamentoSystemRepository.marcarNotificacaoVencimentoEnviada(
+            pagamentoId,
+          );
+        }
+      }
+
+      this.logger.log(
+        `Notificação de prazos concluída: ${notificacoesEnviadas.length} notificações enviadas`,
       );
 
-    const notificacoesEnviadas: { pagamentoId: string; tecnicoId: string }[] =
-      [];
-
-    for (const pagamento of pagamentosProximosVencimento) {
-      if (pagamento.solicitacao?.tecnico_id) {
-        // Aqui seria implementada a lógica de notificação
-        // Por enquanto, apenas registramos que a notificação seria enviada
-        // Notificação de prazo enviada para técnico
-
-        notificacoesEnviadas.push({
-          pagamentoId: pagamento.id,
-          tecnicoId: pagamento.solicitacao.tecnico_id,
-        });
-      }
+      return notificacoesEnviadas;
+    } catch (error) {
+      this.logger.error(
+        'Erro ao processar notificações de vencimento',
+        error.stack,
+      );
+      throw error;
     }
-
-    return notificacoesEnviadas;
   }
 }

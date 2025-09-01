@@ -1,3 +1,4 @@
+import { MetodoConfirmacaoEnum } from '@/enums';
 import { ConfirmacaoRecebimento } from '../../../entities/confirmacao-recebimento.entity';
 import { ConfirmacaoResponseDto } from '../dtos/confirmacao-response.dto';
 
@@ -65,11 +66,11 @@ export class ConfirmacaoMapper {
   ): Partial<ConfirmacaoRecebimento> {
     return {
       pagamento_id: pagamentoId,
-      data_confirmacao: createDto.dataConfirmacao || new Date(),
-      metodo_confirmacao: createDto.metodoConfirmacao,
+      data_confirmacao: createDto.data_confirmacao || new Date(),
+      metodo_confirmacao: createDto.metodo_confirmacao  || MetodoConfirmacaoEnum.ASSINATURA,
       confirmado_por: usuarioId,
-      destinatario_id: createDto.destinatarioId,
-      observacoes: createDto.observacoes?.trim(),
+      destinatario_id: createDto.destinatario_id,
+      observacoes: createDto.observacoes?.trim(), 
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -123,13 +124,10 @@ export class ConfirmacaoMapper {
   static validateConfirmacaoData(createDto: any): string[] {
     const errors: string[] = [];
 
-    if (!createDto.metodoConfirmacao) {
-      errors.push('Método de confirmação é obrigatório');
-    }
-
+    // Método de confirmação é opcional - se não fornecido, usa 'ASSINATURA' como padrão
     if (
       createDto.metodoConfirmacao &&
-      !['PRESENCIAL', 'TELEFONE', 'EMAIL', 'SMS', 'WHATSAPP'].includes(
+      !['PRESENCIAL', 'TELEFONE', 'EMAIL', 'SMS', 'WHATSAPP', 'ASSINATURA'].includes(
         createDto.metodoConfirmacao,
       )
     ) {

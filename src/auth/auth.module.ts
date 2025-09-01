@@ -41,7 +41,10 @@ import { UsuarioModule } from '../modules/usuario/usuario.module';
 import { forwardRef } from '@nestjs/common';
 import { LoggingModule } from '../shared/logging/logging.module';
 import { PermissionModule } from './permission.module';
-// Removido AuditoriaSharedModule para evitar dependência circular
+import { AuditoriaCoreModule } from '../modules/auditoria/auditoria-core.module';
+
+// Interceptors
+import { AuthAuditInterceptor } from './interceptors/auth-audit.interceptor';
 
 /**
  * Módulo de Autenticação e Autorização
@@ -104,6 +107,7 @@ import { PermissionModule } from './permission.module';
     ConfigModule,
     LoggingModule,
     PermissionModule,
+    AuditoriaCoreModule,
   ],
 
   controllers: [
@@ -129,6 +133,9 @@ import { PermissionModule } from './permission.module';
     PasswordResetService,
     JwtBlacklistService,
     PermissionService,
+
+    // Interceptors
+    AuthAuditInterceptor,
   ],
 
   exports: [

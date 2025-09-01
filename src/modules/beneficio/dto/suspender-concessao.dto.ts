@@ -42,7 +42,7 @@ export class DesbloquearConcessaoDto {
   motivo: string;
 }
 
-export class CancelarConcessaoDto {
+export class CessarConcessaoDto {
   @ApiProperty({
     description: 'Motivo do cancelamento',
     example: 'Beneficiário não atende mais aos critérios de elegibilidade',

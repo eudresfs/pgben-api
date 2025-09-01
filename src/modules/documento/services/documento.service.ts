@@ -6,8 +6,10 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Brackets } from 'typeorm';
+import { Repository, Brackets, DataSource } from 'typeorm';
 import { Documento } from '../../../entities/documento.entity';
+import { DocumentoFiltrosAvancadosDto, DocumentoFiltrosResponseDto } from '../dto/documento-filtros-avancados.dto';
+import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
 import { TipoDocumentoEnum } from '../../../enums';
 import { InputSanitizerValidator } from '../validators/input-sanitizer.validator';
 import { StorageProviderFactory } from '../factories/storage-provider.factory';
@@ -27,6 +29,7 @@ import {
 } from './documento-audit.service';
 import { AuditContextHolder } from '../../../common/interceptors/audit-context.interceptor';
 import { DocumentoPathService } from './documento-path.service';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import {
   DocumentoUploadValidationService,
   DocumentoFileProcessingService,
@@ -34,8 +37,8 @@ import {
   DocumentoStorageService,
   DocumentoMetadataService,
   DocumentoPersistenceService,
-  UploadValidationResult,
 } from './upload';
+import { UploadValidationResult } from './upload/interfaces';
 
 // Interfaces para refatoração do método upload
 
@@ -77,6 +80,7 @@ export class DocumentoService {
     private readonly logger: LoggingService,
     private readonly auditService: DocumentoAuditService,
     private readonly pathService: DocumentoPathService,
+    private readonly auditEventEmitter: AuditEventEmitter,
 
     // Novos serviços especializados para upload
     private readonly uploadValidationService: DocumentoUploadValidationService,
@@ -85,6 +89,10 @@ export class DocumentoService {
     private readonly storageService: DocumentoStorageService,
     private readonly metadataService: DocumentoMetadataService,
     private readonly persistenceService: DocumentoPersistenceService,
+
+    // Serviços para filtros avançados
+    private readonly filtrosAvancadosService: FiltrosAvancadosService,
+    private readonly dataSource: DataSource,
   ) {
     this.maxRetries = this.configService.get<number>(
       'DOCUMENTO_MAX_RETRIES',
@@ -228,20 +236,14 @@ export class DocumentoService {
       const buffer = await storageProvider.obterArquivo(documento.caminho);
 
       // Auditoria do download com contexto completo
-      await this.auditService.auditAccess(
-        this.getAuditContext(
-          usuarioId || '00000000-0000-0000-0000-000000000000',
-        ),
-        {
-          documentoId: documento.id,
-          filename: documento.nome_original,
-          mimetype: documento.mimetype,
-          fileSize: documento.tamanho,
-          cidadaoId: documento.cidadao_id,
-          solicitacaoId: documento.solicitacao_id,
-          accessType: 'download',
-          success: true,
-        },
+      const auditContext = this.getAuditContext(
+        usuarioId || '00000000-0000-0000-0000-000000000000',
+      );
+      
+      await this.auditEventEmitter.emitEntityAccessed(
+        'Documento',
+        documento.id,
+        usuarioId || '00000000-0000-0000-0000-000000000000',
       );
 
       this.logger.info(
@@ -257,21 +259,14 @@ export class DocumentoService {
       };
     } catch (error) {
       // Auditoria de falha no download
-      await this.auditService.auditAccess(
-        this.getAuditContext(
-          usuarioId || '00000000-0000-0000-0000-000000000000',
-        ),
-        {
-          documentoId: documento.id,
-          filename: documento.nome_original,
-          mimetype: documento.mimetype,
-          fileSize: documento.tamanho,
-          cidadaoId: documento.cidadao_id,
-          solicitacaoId: documento.solicitacao_id,
-          accessType: 'download',
-          success: false,
-          errorReason: error.message,
-        },
+      const auditContext = this.getAuditContext(
+        usuarioId || '00000000-0000-0000-0000-000000000000',
+      );
+      
+      await this.auditEventEmitter.emitEntityAccessed(
+        'DOCUMENTO',
+        documento.id,
+        usuarioId || '00000000-0000-0000-0000-000000000000',
       );
 
       // Log estruturado do erro para rastreabilidade
@@ -545,18 +540,25 @@ export class DocumentoService {
     const documentoAtualizado = await this.documentoRepository.save(documento);
 
     // Auditoria da verificação
-    await this.auditService.auditUpload(this.getAuditContext(usuarioId), {
-      documentoId: documento.id,
-      operationType: 'verify',
-      operationDetails: {
-        fileName: documento.nome_original,
-        fileSize: documento.tamanho,
-        mimetype: documento.mimetype,
-        observacoes: observacoes,
-        dataVerificacao: documento.data_verificacao,
+    const auditContext = this.getAuditContext(usuarioId);
+    
+    await this.auditEventEmitter.emitEntityUpdated(
+      'Documento',
+      documento.id,
+      {
+        verificado: false,
+        data_verificacao: null,
+        usuario_verificacao_id: null,
+        observacoes_verificacao: null,
       },
-      success: true,
-    });
+      {
+        verificado: true,
+        data_verificacao: documento.data_verificacao,
+        usuario_verificacao_id: usuarioId,
+        observacoes_verificacao: observacoes,
+      },
+      usuarioId,
+    );
 
     return this.documentoRepository
       .createQueryBuilder('documento')
@@ -578,19 +580,23 @@ export class DocumentoService {
     const documentoRemovido = await this.documentoRepository.save(documento);
 
     // Auditoria da remoção
-    await this.auditService.auditUpload(this.getAuditContext(usuarioId), {
-      documentoId: documento.id,
-      operationType: 'delete',
-      operationDetails: {
-        fileName: documento.nome_original,
-        fileSize: documento.tamanho,
+    const auditContext = this.getAuditContext(usuarioId);
+    
+    await this.auditEventEmitter.emitEntityDeleted(
+      'DOCUMENTO',
+      documento.id,
+      {
+        nomeOriginal: documento.nome_original,
         mimetype: documento.mimetype,
-        dataRemocao: documento.removed_at,
+        tamanho: documento.tamanho,
         cidadaoId: documento.cidadao_id,
         solicitacaoId: documento.solicitacao_id,
+        tipo: documento.tipo,
+        verificado: documento.verificado,
+        removed_at: documento.removed_at,
       },
-      success: true,
-    });
+      usuarioId,
+    );
 
     return documentoRemovido;
   }
@@ -739,5 +745,179 @@ export class DocumentoService {
       pendentes,
       reutilizaveis,
     };
+  }
+
+  /**
+   * Busca avançada de documentos com filtros personalizados
+   * @param filtros Filtros avançados para busca
+   * @returns Resultado paginado com documentos e metadados
+   */
+  async filtrosAvancados(
+    filtros: DocumentoFiltrosAvancadosDto,
+  ): Promise<DocumentoFiltrosResponseDto> {
+    const startTime = Date.now();
+
+    try {
+      // Criar query builder base
+      const queryBuilder = this.dataSource
+        .createQueryBuilder()
+        .select('documento')
+        .from(Documento, 'documento')
+        .where('documento.removed_at IS NULL');
+
+      // Aplicar joins condicionais baseados nos relacionamentos solicitados
+      if (filtros.include_relations?.includes('usuario_upload')) {
+        queryBuilder.leftJoinAndSelect(
+          'documento.usuario_upload',
+          'usuario_upload',
+        );
+      }
+
+      if (filtros.include_relations?.includes('usuario_verificacao')) {
+        queryBuilder.leftJoinAndSelect(
+          'documento.usuario_verificacao',
+          'usuario_verificacao',
+        );
+      }
+
+      // Aplicar filtros específicos de documento
+      if (filtros.tipo?.length > 0) {
+        queryBuilder.andWhere('documento.tipo IN (:...tipos)', {
+          tipos: filtros.tipo,
+        });
+      }
+
+      if (filtros.verificado !== undefined) {
+        queryBuilder.andWhere('documento.verificado = :verificado', {
+          verificado: filtros.verificado,
+        });
+      }
+
+      if (filtros.reutilizavel !== undefined) {
+        queryBuilder.andWhere('documento.reutilizavel = :reutilizavel', {
+          reutilizavel: filtros.reutilizavel,
+        });
+      }
+
+      if (filtros.cidadaos?.length > 0) {
+        queryBuilder.andWhere('documento.cidadao_id IN (:...cidadaoId)', {
+          cidadaoId: filtros.cidadaos,
+        });
+      }
+
+      if (filtros.solicitacoes?.length > 0) {
+        queryBuilder.andWhere('documento.solicitacao_id IN (:...solicitacaoId)', {
+          solicitacaoId: filtros.solicitacoes,
+        });
+      }
+
+      if (filtros.usuarios_upload?.length > 0) {
+        queryBuilder.andWhere(
+          'documento.usuario_upload_id IN (:...usuarioUploadId)',
+          {
+            usuarioUploadId: filtros.usuarios_upload,
+          },
+        );
+      }
+
+      if (filtros.usuarios_verificacao?.length > 0) {
+        queryBuilder.andWhere(
+          'documento.usuario_verificacao_id IN (:...usuarioVerificacaoId)',
+          {
+            usuarioVerificacaoId: filtros.usuarios_verificacao,
+          },
+        );
+      }
+
+      // Filtros de tamanho
+      if (filtros.tamanho_min !== undefined) {
+        queryBuilder.andWhere('documento.tamanho >= :tamanhoMin', {
+          tamanhoMin: filtros.tamanho_min,
+        });
+      }
+
+      if (filtros.tamanho_max !== undefined) {
+        queryBuilder.andWhere('documento.tamanho <= :tamanhoMax', {
+          tamanhoMax: filtros.tamanho_max,
+        });
+      }
+
+      // Filtro de tipo MIME
+      if (filtros.mimetype?.length > 0) {
+        queryBuilder.andWhere('documento.mimetype IN (:...mimetypes)', {
+          mimetypes: filtros.mimetype,
+        });
+      }
+
+      // Busca textual
+      if (filtros.search) {
+        queryBuilder.andWhere(
+          '(documento.nome_original ILIKE :search OR documento.descricao ILIKE :search OR documento.observacoes_verificacao ILIKE :search)',
+          { search: `%${filtros.search}%` },
+        );
+      }
+
+      // Aplicar filtros de data usando o serviço de filtros avançados
+      this.filtrosAvancadosService.aplicarFiltrosData(
+        queryBuilder,
+        'documento',
+        {
+          data_upload_inicio: filtros.data_upload_inicio,
+          data_upload_fim: filtros.data_upload_fim,
+          data_verificacao_inicio: filtros.data_verificacao_inicio,
+          data_verificacao_fim: filtros.data_verificacao_fim,
+          data_validade_inicio: filtros.data_validade_inicio,
+          data_validade_fim: filtros.data_validade_fim,
+          data_inicio: filtros.data_inicio,
+          data_fim: filtros.data_fim,
+        },
+        {
+          data_upload: 'data_upload',
+          data_verificacao: 'data_verificacao',
+          data_validade: 'data_validade',
+          created_at: 'created_at',
+          updated_at: 'updated_at',
+        },
+      );
+
+      // Aplicar ordenação
+      const campoOrdenacao = filtros.sort_by || 'created_at';
+      const direcaoOrdenacao = filtros.sort_order || 'DESC';
+      queryBuilder.orderBy(
+        `documento.${campoOrdenacao}`,
+        direcaoOrdenacao as 'ASC' | 'DESC',
+      );
+
+      // Aplicar paginação e executar query
+      const resultado = await this.filtrosAvancadosService.aplicarPaginacao(
+        queryBuilder,
+        filtros,
+      );
+
+      const tempoExecucao = Date.now() - startTime;
+
+      return {
+        items: resultado.items,
+        total: resultado.total,
+        filtros_aplicados: this.filtrosAvancadosService.normalizarFiltros(filtros),
+        meta: {
+          page: filtros.page,
+          offset: (filtros.page - 1) * filtros.limit,
+          limit: filtros.limit,
+          pages: Math.ceil(resultado.total / filtros.limit),
+          hasNext: filtros.page < Math.ceil(resultado.total / filtros.limit),
+          hasPrev: filtros.page > 1,
+        },
+        tempo_execucao: tempoExecucao,
+      };
+    } catch (error) {
+      this.logger.error(
+        'Erro ao executar filtros avançados de documentos',
+        error.stack,
+        DocumentoService.name,
+        { filtros, error: error.message },
+      );
+      throw error;
+    }
   }
 }

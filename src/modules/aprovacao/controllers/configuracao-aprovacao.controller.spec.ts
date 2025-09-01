@@ -5,6 +5,7 @@ import { ConfiguracaoAprovacaoController } from './configuracao-aprovacao.contro
 import { AprovacaoService } from '../services';
 import { CriarAcaoAprovacaoDto } from '../dtos';
 import { TipoAcaoCritica, EstrategiaAprovacao } from '../enums';
+import { Status } from '../../../enums/status.enum';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
@@ -79,7 +80,7 @@ describe('ConfiguracaoAprovacaoController', () => {
         descricao: 'Aprovação para criação de novos usuários',
         estrategia: EstrategiaAprovacao.MAIORIA,
         min_aprovadores: 2,
-        ativo: true,
+        status: Status.ATIVO,
       };
 
       const mockAcaoAprovacao = {
@@ -108,7 +109,7 @@ describe('ConfiguracaoAprovacaoController', () => {
         descricao: 'Teste',
         estrategia: EstrategiaAprovacao.MAIORIA,
         min_aprovadores: 1,
-        ativo: true,
+        status: Status.ATIVO,
       };
 
       const erro = new BadRequestException('Erro na validação');
@@ -129,7 +130,7 @@ describe('ConfiguracaoAprovacaoController', () => {
           nome: 'Criação de Usuário',
           estrategia: EstrategiaAprovacao.MAIORIA,
           min_aprovadores: 2,
-          ativo: true,
+          status: Status.ATIVO,
         },
         {
           id: '2',
@@ -137,7 +138,7 @@ describe('ConfiguracaoAprovacaoController', () => {
           nome: 'Exclusão de Usuário',
           estrategia: EstrategiaAprovacao.MAIORIA,
           min_aprovadores: 3,
-          ativo: true,
+          status: Status.ATIVO,
         },
       ];
 
@@ -174,12 +175,12 @@ describe('ConfiguracaoAprovacaoController', () => {
         nome: 'Criação de Usuário',
         estrategia: EstrategiaAprovacao.MAIORIA,
         min_aprovadores: 2,
-        ativo: true,
+        status: Status.ATIVO,
         aprovadores: [
           {
             id: '1',
             usuario_id: '2',
-            ativo: true,
+            status: Status.ATIVO,
           },
         ],
       };
@@ -223,7 +224,7 @@ describe('ConfiguracaoAprovacaoController', () => {
           nome: 'Nome Atualizado',
           estrategia: EstrategiaAprovacao.MAIORIA,
         min_aprovadores: 3,
-        ativo: true,
+        status: Status.ATIVO,
         atualizado_em: new Date(),
       };
 
@@ -289,7 +290,7 @@ describe('ConfiguracaoAprovacaoController', () => {
         id: '1',
         acao_aprovacao_id: acaoId,
         usuario_id: usuarioId,
-        ativo: true,
+        status: Status.ATIVO,
         criado_em: new Date(),
       };
 
@@ -327,13 +328,13 @@ describe('ConfiguracaoAprovacaoController', () => {
           id: '1',
           acao_aprovacao_id: acaoId,
           usuario_id: '1',
-          ativo: true,
+          status: Status.ATIVO,
         },
         {
           id: '2',
           acao_aprovacao_id: acaoId,
           usuario_id: '2',
-          ativo: true,
+          status: Status.ATIVO,
         },
       ];
 

@@ -9,7 +9,7 @@ import {
   TipoUnidade,
   StatusUnidade,
 } from '../../../entities/unidade.entity';
-import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { ExecutionContext } from '@nestjs/common';
 
@@ -52,12 +52,15 @@ describe('SetorController', () => {
   const mockSetor: Setor = {
     id: 'setor-123',
     nome: 'Atendimento Social',
+    sigla: 'AS',
     descricao: 'Setor responsável pelo atendimento social',
     unidade_id: 'unidade-123',
     unidade: mockUnidade,
+    status: true,
     usuarios: [],
     created_at: new Date('2024-01-01T10:00:00Z'),
     updated_at: new Date('2024-01-01T10:00:00Z'),
+    removed_at: null,
   };
 
   const mockCreateSetorDto: CreateSetorDto = {
@@ -76,7 +79,7 @@ describe('SetorController', () => {
     total: 1,
     page: 1,
     limit: 10,
-    totalPages: 1,
+    pages: 1,
   };
 
   // Mock para AuthGuard
@@ -91,12 +94,9 @@ describe('SetorController', () => {
 
   beforeEach(async () => {
     const mockSetorService = {
-      findAll: jest.fn(),
       findById: jest.fn(),
-      findByUnidade: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
-      remove: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -108,7 +108,7 @@ describe('SetorController', () => {
         },
       ],
     })
-      .overrideGuard(AuthGuard('jwt'))
+      .overrideGuard(JwtAuthGuard)
       .useValue(mockAuthGuard)
       .overrideGuard(RolesGuard)
       .useValue(mockRolesGuard)
@@ -122,70 +122,14 @@ describe('SetorController', () => {
     jest.clearAllMocks();
   });
 
-  describe('findAll', () => {
-    it('deve retornar lista paginada de setores', async () => {
-      service.findAll.mockResolvedValue(mockPaginatedResult);
+  // Método findAll não existe no SetorController
+  // A listagem de setores é feita através do UnidadeController.findSetores
 
-      const result = await controller.findAll({
-        page: 1,
-        limit: 10,
-      });
-
-      expect(result).toEqual(mockPaginatedResult);
-      expect(service.findAll).toHaveBeenCalledWith({
-        page: 1,
-        limit: 10,
-      });
-    });
-
-    it('deve aplicar filtros de busca', async () => {
-      const filtros = {
-        nome: 'Atendimento',
-        unidade_id: 'unidade-123',
-        page: 1,
-        limit: 10,
-      };
-
-      service.findAll.mockResolvedValue(mockPaginatedResult);
-
-      await controller.findAll(filtros);
-
-      expect(service.findAll).toHaveBeenCalledWith(filtros);
-    });
-
-    it('deve usar valores padrão para paginação', async () => {
-      service.findAll.mockResolvedValue(mockPaginatedResult);
-
-      await controller.findAll({});
-
-      expect(service.findAll).toHaveBeenCalledWith({
-        page: 1,
-        limit: 10,
-      });
-    });
-
-    it('deve validar limites de paginação', async () => {
-      const filtrosComLimiteAlto = {
-        page: 1,
-        limit: 1000,
-      };
-
-      service.findAll.mockResolvedValue(mockPaginatedResult);
-
-      await controller.findAll(filtrosComLimiteAlto);
-
-      expect(service.findAll).toHaveBeenCalledWith({
-        page: 1,
-        limit: 100, // Deve ser limitado a 100
-      });
-    });
-  });
-
-  describe('findById', () => {
+  describe('findOne', () => {
     it('deve retornar um setor quando encontrado', async () => {
       service.findById.mockResolvedValue(mockSetor);
 
-      const result = await controller.findById('setor-123');
+      const result = await controller.findOne('setor-123');
 
       expect(result).toEqual(mockSetor);
       expect(service.findById).toHaveBeenCalledWith('setor-123');
@@ -194,57 +138,18 @@ describe('SetorController', () => {
     it('deve propagar erro quando setor não encontrado', async () => {
       service.findById.mockRejectedValue(new Error('Setor não encontrado'));
 
-      await expect(controller.findById('invalid-id')).rejects.toThrow(
+      await expect(controller.findOne('invalid-id')).rejects.toThrow(
         'Setor não encontrado',
       );
     });
 
     it('deve validar formato UUID do ID', async () => {
-      await expect(controller.findById('invalid-uuid')).rejects.toThrow();
+      await expect(controller.findOne('invalid-uuid')).rejects.toThrow();
     });
   });
 
-  describe('findByUnidade', () => {
-    it('deve retornar setores de uma unidade específica', async () => {
-      service.findByUnidade.mockResolvedValue(mockPaginatedResult);
-
-      const result = await controller.findByUnidade('unidade-123');
-
-      expect(result).toEqual(mockPaginatedResult);
-      expect(service.findByUnidade).toHaveBeenCalledWith('unidade-123');
-    });
-
-    it('deve propagar erro quando unidade não encontrada', async () => {
-      service.findByUnidade.mockRejectedValue(
-        new Error('Unidade não encontrada'),
-      );
-
-      await expect(controller.findByUnidade('invalid-id')).rejects.toThrow(
-        'Unidade não encontrada',
-      );
-    });
-
-    it('deve validar formato UUID da unidade', async () => {
-      await expect(controller.findByUnidade('invalid-uuid')).rejects.toThrow();
-    });
-
-    it('deve retornar lista vazia quando unidade não tem setores', async () => {
-      const resultadoVazio = {
-        data: [],
-        total: 0,
-        page: 1,
-        limit: 100,
-        totalPages: 0,
-      };
-
-      service.findByUnidade.mockResolvedValue(resultadoVazio);
-
-      const result = await controller.findByUnidade('unidade-sem-setores');
-
-      expect(result).toEqual(resultadoVazio);
-      expect(result.data).toHaveLength(0);
-    });
-  });
+  // Método findByUnidade não existe no SetorController
+  // Este método está disponível no UnidadeController como findSetores
 
   describe('create', () => {
     it('deve criar um novo setor com sucesso', async () => {
@@ -252,6 +157,7 @@ describe('SetorController', () => {
         ...mockSetor,
         ...mockCreateSetorDto,
         id: 'new-setor-id',
+        status: true,
       };
 
       service.create.mockResolvedValue(novoSetor);
@@ -361,47 +267,7 @@ describe('SetorController', () => {
     });
   });
 
-  describe('remove', () => {
-    it('deve remover um setor com sucesso', async () => {
-      service.remove.mockResolvedValue(undefined);
-
-      await controller.remove(mockSetor.id);
-
-      expect(service.remove).toHaveBeenCalledWith(mockSetor.id);
-    });
-
-    it('deve propagar erro quando setor não encontrado', async () => {
-      service.remove.mockRejectedValue(new Error('Setor não encontrado'));
-
-      await expect(controller.remove('invalid-id')).rejects.toThrow(
-        'Setor não encontrado',
-      );
-    });
-
-    it('deve validar formato UUID do ID', async () => {
-      await expect(controller.remove('invalid-uuid')).rejects.toThrow();
-    });
-
-    it('deve propagar erro quando setor tem usuários vinculados', async () => {
-      service.remove.mockRejectedValue(
-        new Error('Setor possui usuários vinculados'),
-      );
-
-      await expect(controller.remove(mockSetor.id)).rejects.toThrow(
-        'Setor possui usuários vinculados',
-      );
-    });
-
-    it('deve propagar erro quando setor tem dependências', async () => {
-      service.remove.mockRejectedValue(
-        new Error('Não é possível remover setor com dependências'),
-      );
-
-      await expect(controller.remove(mockSetor.id)).rejects.toThrow(
-        'Não é possível remover setor com dependências',
-      );
-    });
-  });
+  // Testes de remoção removidos pois o método remove não existe no SetorController
 
   describe('validações de segurança', () => {
     it('deve exigir autenticação para todas as rotas', () => {
@@ -438,7 +304,7 @@ describe('SetorController', () => {
     it('deve retornar 404 para setor não encontrado', async () => {
       service.findById.mockRejectedValue(new Error('Setor não encontrado'));
 
-      await expect(controller.findById('invalid-id')).rejects.toThrow(
+      await expect(controller.findOne('invalid-id')).rejects.toThrow(
         'Setor não encontrado',
       );
     });
@@ -470,9 +336,9 @@ describe('SetorController', () => {
     });
 
     it('deve retornar 500 para erro interno', async () => {
-      service.findAll.mockRejectedValue(new Error('Erro interno do servidor'));
+      service.findById.mockRejectedValue(new Error('Erro interno do servidor'));
 
-      await expect(controller.findAll({ page: 1, limit: 10 })).rejects.toThrow(
+      await expect(controller.findOne('invalid-id')).rejects.toThrow(
         'Erro interno do servidor',
       );
     });
@@ -487,7 +353,7 @@ describe('SetorController', () => {
 
       service.findById.mockResolvedValue(setorComUnidade);
 
-      const result = await controller.findById(mockSetor.id);
+      const result = await controller.findOne(mockSetor.id);
 
       expect(result.unidade).toBeDefined();
       expect(result.unidade.nome).toBe(mockUnidade.nome);
@@ -515,7 +381,7 @@ describe('SetorController', () => {
 
       service.findById.mockResolvedValue(setorComUsuarios as any);
 
-      const result = await controller.findById(mockSetor.id);
+      const result = await controller.findOne(mockSetor.id);
 
       expect(result.usuarios).toBeDefined();
       expect(result.usuarios).toHaveLength(1);
@@ -523,78 +389,7 @@ describe('SetorController', () => {
   });
 
   describe('casos de uso específicos', () => {
-    it('deve listar setores ordenados por nome', async () => {
-      const setoresOrdenados = {
-        data: [
-          { ...mockSetor, nome: 'Atendimento' },
-          { ...mockSetor, id: 'setor-2', nome: 'Psicologia' },
-          { ...mockSetor, id: 'setor-3', nome: 'Serviço Social' },
-        ],
-        total: 3,
-        page: 1,
-        limit: 10,
-        totalPages: 1,
-      };
-
-      service.findAll.mockResolvedValue(setoresOrdenados);
-
-      const result = await controller.findAll({
-        page: 1,
-        limit: 10,
-        orderBy: 'nome',
-        order: 'ASC',
-      });
-
-      expect(result.data).toHaveLength(3);
-      expect(result.data[0].nome).toBe('Atendimento');
-      expect(result.data[2].nome).toBe('Serviço Social');
-    });
-
-    it('deve filtrar setores por termo de busca', async () => {
-      const filtros = {
-        search: 'psico',
-        page: 1,
-        limit: 10,
-      };
-
-      const setoresFiltrados = {
-        data: [{ ...mockSetor, nome: 'Psicologia' }],
-        total: 1,
-        page: 1,
-        limit: 10,
-        totalPages: 1,
-      };
-
-      service.findAll.mockResolvedValue(setoresFiltrados);
-
-      const result = await controller.findAll(filtros);
-
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0].nome).toContain('Psicologia');
-    });
-
-    it('deve paginar resultados corretamente', async () => {
-      const filtrosPaginacao = {
-        page: 2,
-        limit: 5,
-      };
-
-      const resultadoPaginado = {
-        data: [mockSetor],
-        total: 15,
-        page: 2,
-        limit: 5,
-        totalPages: 3,
-      };
-
-      service.findAll.mockResolvedValue(resultadoPaginado);
-
-      const result = await controller.findAll(filtrosPaginacao);
-
-      expect(result.page).toBe(2);
-      expect(result.limit).toBe(5);
-      expect(result.totalPages).toBe(3);
-      expect(result.total).toBe(15);
-    });
+    // Testes removidos pois o método findAll não existe no SetorController
+    // O controlador possui apenas métodos create, update e findOne
   });
 });

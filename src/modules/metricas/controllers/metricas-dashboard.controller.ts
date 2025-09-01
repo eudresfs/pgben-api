@@ -1,113 +1,228 @@
-import { Controller, Get, Query, UseGuards, Param } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiQuery,
-  ApiParam,
-} from '@nestjs/swagger';
+  Controller,
+  Get,
+  Post,
+  Query,
+  Body,
+  UseGuards,
+  HttpStatus,
+  HttpException,
+  Logger,
+} from '@nestjs/common';
+import { RequestContextHolder } from '@/common/services/request-context-holder.service';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { ImpactoSocialResponse } from '../interfaces/impacto-social.interface';
+import { GestaoOperacionalResponse } from '../interfaces/gestao-operacional.interface';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
-import { PermissionGuard } from '../../../auth/guards/permission.guard';
-import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
-import { ScopeType } from '../../../entities/user-permission.entity';
-import { DashboardFiltrosDto } from '../dto/dashboard-filtros.dto';
+import { MetricasDashboardService } from '../services/metricas-dashboard.service';
+import { PermissionGuard } from '@/auth/guards/permission.guard';
+import { RequiresPermission } from '@/auth/decorators/requires-permission.decorator';
+import { MetricasFiltrosAvancadosDto } from '../dto/metricas-filtros-avancados.dto';
+import { Public } from '@/auth';
+import { TipoEscopo } from '@/entities/user-permission.entity';
 
-import { MetricasService, MetricasAnomaliasService } from '../services';
-import { DashboardService } from '../services/dashboard.service';
-import {
-  DashboardIndicadoresCompletos,
-  ImpactoSocialIndicadores,
-  EficienciaOperacionalIndicadores,
-  GestaoOrcamentariaIndicadores,
-  PerformanceUnidadesIndicadores,
-  AnaliseTerritorialIndicadores,
-  PerfilBeneficiariosIndicadores,
-  ConformidadeQualidadeIndicadores,
-  ComunicacaoCampanhasIndicadores,
-} from '../interfaces/dashboard-indicadores.interface';
-
-/**
- * Controlador para endpoints específicos de dashboard
- *
- * Este controlador fornece endpoints otimizados para:
- * 1. Obter resumo das métricas principais
- * 2. Listar alertas ativos de anomalias
- * 3. Obter KPIs configurados para dashboard
- * 4. Obter dados para gráficos e visualizações
- * 5. Exportar dados para relatórios
- * 6. Obter contagem de solicitações por status
- */
-@ApiTags('Métricas e Dashboard')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@ApiTags('Dashboard de Métricas')
 @Controller('dashboard')
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@ApiBearerAuth()
 export class MetricasDashboardController {
+  private readonly logger = new Logger(MetricasDashboardController.name);
+
   constructor(
-    private readonly metricasService: MetricasService,
-    private readonly metricasAnomaliasService: MetricasAnomaliasService,
-    private readonly dashboardService: DashboardService,
+    private readonly metricasDashboardService: MetricasDashboardService,
   ) {}
 
-  /**
-   * Obtém resumo das métricas principais para dashboard
-   */
-  @Get('resumo')
-  @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
-    scopeType: ScopeType.GLOBAL,
-  })
-  @ApiOperation({ summary: 'Obtém resumo das métricas principais' })
-  @ApiResponse({ status: 200, description: 'Resumo obtido com sucesso' })
-  async obterResumo() {
-    return this.dashboardService.obterResumo();
-  }
 
-  /**
-   * Obtém KPIs para o dashboard
-   */
-  @Get('kpis')
-  @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
-    scopeType: ScopeType.GLOBAL,
-  })
-  @ApiOperation({ summary: 'Obtém KPIs para o dashboard' })
-  @ApiResponse({ status: 200, description: 'KPIs obtidos com sucesso' })
-  async obterKPIs() {
-    return this.dashboardService.obterKPIs();
-  }
 
-  /**
-   * Obtém dados para gráficos do dashboard
-   */
-  @Get('graficos')
+  @Post('impacto-social/filtros-avancados')
   @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
+    permissionName: 'dashboard.impacto_social',
+    scopeType: TipoEscopo.UNIDADE
   })
-  @ApiOperation({ summary: 'Obtém dados para gráficos do dashboard' })
-  @ApiResponse({ status: 200, description: 'Dados obtidos com sucesso' })
-  @ApiQuery({
-    name: 'periodo',
-    required: false,
-    type: Number,
-    description: 'Período em dias para filtrar os dados',
-  })
-  async obterGraficos(@Query('periodo') periodo?: number) {
-    return this.dashboardService.obterGraficos(periodo ? +periodo : 30);
-  }
-
-  /**
-   * Obtém contagem de solicitações por status
-   */
-  @Get('solicitacoes/status')
   @ApiOperation({
-    summary: 'Obtém contagem de solicitações por status',
-    description:
-      'Retorna a quantidade de solicitações agrupadas por status para exibição no dashboard',
+    summary: 'Obter métricas de impacto social com filtros avançados',
+    description: `Retorna métricas consolidadas sobre o impacto social dos benefícios concedidos.
+    
+    **Funcionalidades principais:**
+    - Filtros por múltiplas unidades, benefícios e status
+    - Filtros por período predefinido ou personalizado
+    - Filtros por bairros e usuários responsáveis
+    - Análise de impacto social consolidada
+    
+    **Casos de uso comuns:**
+    - Relatórios de impacto por unidade
+    - Análise de benefícios por período
+    - Métricas consolidadas por região
+    - Dashboard executivo de impacto social`
+  })
+  @ApiBody({
+    type: MetricasFiltrosAvancadosDto,
+    description: 'Filtros avançados para métricas de impacto social',
+    examples: {
+      'filtro-basico': {
+        summary: 'Filtro básico por período',
+        description: 'Exemplo de filtro simples por período predefinido',
+        value: {
+          periodo: 'ultimos_30_dias',
+          limite: 1000,
+          offset: 0
+        }
+      },
+      'filtro-unidades': {
+        summary: 'Filtro por múltiplas unidades',
+        description: 'Exemplo de filtro por unidades específicas',
+        value: {
+          unidades: ['550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440001'],
+          periodo: 'mes_atual',
+          incluirArquivados: false
+        }
+      },
+      'filtro-avancado': {
+        summary: 'Filtro avançado completo',
+        description: 'Exemplo de filtro com múltiplos critérios',
+        value: {
+          unidades: ['550e8400-e29b-41d4-a716-446655440000'],
+          beneficios: ['550e8400-e29b-41d4-a716-446655440002'],
+          bairros: ['Centro', 'Copacabana'],
+          status: ['aprovado', 'concluido'],
+          usuarios: ['550e8400-e29b-41d4-a716-446655440003'],
+          periodo: 'personalizado',
+          dataInicioPersonalizada: '2024-01-01T00:00:00.000Z',
+          dataFimPersonalizada: '2024-12-31T23:59:59.999Z'
+        }
+      }
+    }
   })
   @ApiResponse({
     status: 200,
-    description: 'Contagem por status obtida com sucesso',
+    description: 'Métricas de impacto social obtidas com sucesso',
+  })
+  async getImpactoSocial(@Body() filtros: MetricasFiltrosAvancadosDto): Promise<ImpactoSocialResponse> {
+    try {
+      const impactoSocial = await this.metricasDashboardService.getImpactoSocial(
+        filtros,
+      );
+      return {
+        success: true,
+        data: impactoSocial,
+        message: 'Dados de impacto social carregados com sucesso',
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      this.logger.error('Erro detalhado no getImpactoSocial:', {
+        message: error.message,
+        stack: error.stack,
+        filtros,
+        errorName: error.constructor.name,
+      });
+      
+      throw new HttpException(
+        {
+          success: false,
+          message: 'Erro ao obter métricas de impacto social',
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('gestao-operacional/filtros-avancados')
+  @RequiresPermission({
+    permissionName: 'dashboard.gestao_operacional',
+    scopeType: TipoEscopo.UNIDADE
+  })
+  @ApiOperation({
+    summary: 'Obter métricas de gestão operacional com filtros avançados',
+    description: `Retorna métricas sobre a gestão operacional do sistema de benefícios.
+    
+    **Funcionalidades principais:**
+    - Filtros por múltiplas unidades, benefícios e status
+    - Filtros por período predefinido ou personalizado
+    - Filtros por bairros e usuários responsáveis
+    - Métricas operacionais consolidadas
+    
+    **Casos de uso comuns:**
+    - Relatórios operacionais por unidade
+    - Análise de performance por período
+    - Métricas de produtividade por usuário
+    - Dashboard gerencial de operações`
+  })
+  @ApiBody({
+    type: MetricasFiltrosAvancadosDto,
+    description: 'Filtros avançados para métricas de gestão operacional',
+    examples: {
+      'filtro-basico': {
+        summary: 'Filtro básico por período',
+        description: 'Exemplo de filtro simples por período predefinido',
+        value: {
+          periodo: 'mes_atual',
+          limite: 1000,
+          offset: 0
+        }
+      },
+      'filtro-usuarios': {
+        summary: 'Filtro por usuários específicos',
+        description: 'Exemplo de filtro por usuários responsáveis',
+        value: {
+          usuarios: ['550e8400-e29b-41d4-a716-446655440003', '550e8400-e29b-41d4-a716-446655440004'],
+          periodo: 'ultimos_30_dias',
+          incluirArquivados: false
+        }
+      },
+      'filtro-completo': {
+        summary: 'Filtro operacional completo',
+        description: 'Exemplo de filtro com múltiplos critérios operacionais',
+        value: {
+          unidades: ['550e8400-e29b-41d4-a716-446655440000'],
+          usuarios: ['550e8400-e29b-41d4-a716-446655440003'],
+          status: ['em_analise', 'aprovado'],
+          periodo: 'personalizado',
+          dataInicioPersonalizada: '2024-01-01T00:00:00.000Z',
+          dataFimPersonalizada: '2024-03-31T23:59:59.999Z'
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Métricas de gestão operacional obtidas com sucesso',
+  })
+  async getGestaoOperacional(@Body() filtros: MetricasFiltrosAvancadosDto): Promise<GestaoOperacionalResponse> {
+    try {
+      const gestaoOperacional = await this.metricasDashboardService.getGestaoOperacional(
+        filtros,
+      );
+      return {
+        success: true,
+        data: gestaoOperacional,
+        message: 'Dados de gestão operacional carregados com sucesso',
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      this.logger.error('Erro detalhado no getGestaoOperacional:', {
+        message: error.message,
+        stack: error.stack,
+        filtros,
+        errorName: error.constructor.name,
+      });
+      
+      throw new HttpException(
+        {
+          success: false,
+          message: 'Erro ao obter métricas de gestão operacional',
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('solicitacoes/status')
+  @ApiOperation({ summary: 'Obter contagem de solicitações por status' })
+  @ApiResponse({
+    status: 200,
+    description: 'Contagem de solicitações por status obtida com sucesso',
     schema: {
       type: 'object',
       properties: {
@@ -117,232 +232,150 @@ export class MetricasDashboardController {
           items: {
             type: 'object',
             properties: {
-              status: { type: 'string', description: 'Nome do status' },
-              quantidade: {
-                type: 'number',
-                description: 'Quantidade de solicitações neste status',
-              },
-              percentual: {
-                type: 'number',
-                description: 'Percentual em relação ao total',
-              },
+              status: { type: 'string', description: 'Status da solicitação' },
+              count: { type: 'number', description: 'Quantidade de solicitações com este status' },
             },
           },
         },
       },
     },
   })
-  async obterContagemPorStatus() {
-    return this.dashboardService.obterContagemSolicitacoesPorStatus();
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  async getSolicitacoesPorStatus(): Promise<{ total: number; porStatus: { status: string; quantidade: number }[] }> {
+    try {
+      return await this.metricasDashboardService.obterSolicitacoesPorStatus();
+    } catch (error) {
+      throw new HttpException(
+        'Erro ao obter contagem de solicitações por status',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   /**
-   * Obtém todos os indicadores organizados por segmentos
+   * Endpoint de debug para validação do sistema de escopo
+   * Retorna informações detalhadas sobre o contexto atual e dados filtrados
    */
-  @Get('indicadores/completos')
-  @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
-  })
+  @Get('debug/escopo')
   @ApiOperation({
-    summary: 'Indicadores completos do dashboard',
-    description:
-      'Retorna todos os indicadores organizados em 8 segmentos: Impacto Social, Eficiência Operacional, Gestão Orçamentária, Performance das Unidades, Análise Territorial, Perfil dos Beneficiários, Conformidade e Qualidade, e Comunicação e Campanhas',
+    summary: 'Debug do sistema de escopo',
+    description: `Endpoint de debug para validação do sistema de escopo.
+    
+    **Informações retornadas:**
+    - Contexto atual do usuário (tipo e unidade)
+    - Contagem total de solicitações (GLOBAL vs UNIDADE)
+    - Distribuição de dados por unidade
+    - Validação de integridade do escopo
+    
+    **Uso recomendado:**
+    - Validação de funcionamento do sistema de escopo
+    - Diagnóstico de problemas de contexto
+    - Verificação de consistência de dados
+    - Monitoramento contínuo do sistema`
   })
   @ApiResponse({
     status: 200,
-    description: 'Indicadores completos obtidos com sucesso',
+    description: 'Informações de debug do sistema de escopo',
+    schema: {
+      type: 'object',
+      properties: {
+        contexto: {
+          type: 'object',
+          properties: {
+            tipo: { type: 'string', description: 'Tipo do escopo (GLOBAL ou UNIDADE)' },
+            unidadeId: { type: 'string', description: 'ID da unidade (se escopo UNIDADE)' },
+            hasContext: { type: 'boolean', description: 'Se existe contexto ativo' }
+          }
+        },
+        dados: {
+          type: 'object',
+          properties: {
+            totalSolicitacoes: { type: 'number', description: 'Total de solicitações visíveis' },
+            distribuicaoPorUnidade: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  unidadeId: { type: 'string' },
+                  nomeUnidade: { type: 'string' },
+                  quantidade: { type: 'number' }
+                }
+              }
+            }
+          }
+        },
+        validacao: {
+          type: 'object',
+          properties: {
+            escopoFuncionando: { type: 'boolean', description: 'Se o sistema de escopo está funcionando corretamente' },
+            observacoes: {
+              type: 'array',
+              items: { type: 'string' }
+            }
+          }
+        },
+        timestamp: { type: 'string', description: 'Timestamp da consulta' }
+      }
+    }
   })
-  async obterIndicadoresCompletos(
-    @Query() filtros: DashboardFiltrosDto,
-  ): Promise<DashboardIndicadoresCompletos> {
-    return this.dashboardService.obterIndicadoresCompletos(filtros);
-  }
-
-  /**
-   * IMPACTO SOCIAL
-   */
-  @Get('indicadores/impacto-social')
-  @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
-  })
-  @ApiOperation({
-    summary: 'Impacto Social',
-    description:
-      'Métricas de impacto social e narrativa de sucesso: famílias beneficiadas, pessoas impactadas, investimento social total, evolução mensal, distribuição por tipo de benefício',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Indicadores de impacto social obtidos com sucesso',
-  })
-  async obterIndicadoresImpactoSocial(
-    @Query() filtros: DashboardFiltrosDto,
-  ): Promise<ImpactoSocialIndicadores> {
-    return this.dashboardService.obterIndicadoresImpactoSocial(filtros);
-  }
-
-  /**
-   * EFICIÊNCIA OPERACIONAL
-   */
-  @Get('indicadores/eficiencia-operacional')
-  @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
-  })
-  @ApiOperation({
-    summary: 'Eficiência Operacional',
-    description:
-      'Métricas de melhoria de processos e produtividade: tempo médio de processamento, taxa de aprovação, pendências ativas, produtividade por técnico',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Indicadores de eficiência operacional obtidos com sucesso',
-  })
-  async obterIndicadoresEficienciaOperacional(
-    @Query() filtros: DashboardFiltrosDto,
-  ): Promise<EficienciaOperacionalIndicadores> {
-    return this.dashboardService.obterIndicadoresEficienciaOperacional(filtros);
-  }
-
-  /**
-   * GESTÃO ORÇAMENTÁRIA
-   */
-  @Get('indicadores/gestao-orcamentaria')
-  @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
-  })
-  @ApiOperation({
-    summary: 'Gestão Orçamentária',
-    description:
-      'Métricas de controle financeiro e execução: execução orçamentária, valor total investido, custo médio por benefício, projeção vs realizado',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Indicadores de gestão orçamentária obtidos com sucesso',
-  })
-  async obterIndicadoresGestaoOrcamentaria(
-    @Query() filtros: DashboardFiltrosDto,
-  ): Promise<GestaoOrcamentariaIndicadores> {
-    return this.dashboardService.obterIndicadoresGestaoOrcamentaria(filtros);
-  }
-
-  /**
-   * PERFORMANCE DAS UNIDADES
-   */
-  @Get('indicadores/performance-unidades')
-  @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
-  })
-  @ApiOperation({
-    summary: 'Performance das Unidades',
-    description:
-      'Métricas de gestão de equipes e recursos: solicitações por unidade, tempo médio por unidade, taxa de aprovação por unidade, utilização orçamentária',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Indicadores de performance das unidades obtidos com sucesso',
-  })
-  async obterIndicadoresPerformanceUnidades(
-    @Query() filtros: DashboardFiltrosDto,
-  ): Promise<PerformanceUnidadesIndicadores> {
-    return this.dashboardService.obterIndicadoresPerformanceUnidades(filtros);
-  }
-
-  /**
-   * ANÁLISE TERRITORIAL
-   */
-  @Get('indicadores/analise-territorial')
-  @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
-  })
-  @ApiOperation({
-    summary: 'Análise Territorial',
-    description:
-      'Métricas de distribuição geográfica e vulnerabilidade: densidade de demanda, mapa de vulnerabilidade, cobertura territorial, acessibilidade',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Indicadores de análise territorial obtidos com sucesso',
-  })
-  async obterIndicadoresAnaliseTerritorial(
-    @Query() filtros: DashboardFiltrosDto,
-  ): Promise<AnaliseTerritorialIndicadores> {
-    return this.dashboardService.obterIndicadoresAnaliseTerritorial(filtros);
-  }
-
-  /**
-   * PERFIL DOS BENEFICIÁRIOS
-   */
-  @Get('indicadores/perfil-beneficiarios')
-  @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
-  })
-  @ApiOperation({
-    summary: 'Perfil dos Beneficiários',
-    description:
-      'Métricas de características socioeconômicas: composição familiar média, renda familiar média, faixa etária predominante, situações de vulnerabilidade',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Indicadores de perfil dos beneficiários obtidos com sucesso',
-  })
-  async obterIndicadoresPerfilBeneficiarios(
-    @Query() filtros: DashboardFiltrosDto,
-  ): Promise<PerfilBeneficiariosIndicadores> {
-    return this.dashboardService.obterIndicadoresPerfilBeneficiarios(filtros);
-  }
-
-  /**
-   * COMUNICAÇÃO E CAMPANHAS
-   */
-  @Get('indicadores/comunicacao-campanhas')
-  @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
-  })
-  @ApiOperation({
-    summary: 'Comunicação e Campanhas',
-    description:
-      'Métricas para narrativas de mídia e comunicação externa: mensagens formatadas, comparativos temporais, impacto consolidado, cases de sucesso',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Indicadores de comunicação e campanhas obtidos com sucesso',
-  })
-  async obterIndicadoresComunicacaoCampanhas(
-    @Query() filtros: DashboardFiltrosDto,
-  ): Promise<ComunicacaoCampanhasIndicadores> {
-    return this.dashboardService.obterIndicadoresComunicacaoCampanhas(filtros);
-  }
-
-  /**
-   * Lista alertas ativos de anomalias
-   */
-  @Get('alertas')
-  @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
-    scopeType: ScopeType.GLOBAL,
-  })
-  @ApiOperation({ summary: 'Lista alertas ativos de anomalias' })
-  @ApiResponse({ status: 200, description: 'Alertas listados com sucesso' })
-  @ApiQuery({
-    name: 'prioridade',
-    required: false,
-    type: String,
-    description: 'Filtro por prioridade (alta, media, baixa)',
-  })
-  @ApiQuery({
-    name: 'limite',
-    required: false,
-    type: Number,
-    description: 'Limite de alertas a serem retornados',
-  })
-  async listarAlertas(
-    @Query('prioridade') prioridade?: string,
-    @Query('limite') limite?: number,
-  ) {
-    // Implementação temporária até que o método seja adicionado ao serviço
-    return {
-      total: 0,
-      prioridade: prioridade || 'todas',
-      alertas: [],
-    };
+  async debugEscopo(): Promise<any> {
+    try {
+      // Obter contexto atual
+      const contexto = RequestContextHolder.get();
+      const hasContext = RequestContextHolder.hasContext();
+      
+      this.logger.debug('=== DEBUG ESCOPO ===');
+      this.logger.debug(`Contexto ativo: ${hasContext}`);
+      this.logger.debug(`Contexto: ${JSON.stringify(contexto)}`);
+      
+      // Obter dados do dashboard
+      const dadosDashboard = await this.metricasDashboardService.debugEscopo();
+      
+      // Validações
+      const observacoes: string[] = [];
+      let escopoFuncionando = true;
+      
+      if (!hasContext) {
+        observacoes.push('ATENÇÃO: Nenhum contexto ativo detectado');
+        escopoFuncionando = false;
+      }
+      
+      if (contexto?.tipo === 'UNIDADE' && !contexto?.unidade_id) {
+        observacoes.push('ERRO: Escopo UNIDADE sem unidadeId definido');
+        escopoFuncionando = false;
+      }
+      
+      if (contexto?.tipo === 'GLOBAL' && dadosDashboard.totalSolicitacoes < 100) {
+        observacoes.push('ATENÇÃO: Escopo GLOBAL com poucos dados (possível problema)');
+      }
+      
+      if (contexto?.tipo === 'UNIDADE' && dadosDashboard.totalSolicitacoes > 500) {
+        observacoes.push('ATENÇÃO: Escopo UNIDADE com muitos dados (possível vazamento)');
+      }
+      
+      const resultado = {
+        contexto: {
+          tipo: contexto?.tipo || 'INDEFINIDO',
+          unidadeId: contexto?.unidade_id || null,
+          hasContext
+        },
+        dados: dadosDashboard,
+        validacao: {
+          escopoFuncionando,
+          observacoes
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      this.logger.debug(`Resultado debug: ${JSON.stringify(resultado, null, 2)}`);
+      
+      return resultado;
+    } catch (error) {
+      this.logger.error('Erro no debug do escopo:', error);
+      throw new HttpException(
+        'Erro interno do servidor no debug',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

@@ -11,6 +11,7 @@ import {
   DefaultValuePipe,
   ParseIntPipe,
   Request,
+  Logger,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -32,6 +33,7 @@ import {
 import { DadosPortalTransparenciaDto } from '../dto/portal-transparencia-response.dto';
 import { AutoAudit, SensitiveDataAccess } from '../../auditoria';
 import { TransferirUnidadeDto } from '../dto/transferir-unidade.dto';
+import { CidadaoFiltrosAvancadosDto, CidadaoFiltrosResponseDto } from '../dto/cidadao-filtros-avancados.dto';
 
 @ApiTags('Cidadão')
 @Controller('cidadao')
@@ -44,6 +46,8 @@ import { TransferirUnidadeDto } from '../dto/transferir-unidade.dto';
   async: true,
 })
 export class CidadaoController {
+  private readonly logger = new Logger(CidadaoController.name);
+
   constructor(private readonly cidadaoService: CidadaoService) {}
 
   @Get()
@@ -133,6 +137,71 @@ export class CidadaoController {
       unidade_id,
       includeRelations,
     });
+  }
+
+  @Post('filtros-avancados')
+  @RequiresPermission({
+    permissionName: 'cidadao.listar',
+    scopeType: ScopeType.UNIT,
+  })
+  @ApiOperation({
+    summary: 'Aplicar filtros avançados para cidadãos',
+    description:
+      'Aplica filtros avançados e complexos para busca de cidadãos com múltiplos critérios. Suporta filtros por unidades, bairros, status, idade, benefícios e busca textual. Retorna dados paginados com metadados de filtros aplicados.',
+  })
+  @ApiResponse({
+    status: 200,
+    type: CidadaoFiltrosResponseDto,
+    description: 'Filtros aplicados com sucesso, dados retornados com paginação',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Parâmetros de filtros inválidos ou malformados',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Token de autenticação inválido ou ausente',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Usuário não possui permissão para aplicar filtros avançados',
+  })
+  @ApiResponse({
+    status: 422,
+    description: 'Erro de validação nos critérios de filtros',
+  })
+  async aplicarFiltrosAvancados(
+    @Body() filtros: CidadaoFiltrosAvancadosDto,
+    @Request() req,
+  ): Promise<CidadaoFiltrosResponseDto> {
+    this.logger.log(
+      `Aplicando filtros avançados para cidadãos - Usuário: ${req.user.id}`,
+    );
+    
+    try {
+      const startTime = Date.now();
+      const resultado = await this.cidadaoService.aplicarFiltrosAvancados(
+        filtros,
+        req.user.unidade_id,
+        req.user.id,
+      );
+      const tempo_execucao = Date.now() - startTime;
+      
+      this.logger.log(
+        `Filtros avançados aplicados com sucesso - Total: ${resultado.total} registros em ${tempo_execucao}ms`,
+      );
+      
+      return {
+        ...resultado,
+        tempo_execucao,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Erro ao aplicar filtros avançados: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
   }
 
   @Get(':id')

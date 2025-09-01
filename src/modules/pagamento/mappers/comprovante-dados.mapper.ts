@@ -24,18 +24,11 @@ export class ComprovanteDadosMapper {
 
     const beneficiario = pagamento.solicitacao.beneficiario;
     const endereco = beneficiario.enderecos?.[0];
-    const contatos = beneficiario.contatos?.[0]; // Assumindo primeiro contato
+    const contatos = beneficiario.contatos?.[0]; 
     const infoBancaria = pagamento.info_bancaria;
     const tecnico = pagamento.solicitacao.tecnico;
     const unidade = pagamento.solicitacao.unidade;
-    const tipoBeneficio = pagamento.solicitacao.tipo_beneficio;
-
-    // Validações condicionais baseadas no tipo de benefício
-    const isAluguelSocial = tipoBeneficio.codigo === 'aluguel-social';
-    
-    if (isAluguelSocial && !endereco) {
-      throw new Error('Endereço do beneficiário é obrigatório para aluguel social');
-    }
+    const dadosAluguelSocial = pagamento.solicitacao.dados_aluguel_social;
 
     return {
       beneficiario: {
@@ -95,6 +88,17 @@ export class ComprovanteDadosMapper {
             conta: infoBancaria.conta || undefined,
             tipoConta: infoBancaria.tipo_conta || undefined,
             chavePix: infoBancaria.chave_pix || undefined,
+          }
+        : undefined,
+      locador: dadosAluguelSocial
+        ? {
+            nome: dadosAluguelSocial.nome_locador || undefined,
+            cpf: dadosAluguelSocial.cpf_locador ? this.formatarCpf(dadosAluguelSocial.cpf_locador) : undefined,
+          }
+        : undefined,
+      imovel: dadosAluguelSocial
+        ? {
+            endereco: dadosAluguelSocial.endereco_imovel_pretendido || undefined,
           }
         : undefined,
       dataGeracao: new Date(),
@@ -243,9 +247,6 @@ export class ComprovanteDadosMapper {
         }
         if (!pagamento.solicitacao.beneficiario.cpf) {
           erros.push('CPF do beneficiário é obrigatório');
-        }
-        if (!pagamento.solicitacao.beneficiario.enderecos?.[0] && isAluguelSocial) {
-          erros.push('Endereço do beneficiário é obrigatório');
         }
       }
 

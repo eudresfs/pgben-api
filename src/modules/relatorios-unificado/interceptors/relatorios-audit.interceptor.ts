@@ -38,6 +38,11 @@ export class RelatoriosAuditInterceptor implements NestInterceptor {
 
     // Identifica o tipo de relatório sendo solicitado
     const reportType = this.extractReportType(path);
+    
+    // Extrai dados HTTP padronizados
+    const clientIP = this.extractClientIP(request);
+    const userAgent = this.extractUserAgent(request);
+    const normalizedEndpoint = this.normalizeEndpoint(request);
 
     // Log de início de operação
     global.auditoriaService.registrarLog({
@@ -45,9 +50,11 @@ export class RelatoriosAuditInterceptor implements NestInterceptor {
       operacao: `RELATORIO_${reportType}_INIT`,
       detalhes: {
         metodo: method,
-        caminho: path,
+        caminho: normalizedEndpoint,
         tipo: reportType,
         formato: query.formato || body.formato,
+        ip_origem: clientIP,
+        user_agent: userAgent,
         parametros: {
           ...params,
           ...query,
@@ -58,7 +65,7 @@ export class RelatoriosAuditInterceptor implements NestInterceptor {
         },
       },
       usuario: user ? user.id : null,
-      origem: request.ip,
+      origem: clientIP,
     });
 
     // Continua o processamento e registra a conclusão
@@ -74,14 +81,16 @@ export class RelatoriosAuditInterceptor implements NestInterceptor {
             operacao: `RELATORIO_${reportType}_SUCCESS`,
             detalhes: {
               metodo: method,
-              caminho: path,
+              caminho: normalizedEndpoint,
               tipo: reportType,
               formato: query.formato || body.formato,
+              ip_origem: clientIP,
+              user_agent: userAgent,
               tempoProcessamento: processingTime,
               tamanhoArquivo: data?.tamanhoBytes || 'N/A',
             },
             usuario: user ? user.id : null,
-            origem: request.ip,
+            origem: clientIP,
           });
         },
         error: (error) => {
@@ -94,9 +103,11 @@ export class RelatoriosAuditInterceptor implements NestInterceptor {
             operacao: `RELATORIO_${reportType}_ERROR`,
             detalhes: {
               metodo: method,
-              caminho: path,
+              caminho: normalizedEndpoint,
               tipo: reportType,
               formato: query.formato || body.formato,
+              ip_origem: clientIP,
+              user_agent: userAgent,
               tempoProcessamento: processingTime,
               erro: {
                 mensagem: error.message,
@@ -108,7 +119,7 @@ export class RelatoriosAuditInterceptor implements NestInterceptor {
               },
             },
             usuario: user ? user.id : null,
-            origem: request.ip,
+            origem: clientIP,
           });
         },
       }),
@@ -133,5 +144,77 @@ export class RelatoriosAuditInterceptor implements NestInterceptor {
       return 'ATENDIMENTOS';
     }
     return 'GENERICO';
+  }
+
+  /**
+   * Extrai o IP do cliente considerando proxies e load balancers
+   * Implementação padronizada para auditoria
+   */
+  private extractClientIP(request: any): string {
+    // Ordem de prioridade para extração do IP real do cliente
+    const forwardedFor = request.headers['x-forwarded-for'] as string;
+    if (forwardedFor) {
+      // Pega o primeiro IP da lista (cliente original)
+      const firstIP = forwardedFor.split(',')[0].trim();
+      if (firstIP && firstIP !== 'unknown') {
+        return firstIP;
+      }
+    }
+
+    // Headers alternativos comuns em diferentes proxies
+    const realIP = request.headers['x-real-ip'] as string;
+    if (realIP && realIP !== 'unknown') {
+      return realIP;
+    }
+
+    const clientIP = request.headers['x-client-ip'] as string;
+    if (clientIP && clientIP !== 'unknown') {
+      return clientIP;
+    }
+
+    // Conexão direta
+    const connectionIP = request.connection?.remoteAddress;
+    if (connectionIP) {
+      return connectionIP;
+    }
+
+    const socketIP = request.socket?.remoteAddress;
+    if (socketIP) {
+      return socketIP;
+    }
+
+    // Fallback obrigatório
+    return 'unknown';
+  }
+
+  /**
+   * Extrai o User-Agent da requisição
+   * Implementação padronizada para auditoria
+   */
+  private extractUserAgent(request: any): string {
+    const userAgent = request.headers['user-agent'];
+    return userAgent && userAgent.trim() !== '' ? userAgent : 'unknown';
+  }
+
+  /**
+   * Normaliza o endpoint removendo parâmetros dinâmicos
+   * Implementação padronizada para auditoria
+   */
+  private normalizeEndpoint(request: any): string {
+    let endpoint = request.url || request.path || '/';
+    
+    // Remove query parameters
+    const queryIndex = endpoint.indexOf('?');
+    if (queryIndex !== -1) {
+      endpoint = endpoint.substring(0, queryIndex);
+    }
+    
+    // Normaliza IDs numéricos para :id
+    endpoint = endpoint.replace(/\/\d+/g, '/:id');
+    
+    // Normaliza UUIDs para :uuid
+    endpoint = endpoint.replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '/:uuid');
+    
+    return endpoint;
   }
 }

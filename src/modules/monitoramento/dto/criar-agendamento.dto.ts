@@ -27,52 +27,16 @@ import {
  */
 export class CriarAgendamentoDto {
   /**
-   * ID do beneficiário a ser visitado
+   * ID do pagamento relacionado à visita
    */
   @ApiProperty({
-    description: 'ID do beneficiário que será visitado',
+    description: 'ID do pagamento que será monitorado através da visita',
     example: '123e4567-e89b-12d3-a456-426614174000',
     format: 'uuid',
   })
-  @IsNotEmpty({ message: 'ID do beneficiário é obrigatório' })
-  @IsUUID('4', { message: 'ID do beneficiário deve ser um UUID válido' })
-  beneficiario_id: string;
-
-  /**
-   * ID da concessão relacionada à visita
-   */
-  @ApiPropertyOptional({
-    description: 'ID da concessão relacionada à visita (se aplicável)',
-    example: '123e4567-e89b-12d3-a456-426614174001',
-    format: 'uuid',
-  })
-  @IsOptional()
-  @IsUUID('4', { message: 'ID da concessão deve ser um UUID válido' })
-  concessao_id?: string;
-
-  /**
-   * ID do técnico responsável pela visita
-   */
-  @ApiPropertyOptional({
-    description: 'ID do técnico responsável pela visita (se não informado, será atribuído automaticamente)',
-    example: '123e4567-e89b-12d3-a456-426614174002',
-    format: 'uuid',
-  })
-  @IsOptional()
-  @IsUUID('4', { message: 'ID do técnico deve ser um UUID válido' })
-  tecnico_id?: string;
-
-  /**
-   * ID da unidade responsável
-   */
-  @ApiPropertyOptional({
-    description: 'ID da unidade responsável (se não informado, será usado a unidade do usuário logado)',
-    example: '123e4567-e89b-12d3-a456-426614174003',
-    format: 'uuid',
-  })
-  @IsOptional()
-  @IsUUID('4', { message: 'ID da unidade deve ser um UUID válido' })
-  unidade_id?: string;
+  @IsNotEmpty({ message: 'ID do pagamento é obrigatório' })
+  @IsUUID('4', { message: 'ID do pagamento deve ser um UUID válido' })
+  pagamento_id: string;
 
   /**
    * Data e hora agendada para a visita
@@ -93,7 +57,7 @@ export class CriarAgendamentoDto {
   @ApiProperty({
     description: 'Tipo da visita a ser realizada',
     enum: TipoVisita,
-    example: TipoVisita.ACOMPANHAMENTO,
+    example: TipoVisita.CONTINUIDADE,
     enumName: 'TipoVisita',
   })
   @IsNotEmpty({ message: 'Tipo da visita é obrigatório' })

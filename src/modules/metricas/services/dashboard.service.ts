@@ -13,6 +13,7 @@ import { Concessao } from '../../../entities/concessao.entity';
 import { ComposicaoFamiliar } from '../../../entities/composicao-familiar.entity';
 import { Pagamento } from '../../../entities/pagamento.entity';
 import { Pendencia } from '../../../entities/pendencia.entity';
+import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { RequestContextHolder } from '../../../common/services/request-context-holder.service';
 import { ScopeType } from '../../../enums/scope-type.enum';
 import { ScopeViolationException } from '../../../common/exceptions/scope.exceptions';
@@ -1120,7 +1121,7 @@ export class DashboardService {
       .select('SUM(pagamento.valor)', 'total')
       .innerJoin('pagamento.concessao', 'concessao')
       .innerJoin('concessao.solicitacao', 'solicitacao')
-      .where('pagamento.status = :status', { status: 'pago' })
+      .where('pagamento.status = :status', { status: StatusPagamentoEnum.PAGO })
       .andWhere('pagamento.data_pagamento BETWEEN :dataInicio AND :dataFim', {
         dataInicio,
         dataFim,
@@ -1154,7 +1155,7 @@ export class DashboardService {
       .innerJoin('pagamento.concessao', 'concessao')
       .innerJoin('concessao.solicitacao', 'solicitacao')
       .innerJoin('solicitacao.tipo_beneficio', 'tipo')
-      .where('pagamento.status = :status', { status: 'pago' })
+      .where('pagamento.status = :status', { status: StatusPagamentoEnum.PAGO })
       .andWhere('pagamento.data_pagamento BETWEEN :dataInicio AND :dataFim', {
         dataInicio,
         dataFim,
@@ -1187,7 +1188,7 @@ export class DashboardService {
       .addSelect('SUM(pagamento.valor)', 'valor')
       .innerJoin('pagamento.concessao', 'concessao')
       .innerJoin('concessao.solicitacao', 'solicitacao')
-      .where('pagamento.status = :status', { status: 'pago' })
+      .where('pagamento.status = :status', { status: StatusPagamentoEnum.PAGO })
       .andWhere('pagamento.data_pagamento BETWEEN :dataInicio AND :dataFim', {
         dataInicio,
         dataFim,
@@ -1220,7 +1221,7 @@ export class DashboardService {
       .innerJoin('pagamento.concessao', 'concessao')
       .innerJoin('concessao.solicitacao', 'solicitacao')
       .innerJoin('solicitacao.tipo_beneficio', 'tipo')
-      .where('pagamento.status = :status', { status: 'pago' })
+      .where('pagamento.status = :status', { status: StatusPagamentoEnum.PAGO })
       .andWhere('pagamento.data_pagamento BETWEEN :dataInicio AND :dataFim', {
         dataInicio,
         dataFim,
@@ -1280,7 +1281,7 @@ export class DashboardService {
       .addSelect('SUM(pagamento.valor)', 'valor')
       .innerJoin('pagamento.concessao', 'concessao')
       .innerJoin('concessao.solicitacao', 'solicitacao')
-      .where('pagamento.status = :status', { status: 'pago' })
+      .where('pagamento.status = :status', { status: StatusPagamentoEnum.PAGO })
       .andWhere('pagamento.data_pagamento BETWEEN :dataInicio AND :dataFim', {
         dataInicio,
         dataFim,

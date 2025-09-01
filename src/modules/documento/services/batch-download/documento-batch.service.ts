@@ -38,6 +38,8 @@ import { TipoDocumentoEnum } from '../../../../enums';
 import { BatchJobManagerService } from './batch-job-manager.service';
 import { ZipGeneratorService } from './zip-generator.service';
 import { DocumentFilterService } from './document-filter.service';
+import { AuditEventEmitter } from '../../../auditoria/events/emitters/audit-event.emitter';
+import { AuditContextHolder } from '../../../../common/interceptors/audit-context.interceptor';
 
 const pipelineAsync = promisify(pipeline);
 
@@ -69,6 +71,7 @@ export class DocumentoBatchService {
     private readonly batchJobManager: BatchJobManagerService,
     private readonly zipGenerator: ZipGeneratorService,
     private readonly documentFilterService: DocumentFilterService,
+    private readonly auditEventEmitter: AuditEventEmitter,
   ) {
     this.ensureTempDirectory();
     this.startCleanupScheduler();
@@ -161,6 +164,24 @@ export class DocumentoBatchService {
       });
 
       const savedJob = await this.batchJobRepository.save(job);
+
+      // Auditoria - Job de download em lote criado
+      const auditContext = this.getAuditContext(usuario_id);
+      await this.auditEventEmitter.emitEntityCreated(
+        'DocumentoBatchJob',
+        savedJob.id,
+        {
+          id: savedJob.id,
+          usuario_id: savedJob.usuario_id,
+          unidade_id: savedJob.unidade_id,
+          status: savedJob.status,
+          filtros: savedJob.filtros,
+          total_documentos: savedJob.total_documentos,
+          tamanho_estimado: savedJob.tamanho_estimado,
+          data_expiracao: savedJob.data_expiracao,
+        },
+        auditContext.userId
+      );
 
       this.logger.log(
         `Job ${savedJob.id} criado para usuário ${usuario_id} - Estimativa: ${metricas.total_documentos} documentos, ${this.formatFileSize(metricas.tamanho_total)} (${podeIniciar.jobsAtivos + 1}/2 jobs ativos)`,
@@ -319,6 +340,14 @@ export class DocumentoBatchService {
 
     const filename = `documentos_lote_${jobId.substring(0, 8)}.zip`;
 
+    // Auditoria - Download em lote iniciado
+    const auditContext = this.getAuditContext(job.usuario_id);
+    await this.auditEventEmitter.emitEntityAccessed(
+      'DocumentoBatchJob',
+      job.id,
+      auditContext.userId
+    );
+
     // Log de métricas para monitoramento
     this.logger.log(
       `Stream criado para job ${jobId}: ${filename}, tamanho estimado: ${this.formatFileSize(result.estimatedSize || 0)}`,
@@ -396,11 +425,34 @@ export class DocumentoBatchService {
       );
     }
 
+    // Dados antigos para auditoria
+    const oldData = {
+      id: job.id,
+      status: job.status,
+      updated_at: job.updated_at,
+      erro_detalhes: job.erro_detalhes,
+    };
+
     await this.batchJobRepository.update(job_id, {
       status: StatusDownloadLoteEnum.CANCELLED,
       updated_at: new Date(),
       erro_detalhes: 'Cancelado pelo usuário',
     });
+
+    // Auditoria - Job de download em lote cancelado
+    const auditContext = this.getAuditContext(job.usuario_id);
+    await this.auditEventEmitter.emitEntityUpdated(
+      'DocumentoBatchJob',
+      job.id,
+      oldData,
+      {
+        id: job.id,
+        status: StatusDownloadLoteEnum.CANCELLED,
+        updated_at: new Date(),
+        erro_detalhes: 'Cancelado pelo usuário',
+      },
+      auditContext.userId
+    );
 
     return true;
   }
@@ -1175,5 +1227,17 @@ export class DocumentoBatchService {
         updateError,
       );
     }
+  }
+
+  /**
+   * Obtém o contexto de auditoria atual
+   */
+  private getAuditContext(usuarioId: string) {
+    const context = AuditContextHolder.get();
+    return {
+      userAgent: context?.userAgent || 'Unknown',
+      ip: context?.ip || 'Unknown',
+      userId: usuarioId,
+    };
   }
 }

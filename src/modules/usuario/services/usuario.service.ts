@@ -35,6 +35,10 @@ import {
   INotificationManagerService,
   NOTIFICATION_MANAGER_SERVICE,
 } from '../../notificacao/interfaces/notification-manager.interface';
+import { UsuarioFiltrosAvancadosDto, UsuarioFiltrosResponseDto } from '../dto/usuario-filtros-avancados.dto';
+
+
+import { plainToInstance } from 'class-transformer';
 
 /**
  * Serviço de usuários
@@ -236,7 +240,7 @@ export class UsuarioService {
           total,
           page,
           limit,
-          totalPages: Math.ceil(total / limit),
+          pages: Math.ceil(total / limit),
         },
       };
     }
@@ -265,7 +269,7 @@ export class UsuarioService {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
+        pages: Math.ceil(total / limit),
       },
     };
   }
@@ -1390,6 +1394,133 @@ export class UsuarioService {
     } catch (error) {
       this.logger.error('Erro ao buscar todos os usuários ativos', error.stack);
       return [];
+    }
+  }
+
+  /**
+   * Aplica filtros avançados para busca de usuários
+   * @param filtros Filtros avançados a serem aplicados
+   * @returns Resultado paginado com metadados de filtros aplicados
+   */
+  async aplicarFiltrosAvancados(
+    filtros: UsuarioFiltrosAvancadosDto,
+  ): Promise<UsuarioFiltrosResponseDto> {
+    const startTime = Date.now();
+    this.logger.info('Iniciando aplicação de filtros avançados para usuários');
+
+    try {
+      // Configurar mapeamento de campos para a entidade Usuario
+      const camposMapeamento = {
+        unidades: 'usuario.unidade_id',
+        setores: 'usuario.setor_id',
+        roles: 'usuario.role_id',
+        status: 'usuario.status',
+        search: ['usuario.nome', 'usuario.email', 'usuario.cpf', 'usuario.matricula'],
+        primeiro_acesso: 'usuario.primeiro_acesso',
+        tentativas_login_min: 'usuario.tentativas_login',
+        tentativas_login_max: 'usuario.tentativas_login',
+      };
+
+      // Configurar relacionamentos
+      const relacionamentos = filtros.include_relations
+        ? ['role', 'unidade', 'setor']
+        : [];
+
+      // Construir query builder
+      const queryBuilder = this.dataSource
+        .createQueryBuilder(Usuario, 'usuario')
+        .leftJoinAndSelect('usuario.role', 'role')
+        .leftJoinAndSelect('usuario.unidade', 'unidade')
+        .leftJoinAndSelect('usuario.setor', 'setor');
+
+      // Aplicar filtros
+      if (filtros.unidades && filtros.unidades.length > 0) {
+        queryBuilder.andWhere('usuario.unidade_id IN (:...unidades)', { unidades: filtros.unidades });
+      }
+
+      if (filtros.setores && filtros.setores.length > 0) {
+        queryBuilder.andWhere('usuario.setor_id IN (:...setores)', { setores: filtros.setores });
+      }
+
+      if (filtros.roles && filtros.roles.length > 0) {
+        queryBuilder.andWhere('usuario.role_id IN (:...roles)', { roles: filtros.roles });
+      }
+
+      if (filtros.status && filtros.status.length > 0) {
+        queryBuilder.andWhere('usuario.status IN (:...status)', { status: filtros.status });
+      }
+
+      if (filtros.search) {
+        queryBuilder.andWhere(
+          '(usuario.nome ILIKE :search OR usuario.email ILIKE :search OR usuario.cpf ILIKE :search OR usuario.matricula ILIKE :search)',
+          { search: `%${filtros.search}%` }
+        );
+      }
+
+      if (filtros.primeiro_acesso !== undefined) {
+        queryBuilder.andWhere('usuario.primeiro_acesso = :primeiro_acesso', { primeiro_acesso: filtros.primeiro_acesso });
+      }
+
+      if (filtros.tentativas_login_min !== undefined) {
+        queryBuilder.andWhere('usuario.tentativas_login >= :tentativas_min', { tentativas_min: filtros.tentativas_login_min });
+      }
+
+      if (filtros.tentativas_login_max !== undefined) {
+        queryBuilder.andWhere('usuario.tentativas_login <= :tentativas_max', { tentativas_max: filtros.tentativas_login_max });
+      }
+
+      // Aplicar paginação
+      const limit = filtros.limit || 10;
+      const offset = filtros.page ? (filtros.page - 1) * limit : (filtros.offset || 0);
+      queryBuilder.skip(offset).take(limit);
+
+      // Executar query
+      const [usuarios, total] = await queryBuilder.getManyAndCount();
+
+      // Remover campos sensíveis dos usuários retornados
+      const usuariosSemSenha = usuarios.map((usuario) => {
+        const { senhaHash, ...usuarioSemSenha } = usuario;
+        return usuarioSemSenha;
+      });
+
+      const tempoExecucao = Date.now() - startTime;
+
+      this.logger.info(
+        `Filtros avançados aplicados com sucesso. ` +
+          `Encontrados ${total} usuários em ${tempoExecucao}ms`,
+      );
+
+      return {
+        items: usuariosSemSenha,
+        total,
+        filtros_aplicados: {
+          unidades: filtros.unidades,
+          setores: filtros.setores,
+          roles: filtros.roles,
+          status: filtros.status,
+          search: filtros.search,
+          primeiro_acesso: filtros.primeiro_acesso,
+          tentativas_login_min: filtros.tentativas_login_min,
+          tentativas_login_max: filtros.tentativas_login_max,
+        },
+        meta: {
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          pages: Math.ceil(total / limit),
+          hasNext: offset + limit < total,
+          hasPrev: offset > 0
+        },
+        tempo_execucao: tempoExecucao
+      };
+    } catch (error) {
+      const tempoExecucao = Date.now() - startTime;
+      this.logger.error(
+        `Erro ao aplicar filtros avançados para usuários: ${error.message}`,
+        error.stack,
+      );
+
+      throw error;
     }
   }
 }

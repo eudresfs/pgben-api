@@ -342,7 +342,7 @@ export class JwtBlacklistController {
         total: { type: 'number' },
         page: { type: 'number' },
         limit: { type: 'number' },
-        totalPages: { type: 'number' },
+        pages: { type: 'number' },
       },
     },
   })
@@ -359,7 +359,7 @@ export class JwtBlacklistController {
     total: number;
     page: number;
     limit: number;
-    totalPages: number;
+    pages: number;
   }> {
     return this.jwtBlacklistService.listBlacklistedTokens(queryDto);
   }

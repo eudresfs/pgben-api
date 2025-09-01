@@ -450,7 +450,7 @@ export class SituacaoMoradiaController {
               example: 10,
               description: 'Itens por página',
             },
-            totalPages: {
+            pages: {
               type: 'number',
               example: 15,
               description: 'Total de páginas',

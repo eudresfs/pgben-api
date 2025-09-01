@@ -27,16 +27,16 @@ export class AluguelSocialTemplate {
     const ano = agora.getFullYear().toString();
     const mesNominal = this.obterNomeMes(agora.getMonth());
 
-    // Dados específicos do aluguel social - endereço do imóvel
-    const endereco = dados.beneficiario.endereco
-      ? `${dados.beneficiario.endereco.logradouro}, 
-        ${dados.beneficiario.endereco.numero || 'S/N'}, ${dados.beneficiario.endereco.bairro}, ${dados.beneficiario.endereco.cidade}/${dados.beneficiario.endereco.estado}, ${dados.beneficiario.endereco.cep}`
-      : 'Endereço não informado';
+    // Dados específicos do aluguel social - endereço do imóvel pretendido
+    const endereco = dados.imovel?.endereco
+      ? dados.imovel.endereco
+      : dados.beneficiario.endereco
+      ? `${dados.beneficiario.endereco.logradouro}, ${dados.beneficiario.endereco.numero || 'S/N'}, ${dados.beneficiario.endereco.bairro}, ${dados.beneficiario.endereco.cidade}/${dados.beneficiario.endereco.estado}, ${dados.beneficiario.endereco.cep}`
+      : '_________________________________________________________';
 
-    // Dados do locador - TODO: Implementar busca do locador nos dados do pagamento
-    // Por enquanto, usando valores placeholder até que os dados do locador sejam disponibilizados
-    const nomeCompletoLocador = '_________________________________'; // TODO: Buscar dados do locador
-    const cpfFormatadoLocador = '__________________'; // TODO: Buscar CPF do locador
+    // Dados do locador obtidos da entidade DadosAluguelSocial
+    const nomeCompletoLocador = dados.locador?.nome || '_________________________________';
+    const cpfFormatadoLocador = dados.locador?.cpf || '__________________';
 
     return {
       pageSize: 'A4',

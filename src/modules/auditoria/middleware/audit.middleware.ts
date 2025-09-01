@@ -7,6 +7,7 @@
 
 import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   AuditEventType,
@@ -75,6 +76,7 @@ export class AuditMiddleware implements NestMiddleware {
   private emitRequestStartEvent(requestInfo: any, startTime: number) {
     try {
       const event: BaseAuditEvent = {
+        eventId: uuidv4(),
         eventType: AuditEventType.SYSTEM_INFO,
         entityName: 'Request',
         timestamp: new Date(startTime),
@@ -113,6 +115,7 @@ export class AuditMiddleware implements NestMiddleware {
   ) {
     try {
       const event: BaseAuditEvent = {
+        eventId: uuidv4(),
         eventType: AuditEventType.SYSTEM_INFO,
         entityName: 'Request',
         timestamp: new Date(),
@@ -150,6 +153,7 @@ export class AuditMiddleware implements NestMiddleware {
   ) {
     try {
       const event: BaseAuditEvent = {
+        eventId: uuidv4(),
         eventType: AuditEventType.SYSTEM_ERROR,
         entityName: 'Request',
         timestamp: new Date(),

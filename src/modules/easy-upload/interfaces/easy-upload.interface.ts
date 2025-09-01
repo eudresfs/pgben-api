@@ -245,7 +245,7 @@ export interface IApiResponse<T = any> {
       page: number;
       limit: number;
       total: number;
-      totalPages: number;
+      pages: number;
     };
   };
 }

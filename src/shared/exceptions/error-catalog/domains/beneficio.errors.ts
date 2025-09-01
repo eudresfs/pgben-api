@@ -911,27 +911,32 @@ export const BENEFICIO_TECH_MESSAGES = {
     SOLICITACAO_ID_REQUIRED:
       'Campo solicitacao_id é obrigatório. Validação de campo obrigatório falhou.',
     QUANTIDADE_CESTAS_REQUIRED:
-      'Campo quantidade_cestas é obrigatório. Validação de campo obrigatório falhou.',
+      'Campo Quantidade de Cestas é obrigatório. Validação de campo obrigatório falhou.',
     NUMERO_PESSOAS_REQUIRED:
-      'Campo numero_pessoas é obrigatório. Validação de campo obrigatório falhou.',
+      'Campo Número de pessoas na família é obrigatório. Validação de campo obrigatório falhou.',
     QUANTIDADE_CESTAS_INVALID:
-      'Campo quantidade_cestas deve ser um número válido. Validação de tipo falhou.',
+      'Campo Quantidade de Cestas deve ser um número válido. Validação de tipo falhou.',
     NUMERO_PESSOAS_INVALID:
-      'Campo numero_pessoas deve ser um número válido. Validação de tipo falhou.',
+      'Campo número de pessoas na família deve ser um número válido. Validação de tipo falhou.',
     JUSTIFICATIVA_REQUIRED:
       'Campo justificativa é obrigatório quando quantidade excede recomendação. Validação de regra de negócio falhou.',
-
+    QUANTIDADE_PARCELAS_REQUIRED:
+      'Campo Quantidade de Parcelas é obrigatório. Validação de campo obrigatório falhou.',
+    QUANTIDADE_PARCELAS_INVALID:
+      'Campo Quantidade de Parcelas deve ser um número válido. Validação de tipo falhou.',
+    ORIGEM_ATENDIMENTO_REQUIRED:
+      'Campo Origem de Atendimento é obrigatório. Validação de campo obrigatório falhou.',
     // Limites
     QUANTIDADE_CESTAS_MIN:
-      'Campo quantidade_cestas deve ser no mínimo 1. Validação de limite falhou.',
+      'Campo Quantidade de Cestas deve ser no mínimo 1. Validação de limite falhou.',
     QUANTIDADE_CESTAS_MAX:
-      'Campo quantidade_cestas não pode exceder 12. Validação de limite falhou.',
+      'Campo Quantidade de Cestas não pode exceder 12. Validação de limite falhou.',
     NUMERO_PESSOAS_MIN:
-      'Campo numero_pessoas deve ser no mínimo 1. Validação de limite falhou.',
+      'Campo Número de pessoas na família deve ser no mínimo 1. Validação de limite falhou.',
     NUMERO_PESSOAS_MAX:
-      'Campo numero_pessoas não pode exceder 50. Validação de limite falhou.',
+      'Campo Número de pessoas na família não pode exceder 50. Validação de limite falhou.',
     MAX_PESSOAS_FAMILIA:
-      'Campo numero_pessoas não pode exceder 50. Validação de limite falhou.',
+      'Campo Número de pessoas na família não pode exceder 50. Validação de limite falhou.',
 
     // Regras de negócio
     JUSTIFICATIVA_MIN_LENGTH:
@@ -945,10 +950,12 @@ export const BENEFICIO_TECH_MESSAGES = {
       'Quantidade de cestas solicitadas excede o limite máximo permitido. Validação de regra de negócio falhou.',
 
     QUANTIDADE_INVALIDA:
-      'Campo quantidade_cestas_solicitadas deve estar entre 1 e 12. Validação de range falhou.',
+      'Campo Quantidade de Cestas solicitadas deve estar entre 1 e 12. Validação de range falhou.',
+    NUMERO_PESSOAS_INVALIDA:
+      'Campo Número de pessoas na família deve estar entre 1 e 50. Validação de range falhou.',
 
     UNIDADE_ENCAMINHAMENTO:
-      'Campo unidade_solicitante é obrigatório para encaminhamentos externos. Validação condicional falhou.',
+      'Campo Unidade Solicitante é obrigatório para encaminhamentos externos. Validação condicional falhou.',
 
     CALCULO_RECOMENDACAO: (pessoas: number) => {
       const recomendado = Math.ceil(pessoas / 3);

@@ -191,14 +191,14 @@ export class QueryOptimizerService {
       countQueryBuilder.getCount(),
     ]);
 
-    const totalPages = Math.ceil(total / limit);
+    const pages = Math.ceil(total / limit);
 
     return {
       data,
       total,
       page,
       limit,
-      hasNext: page < totalPages,
+      hasNext: page < pages,
       hasPrevious: page > 1,
     };
   }
