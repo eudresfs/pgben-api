@@ -17,6 +17,7 @@ import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
 import { PagamentoValidationService } from './pagamento-validation.service';
 import { PagamentoUnifiedMapper } from '../mappers';
 import { DocumentoService } from '../../documento/services/documento.service';
+import { PagamentoEventosService } from './pagamento-eventos.service';
 
 /**
  * Interface para resultado de verificação de elegibilidade
@@ -82,6 +83,7 @@ export class PagamentoWorkflowService {
     private readonly confirmacaoRepository: ConfirmacaoRepository,
     private readonly validationService: PagamentoValidationService,
     private readonly documentoService: DocumentoService,
+    private readonly pagamentoEventosService: PagamentoEventosService,
   ) {}
 
   // ==========================================
@@ -210,6 +212,15 @@ export class PagamentoWorkflowService {
     );
     const pagamento = await this.pagamentoRepository.create(dados_pagamento);
 
+    // Emitir evento de pagamento criado
+    await this.pagamentoEventosService.emitirEventoPagamentoCriado({
+      concessaoId: pagamento.concessao_id,
+      valor: pagamento.valor,
+      dataVencimento: pagamento.data_vencimento,
+      usuarioCriadorId: usuarioId,
+      observacao: pagamento.observacoes,
+    });
+
     return {
       success: true,
       data: PagamentoUnifiedMapper.toResponseDto(pagamento),
@@ -275,6 +286,15 @@ export class PagamentoWorkflowService {
       },
     );
 
+    // Emitir evento de status atualizado
+    await this.pagamentoEventosService.emitirEventoStatusAtualizado({
+      statusAnterior: pagamento.status,
+      statusAtual: updateDto.status,
+      motivoMudanca: updateDto.observacoes,
+      usuarioId: usuarioId,
+      observacao: updateDto.observacoes,
+    });
+
     return {
       success: true,
       data: PagamentoUnifiedMapper.toResponseDto(pagamentoAtualizado),
@@ -329,6 +349,14 @@ export class PagamentoWorkflowService {
         updated_at: new Date(),
       },
     );
+
+    // Emitir evento de pagamento cancelado
+    await this.pagamentoEventosService.emitirEventoPagamentoCancelado({
+      canceladoPorId: usuarioId,
+      motivoCancelamento: cancelDto.motivo,
+      dataCancelamento: new Date(),
+      observacao: cancelDto.observacoes,
+    });
 
     return {
       success: true,

@@ -27,10 +27,12 @@ import { AprovacaoInterceptor } from './interceptors';
 // Listeners
 import { AprovacaoAuditListener } from './listeners/aprovacao-audit.listener';
 import { AprovacaoAblyListener } from './listeners/aprovacao-ably.listener';
+import { AprovacaoEventListener } from './listeners/aprovacao-event.listener';
 
 // Serviços especializados
 import { AprovacaoNotificationService } from './services/aprovacao-notification.service';
 import { AprovacaoTemplateMappingService } from './services/aprovacao-template-mapping.service';
+import { AprovacaoEventosService } from './services/aprovacao-eventos.service';
 
 // Módulos existentes para integração
 import { NotificacaoModule } from '../notificacao/notificacao.module';
@@ -83,6 +85,7 @@ import { SharedModule } from '../../shared/shared.module';
     AprovacaoService,
     AprovacaoNotificationService,
     AprovacaoTemplateMappingService,
+    AprovacaoEventosService,
     
     // ExecucaoAcaoService como REQUEST-scoped para acessar o token do usuário
     // Ajustado para DEFAULT scope para evitar problemas de inicialização
@@ -97,12 +100,14 @@ import { SharedModule } from '../../shared/shared.module';
     
     // Listeners para eventos
     AprovacaoAuditListener,
-    AprovacaoAblyListener
+    AprovacaoAblyListener,
+    AprovacaoEventListener
   ],
   
   exports: [
     AprovacaoService,
     AprovacaoNotificationService,
+    AprovacaoEventosService,
     TypeOrmModule
   ]
 })

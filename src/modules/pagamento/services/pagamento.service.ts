@@ -33,6 +33,7 @@ import { PagamentoFiltrosAvancadosDto, PagamentoFiltrosResponseDto } from '../dt
 import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
 import { PeriodoPredefinido } from '../../../enums/periodo-predefinido.enum';
 import { SelectQueryBuilder } from 'typeorm';
+import { PagamentoEventosService } from './pagamento-eventos.service';
 
 /**
  * Service simplificado para gerenciamento de pagamentos
@@ -54,6 +55,7 @@ export class PagamentoService {
     private readonly mapper: PagamentoUnifiedMapper,
     private readonly pagamentoCalculatorService: PagamentoCalculatorService,
     private readonly filtrosAvancadosService: FiltrosAvancadosService,
+    private readonly pagamentoEventosService: PagamentoEventosService,
   ) { }
 
   /**
@@ -91,6 +93,15 @@ export class PagamentoService {
         metodo: pagamento.metodo_pagamento,
         valor: pagamento.valor,
       },
+    });
+
+    // Emitir evento de pagamento criado
+    await this.pagamentoEventosService.emitirEventoPagamentoCriado({
+      concessaoId: pagamento.concessao_id,
+      valor: pagamento.valor,
+      dataVencimento: pagamento.data_vencimento,
+      usuarioCriadorId: pagamento.criado_por || 'sistema',
+      observacao: pagamento.observacoes,
     });
 
     // Pagamento criado com sucesso
@@ -295,6 +306,15 @@ export class PagamentoService {
       },
     });
 
+    // Emitir evento de status atualizado
+    await this.pagamentoEventosService.emitirEventoStatusAtualizado({
+      statusAnterior: pagamento.status,
+      statusAtual: updateDto.status,
+      motivoMudanca: updateDto.observacoes,
+      usuarioId: usuarioId,
+      observacao: updateDto.observacoes,
+    });
+
     this.logger.log(
       `Status do pagamento ${id} atualizado para ${updateDto.status}`,
     );
@@ -349,6 +369,14 @@ export class PagamentoService {
         previousStatus: pagamento.status,
         reason: 'Manual cancellation',
       },
+    });
+
+    // Emitir evento de pagamento cancelado
+    await this.pagamentoEventosService.emitirEventoPagamentoCancelado({
+      canceladoPorId: usuarioId,
+      motivoCancelamento: motivo,
+      dataCancelamento: new Date(),
+      observacao: motivo,
     });
 
     // Pagamento cancelado com sucesso

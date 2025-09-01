@@ -1370,7 +1370,7 @@ export class EmailService implements OnModuleDestroy {
         expiresInMinutes: expiresIn,
         supportEmail: this.configService.get<string>(
           'SUPPORT_EMAIL',
-          'suporte@PGBen.gov.br',
+          'suporte@pgben.com.br',
         ),
       },
       priority: 'high',

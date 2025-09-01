@@ -73,6 +73,10 @@ import { Reflector } from '@nestjs/core';
 // Mappers
 import { PagamentoUnifiedMapper } from './mappers/pagamento-unified.mapper';
 
+// Eventos
+import { PagamentoEventosService } from './services/pagamento-eventos.service';
+import { PagamentoEventListener } from './listeners/pagamento-event.listener';
+
 // Módulos
 import { AuthModule } from '../../auth/auth.module';
 import { UsuarioModule } from '../usuario/usuario.module';
@@ -208,6 +212,10 @@ import { CacheModule } from '../../shared/cache/cache.module';
 
     // Mappers
     PagamentoUnifiedMapper,
+
+    // Eventos
+    PagamentoEventosService,
+    PagamentoEventListener,
   ],
   exports: [
     TypeOrmModule,
@@ -239,6 +247,9 @@ import { CacheModule } from '../../shared/cache/cache.module';
     PixValidator,
     DadosBancariosValidator,
     StatusTransitionValidator,
+
+    // Eventos
+    PagamentoEventosService,
   ],
 })
 export class PagamentoModule {}

@@ -19,6 +19,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TipoEscopo } from '../../../entities/user-permission.entity';
 import { ListaAprovacoesPendentesResponseDto, SolicitacaoAprovacaoResponseDto } from '../dtos/response/aprovacao-response.dto';
 import { Status } from '../../../enums/status.enum';
+import { AprovacaoEventosService } from './aprovacao-eventos.service';
 
 /**
  * Serviço principal consolidado para gerenciamento de aprovações
@@ -49,7 +50,8 @@ export class AprovacaoService {
     private readonly auditEventEmitter: AuditEventEmitter,
     private readonly execucaoAcaoService: ExecucaoAcaoService,
     private readonly permissionService: PermissionService,
-    private readonly filtrosAvancadosService: FiltrosAvancadosService
+    private readonly filtrosAvancadosService: FiltrosAvancadosService,
+    private readonly aprovacaoEventosService: AprovacaoEventosService
   ) {}
 
   /**
@@ -295,6 +297,13 @@ export class AprovacaoService {
       timestamp: new Date()
     });
 
+    // Emitir evento de solicitação criada
+    await this.aprovacaoEventosService.emitirEventoSolicitacaoCriada(
+      solicitacaoSalva,
+      solicitanteId,
+      configuracao
+    );
+
     this.logger.log(`Solicitação criada: ${codigo} para ação: ${dto.tipo_acao}`);
     
     return this.obterSolicitacao(solicitacaoSalva.id);
@@ -472,6 +481,9 @@ export class AprovacaoService {
         justificativa,
         timestamp: new Date()
       });
+
+      // Emitir evento de solicitação aprovada
+      await this.aprovacaoEventosService.emitirEventoSolicitacaoAprovada(solicitacaoAtualizada, aprovadorId);
       
     } else if (solicitacaoAtualizada.status === StatusSolicitacao.REJEITADA) {
       // Evento específico de rejeição
@@ -482,6 +494,9 @@ export class AprovacaoService {
         justificativa,
         timestamp: new Date()
       });
+
+      // Emitir evento de solicitação rejeitada
+      await this.aprovacaoEventosService.emitirEventoSolicitacaoRejeitada(solicitacaoAtualizada, aprovadorId, justificativa);
     }
 
     this.logger.log(

@@ -24,6 +24,7 @@ import {
 import { SYSTEM_USER_UUID } from '../../../shared/constants/system.constants';
 import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
 import { PeriodoPredefinido } from '../../../enums/periodo-predefinido.enum';
+import { BeneficioEventosService } from './beneficio-eventos.service';
 
 @Injectable()
 export class ConcessaoService {
@@ -36,6 +37,7 @@ export class ConcessaoService {
     private readonly validacaoBeneficioService: ValidacaoBeneficioService,
     private readonly logger: LoggingService,
     private readonly filtrosAvancadosService: FiltrosAvancadosService,
+    private readonly beneficioEventosService: BeneficioEventosService,
   ) {}
 
   /**
@@ -718,6 +720,31 @@ export class ConcessaoService {
         ConcessaoService.name,
       );
     });
+
+    // Emitir evento de suspensão para o sistema de notificações
+    try {
+      // Buscar concessão completa para emitir evento
+      const concessaoCompleta = await this.concessaoRepo.findOne({
+        where: { id: concessaoId },
+        relations: ['solicitacao', 'solicitacao.beneficiario'],
+      });
+      
+      if (concessaoCompleta) {
+        this.beneficioEventosService.emitirEventoConcessaoSuspensa(
+          concessaoCompleta,
+          motivo,
+          usuarioId,
+          dataRevisao ? `Data de revisão: ${dataRevisao.toLocaleDateString()}` : undefined,
+        );
+      }
+    } catch (eventError) {
+      this.logger.error(
+        `Erro ao emitir evento de suspensão para concessão ${concessaoId}: ${eventError.message}`,
+        eventError.stack,
+        ConcessaoService.name,
+      );
+      // Não falha a operação principal, apenas registra o erro
+    }
       
     return concessaoSalva;
   }
@@ -764,6 +791,23 @@ export class ConcessaoService {
       `Concessão ${concessaoId} bloqueada por ${usuarioId}. Motivo: ${motivo}`,
       ConcessaoService.name,
     );
+
+    // Emitir evento de bloqueio para o sistema de notificações
+    try {
+      this.beneficioEventosService.emitirEventoConcessaoBloqueada(
+        concessaoSalva,
+        motivo,
+        usuarioId,
+      );
+    } catch (eventError) {
+      this.logger.error(
+        `Erro ao emitir evento de bloqueio para concessão ${concessaoId}: ${eventError.message}`,
+        eventError.stack,
+        ConcessaoService.name,
+      );
+      // Não falha a operação principal, apenas registra o erro
+    }
+
     return concessaoSalva;
   }
 
@@ -843,6 +887,24 @@ export class ConcessaoService {
         `Concessão ${concessaoId} reativada por ${usuarioId}. Motivo: ${motivo}`,
         ConcessaoService.name,
       );
+
+      // Emitir evento de reativação para o sistema de notificações
+      try {
+        this.beneficioEventosService.emitirEventoConcessaoReativada(
+          concessaoSalva,
+          statusAnterior,
+          motivo,
+          usuarioId,
+        );
+      } catch (eventError) {
+        this.logger.error(
+          `Erro ao emitir evento de reativação para concessão ${concessaoId}: ${eventError.message}`,
+          eventError.stack,
+          ConcessaoService.name,
+        );
+        // Não falha a operação principal, apenas registra o erro
+      }
+
       return concessaoSalva;
     } catch (error) {
       // Log detalhado do erro para debugging
@@ -940,6 +1002,24 @@ export class ConcessaoService {
         `Concessão ${concessaoId} desbloqueada por ${usuarioId}. Motivo: ${motivo}`,
         ConcessaoService.name,
       );
+
+      // Emitir evento de reativação para o sistema de notificações (desbloqueio é uma forma de reativação)
+      try {
+        this.beneficioEventosService.emitirEventoConcessaoReativada(
+          concessaoSalva,
+          statusAnterior,
+          motivo,
+          usuarioId,
+        );
+      } catch (eventError) {
+        this.logger.error(
+          `Erro ao emitir evento de desbloqueio para concessão ${concessaoId}: ${eventError.message}`,
+          eventError.stack,
+          ConcessaoService.name,
+        );
+        // Não falha a operação principal, apenas registra o erro
+      }
+
       return concessaoSalva;
     } catch (error) {
       // Log detalhado do erro para debugging

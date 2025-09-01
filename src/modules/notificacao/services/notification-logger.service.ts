@@ -257,11 +257,11 @@ export class NotificationLoggerService {
       timestamp: new Date().toISOString()
     };
 
-    this.logger.log(`Métrica coletada: ${metricName}`, {
-      ...metricsContext,
-      operation: 'metric_collection',
-      stage: 'metrics'
-    });
+    // this.logger.log(`Métrica coletada: ${metricName}`, {
+    //   ...metricsContext,
+    //   operation: 'metric_collection',
+    //   stage: 'metrics'
+    // });
   }
 
   /**
