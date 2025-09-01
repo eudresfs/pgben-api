@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0](https://github.com/kemosoft-team/pgben-server/compare/v0.1.15...v1.1.0) (2025-09-01)
+
+
+### Features
+
+* **feedback:** implement feedback module with entities, services and endpoints ([789f84d](https://github.com/kemosoft-team/pgben-server/commit/789f84d3946920414791529e1869fbac3e792548))
+* **interceptor:** add text normalization interceptor for name fields ([9a20e64](https://github.com/kemosoft-team/pgben-server/commit/9a20e64d38e10cabd3b625d55f8a9bf148c12e1b))
+* **notification:** implement standardized notification system ([c6654e9](https://github.com/kemosoft-team/pgben-server/commit/c6654e969d6ebf03b777fafe4f15c705dcc90043))
+* **notifications:** implement event-driven notification system ([c72b63b](https://github.com/kemosoft-team/pgben-server/commit/c72b63b5b75d37d71e7291fd6452ca0dcdfd3ce5))
+* **scoped-repository:** enhance scope context handling and logging ([b419a9a](https://github.com/kemosoft-team/pgben-server/commit/b419a9a678a4961ad9c920f3470dd690c7d71be2))
+* **workflow:** add priority bypass for analysis submission ([d6b81e8](https://github.com/kemosoft-team/pgben-server/commit/d6b81e8f24cb3844f94f2d34142518d0b2013935))
+
 ### [0.1.15](https://github.com/kemosoft-team/pgben-server/compare/v0.1.14...v0.1.15) (2025-08-29)
 
 
