@@ -308,17 +308,11 @@ export class MetricasDashboardService {
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<ImpactoSocialMetricas> {
     const context = RequestContextHolder.get();
-    
-    this.logger.debug('[METRICS-DEBUG] Calculando métricas de impacto social:', {
-      contextType: context?.tipo,
-      contextUnidadeId: context?.unidade_id,
-      dataLimite: dataLimite.toISOString(),
-      filtrosAplicados: filtros ? Object.keys(filtros).filter(k => filtros[k]) : 'nenhum'
-    });
+
 
     // Contar famílias beneficiadas com escopo aplicado
     const familiasBeneficiadasQuery = this.createScopedSolicitacaoQueryBuilder('solicitacao')
-      .where('solicitacao.data_abertura >= :dataLimite', { dataLimite });
+      .where('solicitacao.status = :status', { status: StatusSolicitacao.APROVADA });
     
     // Aplicar filtros dinâmicos, incluindo status se fornecido
     if (filtros && !this.filtrosEstaoVazios(filtros)) {
@@ -330,21 +324,30 @@ export class MetricasDashboardService {
       });
     }
     
-    // Log da query antes da execução
-    this.logger.debug('[METRICS-DEBUG] Query famílias beneficiadas:', {
-      sql: familiasBeneficiadasQuery.getQuery(),
-      parameters: familiasBeneficiadasQuery.getParameters()
-    });
+    const pessoasImpactadasQuery = this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .leftJoin('solicitacao.beneficiario', 'beneficiario')
+      .leftJoin('beneficiario.composicao_familiar', 'composicao_familiar')
+      .select('COUNT(DISTINCT composicao_familiar.id) as count')
+      .where('solicitacao.status = :status', { status: StatusSolicitacao.APROVADA });
     
+    // Aplicar filtros dinâmicos, incluindo status se fornecido
+    if (filtros && !this.filtrosEstaoVazios(filtros)) {
+      FiltrosQueryHelper.aplicarFiltrosSolicitacao(pessoasImpactadasQuery, filtros);
+    } else {
+      // Se não há filtros, aplica filtro padrão para solicitações aprovadas
+      pessoasImpactadasQuery.andWhere('solicitacao.status = :status', {
+        status: StatusSolicitacao.APROVADA,
+      });
+    }
+    
+    // Contar famílias beneficiadas
     const familiasBeneficiadas = await familiasBeneficiadasQuery.getCount();
     
-    this.logger.debug('[METRICS-DEBUG] Resultado famílias beneficiadas:', {
-      total: familiasBeneficiadas,
-      contextType: context?.tipo
-    });
-
-    // Calcular pessoas impactadas (assumindo média de 3 pessoas por família)
-    const pessoasImpactadas = familiasBeneficiadas * 3;
+    // Contar pessoas impactadas
+    const pessoasImpactadasResult = await pessoasImpactadasQuery.getRawOne();
+    
+    // Calcular pessoas impactadas
+    const pessoasImpactadas = parseInt(pessoasImpactadasResult?.count) || 0;
 
     // Contar bairros impactados com escopo aplicado
     const bairrosQuery = this.createScopedSolicitacaoQueryBuilder('solicitacao');
@@ -372,20 +375,9 @@ export class MetricasDashboardService {
       FiltrosQueryHelper.aplicarFiltrosSolicitacao(bairrosQuery, filtros);
     }
     
-    // Log da query de bairros
-    this.logger.debug('[METRICS-DEBUG] Query bairros impactados:', {
-      sql: bairrosQuery.getQuery(),
-      parameters: bairrosQuery.getParameters()
-    });
-    
     const bairrosResult = await bairrosQuery.getRawOne();
-    
     const bairrosImpactados = parseInt(bairrosResult?.count) || 0;
     
-    this.logger.debug('[METRICS-DEBUG] Resultado bairros impactados:', {
-      total: bairrosImpactados,
-      contextType: context?.tipo
-    });
 
     // Calcular investimento total com escopo aplicado
     const investimentoResult = await this.createScopedPagamentoQueryBuilder('pagamento')
@@ -829,8 +821,15 @@ export class MetricasDashboardService {
       .getRawOne()
       .then(result => parseInt(result.count) || 0);
 
-    // Concessões judicializadas (assumindo campo específico)
-    const concessoesJudicializadas = 8; // Mock - implementar consulta real
+    // Concessões judicializadas - consulta real usando determinacaoJudicialFlag
+    const concessoesJudicializadas = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .innerJoin('solicitacao.concessao', 'concessao')
+      .where('concessao.status = :status', { status: StatusConcessao.ATIVO })
+      .andWhere('concessao.dataInicio >= :dataLimite', { dataLimite })
+      .andWhere('concessao.determinacaoJudicialFlag = :isJudicial', { isJudicial: true })
+      .select('COUNT(DISTINCT concessao.id)', 'count')
+      .getRawOne()
+      .then(result => parseInt(result.count) || 0);
 
     return {
       novos_beneficiarios: novosBeneficiarios,
@@ -882,13 +881,104 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<GestaoOperacionalPerformance> {
-    // Implementação mock - deve ser substituída por consultas reais
-    return {
-      tempo_medio_solicitacao: 5.2,
-      tempo_medio_analise: 3.5,
-      solicitacoes_por_dia: 45,
-      concessoes_por_dia: 38,
-    };
+    try {
+      // Definir período de análise (últimos 30 dias se não especificado)
+      const dataFim = new Date();
+      const dataInicio = new Date(dataLimite);
+      const diasNoPeriodo = Math.ceil((dataFim.getTime() - dataInicio.getTime()) / (1000 * 60 * 60 * 24));
+
+      // 1. Calcular tempo médio de solicitação (da abertura até aprovação)
+      const queryTempoSolicitacao = this.createScopedSolicitacaoQueryBuilder('s')
+        .select('AVG(EXTRACT(EPOCH FROM (s.data_aprovacao - s.data_abertura)) / 86400)', 'tempo_medio_dias')
+        .where('s.data_aprovacao IS NOT NULL')
+        .andWhere('s.data_abertura IS NOT NULL')
+        .andWhere('s.data_abertura >= :dataInicio', { dataInicio })
+        .andWhere('s.data_abertura <= :dataFim', { dataFim });
+
+      if (filtros && !this.filtrosEstaoVazios(filtros)) {
+        FiltrosQueryHelper.aplicarFiltroPeriodo(queryTempoSolicitacao, filtros, 's.created_at');
+        FiltrosQueryHelper.aplicarFiltroUnidade(queryTempoSolicitacao, filtros, 's');
+        FiltrosQueryHelper.aplicarFiltroBeneficio(queryTempoSolicitacao, filtros, 's');
+        FiltrosQueryHelper.aplicarFiltroStatus(queryTempoSolicitacao, filtros, 's');
+        FiltrosQueryHelper.aplicarFiltroUsuario(queryTempoSolicitacao, filtros, 's');
+      }
+
+      const resultadoTempoSolicitacao = await queryTempoSolicitacao.getRawOne();
+      const tempoMedioSolicitacao = parseFloat(resultadoTempoSolicitacao?.tempo_medio_dias || '0');
+
+      // 2. Calcular tempo médio de análise (assumindo que temos campo data_inicio_analise)
+      const queryTempoAnalise = this.createScopedSolicitacaoQueryBuilder('s')
+        .select('AVG(EXTRACT(EPOCH FROM (s.data_aprovacao - s.data_abertura)) / 86400)', 'tempo_medio_analise')
+        .where('s.data_aprovacao IS NOT NULL')
+        .andWhere('s.data_abertura IS NOT NULL')
+        .andWhere('s.status = :status', { status: StatusSolicitacao.APROVADA })
+        .andWhere('s.data_abertura >= :dataInicio', { dataInicio })
+        .andWhere('s.data_abertura <= :dataFim', { dataFim });
+
+      if (filtros && !this.filtrosEstaoVazios(filtros)) {
+        FiltrosQueryHelper.aplicarFiltroPeriodo(queryTempoAnalise, filtros, 's.created_at');
+        FiltrosQueryHelper.aplicarFiltroUnidade(queryTempoAnalise, filtros, 's');
+        FiltrosQueryHelper.aplicarFiltroBeneficio(queryTempoAnalise, filtros, 's');
+        FiltrosQueryHelper.aplicarFiltroStatus(queryTempoAnalise, filtros, 's');
+        FiltrosQueryHelper.aplicarFiltroUsuario(queryTempoAnalise, filtros, 's');
+      }
+
+      const resultadoTempoAnalise = await queryTempoAnalise.getRawOne();
+      const tempoMedioAnalise = parseFloat(resultadoTempoAnalise?.tempo_medio_analise || '0');
+
+      // 3. Calcular solicitações por dia
+      const querySolicitacoesPorDia = this.createScopedSolicitacaoQueryBuilder('s')
+        .select('COUNT(*)', 'total_solicitacoes')
+        .where('s.data_abertura >= :dataInicio', { dataInicio })
+        .andWhere('s.data_abertura <= :dataFim', { dataFim });
+
+      if (filtros && !this.filtrosEstaoVazios(filtros)) {
+        FiltrosQueryHelper.aplicarFiltroPeriodo(querySolicitacoesPorDia, filtros, 's.created_at');
+        FiltrosQueryHelper.aplicarFiltroUnidade(querySolicitacoesPorDia, filtros, 's');
+        FiltrosQueryHelper.aplicarFiltroBeneficio(querySolicitacoesPorDia, filtros, 's');
+        FiltrosQueryHelper.aplicarFiltroStatus(querySolicitacoesPorDia, filtros, 's');
+        FiltrosQueryHelper.aplicarFiltroUsuario(querySolicitacoesPorDia, filtros, 's');
+      }
+
+      const resultadoSolicitacoes = await querySolicitacoesPorDia.getRawOne();
+      const totalSolicitacoes = parseInt(resultadoSolicitacoes?.total_solicitacoes || '0');
+      const solicitacoesPorDia = diasNoPeriodo > 0 ? Math.round((totalSolicitacoes / diasNoPeriodo) * 100) / 100 : 0;
+
+      // 4. Calcular concessões por dia através das solicitações aprovadas
+      const queryConcessoesPorDia = this.createScopedSolicitacaoQueryBuilder('s')
+        .select('COUNT(*)', 'total_concessoes')
+        .where('s.status = :status', { status: StatusSolicitacao.APROVADA })
+        .andWhere('s.data_aprovacao >= :dataInicio', { dataInicio })
+        .andWhere('s.data_aprovacao <= :dataFim', { dataFim });
+
+      if (filtros && !this.filtrosEstaoVazios(filtros)) {
+        FiltrosQueryHelper.aplicarFiltroPeriodo(queryConcessoesPorDia, filtros, 's.created_at');
+        FiltrosQueryHelper.aplicarFiltroUnidade(queryConcessoesPorDia, filtros, 's');
+        FiltrosQueryHelper.aplicarFiltroBeneficio(queryConcessoesPorDia, filtros, 's');
+        FiltrosQueryHelper.aplicarFiltroStatus(queryConcessoesPorDia, filtros, 's');
+        FiltrosQueryHelper.aplicarFiltroUsuario(queryConcessoesPorDia, filtros, 's');
+      }
+
+      const resultadoConcessoes = await queryConcessoesPorDia.getRawOne();
+      const totalConcessoes = parseInt(resultadoConcessoes?.total_concessoes || '0');
+      const concessoesPorDia = diasNoPeriodo > 0 ? Math.round((totalConcessoes / diasNoPeriodo) * 100) / 100 : 0;
+
+      return {
+        tempo_medio_solicitacao: Math.round(tempoMedioSolicitacao * 100) / 100,
+        tempo_medio_analise: Math.round(tempoMedioAnalise * 100) / 100,
+        solicitacoes_por_dia: solicitacoesPorDia,
+        concessoes_por_dia: concessoesPorDia,
+      };
+    } catch (error) {
+      this.logger.error('Erro ao calcular performance operacional:', error);
+      // Retornar valores zerados em caso de erro para evitar quebra do dashboard
+      return {
+        tempo_medio_solicitacao: 0,
+        tempo_medio_analise: 0,
+        solicitacoes_por_dia: 0,
+        concessoes_por_dia: 0,
+      };
+    }
   }
 
   /**
@@ -962,51 +1052,77 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<EvolucaoConcessoesItem[]> {
-    // Implementação mock - deve ser substituída por consulta real
-    return [
-      {
-        mes: 'Jan/2024',
-        aluguel_social: 25,
-        cesta_basica: 18,
-        beneficio_funeral: 3,
-        beneficio_natalidade: 1,
-      },
-      {
-        mes: 'Fev/2024',
-        aluguel_social: 28,
-        cesta_basica: 20,
-        beneficio_funeral: 4,
-        beneficio_natalidade: 1,
-      },
-      {
-        mes: 'Mar/2024',
-        aluguel_social: 30,
-        cesta_basica: 22,
-        beneficio_funeral: 3,
-        beneficio_natalidade: 2,
-      },
-      {
-        mes: 'Abr/2024',
-        aluguel_social: 32,
-        cesta_basica: 24,
-        beneficio_funeral: 4,
-        beneficio_natalidade: 1,
-      },
-      {
-        mes: 'Mai/2024',
-        aluguel_social: 35,
-        cesta_basica: 26,
-        beneficio_funeral: 3,
-        beneficio_natalidade: 2,
-      },
-      {
-        mes: 'Jun/2024',
-        aluguel_social: 38,
-        cesta_basica: 28,
-        beneficio_funeral: 4,
-        beneficio_natalidade: 1,
-      },
-    ];
+    // Consulta real para evolução de concessões por mês e tipo de benefício
+    const queryBuilder = this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .innerJoin('solicitacao.concessao', 'concessao')
+      .innerJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
+      .where('concessao.status = :status', { status: StatusConcessao.ATIVO })
+      .andWhere('concessao.dataInicio >= :dataLimite', { dataLimite })
+      .select([
+        "TO_CHAR(concessao.dataInicio, 'Mon/YYYY') as mes",
+        'tipo_beneficio.codigo as tipo_codigo',
+        'COUNT(DISTINCT concessao.id) as quantidade',
+      ])
+      .groupBy("TO_CHAR(concessao.dataInicio, 'Mon/YYYY'), tipo_beneficio.codigo")
+      .orderBy("TO_CHAR(concessao.dataInicio, 'Mon/YYYY')");
+
+    // Aplicar filtros avançados se fornecidos
+    if (filtros) {
+        FiltrosQueryHelper.aplicarFiltroPeriodo(queryBuilder, filtros, 'concessao.dataInicio');
+        FiltrosQueryHelper.aplicarFiltroUnidade(queryBuilder, filtros, 'concessao');
+        FiltrosQueryHelper.aplicarFiltroBeneficio(queryBuilder, filtros, 'concessao');
+        FiltrosQueryHelper.aplicarFiltroStatus(queryBuilder, filtros, 'concessao');
+        FiltrosQueryHelper.aplicarFiltroUsuario(queryBuilder, filtros, 'concessao');
+      }
+
+    const resultados = await queryBuilder.getRawMany();
+
+    // Agrupar resultados por mês
+    const evolucaoPorMes = new Map<string, EvolucaoConcessoesItem>();
+
+    resultados.forEach((resultado) => {
+      const mes = resultado.mes;
+      const tipoCodigo = resultado.tipo_codigo;
+      const quantidade = parseInt(resultado.quantidade) || 0;
+
+      if (!evolucaoPorMes.has(mes)) {
+        evolucaoPorMes.set(mes, {
+          mes,
+          aluguel_social: 0,
+          cesta_basica: 0,
+          beneficio_funeral: 0,
+          beneficio_natalidade: 0,
+        });
+      }
+
+      const evolucaoMes = evolucaoPorMes.get(mes)!;
+
+      // Mapear códigos de tipo de benefício para campos da resposta
+      switch (tipoCodigo) {
+        case 'aluguel-social':
+        case 'ALUGUEL_SOCIAL':
+          evolucaoMes.aluguel_social = quantidade;
+          break;
+        case 'cesta-basica':
+        case 'CESTA_BASICA':
+          evolucaoMes.cesta_basica = quantidade;
+          break;
+        case 'funeral':
+        case 'FUNERAL':
+        case 'ataude':
+        case 'ATAUDE':
+        case 'BENEFICIO_FUNERAL':
+          evolucaoMes.beneficio_funeral = quantidade;
+          break;
+        case 'natalidade':
+        case 'NATALIDADE':
+        case 'BENEFICIO_NATALIDADE':
+          evolucaoMes.beneficio_natalidade = quantidade;
+          break;
+      }
+    });
+
+    return Array.from(evolucaoPorMes.values());
   }
 
   /**
@@ -1016,16 +1132,67 @@ export class MetricasDashboardService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<SolicitacoesDiaSemanaItem[]> {
-    // Implementação mock - deve ser substituída por consulta real
-    return [
-      { dia: 'Segunda', quantidade: 45 },
-      { dia: 'Terça', quantidade: 52 },
-      { dia: 'Quarta', quantidade: 48 },
-      { dia: 'Quinta', quantidade: 55 },
-      { dia: 'Sexta', quantidade: 50 },
-      { dia: 'Sábado', quantidade: 25 },
-      { dia: 'Domingo', quantidade: 12 },
+    // Consulta real para solicitações por dia da semana
+    const queryBuilder = this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .where('solicitacao.created_at >= :dataLimite', { dataLimite })
+      .select([
+        "EXTRACT(DOW FROM solicitacao.created_at) as dia_numero",
+        'COUNT(DISTINCT solicitacao.id) as quantidade',
+      ])
+      .groupBy("EXTRACT(DOW FROM solicitacao.created_at)")
+      .orderBy("EXTRACT(DOW FROM solicitacao.created_at)");
+
+    // Aplicar filtros avançados se fornecidos
+    if (filtros) {
+        FiltrosQueryHelper.aplicarFiltroPeriodo(queryBuilder, filtros, 'solicitacao.created_at');
+        FiltrosQueryHelper.aplicarFiltroUnidade(queryBuilder, filtros, 'solicitacao');
+        FiltrosQueryHelper.aplicarFiltroBeneficio(queryBuilder, filtros, 'solicitacao');
+        FiltrosQueryHelper.aplicarFiltroStatus(queryBuilder, filtros, 'solicitacao');
+        FiltrosQueryHelper.aplicarFiltroUsuario(queryBuilder, filtros, 'solicitacao');
+      }
+
+    const resultados = await queryBuilder.getRawMany();
+
+    // Mapear números dos dias para nomes em português
+    const diasSemana = {
+      0: 'Domingo',
+      1: 'Segunda',
+      2: 'Terça',
+      3: 'Quarta',
+      4: 'Quinta',
+      5: 'Sexta',
+      6: 'Sábado',
+    };
+
+    // Criar array com todos os dias da semana inicializados com 0
+    const solicitacoesPorDia = Object.entries(diasSemana).map(([numero, nome]) => ({
+      dia: nome,
+      quantidade: 0,
+    }));
+
+    // Preencher com os dados reais da consulta
+    resultados.forEach((resultado) => {
+      const diaNumero = parseInt(resultado.dia_numero);
+      const quantidade = parseInt(resultado.quantidade) || 0;
+      const diaIndex = diaNumero;
+      
+      if (solicitacoesPorDia[diaIndex]) {
+        solicitacoesPorDia[diaIndex].quantidade = quantidade;
+      }
+    });
+
+    // Reordenar para começar na segunda-feira
+    const ordenado = [
+      solicitacoesPorDia[1], // Segunda
+      solicitacoesPorDia[2], // Terça
+      solicitacoesPorDia[3], // Quarta
+      solicitacoesPorDia[4], // Quinta
+      solicitacoesPorDia[5], // Sexta
+      solicitacoesPorDia[6], // Sábado
+      solicitacoesPorDia[0], // Domingo
     ];
+
+    return ordenado;
   }
 
   /**
@@ -1060,7 +1227,11 @@ export class MetricasDashboardService {
       .orderBy('COUNT(solicitacao.id)', 'DESC');
     
     if (filtros) {
-      FiltrosQueryHelper.aplicarFiltrosSolicitacao(resultadoQuery, filtros);
+      FiltrosQueryHelper.aplicarFiltroPeriodo(resultadoQuery, filtros, 'solicitacao.created_at');
+      FiltrosQueryHelper.aplicarFiltroUnidade(resultadoQuery, filtros, 'solicitacao');
+      FiltrosQueryHelper.aplicarFiltroBeneficio(resultadoQuery, filtros, 'solicitacao');
+      FiltrosQueryHelper.aplicarFiltroStatus(resultadoQuery, filtros, 'solicitacao');
+      FiltrosQueryHelper.aplicarFiltroUsuario(resultadoQuery, filtros, 'solicitacao');
     }
     
     const resultado = await resultadoQuery.getRawMany();

@@ -18,7 +18,6 @@ import { MetricasDashboardService } from '../services/metricas-dashboard.service
 import { PermissionGuard } from '@/auth/guards/permission.guard';
 import { RequiresPermission } from '@/auth/decorators/requires-permission.decorator';
 import { MetricasFiltrosAvancadosDto } from '../dto/metricas-filtros-avancados.dto';
-import { Public } from '@/auth';
 import { TipoEscopo } from '@/entities/user-permission.entity';
 
 @ApiTags('Dashboard de Métricas')
