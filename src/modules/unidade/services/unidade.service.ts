@@ -84,6 +84,8 @@ export class UnidadeService {
         page,
         limit,
         pages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
+        hasPrev: page > 1,
       },
     };
   }
