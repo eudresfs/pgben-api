@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: ['main', 'development']
+    branches: ['main', 'develop']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -12,8 +12,8 @@ env:
   CPR_ADDR: cpr.kemosoft.com.br
   K8S_NAMESPACE: consigmais
   # Adiciona sufixo -dev para a branch development
-  ENV_SUFFIX: ${{ github.ref == 'refs/heads/development' && '-dev' || '' }}
-  DEPLOYMENT_NAME: ${{ github.event.repository.name }}${{ github.ref == 'refs/heads/development' && '-dev' || '' }}
+  ENV_SUFFIX: ${{ github.ref == 'refs/heads/develop' && '-dev' || '' }}
+  DEPLOYMENT_NAME: ${{ github.event.repository.name }}${{ github.ref == 'refs/heads/develop' && '-dev' || '' }}
   CONTAINER_PATH: cpr.kemosoft.com.br/${{ github.event.repository.name }}:${{ github.sha }}
   CONTAINER_NAME: ${{ github.event.repository.name }}
 
