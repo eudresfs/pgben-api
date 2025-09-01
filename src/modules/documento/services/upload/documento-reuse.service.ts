@@ -11,6 +11,7 @@ import {
 import { AuditEventEmitter } from '../../../auditoria/events/emitters/audit-event.emitter';
 import { AuditContextHolder } from '../../../../common/interceptors/audit-context.interceptor';
 import { AuditEventType } from '../../../auditoria/events/types/audit-event.types';
+import { SYSTEM_USER_UUID } from '../../../../shared/constants/system.constants';
 
 /**
  * Serviço especializado para verificação de reutilização de documentos
@@ -82,7 +83,7 @@ export class DocumentoReuseService implements IDocumentoReuseService {
     };
 
     // Auditoria - Verificação de reutilização
-    const auditContext = this.getAuditContext('system');
+    const auditContext = this.getAuditContext(SYSTEM_USER_UUID);
     this.auditEventEmitter.emitSecurityEvent(
       AuditEventType.SUSPICIOUS_ACTIVITY,
       auditContext.userId,

@@ -4,6 +4,7 @@ import { PagamentoEventListener } from './pagamento-event.listener';
 import { NotificacaoService } from '../../notificacao/services/notificacao.service';
 import { PagamentoEventos } from '../events/pagamento-events';
 import { StatusPagamento } from '../../../enums/status-pagamento.enum';
+import { SYSTEM_USER_UUID } from '../../../shared/constants/system.constants';
 
 describe('PagamentoEventListener', () => {
   let listener: PagamentoEventListener;
@@ -96,7 +97,7 @@ describe('PagamentoEventListener', () => {
         motivo: 'Dados bancários inválidos',
         data_falha: new Date(),
         codigo_erro: 'ERR001',
-        failed_by: 'system',
+        failed_by: SYSTEM_USER_UUID,
       };
 
       await listener.handlePagamentoFailedEvent(event);

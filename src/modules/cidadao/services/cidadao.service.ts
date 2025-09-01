@@ -31,6 +31,7 @@ import {
 } from '../dto/portal-transparencia-response.dto';
 import { EnhancedCacheService } from '../../../shared/cache/enhanced-cache.service';
 import { CidadaoFiltrosAvancadosDto, CidadaoFiltrosResponseDto } from '../dto/cidadao-filtros-avancados.dto';
+import { SYSTEM_USER_UUID } from '../../../shared/constants/system.constants';
 
 @Injectable()
 export class CidadaoService {
@@ -149,7 +150,7 @@ export class CidadaoService {
         AuditEventType.SENSITIVE_DATA_ACCESSED,
         'Cidadao',
         cidadao.id,
-        userId || 'system',
+        userId || SYSTEM_USER_UUID,
         ['cpf'],
         'Consulta por CPF - Base Local',
       );
@@ -204,7 +205,7 @@ export class CidadaoService {
       AuditEventType.SENSITIVE_DATA_ACCESSED,
       'Cidadao',
       cidadao.id,
-      userId || 'system',
+      userId || SYSTEM_USER_UUID,
       ['nis'],
       'Consulta por NIS',
     );
@@ -297,7 +298,7 @@ export class CidadaoService {
         AuditEventType.SENSITIVE_DATA_ACCESSED,
         'PortalTransparencia',
         cpfClean,
-        userId || 'system',
+        userId || SYSTEM_USER_UUID,
         ['cpf', 'nome', 'nis', 'naturalidade'],
         'Consulta no Portal da Transparência',
       );
@@ -482,7 +483,7 @@ private async consultarNovoBolsaFamiliaSacado(
       AuditEventType.SENSITIVE_DATA_ACCESSED,
       'PortalTransparencia-NovoBolsaFamilia',
       nis,
-      userId || 'system',
+      userId || SYSTEM_USER_UUID,
       ['nis', 'nome', 'cpf', 'valorSaque'],
       'Consulta do Novo Bolsa Família sacado por NIS',
     );

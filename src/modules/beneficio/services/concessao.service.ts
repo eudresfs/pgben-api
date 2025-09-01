@@ -1229,7 +1229,7 @@ export class ConcessaoService {
             statusAnterior,
             statusNovo: StatusConcessao.CESSADO,
             motivo: 'Encerramento automático - todos os pagamentos liberados',
-            alteradoPor: 'SISTEMA',
+            alteradoPor: SYSTEM_USER_UUID,
             dataAlteracao: new Date(),
           });
         } catch (historicoError) {

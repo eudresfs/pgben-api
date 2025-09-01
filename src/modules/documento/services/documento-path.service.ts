@@ -3,6 +3,7 @@ import { LoggingService } from '../../../shared/logging/logging.service';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { AuditContextHolder } from '../../../common/interceptors/audit-context.interceptor';
 import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
+import { SYSTEM_USER_UUID } from '../../../shared/constants/system.constants';
 
 export interface DocumentoPathInfo {
   cidadaoId: string;
@@ -308,7 +309,7 @@ export class DocumentoPathService {
     return {
       userAgent: context?.userAgent || 'unknown',
       ipAddress: context?.ip || 'unknown',
-      userId: context?.userId || 'system',
+      userId: context?.userId || SYSTEM_USER_UUID,
     };
   }
 }

@@ -138,12 +138,13 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect('cidadao.contatos', 'contato');
       query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
+      query.leftJoinAndSelect('cidadao.info_bancaria', 'info_bancaria');
       query.leftJoinAndSelect(
         'cidadao.composicao_familiar',
         'composicao_familiar',
       );
     } else {
-      // Sempre incluir unidade, contatos e apenas o último endereço
+      // Sempre incluir unidade e apenas o último endereço
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect(
         'cidadao.enderecos',
@@ -261,6 +262,7 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect('cidadao.contatos', 'contato');
       query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
+      query.leftJoinAndSelect('cidadao.info_bancaria', 'info_bancaria');
       query.leftJoinAndSelect(
         'cidadao.composicao_familiar',
         'composicao_familiar',
@@ -298,12 +300,14 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect('cidadao.contatos', 'contato');
       query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
+      query.leftJoinAndSelect('cidadao.info_bancaria', 'info_bancaria');
       query.leftJoinAndSelect(
         'cidadao.composicao_familiar',
         'composicao_familiar',
       );
     } else {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
+      query.leftJoinAndSelect('cidadao.info_bancaria', 'info_bancaria');
       query.leftJoinAndSelect(
         'cidadao.enderecos',
         'endereco',
@@ -335,6 +339,7 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect('cidadao.contatos', 'contato');
       query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
+      query.leftJoinAndSelect('cidadao.info_bancaria', 'info_bancaria');
       query.leftJoinAndSelect(
         'cidadao.composicao_familiar',
         'composicao_familiar',
@@ -544,6 +549,7 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect('cidadao.contatos', 'contato');
       query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
+      query.leftJoinAndSelect('cidadao.info_bancaria', 'info_bancaria');
       query.leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar');
       query.leftJoinAndSelect('cidadao.solicitacoes', 'solicitacoes');
     } else {
