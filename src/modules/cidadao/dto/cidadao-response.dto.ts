@@ -3,6 +3,9 @@ import { Expose, Transform, Type } from 'class-transformer';
 import { Sexo } from '../../../enums/sexo.enum';
 import { ParentescoEnum } from '../../../enums/parentesco.enum';
 import { UnidadeResponseDto } from '@/modules/unidade/dto/unidade-response.dto';
+import { NacionalidadeValidator } from '../validators/nacionalidade-validator';
+import { IsString, IsOptional, MaxLength, Validate } from 'class-validator';
+import { InfoBancariaResponseDto } from './info-bancaria-response.dto';
 
 /**
  * DTO de resposta para contatos do cidadão
@@ -323,6 +326,14 @@ export class CidadaoResponseDto {
   @Expose()
   nome: string;
 
+  @ApiPropertyOptional({
+    example: 'Maria Santos',
+    description: 'Nome social do cidadão (usado para pessoas trans)',
+    required: false,
+  })
+  @Expose()
+  nome_social: string;
+
   @ApiProperty({
     example: '123.456.789-00',
     description: 'CPF do cidadão',
@@ -425,6 +436,14 @@ export class CidadaoResponseDto {
   })
   @Expose()
   naturalidade: string;
+
+  @MaxLength(50, { message: 'Nacionalidade deve ter no máximo 50 caracteres' })
+  @ApiProperty({
+    example: 'Brasileira',
+    description: 'Nacionalidade do cidadão',
+  })
+  @Expose()
+  nacionalidade: string;
 
   @ApiProperty({
     example: 'Solteiro',
@@ -561,6 +580,14 @@ export class CidadaoResponseDto {
   })
   @Expose()
   encontrado_por_composicao_familiar?: boolean;
+
+  @ApiProperty({
+    description: 'Informações bancárias do cidadão',
+    type: InfoBancariaResponseDto,
+  })
+  @Expose()
+  @Type(() => InfoBancariaResponseDto)
+  info_bancaria?: InfoBancariaResponseDto;
 }
 
 export class CidadaoPaginatedResponseDto {

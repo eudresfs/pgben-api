@@ -17,6 +17,7 @@ import {
 import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { AuditContextHolder } from '../../../common/interceptors/audit-context.interceptor';
+import { SYSTEM_USER_UUID } from '../../../shared/constants/system.constants';
 
 /**
  * Resultado da validação MIME
@@ -408,7 +409,7 @@ export class MimeValidationService {
     return {
       userAgent: context?.userAgent || 'unknown',
       ipAddress: context?.ip || 'unknown',
-      userId: context?.userId || 'system',
+      userId: context?.userId || SYSTEM_USER_UUID,
     };
   }
 }

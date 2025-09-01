@@ -8,6 +8,7 @@ import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { LoggingService } from '../logging.service';
 import { Reflector } from '@nestjs/core';
+import { SYSTEM_USER_UUID } from '../../constants/system.constants';
 
 /**
  * Metadata key para operações de banco
@@ -60,7 +61,7 @@ export class DatabaseLoggerInterceptor implements NestInterceptor {
     const startTime = Date.now();
     const request = context.switchToHttp()?.getRequest();
     const requestId = request?.requestId;
-    const userId = request?.user?.id || 'system';
+    const userId = request?.user?.id || SYSTEM_USER_UUID;
 
     // Log de início da operação
     this.loggingService.debug(
@@ -177,7 +178,7 @@ export class TypeORMLoggerInterceptor implements NestInterceptor {
               entity: className,
               duration,
               requestId: request?.requestId,
-              userId: request?.user?.id || 'system',
+              userId: request?.user?.id || SYSTEM_USER_UUID,
               resultCount: this.getResultCount(result),
             });
           }
@@ -194,7 +195,7 @@ export class TypeORMLoggerInterceptor implements NestInterceptor {
               methodName,
               duration,
               requestId: request?.requestId,
-              userId: request?.user?.id || 'system',
+              userId: request?.user?.id || SYSTEM_USER_UUID,
             },
           );
         },

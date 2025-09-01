@@ -348,10 +348,6 @@ export class UsuarioController {
    * Obtém o perfil do usuário atual
    */
   @Get('me')
-  @RequiresPermission({
-    permissionName: 'usuario.perfil.visualizar',
-    scopeType: ScopeType.SELF,
-  })
   @AuditSensitiveAccess('Usuario', 'Acesso ao perfil do usuário')
   @ApiOperation({ 
     summary: 'Obter perfil do usuário autenticado',

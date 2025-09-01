@@ -4,6 +4,7 @@ import {
   ExecutionContext,
 } from '@nestjs/common';
 import { LoggingService } from '../logging.service';
+import { SYSTEM_USER_UUID } from '../../constants/system.constants';
 
 /**
  * Metadata key para o decorator de logging
@@ -160,7 +161,7 @@ export function LogAudit(resource: string) {
       const logger = new LoggingService(null as any);
 
       // Tentar extrair userId dos argumentos ou contexto
-      const userId = this.extractUserId(args) || 'system';
+      const userId = this.extractUserId(args) || SYSTEM_USER_UUID;
 
       try {
         const result = await originalMethod.apply(this, args);

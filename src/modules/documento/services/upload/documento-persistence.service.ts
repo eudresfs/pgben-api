@@ -12,6 +12,7 @@ import { DocumentoUrlService } from '../documento-url.service';
 import { AuditEventEmitter } from '../../../auditoria/events/emitters/audit-event.emitter';
 import { AuditContextHolder } from '../../../../common/interceptors/audit-context.interceptor';
 import { AuditEventType } from '../../../auditoria/events/types/audit-event.types';
+import { SYSTEM_USER_UUID } from '../../../../shared/constants/system.constants';
 
 /**
  * Serviço especializado para persistência de documentos
@@ -369,7 +370,7 @@ export class DocumentoPersistenceService
     return {
       userAgent: context?.userAgent || 'unknown',
       ipAddress: context?.ip || 'unknown',
-      userId: context?.userId || 'system',
+      userId: context?.userId || SYSTEM_USER_UUID,
     };
   }
 }

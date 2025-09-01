@@ -97,13 +97,15 @@ export class UnidadeController {
     @Query('tipo') tipo?: string,
     @Query('status') status?: string,
   ) {
-    return this.unidadeService.findAll({
+    const unidades = this.unidadeService.findAll({
       page: page ? +page : undefined,
       limit: limit ? +limit : undefined,
       search,
       tipo,
       status,
     });
+
+    return unidades
   }
 
   /**

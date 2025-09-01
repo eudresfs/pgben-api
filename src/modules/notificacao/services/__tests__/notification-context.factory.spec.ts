@@ -6,6 +6,7 @@ import {
   NotificationType,
   PagamentoEventType
 } from '../../interfaces/base-notification.interface';
+import { SYSTEM_USER_UUID } from '../../../../shared/constants/system.constants';
 
 describe('NotificationContextFactory', () => {
   let factory: NotificationContextFactory;
@@ -438,7 +439,7 @@ describe('NotificationContextFactory', () => {
       );
 
       // Assert
-      expect(contexto.user_id).toBe('system'); // Valor padrão
+      expect(contexto.user_id).toBe(SYSTEM_USER_UUID); // Valor padrão
     });
   });
 
