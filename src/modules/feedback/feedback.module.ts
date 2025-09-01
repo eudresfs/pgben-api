@@ -46,7 +46,7 @@ import { FileUploadValidator, defaultFileValidator } from './validators';
     ]),
     
     // Importar AuthModule
-    AuthModule,
+    // AuthModule,
 
     // Configuração do Multer para upload de arquivos
     MulterModule.registerAsync({

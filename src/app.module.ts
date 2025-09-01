@@ -185,7 +185,7 @@ import { CommonModule } from './common/common.module';
     // Módulo de upload facilitado
     EasyUploadModule,
     // Módulo de feedback
-    FeedbackModule,
+    // FeedbackModule,
   ],
   controllers: [AppController],
   providers: [

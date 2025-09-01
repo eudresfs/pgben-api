@@ -9,7 +9,7 @@ import {
   HealthIndicatorResult,
   HealthIndicatorStatus,
 } from '@nestjs/terminus';
-import { Public } from '../../auth/decorators/public.decorator';
+import { Public } from '../decorators/public.decorator';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SWAGGER_TAGS } from '../configs/swagger/tags.config';
 import { HealthCheckService as AppHealthCheckService } from '../services/health-check.service';
