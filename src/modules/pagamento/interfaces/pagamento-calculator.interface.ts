@@ -11,6 +11,9 @@ export interface DadosPagamento {
   /** Data de início do benefício */
   dataInicio: Date;
 
+  /** Quantidade de parcelas */
+  quantidadeParcelas: number;
+
   /** Dados específicos do benefício (opcional) */
   dadosEspecificos?: any;
 }
@@ -96,6 +99,9 @@ export interface ConfiguracaoBeneficio {
 
   /** Dias para vencimento após liberação */
   diasParaVencimento: number;
+
+  /** Dia limite para liberação no mês vigente */
+  diaLimite: number;
 }
 
 /**

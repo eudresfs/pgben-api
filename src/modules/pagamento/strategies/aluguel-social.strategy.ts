@@ -14,8 +14,8 @@ import { FeriadoService } from '../../../shared/services/feriado.service';
  * Regras específicas:
  * - Parcelas mensais (30 dias)
  * - Quantidade baseada nos dados específicos ou padrão de 6 parcelas
- * - Liberação em 5 dias úteis
- * - Vencimento em 30 dias após liberação
+ * - Liberação: se dia >= 25, usar data atual; caso contrário, primeiro dia do mês seguinte
+ * - Vencimento em 10 dias úteis após liberação
  */
 @Injectable()
 export class AluguelSocialStrategy implements IBeneficioCalculatorStrategy {
@@ -26,9 +26,10 @@ export class AluguelSocialStrategy implements IBeneficioCalculatorStrategy {
     intervaloParcelas: 30,
     diasParaLiberacao: 5,
     diasParaVencimento: 10,
+    diaLimite: 25,
   };
 
-  constructor(private readonly feriadoService: FeriadoService) {}
+  constructor(private readonly feriadoService: FeriadoService) { }
 
   async calcular(dados: DadosPagamento): Promise<ResultadoCalculoPagamento> {
     // Determina quantidade de parcelas
@@ -48,6 +49,11 @@ export class AluguelSocialStrategy implements IBeneficioCalculatorStrategy {
   }
 
   private determinarQuantidadeParcelas(dados: DadosPagamento): number {
+    // Verifica se foi informada a quantidade de parcelas
+    if (dados.quantidadeParcelas) {
+      return dados.quantidadeParcelas;
+    }
+
     // Verifica se há dados específicos com quantidade de parcelas
     if (dados.dadosEspecificos?.quantidadeParcelas) {
       return dados.dadosEspecificos.quantidadeParcelas;
@@ -63,18 +69,33 @@ export class AluguelSocialStrategy implements IBeneficioCalculatorStrategy {
   }
 
   private async calcularDataLiberacao(dataInicio: Date): Promise<Date> {
-    return await this.feriadoService.adicionarDiasUteis(
-      dataInicio,
-      this.configuracao.diasParaLiberacao,
-    );
+    const diaAtual = dataInicio.getDate();
+    let dataLiberacao: Date;
+
+    // Se o dia atual for >= diaLimite (25), usar a data atual
+    if (diaAtual >= this.configuracao.diaLimite) {
+      dataLiberacao = new Date(dataInicio);
+    } else {
+      // Caso contrário, usar o primeiro dia do mês seguinte
+      const proximoMes = new Date(dataInicio);
+      proximoMes.setMonth(proximoMes.getMonth() + 1);
+      proximoMes.setDate(1);
+      dataLiberacao = proximoMes;
+    }
+
+    // Ajustar para o próximo dia útil
+    return await this.feriadoService.ajustarParaProximoDiaUtil(dataLiberacao);
   }
 
   private async calcularDataVencimento(dataLiberacao: Date): Promise<Date> {
     const dataVencimento = new Date(dataLiberacao);
-    dataVencimento.setDate(
-      dataVencimento.getDate() + this.configuracao.diasParaVencimento,
+
+    // Adicionar dias úteis à data de liberação
+    const dataComDiasUteis = await this.feriadoService.adicionarDiasUteis(
+      dataVencimento,
+      this.configuracao.diasParaVencimento,
     );
 
-    return await this.feriadoService.ajustarParaProximoDiaUtil(dataVencimento);
+    return await this.feriadoService.ajustarParaProximoDiaUtil(dataComDiasUteis);
   }
 }
