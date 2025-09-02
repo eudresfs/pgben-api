@@ -57,6 +57,8 @@ import { RequestContextHolder } from '../../common/services/request-context-hold
 
 // Módulos internos
 import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
+import { PagamentoModule } from '../pagamento/pagamento.module';
+import { CidadaoModule } from '../cidadao/cidadao.module';
 
 /**
  * Módulo responsável pelo monitoramento, observabilidade e análise de métricas do sistema
@@ -109,6 +111,8 @@ import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
 
     // Módulo de solicitação para acesso ao SolicitacaoRepository
     SolicitacaoModule,
+    PagamentoModule,
+    CidadaoModule,
   ],
 
   // Controladores para API

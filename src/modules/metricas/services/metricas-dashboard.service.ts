@@ -5,6 +5,7 @@ import { GestaoOperacionalData } from '../interfaces/gestao-operacional.interfac
 import { MetricasFiltrosAvancadosDto } from '../dto/metricas-filtros-avancados.dto';
 import { ImpactoSocialService } from './impacto-social.service';
 import { GestaoOperacionalService } from './gestao-operacional.service';
+import { RequestContext } from '@/shared/request-context/request-context.dto';
 
 /**
  * Serviço principal para métricas do dashboard
@@ -32,7 +33,9 @@ export class MetricasDashboardService {
    * @param filtros Filtros avançados opcionais para refinar os dados
    * @returns Dados completos de impacto social incluindo métricas, indicadores e gráficos
    */
-  async getImpactoSocial(filtros?: MetricasFiltrosAvancadosDto): Promise<ImpactoSocialData> {
+  async getImpactoSocial(
+    filtros?: MetricasFiltrosAvancadosDto,
+  ): Promise<ImpactoSocialData> {
     try {
       this.logger.log('Iniciando cálculo de métricas de impacto social');
       
@@ -52,7 +55,9 @@ export class MetricasDashboardService {
    * @param filtros Filtros avançados opcionais para refinar os dados
    * @returns Dados completos de gestão operacional incluindo métricas, performance e gráficos
    */
-  async getGestaoOperacional(filtros?: MetricasFiltrosAvancadosDto): Promise<GestaoOperacionalData> {
+  async getGestaoOperacional(
+    filtros?: MetricasFiltrosAvancadosDto,
+  ): Promise<GestaoOperacionalData> {
     try {
       this.logger.log('Iniciando cálculo de métricas de gestão operacional');
       

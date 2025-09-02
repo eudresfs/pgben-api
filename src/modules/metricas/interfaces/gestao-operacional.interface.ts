@@ -38,7 +38,7 @@ export interface EvolucaoConcessoesItem {
   mes: string;
   aluguel_social: number;
   cesta_basica: number;
-  beneficio_funeral: number;
+  beneficio_por_morte: number;
   beneficio_natalidade: number;
 }
 

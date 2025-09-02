@@ -46,7 +46,7 @@ import { FiltrosQueryHelper } from '../helpers/filtros-query.helper';
 @Injectable()
 export class ImpactoSocialService {
   private readonly logger = new Logger(ImpactoSocialService.name);
-  
+
   // Repositórios com escopo aplicado automaticamente
   private readonly solicitacaoScopedRepository: ScopedRepository<Solicitacao>;
   private readonly pagamentoScopedRepository: ScopedRepository<Pagamento>;
@@ -76,28 +76,28 @@ export class ImpactoSocialService {
       this.solicitacaoRepository.queryRunner,
       { strictMode: true, allowGlobalScope: false }
     );
-    
+
     this.pagamentoScopedRepository = new ScopedRepository(
       Pagamento,
       this.pagamentoRepository.manager,
       this.pagamentoRepository.queryRunner,
       { strictMode: true, allowGlobalScope: false }
     );
-    
+
     this.cidadaoScopedRepository = new ScopedRepository(
       Cidadao,
       this.cidadaoRepository.manager,
       this.cidadaoRepository.queryRunner,
       { strictMode: true, allowGlobalScope: false }
     );
-    
+
     this.enderecoScopedRepository = new ScopedRepository(
       Endereco,
       this.enderecoRepository.manager,
       this.enderecoRepository.queryRunner,
       { strictMode: true, allowGlobalScope: false }
     );
-    
+
     this.composicaoFamiliarScopedRepository = new ScopedRepository(
       ComposicaoFamiliar,
       this.composicaoFamiliarRepository.manager,
@@ -114,7 +114,7 @@ export class ImpactoSocialService {
    */
   async getImpactoSocial(filtros?: MetricasFiltrosAvancadosDto): Promise<ImpactoSocialData> {
     const context = RequestContextHolder.get();
-    
+
     // Garantir que o contexto seja preservado durante todas as operações assíncronas
     return RequestContextHolder.runAsync(context, async () => {
       // Normalizar e validar filtros
@@ -154,98 +154,99 @@ export class ImpactoSocialService {
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<ImpactoSocialMetricas> {
     const context = RequestContextHolder.get();
+    return RequestContextHolder.runAsync(context, async () => {
 
-    // Contar famílias beneficiadas com escopo aplicado
-    const familiasBeneficiadasQuery = this.solicitacaoScopedRepository
-      .createScopedQueryBuilder('solicitacao')
-      .where('solicitacao.status = :status', { status: StatusSolicitacao.APROVADA });
-    
-    // Aplicar filtros dinâmicos
-    if (filtros && !this.filtrosEstaoVazios(filtros)) {
-      FiltrosQueryHelper.aplicarFiltrosSolicitacao(familiasBeneficiadasQuery, filtros);
-    } else {
-      // Se não há filtros, aplica filtro padrão de data
-      familiasBeneficiadasQuery.andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite });
-    }
-    
-    // Contar pessoas impactadas através da composição familiar
-    const pessoasImpactadasQuery = this.solicitacaoScopedRepository
-      .createScopedQueryBuilder('solicitacao')
-      .leftJoin('solicitacao.beneficiario', 'beneficiario')
-      .leftJoin('beneficiario.composicao_familiar', 'composicao_familiar')
-      .select('COUNT(DISTINCT composicao_familiar.id)', 'count')
-      .where('solicitacao.status = :status', { status: StatusSolicitacao.APROVADA });
-    
-    // Aplicar filtros dinâmicos
-    if (filtros && !this.filtrosEstaoVazios(filtros)) {
-      FiltrosQueryHelper.aplicarFiltrosSolicitacao(pessoasImpactadasQuery, filtros);
-    } else {
-      pessoasImpactadasQuery.andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite });
-    }
-    
-    // Executar queries de contagem
-    const familiasBeneficiadas = await familiasBeneficiadasQuery.getCount();
-    const pessoasImpactadasResult = await pessoasImpactadasQuery.getRawOne();
-    const pessoasImpactadas = parseInt(pessoasImpactadasResult?.count) || 0;
+      // Contar famílias beneficiadas com escopo aplicado
+      const familiasBeneficiadasQuery = this.solicitacaoScopedRepository
+        .createScopedQueryBuilder('solicitacao')
+        .where('solicitacao.status = :status', { status: StatusSolicitacao.APROVADA });
 
-    // Contar bairros impactados com escopo aplicado
-    const bairrosResult = await this.executarQueryComTratamento(
-      async () => {
-        const bairrosQuery = this.solicitacaoScopedRepository
-          .createScopedQueryBuilder('solicitacao');
-        
-        // Aplicar joins baseado no escopo
-        if (context?.tipo === ScopeType.GLOBAL) {
-          bairrosQuery.innerJoin('solicitacao.beneficiario', 'beneficiario');
-        }
-        bairrosQuery.innerJoin('beneficiario.enderecos', 'endereco');
-        
-        bairrosQuery
-          .where('solicitacao.status = :status', { status: StatusSolicitacao.APROVADA })
-          .andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite })
-          .select('COUNT(DISTINCT endereco.bairro)', 'count');
-        
-        // Aplicar filtros padronizados
-        this.aplicarFiltrosPadrao(bairrosQuery, filtros, 'solicitacao');
-        
-        return bairrosQuery.getRawOne();
-      },
-      'contagem de bairros impactados'
-    );
-    
-    const bairrosImpactados = parseInt(bairrosResult?.count) || 0;
+      // Aplicar filtros dinâmicos
+      if (filtros && !this.filtrosEstaoVazios(filtros)) {
+        FiltrosQueryHelper.aplicarFiltrosSolicitacao(familiasBeneficiadasQuery, filtros);
+      } else {
+        // Se não há filtros, aplica filtro padrão de data
+        familiasBeneficiadasQuery.andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite });
+      }
 
-    // Calcular investimento total com escopo aplicado
-    const investimentoResult = await this.createScopedPagamentoQueryBuilder('pagamento')
-      .innerJoin('pagamento.solicitacao', 'solicitacao')
-      .where('pagamento.status IN (:...status)', {
-        status: [
-          StatusPagamentoEnum.PAGO,
-          StatusPagamentoEnum.LIBERADO,
-          StatusPagamentoEnum.CONFIRMADO,
-          StatusPagamentoEnum.RECEBIDO,
-        ],
-      })
-      .andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite })
-      .select('SUM(pagamento.valor)', 'total')
-      .getRawOne();
-    
-    const investimentoTotal = parseFloat(investimentoResult?.total) || 0;
+      // Contar pessoas impactadas através da composição familiar
+      const pessoasImpactadasQuery = this.solicitacaoScopedRepository
+        .createScopedQueryBuilder('solicitacao')
+        .leftJoin('solicitacao.beneficiario', 'beneficiario')
+        .leftJoin('beneficiario.composicao_familiar', 'composicao_familiar')
+        .select(
+          '(COUNT(DISTINCT beneficiario.id) + COUNT(DISTINCT composicao_familiar.id))',
+          'count',
+        )
+        .where('solicitacao.status = :status', { status: StatusSolicitacao.APROVADA });
 
-    const resultado = {
-      familias_beneficiadas: familiasBeneficiadas,
-      pessoas_impactadas: pessoasImpactadas,
-      bairros_impactados: bairrosImpactados,
-      investimento_total: investimentoTotal,
-    };
-    
-    this.logger.debug('[IMPACTO-SOCIAL-DEBUG] Métricas de impacto social calculadas:', {
-      resultado,
-      contextType: context?.tipo,
-      contextUnidadeId: context?.unidade_id
+      // Aplicar filtros dinâmicos
+      if (filtros && !this.filtrosEstaoVazios(filtros)) {
+        FiltrosQueryHelper.aplicarFiltrosSolicitacao(pessoasImpactadasQuery, filtros);
+      } else {
+        pessoasImpactadasQuery.andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite });
+      }
+
+      // Executar queries de contagem
+      const familiasBeneficiadas = await familiasBeneficiadasQuery.getCount();
+      const pessoasImpactadasResult = await pessoasImpactadasQuery.getRawOne();
+      const pessoasImpactadas = parseInt(pessoasImpactadasResult?.count) || 0;
+
+      // Contar bairros impactados com escopo aplicado
+      const bairrosResult = await this.executarQueryComTratamento(
+        async () => {
+          const bairrosQuery = this.solicitacaoScopedRepository
+            .createScopedQueryBuilder('solicitacao')
+            .innerJoin('solicitacao.beneficiario', 'beneficiario')
+            .innerJoin('beneficiario.enderecos', 'endereco');
+
+          bairrosQuery
+            .where('solicitacao.status = :status', { status: StatusSolicitacao.APROVADA })
+            .andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite })
+            .select('COUNT(DISTINCT endereco.bairro)', 'count');
+
+          // Aplicar filtros padronizados
+          this.aplicarFiltrosPadrao(bairrosQuery, filtros, 'solicitacao');
+
+          return bairrosQuery.getRawOne();
+        },
+        'contagem de bairros impactados'
+      );
+
+      const bairrosImpactados = parseInt(bairrosResult?.count) || 0;
+
+      // Calcular investimento total com escopo aplicado
+      const investimentoResult = await this.createScopedPagamentoQueryBuilder('pagamento')
+        .innerJoin('pagamento.solicitacao', 'solicitacao')
+        .where('pagamento.status IN (:...status)', {
+          status: [
+            StatusPagamentoEnum.PAGO,
+            StatusPagamentoEnum.LIBERADO,
+            StatusPagamentoEnum.CONFIRMADO,
+            StatusPagamentoEnum.RECEBIDO,
+          ],
+        })
+        .andWhere('solicitacao.data_abertura >= :dataLimite', { dataLimite })
+        .select('SUM(pagamento.valor)', 'total')
+        .getRawOne();
+
+      const investimentoTotal = parseFloat(investimentoResult?.total) || 0;
+
+      const resultado = {
+        familias_beneficiadas: familiasBeneficiadas,
+        pessoas_impactadas: pessoasImpactadas,
+        bairros_impactados: bairrosImpactados,
+        investimento_total: investimentoTotal,
+      };
+
+      this.logger.debug('[IMPACTO-SOCIAL-DEBUG] Métricas de impacto social calculadas:', {
+        resultado,
+        contextType: context?.tipo,
+        contextUnidadeId: context?.unidade_id
+      });
+
+      return resultado;
     });
-
-    return resultado;
   }
 
   /**
@@ -267,7 +268,7 @@ export class ImpactoSocialService {
 
     // Taxa de cobertura social baseada na população configurada
     const taxaCoberturaSocial =
-      (metricas.pessoas_impactadas / MetricasConstants.POPULACAO_BASE_DEFAULT) * 
+      (metricas.pessoas_impactadas / MetricasConstants.POPULACAO_BASE_DEFAULT) *
       MetricasConstants.MULTIPLICADOR_PERCENTUAL;
 
     return {
@@ -321,12 +322,12 @@ export class ImpactoSocialService {
     if (!filtros || this.filtrosEstaoVazios(filtros)) {
       return { periodo: PeriodoPredefinido.ULTIMOS_30_DIAS };
     }
-    
+
     // Se há filtros mas não há período definido, usar padrão
     if (!filtros.periodo) {
       return { ...filtros, periodo: PeriodoPredefinido.ULTIMOS_30_DIAS };
     }
-    
+
     return filtros;
   }
 
@@ -335,15 +336,15 @@ export class ImpactoSocialService {
    */
   private filtrosEstaoVazios(filtros: MetricasFiltrosAvancadosDto): boolean {
     const campos = [
-      'periodo', 'unidades', 'beneficios', 'bairros', 'statusList', 
+      'periodo', 'unidades', 'beneficios', 'bairros', 'statusList',
       'usuario', 'usuarios', 'dataInicioPersonalizada', 'dataFimPersonalizada'
     ];
-    
+
     return campos.every(campo => {
       const valor = filtros[campo];
-      return valor === undefined || valor === null || 
-             (Array.isArray(valor) && valor.length === 0) ||
-             (typeof valor === 'string' && valor.trim() === '');
+      return valor === undefined || valor === null ||
+        (Array.isArray(valor) && valor.length === 0) ||
+        (typeof valor === 'string' && valor.trim() === '');
     });
   }
 
@@ -357,11 +358,11 @@ export class ImpactoSocialService {
     if (filtros.data_inicio && filtros.data_fim) {
       const dataInicio = new Date(filtros.data_inicio);
       const dataFim = new Date(filtros.data_fim);
-      
+
       if (dataInicio > dataFim) {
         throw new Error('Data de início não pode ser posterior à data de fim');
       }
-      
+
       const hoje = new Date();
       if (dataInicio > hoje) {
         throw new Error('Data de início não pode ser futura');
@@ -459,7 +460,7 @@ export class ImpactoSocialService {
           ) as SelectQueryBuilder<T>;
       }
     }
-    
+
     // Se não há filtros, aplica filtros padrão baseado no tipo de entidade
     return this.aplicarFiltrosPadraoParaEntidade(query, tipoEntidade);
   }
@@ -483,11 +484,11 @@ export class ImpactoSocialService {
         return query
           .andWhere('pagamento.status IN (:...status)', {
             status: [
-          StatusPagamentoEnum.PAGO,
-          StatusPagamentoEnum.LIBERADO,
-          StatusPagamentoEnum.CONFIRMADO,
-          StatusPagamentoEnum.RECEBIDO,
-        ],
+              StatusPagamentoEnum.PAGO,
+              StatusPagamentoEnum.LIBERADO,
+              StatusPagamentoEnum.CONFIRMADO,
+              StatusPagamentoEnum.RECEBIDO,
+            ],
           })
           .andWhere('pagamento.created_at >= :dataLimite', { dataLimite });
       default:
@@ -658,7 +659,7 @@ export class ImpactoSocialService {
 
     return resultados.map((resultado) => {
       const quantidade = parseInt(resultado.quantidade, 10);
-      
+
       return {
         tipo: resultado.tipo,
         quantidade: quantidade,

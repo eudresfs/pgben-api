@@ -12,9 +12,9 @@ import {
 import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { SolicitacaoRepository } from '../../solicitacao/repositories/solicitacao.repository';
+import { PagamentoRepository } from '../../pagamento/repositories/pagamento.repository';
+import { CidadaoRepository } from '../../cidadao/repositories/cidadao.repository';
 import { RequestContextHolder } from '../../../common/services/request-context-holder.service';
-import { ScopeType } from '../../../enums/scope-type.enum';
-import { ScopeViolationException } from '../../../common/exceptions/scope.exceptions';
 import { ScopedRepository } from '../../../common/repositories/scoped-repository';
 import { MetricasConstants } from '../constants/metricas.constants';
 import {
@@ -48,52 +48,20 @@ export class GestaoOperacionalService {
   private readonly logger = new Logger(GestaoOperacionalService.name);
 
   // Repositórios com escopo aplicado automaticamente
-  private readonly solicitacaoScopedRepository: ScopedRepository<Solicitacao>;
-  private readonly pagamentoScopedRepository: ScopedRepository<Pagamento>;
   private readonly concessaoScopedRepository: ScopedRepository<Concessao>;
-  private readonly cidadaoScopedRepository: ScopedRepository<Cidadao>;
 
   constructor(
-    @InjectRepository(Solicitacao)
-    private readonly solicitacaoRepository: Repository<Solicitacao>,
-    @InjectRepository(Pagamento)
-    private readonly pagamentoRepository: Repository<Pagamento>,
     @InjectRepository(Concessao)
     private readonly concessaoRepository: Repository<Concessao>,
-    @InjectRepository(Cidadao)
-    private readonly cidadaoRepository: Repository<Cidadao>,
-    @InjectRepository(TipoBeneficio)
-    private readonly tipoBeneficioRepository: Repository<TipoBeneficio>,
-    @InjectRepository(Unidade)
-    private readonly unidadeRepository: Repository<Unidade>,
-    private readonly solicitacaoCustomRepository: SolicitacaoRepository,
+    private readonly solicitacaoRepository: SolicitacaoRepository,
+    private readonly cidadaoRepository: CidadaoRepository,
   ) {
-    // Inicializar repositórios com escopo usando ScopedRepository
-    this.solicitacaoScopedRepository = new ScopedRepository(
-      Solicitacao,
-      this.solicitacaoRepository.manager,
-      this.solicitacaoRepository.queryRunner,
-      { strictMode: true, allowGlobalScope: false }
-    );
-
-    this.pagamentoScopedRepository = new ScopedRepository(
-      Pagamento,
-      this.pagamentoRepository.manager,
-      this.pagamentoRepository.queryRunner,
-      { strictMode: true, allowGlobalScope: false }
-    );
-
+    // Inicializar repositório com escopo usando ScopedRepository apenas para Concessao
+    // (não possui repositório customizado)
     this.concessaoScopedRepository = new ScopedRepository(
       Concessao,
       this.concessaoRepository.manager,
       this.concessaoRepository.queryRunner,
-      { strictMode: true, allowGlobalScope: false }
-    );
-
-    this.cidadaoScopedRepository = new ScopedRepository(
-      Cidadao,
-      this.cidadaoRepository.manager,
-      this.cidadaoRepository.queryRunner,
       { strictMode: true, allowGlobalScope: false }
     );
   }
@@ -149,7 +117,7 @@ export class GestaoOperacionalService {
     const context = RequestContextHolder.get();
 
     // Contar novos beneficiários com escopo aplicado
-    const novosBeneficiariosQuery = this.cidadaoScopedRepository
+    const novosBeneficiariosQuery = this.cidadaoRepository
       .createScopedQueryBuilder('cidadao')
       .where('cidadao.created_at >= :dataLimite', { dataLimite });
 
@@ -159,7 +127,7 @@ export class GestaoOperacionalService {
     }
 
     // Contar solicitações iniciadas com escopo aplicado
-    const solicitacoesIniciadasQuery = this.solicitacaoScopedRepository
+    const solicitacoesIniciadasQuery = this.solicitacaoRepository
       .createScopedQueryBuilder('solicitacao')
       .where('solicitacao.data_abertura >= :dataLimite', { dataLimite });
 
@@ -180,7 +148,7 @@ export class GestaoOperacionalService {
 
     // Query para contar concessões judicializadas
     const concessoesJudicializadasQuery = this.concessaoScopedRepository
-      .createQueryBuilder('concessao')
+      .createScopedQueryBuilder('concessao')
       .innerJoin('concessao.solicitacao', 'solicitacao')
       .where('concessao.data_inicio >= :dataLimite', { dataLimite })
       .andWhere('solicitacao.determinacao_judicial_flag = :origemJudicial', { origemJudicial: true });
@@ -218,7 +186,7 @@ export class GestaoOperacionalService {
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<SolicitacoesTramitacao> {
     // Query base para solicitações em tramitação
-    const baseQuery = this.solicitacaoScopedRepository
+    const baseQuery = this.solicitacaoRepository
       .createScopedQueryBuilder('solicitacao')
       .where('solicitacao.data_abertura >= :dataLimite', { dataLimite });
 
@@ -255,7 +223,7 @@ export class GestaoOperacionalService {
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<GestaoOperacionalPerformance> {
     // Calcular tempo médio de solicitação
-    const tempoMedioSolicitacaoQuery = this.solicitacaoScopedRepository
+    const tempoMedioSolicitacaoQuery = this.solicitacaoRepository
       .createScopedQueryBuilder('solicitacao')
       .select('AVG(EXTRACT(EPOCH FROM (solicitacao.updated_at - solicitacao.data_abertura)) / 86400)', 'tempo_medio')
       .where('solicitacao.data_abertura >= :dataLimite', { dataLimite })
@@ -284,7 +252,7 @@ export class GestaoOperacionalService {
     }
 
     // Calcular solicitações por dia
-    const solicitacoesPorDiaQuery = this.solicitacaoScopedRepository
+    const solicitacoesPorDiaQuery = this.solicitacaoRepository
       .createScopedQueryBuilder('solicitacao')
       .select('COUNT(*) / (CURRENT_DATE - :dataLimite)', 'media_diaria')
       .where('solicitacao.data_abertura >= :dataLimite', { dataLimite });
@@ -333,7 +301,7 @@ export class GestaoOperacionalService {
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<TaxaConcessao> {
     // Contar total de solicitações finalizadas
-    const totalSolicitacoesQuery = this.solicitacaoScopedRepository
+    const totalSolicitacoesQuery = this.solicitacaoRepository
       .createScopedQueryBuilder('solicitacao')
       .where('solicitacao.data_abertura >= :dataLimite', { dataLimite })
       .andWhere('solicitacao.status IN (:...status)', {
@@ -341,7 +309,7 @@ export class GestaoOperacionalService {
       });
 
     // Contar solicitações aprovadas
-    const solicitacoesAprovadasQuery = this.solicitacaoScopedRepository
+    const solicitacoesAprovadasQuery = this.solicitacaoRepository
       .createScopedQueryBuilder('solicitacao')
       .where('solicitacao.data_abertura >= :dataLimite', { dataLimite })
       .andWhere('solicitacao.status = :status', { status: StatusSolicitacao.APROVADA });
@@ -542,7 +510,7 @@ export class GestaoOperacionalService {
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<EvolucaoConcessoesItem[]> {
     const query = this.concessaoScopedRepository
-      .createQueryBuilder('concessao')
+      .createScopedQueryBuilder('concessao')
       .innerJoin('concessao.solicitacao', 'solicitacao')
       .innerJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .select([
@@ -575,7 +543,7 @@ export class GestaoOperacionalService {
           mes: mesFormatado,
           aluguel_social: 0,
           cesta_basica: 0,
-          beneficio_funeral: 0,
+          beneficio_por_morte: 0,
           beneficio_natalidade: 0,
         });
       }
@@ -590,8 +558,8 @@ export class GestaoOperacionalService {
         case 'cesta básica':
           item.cesta_basica = quantidade;
           break;
-        case 'benefício funeral':
-          item.beneficio_funeral = quantidade;
+        case 'benefício por morte':
+          item.beneficio_por_morte = quantidade;
           break;
         case 'benefício natalidade':
           item.beneficio_natalidade = quantidade;
@@ -606,8 +574,8 @@ export class GestaoOperacionalService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<SolicitacoesDiaSemanaItem[]> {
-    const query = this.solicitacaoScopedRepository
-      .createQueryBuilder('solicitacao')
+    const query = this.solicitacaoRepository
+      .createScopedQueryBuilder('solicitacao')
       .select([
         'EXTRACT(DOW FROM solicitacao.created_at) as dia_semana',
         'COUNT(*) as quantidade',
@@ -645,7 +613,7 @@ export class GestaoOperacionalService {
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<ConcessoesTipoBeneficioItem[]> {
     const query = this.concessaoScopedRepository
-      .createQueryBuilder('concessao')
+      .createScopedQueryBuilder('concessao')
       .innerJoin('concessao.solicitacao', 'solicitacao')
       .innerJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .select([
@@ -680,8 +648,8 @@ export class GestaoOperacionalService {
     dataLimite: Date,
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<SolicitacoesUnidadeItem[]> {
-    const query = this.solicitacaoScopedRepository
-      .createQueryBuilder('solicitacao')
+    const query = this.solicitacaoRepository
+      .createScopedQueryBuilder('solicitacao')
       .innerJoin('solicitacao.unidade', 'unidade')
       .select([
         'unidade.nome as unidade',
@@ -724,13 +692,13 @@ export class GestaoOperacionalService {
 
     return RequestContextHolder.runAsync(context, async () => {
       // Query base para contar todas as solicitações
-      const totalQuery = this.solicitacaoScopedRepository
+      const totalQuery = this.solicitacaoRepository
         .createScopedQueryBuilder('solicitacao');
 
       const total = await totalQuery.getCount();
 
       // Query para agrupar por status
-      const statusQuery = this.solicitacaoScopedRepository
+      const statusQuery = this.solicitacaoRepository
         .createScopedQueryBuilder('solicitacao')
         .select('solicitacao.status', 'status')
         .addSelect('COUNT(solicitacao.id)', 'quantidade')

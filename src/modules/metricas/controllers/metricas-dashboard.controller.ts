@@ -19,6 +19,8 @@ import { PermissionGuard } from '@/auth/guards/permission.guard';
 import { RequiresPermission } from '@/auth/decorators/requires-permission.decorator';
 import { MetricasFiltrosAvancadosDto } from '../dto/metricas-filtros-avancados.dto';
 import { TipoEscopo } from '@/entities/user-permission.entity';
+import { ReqContext } from '@/shared/request-context/req-context.decorator';
+import { RequestContext } from '@/shared/request-context/request-context.dto';
 
 @ApiTags('Dashboard de Métricas')
 @Controller('dashboard')
@@ -29,7 +31,7 @@ export class MetricasDashboardController {
 
   constructor(
     private readonly metricasDashboardService: MetricasDashboardService,
-  ) {}
+  ) { }
 
 
 
@@ -96,10 +98,11 @@ export class MetricasDashboardController {
     status: 200,
     description: 'Métricas de impacto social obtidas com sucesso',
   })
-  async getImpactoSocial(@Body() filtros: MetricasFiltrosAvancadosDto): Promise<ImpactoSocialResponse> {
+  async getImpactoSocial(
+    @Body() filtros: MetricasFiltrosAvancadosDto): Promise<ImpactoSocialResponse> {
     try {
       const impactoSocial = await this.metricasDashboardService.getImpactoSocial(
-        filtros,
+        filtros
       );
       return {
         success: true,
@@ -114,7 +117,7 @@ export class MetricasDashboardController {
         filtros,
         errorName: error.constructor.name,
       });
-      
+
       throw new HttpException(
         {
           success: false,
@@ -187,7 +190,9 @@ export class MetricasDashboardController {
     status: 200,
     description: 'Métricas de gestão operacional obtidas com sucesso',
   })
-  async getGestaoOperacional(@Body() filtros: MetricasFiltrosAvancadosDto): Promise<GestaoOperacionalResponse> {
+  async getGestaoOperacional(
+    @Body() filtros: MetricasFiltrosAvancadosDto,
+  ): Promise<GestaoOperacionalResponse> {
     try {
       const gestaoOperacional = await this.metricasDashboardService.getGestaoOperacional(
         filtros,
@@ -205,7 +210,7 @@ export class MetricasDashboardController {
         filtros,
         errorName: error.constructor.name,
       });
-      
+
       throw new HttpException(
         {
           success: false,
