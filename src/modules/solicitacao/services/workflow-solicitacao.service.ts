@@ -648,24 +648,6 @@ export class WorkflowSolicitacaoService {
           },
           usuarioId,
         );
-
-        const solicitacao = await this.solicitacaoRepository.findOne({
-          where: { id: solicitacaoId },
-        });
-
-        await this.historicoRepository.save({
-          solicitacao_id: solicitacaoId,
-          status_anterior: solicitacao.status,
-          status_atual: StatusSolicitacao.EM_ANALISE,
-          usuario_id: usuarioId,
-          observacao: 'Enviado para análise com bypass de prioridade máxima (nível 0)',
-          dados_alterados: {
-            status: {
-              de: solicitacao.status,
-              para: StatusSolicitacao.EM_ANALISE,
-            },
-          },
-        });
       } else {
         // Executar validações padrão para solicitações com prioridade diferente de 0
         await this.validarEnvioParaAnalise(solicitacaoId);
