@@ -76,7 +76,7 @@ export class WorkflowSolicitacaoService {
     private readonly beneficioService: BeneficioService,
     private readonly documentoService: DocumentoService,
     private readonly auditEventEmitter: AuditEventEmitter,
-  ) {}
+  ) { }
 
   /**
    * Verifica se uma transição de estado é permitida
@@ -409,7 +409,7 @@ export class WorkflowSolicitacaoService {
     }
 
     const temBypass = solicitacao.prioridade === 0;
-    
+
     if (temBypass) {
       this.logger.warn(
         `BYPASS ATIVADO: Solicitação ${solicitacaoId} (protocolo: ${solicitacao.protocolo}) possui prioridade máxima (0) - validações padrão serão ignoradas`,
@@ -627,13 +627,13 @@ export class WorkflowSolicitacaoService {
     try {
       // Verificar se a solicitação possui prioridade máxima (0) para bypass
       const temBypassPrioridadeMaxima = await this.verificarBypassPrioridadeMaxima(solicitacaoId);
-      
+
       if (temBypassPrioridadeMaxima) {
         // BYPASS ATIVADO: Pular validações padrão para prioridade máxima
         this.logger.warn(
           `Solicitação ${solicitacaoId} com prioridade máxima (0) - enviando diretamente para análise`,
         );
-        
+
         // Emitir evento de auditoria específico para bypass
         await this.auditEventEmitter.emitEntityUpdated(
           'Solicitacao',
@@ -648,16 +648,34 @@ export class WorkflowSolicitacaoService {
           },
           usuarioId,
         );
+
+        const solicitacao = await this.solicitacaoRepository.findOne({
+          where: { id: solicitacaoId },
+        });
+
+        await this.historicoRepository.save({
+          solicitacao_id: solicitacaoId,
+          status_anterior: solicitacao.status,
+          status_atual: StatusSolicitacao.EM_ANALISE,
+          usuario_id: usuarioId,
+          observacao: 'Enviado para análise com bypass de prioridade máxima (nível 0)',
+          dados_alterados: {
+            status: {
+              de: solicitacao.status,
+              para: StatusSolicitacao.EM_ANALISE,
+            },
+          },
+        });
       } else {
         // Executar validações padrão para solicitações com prioridade diferente de 0
         await this.validarEnvioParaAnalise(solicitacaoId);
       }
 
       // Realizar a transição de estado
-      const observacaoTransicao = temBypassPrioridadeMaxima 
+      const observacaoTransicao = temBypassPrioridadeMaxima
         ? 'Solicitação enviada para análise com bypass de prioridade máxima (nível 0)'
         : 'Solicitação enviada para análise';
-        
+
       const resultado = await this.realizarTransicao(
         solicitacaoId,
         StatusSolicitacao.EM_ANALISE,
@@ -1124,13 +1142,13 @@ export class WorkflowSolicitacaoService {
             tiposFaltantes.push(TipoDocumentoEnum.CERTIDAO_NASCIMENTO);
             this.logger.debug(
               `Contexto pós-natal detectado para solicitação ${solicitacaoId}. ` +
-                `Adicionando certidão de nascimento como documento obrigatório.`,
+              `Adicionando certidão de nascimento como documento obrigatório.`,
             );
           }
         } else {
           this.logger.debug(
             `Contexto pós-natal detectado para solicitação ${solicitacaoId}. ` +
-              `Certidão de nascimento já está presente nos documentos.`,
+            `Certidão de nascimento já está presente nos documentos.`,
           );
         }
 
@@ -1140,7 +1158,7 @@ export class WorkflowSolicitacaoService {
       } else {
         this.logger.debug(
           `Contexto pré-natal detectado para solicitação ${solicitacaoId}. ` +
-            `Mantendo validação padrão de documentos.`,
+          `Mantendo validação padrão de documentos.`,
         );
       }
 
