@@ -25,6 +25,7 @@ export class NatalidadeStrategy implements IBeneficioCalculatorStrategy {
     intervaloParcelas: 0, // Não se aplica para pagamento único
     diasParaLiberacao: 3,
     diasParaVencimento: 30,
+    diaLimite: 25,
   };
 
   constructor(private readonly feriadoService: FeriadoService) {}

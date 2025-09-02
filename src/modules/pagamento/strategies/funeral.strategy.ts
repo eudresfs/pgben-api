@@ -25,6 +25,7 @@ export class FuneralStrategy implements IBeneficioCalculatorStrategy {
     intervaloParcelas: 0, // Não se aplica para pagamento único
     diasParaLiberacao: 2,
     diasParaVencimento: 15,
+    diaLimite: 25,
   };
 
   constructor(private readonly feriadoService: FeriadoService) {}

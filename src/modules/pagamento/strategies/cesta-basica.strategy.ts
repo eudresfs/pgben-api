@@ -26,6 +26,7 @@ export class CestaBasicaStrategy implements IBeneficioCalculatorStrategy {
     intervaloParcelas: 30,
     diasParaLiberacao: 3,
     diasParaVencimento: 30,
+    diaLimite: 25,
   };
 
   constructor(private readonly feriadoService: FeriadoService) {}
