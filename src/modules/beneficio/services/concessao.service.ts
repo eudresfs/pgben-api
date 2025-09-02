@@ -1364,6 +1364,22 @@ export class ConcessaoService {
     const startTime = Date.now();
     this.logger.log('Iniciando aplicação de filtros avançados para concessões');
 
+    // Validações de entrada
+    if (!filtros) {
+      filtros = new ConcessaoFiltrosAvancadosDto();
+    }
+
+    // Validar filtros de data se fornecidos
+    if (filtros.data_inicio && filtros.data_fim) {
+      const dataInicio = new Date(filtros.data_inicio);
+      const dataFim = new Date(filtros.data_fim);
+      if (dataInicio > dataFim) {
+        throw new BadRequestException(
+          'Data de início deve ser anterior à data final',
+        );
+      }
+    }
+
     // Obter contexto atual para preservar durante operações assíncronas
     const context = RequestContextHolder.get();
     
@@ -1474,9 +1490,9 @@ export class ConcessaoService {
       // Obter contagem total
       const total = await queryBuilder.getCount();
 
-      // Aplicar paginação
-      const page = filtros.page || 1;
-      const limit = Math.min(filtros.limit || 10, 100);
+      // Aplicar paginação com validações robustas
+      const page = Math.max(1, filtros.page || 1); // Garantir que page seja pelo menos 1
+      const limit = Math.min(Math.max(1, filtros.limit || 10), 100); // Garantir que limit esteja entre 1 e 100
       const offset = (page - 1) * limit;
 
       queryBuilder.limit(limit).offset(offset);
@@ -1547,10 +1563,10 @@ export class ConcessaoService {
           : null,
       }));
 
-      // Calcular metadados de paginação
-      const pages = Math.ceil(total / limit);
-      const hasNext = page < pages;
-      const hasPrev = page > 1;
+      // Calcular metadados de paginação com tratamento de casos extremos
+      const pages = total > 0 ? Math.ceil(total / limit) : 1;
+      const hasNext = total > 0 && page < pages;
+      const hasPrev = total > 0 && page > 1;
 
       const executionTime = Date.now() - startTime;
 
@@ -1564,9 +1580,9 @@ export class ConcessaoService {
           page,
           limit,
           total,
-          pages: pages,
+          pages,
           hasNext,
-          hasPrev: hasPrev,
+          hasPrev,
         },
         performance: {
           executionTime,
