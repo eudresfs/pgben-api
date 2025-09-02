@@ -219,7 +219,7 @@ export class UsuarioController {
     // Extrair page e limit, convertendo para números
     const { includeRelations, page, limit, ...filters } = query;
 
-    return this.usuarioService.findAll({
+    return await this.usuarioService.findAll({
       relations: includeRelations ? +includeRelations : true,
       page: page ? +page : undefined,
       limit: limit ? +limit : undefined,
@@ -318,7 +318,7 @@ export class UsuarioController {
     @Body() filtrosDto: UsuarioFiltrosAvancadosDto,
     @ReqContext() context: RequestContext,
   ): Promise<UsuarioFiltrosResponseDto> {
-    return this.usuarioService.aplicarFiltrosAvancados(filtrosDto);
+    return await this.usuarioService.aplicarFiltrosAvancados(filtrosDto);
   }
 
   /**
@@ -341,7 +341,7 @@ export class UsuarioController {
   })
   async findAllRoles(@Request() req) {
     const usuarioAtual = req.user;
-    return this.usuarioService.findAllRoles(usuarioAtual);
+    return await this.usuarioService.findAllRoles(usuarioAtual);
   }
 
   /**
@@ -394,7 +394,7 @@ export class UsuarioController {
     description: 'Token de autenticação inválido ou expirado' 
   })
   async getProfile(@Request() req) {
-    return this.usuarioService.getProfile(req.user.id);
+    return await this.usuarioService.getProfile(req.user.id);
   }
 
   /**
@@ -409,7 +409,7 @@ export class UsuarioController {
   @ApiResponse({ status: 200, description: 'Usuário encontrado com sucesso' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usuarioService.findById(id);
+    return await this.usuarioService.findById(id);
   }
 
   /**
@@ -823,7 +823,7 @@ export class UsuarioController {
     description: 'Muitas tentativas - Aguarde antes de tentar novamente'
   })
   async recuperarSenha(@Body() recuperarSenhaDto: RecuperarSenhaDto) {
-    return this.usuarioService.solicitarRecuperacaoSenha(
+    return await this.usuarioService.solicitarRecuperacaoSenha(
       recuperarSenhaDto.email,
     );
   }

@@ -72,7 +72,15 @@ export class BeneficioController {
     description: 'Lista de benefícios retornada com sucesso',
     content: {
       'application/json': {
-        example: '',
+        example: {
+          items: [],
+          meta: {
+            total: 0,
+            page: 1,
+            limit: 10,
+            pages: 0,
+          },
+        },
       },
     },
   })
@@ -106,7 +114,7 @@ export class BeneficioController {
     @Query('search') search?: string,
     @Query('status') status?: Status,
   ) {
-    return this.beneficioService.findAll({
+    return await this.beneficioService.findAll({
       page: page ? +page : undefined,
       limit: limit ? +limit : undefined,
       search,
@@ -179,13 +187,14 @@ export class BeneficioController {
             valor_max: 1000,
           },
           meta: {
-            limit: 10,
-            offset: 0,
-            page: 1,
-            pages: 0,
-            hasNext: false,
-            hasPrev: false,
-          },
+             total: 0,
+             limit: 10,
+             offset: 0,
+             page: 1,
+             pages: 0,
+             hasNext: false,
+             hasPrev: false,
+           },
           tempo_execucao: 150,
         },
       },
