@@ -1238,8 +1238,6 @@ export class SolicitacaoService {
         if (avaliarSolicitacaoDto.aprovado) {
           dadosAtualizacao.data_aprovacao = dataAvaliacao;
         }
-        // Nota: campos data_rejeicao e motivo_rejeicao não existem na entidade Solicitacao
-        // Essas informações são armazenadas no histórico
 
         await solicitacaoRepo.update(id, dadosAtualizacao);
 

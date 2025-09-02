@@ -56,7 +56,7 @@ import {
 export class DocumentoBatchController {
   private readonly logger = new Logger(DocumentoBatchController.name);
 
-  constructor(private readonly documentoBatchService: DocumentoBatchService) {}
+  constructor(private readonly documentoBatchService: DocumentoBatchService) { }
 
   /**
    * Inicia um download em lote de documentos
@@ -189,6 +189,9 @@ export class DocumentoBatchController {
 
       // Headers para download do ZIP
       res.set({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
         'Content-Type': 'application/zip',
         'Content-Disposition': `attachment; filename="${filename}"`,
         'Cache-Control': 'no-cache, no-store, must-revalidate',

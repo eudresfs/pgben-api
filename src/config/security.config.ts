@@ -183,6 +183,10 @@ export const createCorsConfig = (configService: ConfigService) => {
     })
     .filter(Boolean) as string[];
 
+  securityLogger.log(
+    `CORS origins carregados: ${normalizedOrigins.join(', ')}`
+  );
+
   return {
     origin: (
       origin: string | undefined,

@@ -115,63 +115,64 @@ export class GestaoOperacionalService {
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<GestaoOperacionalMetricasGerais> {
     const context = RequestContextHolder.get();
+    return RequestContextHolder.runAsync(context, async () => {
+      // Contar novos beneficiários com escopo aplicado
+      const novosBeneficiariosQuery = this.cidadaoRepository
+        .createScopedQueryBuilder('cidadao')
+        .where('cidadao.created_at >= :dataLimite', { dataLimite });
 
-    // Contar novos beneficiários com escopo aplicado
-    const novosBeneficiariosQuery = this.cidadaoRepository
-      .createScopedQueryBuilder('cidadao')
-      .where('cidadao.created_at >= :dataLimite', { dataLimite });
+      // Aplicar filtros dinâmicos
+      if (filtros && !this.filtrosEstaoVazios(filtros)) {
+        FiltrosQueryHelper.aplicarFiltrosCidadao(novosBeneficiariosQuery, filtros);
+      }
 
-    // Aplicar filtros dinâmicos
-    if (filtros && !this.filtrosEstaoVazios(filtros)) {
-      FiltrosQueryHelper.aplicarFiltrosCidadao(novosBeneficiariosQuery, filtros);
-    }
+      // Contar solicitações iniciadas com escopo aplicado
+      const solicitacoesIniciadasQuery = this.solicitacaoRepository
+        .createScopedQueryBuilder('solicitacao')
+        .where('solicitacao.data_abertura >= :dataLimite', { dataLimite });
 
-    // Contar solicitações iniciadas com escopo aplicado
-    const solicitacoesIniciadasQuery = this.solicitacaoRepository
-      .createScopedQueryBuilder('solicitacao')
-      .where('solicitacao.data_abertura >= :dataLimite', { dataLimite });
+      // Aplicar filtros dinâmicos
+      if (filtros && !this.filtrosEstaoVazios(filtros)) {
+        FiltrosQueryHelper.aplicarFiltrosSolicitacao(solicitacoesIniciadasQuery, filtros);
+      }
 
-    // Aplicar filtros dinâmicos
-    if (filtros && !this.filtrosEstaoVazios(filtros)) {
-      FiltrosQueryHelper.aplicarFiltrosSolicitacao(solicitacoesIniciadasQuery, filtros);
-    }
+      // Contar concessões realizadas com escopo aplicado
+      const concessoesQuery = this.concessaoScopedRepository
+        .createScopedQueryBuilder('concessao')
+        .where('concessao.data_inicio >= :dataLimite', { dataLimite });
 
-    // Contar concessões realizadas com escopo aplicado
-    const concessoesQuery = this.concessaoScopedRepository
-      .createScopedQueryBuilder('concessao')
-      .where('concessao.data_inicio >= :dataLimite', { dataLimite });
+      // Aplicar filtros dinâmicos
+      if (filtros && !this.filtrosEstaoVazios(filtros)) {
+        FiltrosQueryHelper.aplicarFiltrosConcessao(concessoesQuery, filtros);
+      }
 
-    // Aplicar filtros dinâmicos
-    if (filtros && !this.filtrosEstaoVazios(filtros)) {
-      FiltrosQueryHelper.aplicarFiltrosConcessao(concessoesQuery, filtros);
-    }
+      // Query para contar concessões judicializadas
+      const concessoesJudicializadasQuery = this.concessaoScopedRepository
+        .createScopedQueryBuilder('concessao')
+        .innerJoin('concessao.solicitacao', 'solicitacao')
+        .where('concessao.data_inicio >= :dataLimite', { dataLimite })
+        .andWhere('solicitacao.determinacao_judicial_flag = :origemJudicial', { origemJudicial: true });
 
-    // Query para contar concessões judicializadas
-    const concessoesJudicializadasQuery = this.concessaoScopedRepository
-      .createScopedQueryBuilder('concessao')
-      .innerJoin('concessao.solicitacao', 'solicitacao')
-      .where('concessao.data_inicio >= :dataLimite', { dataLimite })
-      .andWhere('solicitacao.determinacao_judicial_flag = :origemJudicial', { origemJudicial: true });
+      // Aplicar escopo automático
+      // Aplicar escopo automático através do ScopedRepository
 
-    // Aplicar escopo automático
-    // Aplicar escopo automático através do ScopedRepository
+      // Executar queries de contagem em paralelo
+      const [novosBeneficiarios, solicitacoesIniciadas, concessoes, concessoesJudicializadas] = await Promise.all([
+        novosBeneficiariosQuery.getCount(),
+        solicitacoesIniciadasQuery.getCount(),
+        concessoesQuery.getCount(),
+        concessoesJudicializadasQuery.getCount(),
+      ]);
 
-    // Executar queries de contagem em paralelo
-    const [novosBeneficiarios, solicitacoesIniciadas, concessoes, concessoesJudicializadas] = await Promise.all([
-      novosBeneficiariosQuery.getCount(),
-      solicitacoesIniciadasQuery.getCount(),
-      concessoesQuery.getCount(),
-      concessoesJudicializadasQuery.getCount(),
-    ]);
+      const resultado = {
+        novos_beneficiarios: novosBeneficiarios,
+        solicitacoes_iniciadas: solicitacoesIniciadas,
+        concessoes: concessoes,
+        concessoes_judicializadas: concessoesJudicializadas,
+      };
 
-    const resultado = {
-      novos_beneficiarios: novosBeneficiarios,
-      solicitacoes_iniciadas: solicitacoesIniciadas,
-      concessoes: concessoes,
-      concessoes_judicializadas: concessoesJudicializadas,
-    };
-
-    return resultado;
+      return resultado;
+    });
   }
 
   /**
@@ -225,7 +226,7 @@ export class GestaoOperacionalService {
     // Calcular tempo médio de solicitação
     const tempoMedioSolicitacaoQuery = this.solicitacaoRepository
       .createScopedQueryBuilder('solicitacao')
-      .select('AVG(EXTRACT(EPOCH FROM (solicitacao.updated_at - solicitacao.data_abertura)) / 86400)', 'tempo_medio')
+      .select('AVG(EXTRACT(EPOCH FROM (solicitacao.data_aprovacao - solicitacao.data_abertura)) / 86400)', 'tempo_medio')
       .where('solicitacao.data_abertura >= :dataLimite', { dataLimite })
       .andWhere('solicitacao.status IN (:...status)', {
         status: [StatusSolicitacao.APROVADA, StatusSolicitacao.INDEFERIDA],
@@ -241,7 +242,7 @@ export class GestaoOperacionalService {
       .createScopedQueryBuilder('concessao')
       .leftJoin('concessao.solicitacao', 'solicitacao')
       .select(
-        `AVG(EXTRACT(EPOCH FROM (concessao.data_inicio - solicitacao.created_at)) / 86400)`,
+        `AVG(EXTRACT(EPOCH FROM (concessao.data_inicio - solicitacao.data_abertura)) / 86400)`,
         'tempo_medio',
       )
       .where('concessao.data_inicio >= :dataLimite', { dataLimite });
