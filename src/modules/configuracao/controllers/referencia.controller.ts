@@ -176,9 +176,9 @@ export class ReferenciaController {
     const [tiposBeneficio, unidades, usuarios, roles, bairros] =
       await Promise.all([
         this.beneficioService.findAll({}), 
-        this.unidadeService.findAll(), 
-        this.usuarioService.findAll(), 
-        this.usuarioService.findAllRoles(),
+        this.unidadeService.findAll({limit: 50}), 
+        this.usuarioService.findAll({limit: 500}), 
+        this.usuarioService.findAllRoles({limit: 500}),
         this.cidadaoService.findAllBairros(),
       ]);
 
