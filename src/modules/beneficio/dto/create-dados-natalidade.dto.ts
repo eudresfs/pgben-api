@@ -348,40 +348,6 @@ export class CreateDadosNatalidadeDto {
   })
   quantidade_filhos?: number;
 
-  @ApiProperty({
-    description: 'Chave PIX igual ao CPF (para critério de pecúnia)',
-    example: '123.456.789-00',
-  })
-  @IsNotEmpty({
-    message: 'A chave PIX (CPF) é obrigatória',
-  })
-  @IsString({
-    message: 'A chave PIX deve ser uma string válida',
-  })
-  @Matches(/^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/, {
-    message:
-      'A chave PIX deve ser um CPF válido no formato XXX.XXX.XXX-XX ou apenas números',
-  })
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      if (trimmed === '') {
-        throw new Error('A chave PIX não pode estar vazia');
-      }
-
-      // Remove caracteres especiais para validação
-      const numbersOnly = trimmed.replace(/\D/g, '');
-
-      if (numbersOnly.length !== 11) {
-        throw new Error('O CPF deve ter exatamente 11 dígitos');
-      }
-
-      return trimmed;
-    }
-    return value;
-  })
-  chave_pix: string;
-
   @ApiPropertyOptional({
     description: 'Observações adicionais sobre o caso',
     example:

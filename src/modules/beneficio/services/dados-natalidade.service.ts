@@ -193,14 +193,6 @@ export class DadosNatalidadeService extends AbstractDadosBeneficioService<
         );
       }
 
-      // Validação de chave PIX
-      if (!data.chave_pix?.trim()) {
-        errorBuilder.add(
-          'chave_pix',
-          BENEFICIO_TECH_MESSAGES.NATALIDADE.CHAVE_PIX_REQUIRED,
-        );
-      }
-
       // Validação de observações adicionais (se fornecidas)
       if (
         data.observacoes &&

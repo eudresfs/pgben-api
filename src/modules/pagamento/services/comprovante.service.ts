@@ -135,8 +135,8 @@ export class ComprovanteService {
     await this.pagamentoRepository.save(pagamento);
 
     // Atualizar status do pagamento se necessário
-    if (pagamento.status === StatusPagamentoEnum.LIBERADO) {
-      pagamento.status = StatusPagamentoEnum.CONFIRMADO;
+    if (pagamento.status === StatusPagamentoEnum.PAGO) {
+      pagamento.status = StatusPagamentoEnum.RECEBIDO;
       await this.pagamentoRepository.save(pagamento);
     }
 
