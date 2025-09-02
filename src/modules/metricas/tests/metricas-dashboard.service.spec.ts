@@ -1,17 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MetricasDashboardService } from '../services/metricas-dashboard.service';
-import { SolicitacaoRepository } from '../../solicitacao/repositories/solicitacao.repository';
-import { Repository, DataSource, SelectQueryBuilder } from 'typeorm';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import {
-  Concessao,
-  Pagamento,
-  Cidadao,
-  TipoBeneficio,
-  Endereco,
-  ComposicaoFamiliar,
-  Unidade,
-} from '../../../entities';
+import { ImpactoSocialService } from '../services/impacto-social.service';
+import { GestaoOperacionalService } from '../services/gestao-operacional.service';
 import { RequestContextHolder } from '../../../common/services/request-context-holder.service';
 import { Logger } from '@nestjs/common';
 import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
@@ -20,44 +10,27 @@ import { ScopeType } from '../../../enums/scope-type.enum';
 /**
  * Testes unitários para o MetricasDashboardService
  * 
- * Foca especificamente no método calcularPerformanceOperacional
- * para garantir que os dados retornados são reais e não mockados
+ * Testa a integração com os novos serviços especializados:
+ * - ImpactoSocialService
+ * - GestaoOperacionalService
  */
-describe('MetricasDashboardService - calcularPerformanceOperacional', () => {
+describe('MetricasDashboardService', () => {
   let service: MetricasDashboardService;
-  let solicitacaoRepository: SolicitacaoRepository;
-  let concessaoRepository: Repository<Concessao>;
-  let dataSource: DataSource;
+  let impactoSocialService: ImpactoSocialService;
+  let gestaoOperacionalService: GestaoOperacionalService;
 
-  // Mock do QueryBuilder
-  const mockQueryBuilder = {
-    select: jest.fn().mockReturnThis(),
-    addSelect: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    andWhere: jest.fn().mockReturnThis(),
-    innerJoin: jest.fn().mockReturnThis(),
-    leftJoin: jest.fn().mockReturnThis(),
-    groupBy: jest.fn().mockReturnThis(),
-    orderBy: jest.fn().mockReturnThis(),
-    setParameters: jest.fn().mockReturnThis(),
-    getRawOne: jest.fn(),
-    getRawMany: jest.fn(),
-    getCount: jest.fn(),
+  // Mock do ImpactoSocialService
+  const mockImpactoSocialService = {
+    getImpactoSocial: jest.fn(),
+    obterSolicitacoesPorStatus: jest.fn(),
+    debugEscopo: jest.fn(),
   };
 
-  // Mock do SolicitacaoRepository
-  const mockSolicitacaoRepository = {
-    createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
-  };
-
-  // Mock dos outros repositórios
-  const mockRepository = {
-    createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
-  };
-
-  // Mock do DataSource
-  const mockDataSource = {
-    createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+  // Mock do GestaoOperacionalService
+  const mockGestaoOperacionalService = {
+    getGestaoOperacional: jest.fn(),
+    obterSolicitacoesPorStatus: jest.fn(),
+    debugEscopo: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -75,40 +48,12 @@ describe('MetricasDashboardService - calcularPerformanceOperacional', () => {
       providers: [
         MetricasDashboardService,
         {
-          provide: SolicitacaoRepository,
-          useValue: mockSolicitacaoRepository,
+          provide: ImpactoSocialService,
+          useValue: mockImpactoSocialService,
         },
         {
-          provide: getRepositoryToken(Concessao),
-          useValue: mockRepository,
-        },
-        {
-          provide: getRepositoryToken(Pagamento),
-          useValue: mockRepository,
-        },
-        {
-          provide: getRepositoryToken(Cidadao),
-          useValue: mockRepository,
-        },
-        {
-          provide: getRepositoryToken(TipoBeneficio),
-          useValue: mockRepository,
-        },
-        {
-          provide: getRepositoryToken(Endereco),
-          useValue: mockRepository,
-        },
-        {
-          provide: getRepositoryToken(ComposicaoFamiliar),
-          useValue: mockRepository,
-        },
-        {
-          provide: getRepositoryToken(Unidade),
-          useValue: mockRepository,
-        },
-        {
-          provide: DataSource,
-          useValue: mockDataSource,
+          provide: GestaoOperacionalService,
+          useValue: mockGestaoOperacionalService,
         },
         {
           provide: Logger,
@@ -122,137 +67,139 @@ describe('MetricasDashboardService - calcularPerformanceOperacional', () => {
     }).compile();
 
     service = module.get<MetricasDashboardService>(MetricasDashboardService);
-    solicitacaoRepository = module.get<SolicitacaoRepository>(SolicitacaoRepository);
-    concessaoRepository = module.get<Repository<Concessao>>(getRepositoryToken(Concessao));
-    dataSource = module.get<DataSource>(DataSource);
+    impactoSocialService = module.get<ImpactoSocialService>(ImpactoSocialService);
+    gestaoOperacionalService = module.get<GestaoOperacionalService>(GestaoOperacionalService);
   });
 
   it('deve ser definido', () => {
     expect(service).toBeDefined();
+    expect(impactoSocialService).toBeDefined();
+    expect(gestaoOperacionalService).toBeDefined();
   });
 
-  describe('calcularPerformanceOperacional', () => {
-    it('deve calcular métricas reais de performance operacional', async () => {
-      // Arrange - Configurar dados de retorno dos mocks
-      const dataLimite = new Date('2024-01-01');
-      
-      // Mock para tempo médio de solicitação
-      mockQueryBuilder.getRawOne
-        .mockResolvedValueOnce({ tempo_medio_dias: '12.5' }) // tempo médio solicitação
-        .mockResolvedValueOnce({ tempo_medio_analise: '8.3' }) // tempo médio análise
-        .mockResolvedValueOnce({ total_solicitacoes: '150' }) // total solicitações
-        .mockResolvedValueOnce({ total_concessoes: '120' }); // total concessões
-
-      // Act - Executar o método
-      const resultado = await service.calcularPerformanceOperacional(dataLimite);
-
-      // Assert - Verificar se os dados são reais e não mockados
-      expect(resultado).toBeDefined();
-      expect(resultado.tempo_medio_solicitacao).toBe(12.5);
-      expect(resultado.tempo_medio_analise).toBe(8.3);
-      expect(resultado.solicitacoes_por_dia).toBe(5); // 150 solicitações / 30 dias
-      expect(resultado.concessoes_por_dia).toBe(4); // 120 concessões / 30 dias
-
-      // Verificar se as consultas SQL foram executadas
-      expect(mockSolicitacaoRepository.createQueryBuilder).toHaveBeenCalled();
-      expect(mockQueryBuilder.select).toHaveBeenCalled();
-      expect(mockQueryBuilder.where).toHaveBeenCalled();
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalled();
-      expect(mockQueryBuilder.getRawOne).toHaveBeenCalled();
-    });
-
-    it('deve aplicar filtros avançados quando fornecidos', async () => {
+  describe('getImpactoSocial', () => {
+    it('deve delegar para o ImpactoSocialService', async () => {
       // Arrange
-      const dataLimite = new Date('2024-01-01');
-      const filtrosAvancados = {
-        unidade_id: 'unidade-123',
-        tipo_beneficio_id: 'tipo-456',
+      const filtros = { unidade_id: 'test-unidade' };
+      const resultadoEsperado = {
+        metricas_principais: {
+          familias_beneficiadas: 100,
+          pessoas_impactadas: 350,
+          bairros_impactados: 15,
+          investimento_total: 250000,
+        },
+        indicadores_derivados: {
+          valor_medio_por_familia: 2500,
+          taxa_cobertura_social: 0.75,
+        },
+        graficos: [],
       };
 
-      // Mock para retornos das consultas
-      mockQueryBuilder.getRawOne
-        .mockResolvedValueOnce({ tempo_medio_dias: '10.0' })
-        .mockResolvedValueOnce({ tempo_medio_analise: '6.5' })
-        .mockResolvedValueOnce({ total_solicitacoes: '90' })
-        .mockResolvedValueOnce({ total_concessoes: '75' });
+      mockImpactoSocialService.getImpactoSocial.mockResolvedValue(resultadoEsperado);
 
       // Act
-      const resultado = await service.calcularPerformanceOperacional(dataLimite, filtrosAvancados);
+      const resultado = await service.getImpactoSocial(filtros);
 
       // Assert
-      expect(resultado).toBeDefined();
-      expect(resultado.tempo_medio_solicitacao).toBe(10);
-      expect(resultado.tempo_medio_analise).toBe(6.5);
-      expect(resultado.solicitacoes_por_dia).toBe(3); // 90 / 30
-      expect(resultado.concessoes_por_dia).toBe(2.5); // 75 / 30
-
-      // Verificar se os filtros foram aplicados
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalled();
+      expect(resultado).toEqual(resultadoEsperado);
+      expect(mockImpactoSocialService.getImpactoSocial).toHaveBeenCalledWith(filtros);
     });
+  });
 
-    it('deve retornar valores zerados em caso de erro', async () => {
-      // Arrange - Simular erro na consulta
-      mockQueryBuilder.getRawOne.mockRejectedValue(new Error('Erro de conexão com banco'));
-
-      // Act
-      const resultado = await service.calcularPerformanceOperacional();
-
-      // Assert - Verificar se retorna valores zerados
-      expect(resultado).toBeDefined();
-      expect(resultado.tempo_medio_solicitacao).toBe(0);
-      expect(resultado.tempo_medio_analise).toBe(0);
-      expect(resultado.solicitacoes_por_dia).toBe(0);
-      expect(resultado.concessoes_por_dia).toBe(0);
-    });
-
-    it('deve usar período padrão de 30 dias quando dataLimite não for fornecida', async () => {
+  describe('getGestaoOperacional', () => {
+    it('deve delegar para o GestaoOperacionalService', async () => {
       // Arrange
-      const dataAtual = new Date();
-      const dataEsperada = new Date(dataAtual);
-      dataEsperada.setDate(dataEsperada.getDate() - 30);
+      const filtros = { periodo: '2024-01' };
+      const resultadoEsperado = {
+        metricas_principais: {
+          novos_beneficiarios: 50,
+          solicitacoes_iniciadas: 75,
+          concessoes: 45,
+        },
+        status_tramitacao: {
+          em_analise: 20,
+          pendente_documentacao: 10,
+          aprovadas: 40,
+          rejeitadas: 5,
+        },
+        performance: {
+          tempo_medio_solicitacao: 12.5,
+          tempo_medio_analise: 8.3,
+          solicitacoes_por_dia: 2.5,
+          concessoes_por_dia: 1.5,
+          taxa_concessao: 0.6,
+        },
+        graficos: [],
+      };
 
-      mockQueryBuilder.getRawOne
-        .mockResolvedValueOnce({ tempo_medio_dias: '15.0' })
-        .mockResolvedValueOnce({ tempo_medio_analise: '9.0' })
-        .mockResolvedValueOnce({ total_solicitacoes: '200' })
-        .mockResolvedValueOnce({ total_concessoes: '160' });
+      mockGestaoOperacionalService.getGestaoOperacional.mockResolvedValue(resultadoEsperado);
 
       // Act
-      const resultado = await service.calcularPerformanceOperacional();
+      const resultado = await service.getGestaoOperacional(filtros);
 
       // Assert
-      expect(resultado).toBeDefined();
-      expect(resultado.tempo_medio_solicitacao).toBe(15);
-      expect(resultado.tempo_medio_analise).toBe(9);
-      expect(resultado.solicitacoes_por_dia).toBeCloseTo(6.67, 1); // 200 / 30
-      expect(resultado.concessoes_por_dia).toBeCloseTo(5.33, 1); // 160 / 30
-
-      // Verificar se as consultas foram feitas com período correto
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
-        expect.stringContaining('created_at'),
-        expect.objectContaining({
-          dataInicio: expect.any(Date),
-          dataFim: expect.any(Date),
-        })
-      );
+      expect(resultado).toEqual(resultadoEsperado);
+      expect(mockGestaoOperacionalService.getGestaoOperacional).toHaveBeenCalledWith(filtros);
     });
+  });
 
-    it('deve arredondar valores para 2 casas decimais', async () => {
+  describe('obterSolicitacoesPorStatus', () => {
+    it('deve delegar para o GestaoOperacionalService quando tipo for gestao_operacional', async () => {
       // Arrange
-      mockQueryBuilder.getRawOne
-        .mockResolvedValueOnce({ tempo_medio_dias: '12.456789' })
-        .mockResolvedValueOnce({ tempo_medio_analise: '8.123456' })
-        .mockResolvedValueOnce({ total_solicitacoes: '157' })
-        .mockResolvedValueOnce({ total_concessoes: '123' });
+      const filtros = { status: StatusSolicitacao.EM_ANALISE };
+      const resultadoEsperado = [{ id: '1', status: StatusSolicitacao.EM_ANALISE }];
+
+      mockGestaoOperacionalService.obterSolicitacoesPorStatus.mockResolvedValue(resultadoEsperado);
 
       // Act
-      const resultado = await service.calcularPerformanceOperacional();
+      const resultado = await service.obterSolicitacoesPorStatus('gestao_operacional', filtros);
 
-      // Assert - Verificar arredondamento
-      expect(resultado.tempo_medio_solicitacao).toBe(12.46);
-      expect(resultado.tempo_medio_analise).toBe(8.12);
-      expect(resultado.solicitacoes_por_dia).toBe(5.23); // 157 / 30 = 5.233...
-      expect(resultado.concessoes_por_dia).toBe(4.1); // 123 / 30 = 4.1
+      // Assert
+      expect(resultado).toEqual(resultadoEsperado);
+      expect(mockGestaoOperacionalService.obterSolicitacoesPorStatus).toHaveBeenCalledWith(filtros);
+    });
+
+    it('deve delegar para o ImpactoSocialService quando tipo for impacto_social', async () => {
+      // Arrange
+      const filtros = { status: StatusSolicitacao.APROVADA };
+      const resultadoEsperado = [{ id: '2', status: StatusSolicitacao.APROVADA }];
+
+      mockImpactoSocialService.obterSolicitacoesPorStatus.mockResolvedValue(resultadoEsperado);
+
+      // Act
+      const resultado = await service.obterSolicitacoesPorStatus('impacto_social', filtros);
+
+      // Assert
+      expect(resultado).toEqual(resultadoEsperado);
+      expect(mockImpactoSocialService.obterSolicitacoesPorStatus).toHaveBeenCalledWith(filtros);
+    });
+  });
+
+  describe('debugEscopo', () => {
+    it('deve delegar para o GestaoOperacionalService quando tipo for gestao_operacional', async () => {
+      // Arrange
+      const resultadoEsperado = { escopo: 'GLOBAL', usuario_id: 'test-user' };
+      mockGestaoOperacionalService.debugEscopo.mockResolvedValue(resultadoEsperado);
+
+      // Act
+      const resultado = await service.debugEscopo('gestao_operacional');
+
+      // Assert
+      expect(resultado).toEqual(resultadoEsperado);
+      expect(mockGestaoOperacionalService.debugEscopo).toHaveBeenCalled();
+    });
+
+    it('deve delegar para o ImpactoSocialService quando tipo for impacto_social', async () => {
+      // Arrange
+      const resultadoEsperado = { escopo: 'UNIDADE', unidade_id: 'test-unidade' };
+      mockImpactoSocialService.debugEscopo.mockResolvedValue(resultadoEsperado);
+
+      // Act
+      const resultado = await service.debugEscopo('impacto_social');
+
+      // Assert
+      expect(resultado).toEqual(resultadoEsperado);
+      expect(mockImpactoSocialService.debugEscopo).toHaveBeenCalled();
     });
   });
 });

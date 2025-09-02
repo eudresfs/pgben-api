@@ -2,7 +2,7 @@ import { SelectQueryBuilder } from 'typeorm';
 import { MetricasFiltrosAvancadosDto, PeriodoPredefinido, PeriodoCalculador } from '../dto/metricas-filtros-avancados.dto';
 import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
-import { Solicitacao, Concessao, Pagamento, Usuario } from '../../../entities';
+import { Solicitacao, Concessao, Pagamento, Usuario, Cidadao } from '../../../entities';
 
 /**
  * Helper para aplicar filtros avançados nas queries do TypeORM
@@ -432,6 +432,19 @@ export class FiltrosQueryHelper {
   }
 
   /**
+   * Aplica todos os filtros de uma vez para cidadãos
+   */
+  static aplicarFiltrosCidadao(
+    query: SelectQueryBuilder<Cidadao>,
+    filtros: MetricasFiltrosAvancadosDto
+  ): SelectQueryBuilder<Cidadao> {
+    return this.aplicarFiltroPeriodo(query, filtros, 'cidadao.created_at')
+      .pipe(q => this.aplicarFiltroUnidade(q, filtros, 'cidadao'))
+      .pipe(q => this.aplicarFiltroUsuario(q, filtros, 'cidadao'))
+      .pipe(q => this.aplicarFiltroBairro(q, filtros, 'cidadao', 'cidadao', 'endereco'));
+  }
+
+  /**
    * Aplica escopo automático para solicitações baseado no usuário logado
    */
   static aplicarEscopoSolicitacao(
@@ -459,6 +472,16 @@ export class FiltrosQueryHelper {
     usuario: Usuario
   ): SelectQueryBuilder<Pagamento> {
     return this.aplicarEscopoUnidade(query, usuario, 'pagamento');
+  }
+
+  /**
+   * Aplica escopo automático para cidadãos baseado no usuário logado
+   */
+  static aplicarEscopoCidadao(
+    query: SelectQueryBuilder<Cidadao>,
+    usuario: Usuario
+  ): SelectQueryBuilder<Cidadao> {
+    return this.aplicarEscopoUnidade(query, usuario, 'cidadao');
   }
 
   /**

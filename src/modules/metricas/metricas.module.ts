@@ -24,6 +24,8 @@ import { MetricasCacheService } from './services/metricas-cache.service';
 import { DashboardService } from './services/dashboard.service';
 import { MetricasAnomaliasService } from './services/metricas-anomalia.service';
 import { MetricasDashboardService } from './services/metricas-dashboard.service';
+import { ImpactoSocialService } from './services/impacto-social.service';
+import { GestaoOperacionalService } from './services/gestao-operacional.service';
 
 // Middleware
 import { MetricasMiddleware } from './middlewares/metricas.middleware';
@@ -134,6 +136,8 @@ import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
     MetricasAnomaliasService,
     DashboardService,
     MetricasDashboardService,
+    ImpactoSocialService,
+    GestaoOperacionalService,
 
     // Serviço de health check compartilhado
     HealthCheckService,
@@ -148,6 +152,9 @@ import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
     HealthService,
     MetricasColetaService,
     MetricasCacheService,
+    MetricasDashboardService,
+    ImpactoSocialService,
+    GestaoOperacionalService,
   ],
 })
 export class MetricasModule implements NestModule {
