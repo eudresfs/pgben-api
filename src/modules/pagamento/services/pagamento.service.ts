@@ -719,10 +719,17 @@ export class PagamentoService {
     }
 
     // Validar valor do benefício
-    const valor = Number(solicitacao.tipo_beneficio?.valor) || 0;
+    const valor = Number(solicitacao.valor) || 0;
     if (valor < 0) {
       throw new Error(
-        `Valor do benefício inválido: ${solicitacao.tipo_beneficio?.valor}`,
+        `Valor do benefício inválido: ${solicitacao.valor}`,
+      );
+    }
+
+    const quantidadeParcelas = Number(solicitacao.quantidade_parcelas) || 0;
+    if (quantidadeParcelas < 0) {
+      throw new Error(
+        `Quantidade de parcelas inválida: ${solicitacao.quantidade_parcelas}`,
       );
     }
 
@@ -736,6 +743,7 @@ export class PagamentoService {
       tipoBeneficio,
       valor,
       dataInicio,
+      quantidadeParcelas,
       dadosEspecificos: solicitacao.dados_especificos,
     };
   }

@@ -78,10 +78,10 @@ COPY --from=build --chown=nextjs:nodejs /app/src/templates ./templates
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
 
-# Create directories with proper permissions (including exports/auditoria for AuditoriaExportacaoService)
-RUN mkdir -p /app/logs /app/uploads /app/keys /app/exports/auditoria /app/temp/download-lote && \
-    chown -R nextjs:nodejs /app/logs /app/uploads /app/keys /app/exports /app/temp && \
-    chmod -R 755 /app/exports /app/temp
+# Create directories with proper permissions (including exports/auditoria for AuditoriaExportacaoService and storage for thumbnails)
+RUN mkdir -p /app/logs /app/uploads /app/keys /app/exports/auditoria /app/temp/download-lote /app/storage && \
+    chown -R nextjs:nodejs /app/logs /app/uploads /app/keys /app/exports /app/temp /app/storage && \
+    chmod -R 755 /app/exports /app/temp /app/storage
 
 # Switch to non-root user
 USER nextjs

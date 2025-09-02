@@ -758,6 +758,8 @@ export class WorkflowSolicitacaoService {
     // Atualizar o parecer SEMTAS antes da transição
     await this.solicitacaoRepository.update(solicitacaoId, {
       parecer_semtas: parecerSemtas,
+      data_aprovacao: new Date(),
+      aprovador_id: usuarioId,
     });
 
     const resultado = await this.realizarTransicao(

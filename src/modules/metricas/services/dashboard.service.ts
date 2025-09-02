@@ -1655,14 +1655,29 @@ export class DashboardService {
       .getRawOne();
 
     const valorTotal = parseFloat(investimentoTotal?.total || '0');
-    const pessoasImpactadas = familiasBeneficiadas * 4;
+    
+    // Calcular pessoas impactadas reais (beneficiários + familiares)
+    const pessoasImpactadasResult = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .select('COUNT(DISTINCT solicitacao.beneficiario_id)', 'beneficiarios')
+      .addSelect('COUNT(DISTINCT cf.cidadao_id)', 'familiares')
+      .leftJoin('composicao_familiar', 'cf', 'solicitacao.beneficiario_id = cf.cidadao_id')
+      .where('solicitacao.status = :status', { status: StatusSolicitacao.APROVADA })
+      .andWhere('solicitacao.data_aprovacao BETWEEN :dataInicio AND :dataFim', {
+        dataInicio,
+        dataFim,
+      })
+      .getRawOne();
+    
+    const beneficiarios = parseInt(pessoasImpactadasResult?.beneficiarios || '0');
+    const familiares = parseInt(pessoasImpactadasResult?.familiares || '0');
+    const pessoasImpactadas = beneficiarios + familiares;
 
     const mensagensFormatadas = {
       impactoGeral: `Em ${new Date().getFullYear()}, o programa já beneficiou ${familiasBeneficiadas.toLocaleString()} famílias, impactando diretamente ${pessoasImpactadas.toLocaleString()} pessoas com um investimento social de R$ ${valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`,
       evolucaoMensal: `O programa apresenta crescimento consistente, com média de ${Math.round(familiasBeneficiadas / 12)} famílias atendidas por mês.`,
       destaquesBeneficios: [
         {
-          tipo: 'Auxílio Natalidade',
+          tipo: 'Benefício Natalidade',
           mensagem:
             'Apoiando famílias no momento mais especial: a chegada de um novo membro.',
         },

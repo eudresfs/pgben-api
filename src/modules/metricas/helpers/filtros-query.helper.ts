@@ -2,7 +2,7 @@ import { SelectQueryBuilder } from 'typeorm';
 import { MetricasFiltrosAvancadosDto, PeriodoPredefinido, PeriodoCalculador } from '../dto/metricas-filtros-avancados.dto';
 import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
-import { Solicitacao, Concessao, Pagamento, Usuario } from '../../../entities';
+import { Solicitacao, Concessao, Pagamento, Usuario, Cidadao } from '../../../entities';
 
 /**
  * Helper para aplicar filtros avançados nas queries do TypeORM
@@ -11,6 +11,48 @@ import { Solicitacao, Concessao, Pagamento, Usuario } from '../../../entities';
  * entre diferentes métodos de consulta do serviço de métricas
  */
 export class FiltrosQueryHelper {
+  /**
+   * Verifica se já existe um join com a tabela 'solicitacao'
+   * Versão simplificada e otimizada para produção
+   */
+  private static hasJoinWithSolicitacao(query: SelectQueryBuilder<any>): boolean {
+    const existingJoins = query.expressionMap.joinAttributes;
+    
+    return existingJoins.some(join => {
+      // Verificações essenciais para detectar joins com solicitacao
+      return (
+        join.alias?.name === 'solicitacao' ||
+        join.alias?.name === 'solicitacao_scope' ||
+        join.relationPropertyPath?.includes('.solicitacao') ||
+        (typeof join.entityOrProperty === 'string' && join.entityOrProperty.includes('solicitacao')) ||
+        join.relation?.propertyName === 'solicitacao'
+      );
+    });
+  }
+
+  /**
+   * Encontra o alias de um join existente para uma tabela específica
+   * Útil para coordenação entre ScopedRepository e FiltrosQueryHelper
+   */
+  private static findExistingJoinAlias(
+    query: SelectQueryBuilder<any>,
+    tableName: string
+  ): string | null {
+    const existingJoins = query.expressionMap.joinAttributes;
+    
+    const join = existingJoins.find(join => {
+      return (
+        join.alias?.name === tableName ||
+        join.alias?.name === `${tableName}_scope` ||
+        join.relationPropertyPath?.includes(`.${tableName}`) ||
+        (typeof join.entityOrProperty === 'string' && join.entityOrProperty.includes(tableName)) ||
+        join.relation?.propertyName === tableName
+      );
+    });
+    
+    return join?.alias?.name || null;
+  }
+
   /**
    * Aplica filtros de período nas queries
    */
@@ -179,39 +221,29 @@ export class FiltrosQueryHelper {
     query: SelectQueryBuilder<Pagamento>,
     filtros: MetricasFiltrosAvancadosDto
   ): SelectQueryBuilder<Pagamento> {
-    // Verifica se já existe o join com solicitacao
-    const existingJoins = query.expressionMap.joinAttributes;
-    const hasSolicitacaoJoin = existingJoins.some(join => 
-      join.alias?.name === 'solicitacao' || 
-      join.relationPropertyPath === 'pagamento.solicitacao'
-    );
-    
-    // Se não existe o join, não aplica o filtro (assume que será feito externamente)
-    if (!hasSolicitacaoJoin) {
+    // Usa alias existente ou cria novo para solicitacao
+    let solicitacaoAlias = this.findExistingJoinAlias(query, 'solicitacao');
+    if (!solicitacaoAlias) {
       console.warn('Join com solicitacao não encontrado para aplicar filtro de benefício em pagamentos');
       return query;
     }
 
     // Verifica se já existe o join com tipo_beneficio
-    const hasTipoBeneficioJoin = existingJoins.some(join => 
-      join.alias?.name === 'tipo_beneficio' || 
-      join.relationPropertyPath === 'solicitacao.tipo_beneficio'
-    );
-    
-    // Se não existe o join com tipo_beneficio, adiciona
-    if (!hasTipoBeneficioJoin) {
-      query.innerJoin('solicitacao.tipo_beneficio', 'tipo_beneficio');
+    let tipoBeneficioAlias = this.findExistingJoinAlias(query, 'tipo_beneficio');
+    if (!tipoBeneficioAlias) {
+      tipoBeneficioAlias = 'tipo_beneficio';
+      query.innerJoin(`${solicitacaoAlias}.tipo_beneficio`, tipoBeneficioAlias);
     }
 
     // Prioriza filtros múltiplos
     if (filtros.beneficios && filtros.beneficios.length > 0) {
-      return query.andWhere('tipo_beneficio.id IN (:...beneficios)', {
+      return query.andWhere(`${tipoBeneficioAlias}.id IN (:...beneficios)`, {
         beneficios: filtros.beneficios
       });
     }
     // Fallback para filtro único
     else if (filtros.beneficio) {
-      return query.andWhere('tipo_beneficio.id = :beneficio', {
+      return query.andWhere(`${tipoBeneficioAlias}.id = :beneficio`, {
         beneficio: filtros.beneficio
       });
     }
@@ -294,18 +326,25 @@ export class FiltrosQueryHelper {
     if (filtros.usuarios && filtros.usuarios.length > 0) {
       // Para pagamentos, o técnico está na solicitação
       if (alias === 'pagamento') {
-        // Verifica se o join com solicitacao já existe
-        const existingJoins = query.expressionMap.joinAttributes;
-        const hasJoinSolicitacao = existingJoins.some(join => 
-          join.alias?.name === 'solicitacao' || 
-          (join.relation?.propertyName === 'solicitacao' && join.entityOrProperty === 'pagamento.solicitacao')
-        );
-        
-        if (!hasJoinSolicitacao) {
-          query.leftJoin('pagamento.solicitacao', 'solicitacao');
+        // Usa alias existente ou cria novo
+        let solicitacaoAlias = this.findExistingJoinAlias(query, 'solicitacao');
+        if (!solicitacaoAlias) {
+          solicitacaoAlias = 'solicitacao';
+          query.leftJoin('pagamento.solicitacao', solicitacaoAlias);
         }
         
-        return query.andWhere('solicitacao.tecnico_id IN (:...usuarios)', {
+        return query.andWhere(`${solicitacaoAlias}.tecnico_id IN (:...usuarios)`, {
+          usuarios: filtros.usuarios
+        });
+      } else if (alias === 'concessao') {
+        // Para concessões, o técnico está na solicitação
+        let solicitacaoAlias = this.findExistingJoinAlias(query, 'solicitacao');
+        if (!solicitacaoAlias) {
+          solicitacaoAlias = 'solicitacao';
+          query.leftJoin('concessao.solicitacao', solicitacaoAlias);
+        }
+        
+        return query.andWhere(`${solicitacaoAlias}.tecnico_id IN (:...usuarios)`, {
           usuarios: filtros.usuarios
         });
       } else {
@@ -334,13 +373,18 @@ export class FiltrosQueryHelper {
       const existingJoins = query.expressionMap.joinAttributes;
       
       if (!existingJoins.some(join => join.alias?.name === aliasCidadao)) {
-        // Para pagamentos, precisa acessar beneficiário através da solicitação
-        if (aliasEntity === 'pagamento') {
-          // Verifica se já existe join com solicitacao
-          if (!existingJoins.some(join => join.alias?.name === 'solicitacao')) {
-            query.leftJoin(`${aliasEntity}.solicitacao`, 'solicitacao');
+        // Para pagamentos e concessões, precisa acessar beneficiário através da solicitação
+        if (aliasEntity === 'pagamento' || aliasEntity === 'concessao') {
+          // Usa alias existente ou cria novo
+          let solicitacaoAlias = this.findExistingJoinAlias(query, 'solicitacao');
+          if (!solicitacaoAlias) {
+            solicitacaoAlias = 'solicitacao';
+            query.leftJoin(`${aliasEntity}.solicitacao`, solicitacaoAlias);
           }
-          query.leftJoin('solicitacao.beneficiario', aliasCidadao);
+          query.leftJoin(`${solicitacaoAlias}.beneficiario`, aliasCidadao);
+        } else if (aliasEntity === 'solicitacao') {
+          // Para solicitações, acessa beneficiário diretamente
+          query.leftJoin(`${aliasEntity}.beneficiario`, aliasCidadao);
         } else {
           query.leftJoin(`${aliasEntity}.beneficiario`, aliasCidadao);
         }
@@ -413,7 +457,7 @@ export class FiltrosQueryHelper {
       .pipe(q => this.aplicarFiltroBeneficio(q, filtros, 'concessao'))
       .pipe(q => this.aplicarFiltroStatus(q, filtros, 'concessao'))
       .pipe(q => this.aplicarFiltroUsuario(q, filtros, 'concessao'))
-      .pipe(q => this.aplicarFiltroBairro(q, filtros, 'concessao', 'cidadao', 'endereco'));
+      .pipe(q => this.aplicarFiltroBairro(q, filtros, 'concessao', 'beneficiario', 'endereco'));
   }
 
   /**
@@ -429,6 +473,19 @@ export class FiltrosQueryHelper {
       .pipe(q => this.aplicarFiltroStatus(q, filtros, 'pagamento'))
       .pipe(q => this.aplicarFiltroUsuario(q, filtros, 'pagamento'))
       .pipe(q => this.aplicarFiltroBairro(q, filtros, 'pagamento', 'beneficiario', 'endereco'));
+  }
+
+  /**
+   * Aplica todos os filtros de uma vez para cidadãos
+   */
+  static aplicarFiltrosCidadao(
+    query: SelectQueryBuilder<Cidadao>,
+    filtros: MetricasFiltrosAvancadosDto
+  ): SelectQueryBuilder<Cidadao> {
+    return this.aplicarFiltroPeriodo(query, filtros, 'cidadao.created_at')
+      .pipe(q => this.aplicarFiltroUnidade(q, filtros, 'cidadao'))
+      .pipe(q => this.aplicarFiltroUsuario(q, filtros, 'cidadao'))
+      .pipe(q => this.aplicarFiltroBairro(q, filtros, 'cidadao', 'cidadao', 'endereco'));
   }
 
   /**
@@ -459,6 +516,16 @@ export class FiltrosQueryHelper {
     usuario: Usuario
   ): SelectQueryBuilder<Pagamento> {
     return this.aplicarEscopoUnidade(query, usuario, 'pagamento');
+  }
+
+  /**
+   * Aplica escopo automático para cidadãos baseado no usuário logado
+   */
+  static aplicarEscopoCidadao(
+    query: SelectQueryBuilder<Cidadao>,
+    usuario: Usuario
+  ): SelectQueryBuilder<Cidadao> {
+    return this.aplicarEscopoUnidade(query, usuario, 'cidadao');
   }
 
   /**

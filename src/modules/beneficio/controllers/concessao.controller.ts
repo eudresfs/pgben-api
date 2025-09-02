@@ -61,7 +61,7 @@ export class ConcessaoController {
   constructor(
     private readonly concessaoService: ConcessaoService,
     private readonly auditEventEmitter: AuditEventEmitter,
-  ) {}
+  ) { }
 
   /**
    * Cria uma nova concessão para uma solicitação aprovada.
@@ -101,7 +101,8 @@ export class ConcessaoController {
       id: dto.solicitacaoId,
       prioridade: dto.ordemPrioridade,
       determinacao_judicial_flag: dto.determinacaoJudicialFlag,
-    } as any); // Cast simplificado
+    } as any
+    ); // Cast simplificado
 
     // Auditoria: Criação de concessão
     await this.auditEventEmitter.emitEntityCreated(
@@ -296,7 +297,7 @@ export class ConcessaoController {
     permissionName: 'concessao.listar',
     scopeType: ScopeType.UNIT,
   })
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Listar concessões com filtros avançados',
     description: `Endpoint otimizado para consultas complexas de concessões com múltiplos critérios de filtro.
     

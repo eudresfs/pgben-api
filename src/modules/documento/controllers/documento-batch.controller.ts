@@ -12,6 +12,8 @@ import {
   HttpStatus,
   Logger,
   Req,
+  BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { Response } from 'express';
@@ -42,6 +44,7 @@ import {
   ThrottleBatchDownload,
   ThrottleReports,
 } from '../../../common/decorators/throttle.decorator';
+import * as fs from 'fs';
 
 /**
  * Controller para Download em Lote de Documentos
@@ -56,7 +59,7 @@ import {
 export class DocumentoBatchController {
   private readonly logger = new Logger(DocumentoBatchController.name);
 
-  constructor(private readonly documentoBatchService: DocumentoBatchService) {}
+  constructor(private readonly documentoBatchService: DocumentoBatchService) { }
 
   /**
    * Inicia um download em lote de documentos
@@ -144,7 +147,7 @@ export class DocumentoBatchController {
     return await this.documentoBatchService.obterProgresso(jobId);
   }
 
-  /**
+/**
    * Faz o download do arquivo ZIP gerado
    */
   @Get(':jobId/download')
@@ -182,60 +185,35 @@ export class DocumentoBatchController {
     @GetUser() usuario: Usuario,
     @Res() res: Response,
   ): Promise<void> {
-    try {
-      // Usar streaming direto sem arquivos temporários
-      const { stream, filename, size } =
-        await this.documentoBatchService.criarStreamDownload(jobId);
+    // Verificar se o job existe e está completo
+    const job = await this.documentoBatchService.obterJobCompleto(jobId);
 
-      // Headers para download do ZIP
-      res.set({
-        'Content-Type': 'application/zip',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        Pragma: 'no-cache',
-        Expires: '0',
-        'Transfer-Encoding': 'chunked',
-      });
-
-      // Adicionar Content-Length se o tamanho for conhecido
-      if (size) {
-        res.set('Content-Length', size.toString());
-      }
-
-      // Configurar handlers de erro
-      stream.on('error', (error) => {
-        this.logger.error('Erro no stream de download:', error);
-        if (!res.headersSent) {
-          res.status(500).json({
-            message: 'Erro interno durante o download',
-            error: 'STREAM_ERROR',
-          });
-        }
-      });
-
-      // Fazer pipe do stream para a resposta
-      stream.pipe(res);
-    } catch (error) {
-      this.logger.error('Erro ao iniciar download:', error);
-      if (!res.headersSent) {
-        if (error.message.includes('não encontrado')) {
-          res.status(404).json({
-            message: error.message,
-            error: 'NOT_FOUND',
-          });
-        } else if (error.message.includes('não foi concluído')) {
-          res.status(400).json({
-            message: error.message,
-            error: 'JOB_NOT_COMPLETED',
-          });
-        } else {
-          res.status(500).json({
-            message: 'Erro interno do servidor',
-            error: 'INTERNAL_ERROR',
-          });
-        }
-      }
+    if (job.status !== 'concluido') {
+      throw new BadRequestException(`Job ainda não foi concluído. Status atual: ${job.status}`);
     }
+
+    if (!job.caminho_arquivo || !fs.existsSync(job.caminho_arquivo)) {
+      throw new NotFoundException('Arquivo ZIP não encontrado ou foi removido');
+    }
+
+    // Ler o arquivo ZIP do disco
+    const zipBuffer = fs.readFileSync(job.caminho_arquivo);
+    const filename = job.nome_arquivo || `documentos_lote_${jobId.substring(0, 8)}.zip`;
+
+
+    // Headers para download do ZIP (igual ao endpoint individual que funciona)
+    res.set({
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+      'Content-Length': zipBuffer.length.toString(),
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'X-Content-Type-Options': 'nosniff',
+    });
+
+    // Enviar o buffer diretamente (igual ao endpoint individual)
+    res.send(zipBuffer);
   }
 
   /**

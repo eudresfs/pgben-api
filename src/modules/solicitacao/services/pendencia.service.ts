@@ -27,6 +27,7 @@ import { PermissionService } from '../../../auth/services/permission.service';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { SolicitacaoEventType } from '../events/solicitacao-events';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { HistoricoSolicitacao } from '@/entities';
 
 interface AuditContext {
   ip?: string;
@@ -45,13 +46,15 @@ export class PendenciaService {
     private readonly pendenciaRepository: Repository<Pendencia>,
     @InjectRepository(Solicitacao)
     private readonly solicitacaoRepository: Repository<Solicitacao>,
+    @InjectRepository(HistoricoSolicitacao)
+    private historicoRepository: Repository<HistoricoSolicitacao>,
     @InjectRepository(Usuario)
     private readonly usuarioRepository: Repository<Usuario>,
     private readonly auditEmitter: AuditEventEmitter,
     private readonly eventosService: EventosService,
     private readonly permissionService: PermissionService,
     private readonly eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
   /**
    * Cria uma nova pendência
@@ -108,6 +111,16 @@ export class PendenciaService {
     // Alterar status da solicitação para PENDENTE
     solicitacao.status = StatusSolicitacao.PENDENTE;
     await this.solicitacaoRepository.save(solicitacao);
+
+    // Registrar a pendência no historico
+    await this.historicoRepository.save({
+      solicitacao_id: solicitacao.id,
+      status_anterior: StatusSolicitacao.EM_ANALISE,
+      status_novo: StatusSolicitacao.PENDENTE,
+      usuario_id: usuarioId,
+      observacao: `Uma ou mais pendências foram criadas. Solicitação movida para pendente pelo sistema`,
+      data_alteracao: new Date(),
+    });
 
     // Emitir evento
     await this.eventosService.emitirEvento({
@@ -231,6 +244,16 @@ export class PendenciaService {
       if (solicitacao) {
         solicitacao.status = StatusSolicitacao.EM_ANALISE;
         await this.solicitacaoRepository.save(solicitacao);
+
+        // Registrar a exclusao no historico
+        await this.historicoRepository.save({
+          solicitacao_id: pendencia.solicitacao_id,
+          status_anterior: StatusSolicitacao.PENDENTE,
+          status_novo: StatusSolicitacao.EM_ANALISE,
+          usuario_id: usuarioId,
+          observacao: `Todas as pendências foram sanadas. Solicitação movida novamente para análise pelo sistema`,
+          data_alteracao: new Date(),
+        });
       }
     }
 
@@ -364,6 +387,16 @@ export class PendenciaService {
       if (solicitacao) {
         solicitacao.status = StatusSolicitacao.EM_ANALISE;
         await this.solicitacaoRepository.save(solicitacao);
+
+        // Registrar a pendência no historico
+        await this.historicoRepository.save({
+          solicitacao_id: solicitacao.id,
+          status_anterior: StatusSolicitacao.PENDENTE,
+          status_novo: StatusSolicitacao.EM_ANALISE,
+          usuario_id: usuarioId,
+          observacao: `Todas as pendências foram canceladas. Solicitação movida novamente para análise pelo sistema`,
+          data_alteracao: new Date(),
+        });
       }
     }
 

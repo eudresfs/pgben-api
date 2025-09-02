@@ -879,59 +879,54 @@ export class ScopedRepository<Entity> extends Repository<Entity> {
 
       case 'Concessao':
         // Para Concessao: JOIN com solicitacao.beneficiario
+        // Verificar se já existe JOIN com solicitacao para evitar duplicação
+        const existingConcessaoJoins = queryBuilder.expressionMap.joinAttributes;
+        const hasExistingConcessaoSolicitacaoJoin = existingConcessaoJoins.some(
+          (join) =>
+            join.alias?.name === 'solicitacao' ||
+            join.entityOrProperty === `${alias}.solicitacao`,
+        );
+
+        // Usar alias existente ou criar novo
+        const concessaoSolicitacaoAlias = hasExistingConcessaoSolicitacaoJoin
+          ? 'solicitacao'
+          : 'solicitacao_scope';
+
+        // Só fazer JOIN com solicitacao se não existir
+        if (!hasExistingConcessaoSolicitacaoJoin) {
+          queryBuilder.leftJoin(`${alias}.solicitacao`, 'solicitacao_scope');
+        }
+
+        // JOIN direto com beneficiario através da solicitacao
         queryBuilder
-          .leftJoin(`${alias}.solicitacao`, 'solicitacao')
-          .leftJoin('solicitacao.beneficiario', 'cidadao')
-          .andWhere('cidadao.unidade_id = :unidadeId', { unidadeId });
+          .leftJoin(`${concessaoSolicitacaoAlias}.beneficiario`, 'cidadao_scope')
+          .andWhere('cidadao_scope.unidade_id = :unidadeId', { unidadeId });
         break;
 
       case 'Pagamento':
-        // Para Pagamento: verificar se já existe JOIN com solicitacao
+        // Para Pagamento: usar apenas um caminho direto (pagamento → solicitacao → beneficiario)
+        // Verificar se já existe JOIN com solicitacao para evitar duplicação
         const existingJoins = queryBuilder.expressionMap.joinAttributes;
         const hasExistingSolicitacaoJoin = existingJoins.some(
           (join) =>
             join.alias?.name === 'solicitacao' ||
             join.entityOrProperty === `${alias}.solicitacao`,
         );
-        const hasExistingConcessaoJoin = existingJoins.some(
-          (join) =>
-            join.alias?.name === 'concessao' ||
-            join.entityOrProperty === `${alias}.concessao`,
-        );
 
-        // Só fazer JOIN se não existir
-        if (!hasExistingSolicitacaoJoin) {
-          queryBuilder.leftJoin(`${alias}.solicitacao`, 'solicitacao_scope');
-        }
-        if (!hasExistingConcessaoJoin) {
-          queryBuilder.leftJoin(`${alias}.concessao`, 'concessao_scope');
-        }
-
-        // Usar aliases únicos para evitar conflitos
+        // Usar alias existente ou criar novo
         const solicitacaoAlias = hasExistingSolicitacaoJoin
           ? 'solicitacao'
           : 'solicitacao_scope';
-        const concessaoAlias = hasExistingConcessaoJoin
-          ? 'concessao'
-          : 'concessao_scope';
 
+        // Só fazer JOIN com solicitacao se não existir
+        if (!hasExistingSolicitacaoJoin) {
+          queryBuilder.leftJoin(`${alias}.solicitacao`, 'solicitacao_scope');
+        }
+
+        // JOIN direto com beneficiario através da solicitacao
         queryBuilder
-          .leftJoin(
-            `${solicitacaoAlias}.beneficiario`,
-            'cidadao_solicitacao_scope',
-          )
-          .leftJoin(
-            `${concessaoAlias}.solicitacao`,
-            'concessao_solicitacao_scope',
-          )
-          .leftJoin(
-            'concessao_solicitacao_scope.beneficiario',
-            'cidadao_concessao_scope',
-          )
-          .andWhere(
-            '(cidadao_solicitacao_scope.unidade_id = :unidadeId OR cidadao_concessao_scope.unidade_id = :unidadeId)',
-            { unidadeId },
-          );
+          .leftJoin(`${solicitacaoAlias}.beneficiario`, 'cidadao_scope')
+          .andWhere('cidadao_scope.unidade_id = :unidadeId', { unidadeId });
         break;
 
       default:

@@ -24,6 +24,8 @@ import { MetricasCacheService } from './services/metricas-cache.service';
 import { DashboardService } from './services/dashboard.service';
 import { MetricasAnomaliasService } from './services/metricas-anomalia.service';
 import { MetricasDashboardService } from './services/metricas-dashboard.service';
+import { ImpactoSocialService } from './services/impacto-social.service';
+import { GestaoOperacionalService } from './services/gestao-operacional.service';
 
 // Middleware
 import { MetricasMiddleware } from './middlewares/metricas.middleware';
@@ -55,6 +57,8 @@ import { RequestContextHolder } from '../../common/services/request-context-hold
 
 // Módulos internos
 import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
+import { PagamentoModule } from '../pagamento/pagamento.module';
+import { CidadaoModule } from '../cidadao/cidadao.module';
 
 /**
  * Módulo responsável pelo monitoramento, observabilidade e análise de métricas do sistema
@@ -107,6 +111,8 @@ import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
 
     // Módulo de solicitação para acesso ao SolicitacaoRepository
     SolicitacaoModule,
+    PagamentoModule,
+    CidadaoModule,
   ],
 
   // Controladores para API
@@ -134,6 +140,8 @@ import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
     MetricasAnomaliasService,
     DashboardService,
     MetricasDashboardService,
+    ImpactoSocialService,
+    GestaoOperacionalService,
 
     // Serviço de health check compartilhado
     HealthCheckService,
@@ -148,6 +156,9 @@ import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
     HealthService,
     MetricasColetaService,
     MetricasCacheService,
+    MetricasDashboardService,
+    ImpactoSocialService,
+    GestaoOperacionalService,
   ],
 })
 export class MetricasModule implements NestModule {
