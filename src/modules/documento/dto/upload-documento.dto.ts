@@ -39,6 +39,15 @@ export class UploadDocumentoDto {
   solicitacao_id?: string;
 
   @ApiPropertyOptional({
+    description:
+      'ID da pendência à qual o documento pertence (opcional para documentos reutilizáveis)',
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+  })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID da pendência inválido' })
+  pendencia_id?: string;
+
+  @ApiPropertyOptional({
     description: 'ID da sessão de upload (usado pelo módulo easy-upload)',
     example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
   })

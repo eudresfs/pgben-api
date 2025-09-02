@@ -103,4 +103,7 @@ export enum TipoDocumentoEnum {
 
   // Documentos do módulo de upload fácil
   UPLOAD_FACIL = 'upload_facil',
+
+  // Documentos de pendências
+  PENDENCIA = 'pendencia',
 }

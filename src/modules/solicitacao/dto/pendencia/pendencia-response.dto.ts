@@ -1,8 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
 import { StatusPendencia } from '../../../../entities/pendencia.entity';
-import { BaseResponseDto } from '../../../../shared/dtos/base-response.dto';
-import { UsuarioSafeResponseDto } from '../../../documento/dto/documento-response.dto';
+import { UsuarioSafeResponseDto, DocumentoResponseDto } from '../../../documento/dto/documento-response.dto';
 
 /**
  * DTO de resposta para pendência
@@ -96,6 +95,14 @@ export class PendenciaResponseDto {
   @Expose()
   @Transform(({ value }) => new Date(value).toISOString())
   updated_at: string;
+
+  @ApiPropertyOptional({
+    description: 'Documentos anexados à pendência',
+    type: [DocumentoResponseDto],
+  })
+  @Expose()
+  @Type(() => DocumentoResponseDto)
+  documentos?: DocumentoResponseDto[];
 
   @ApiPropertyOptional({
     description: 'Indica se a pendência está vencida',

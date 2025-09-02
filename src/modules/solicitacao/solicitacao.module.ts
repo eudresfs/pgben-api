@@ -39,6 +39,7 @@ import {
   NotificationTemplate,
   ComposicaoFamiliar,
   TipoBeneficio,
+  Documento,
 } from '../../entities';
 import { TemplateMappingService } from './services/template-mapping.service';
 import { SolicitacaoRepository } from './repositories/solicitacao.repository';
@@ -59,6 +60,7 @@ import { SharedModule } from '../../shared/shared.module';
       HistoricoSolicitacao,
       Pendencia,
       DeterminacaoJudicial,
+      Documento,
       Usuario, // Adicionado para permitir injeção do Repository<Usuario>
       NotificationTemplate, // Adicionado para permitir injeção do TemplateRepository
       ComposicaoFamiliar, // Adicionado para validação cruzada com solicitações
@@ -102,6 +104,7 @@ import { SharedModule } from '../../shared/shared.module';
     createScopedRepositoryProvider(Solicitacao),
     createScopedRepositoryProvider(HistoricoSolicitacao),
     createScopedRepositoryProvider(Pendencia),
+    createScopedRepositoryProvider(Documento),
 
     // Repositórios customizados
     SolicitacaoRepository,
@@ -136,7 +139,6 @@ import { SharedModule } from '../../shared/shared.module';
     PriorizacaoSolicitacaoService,
     NotificacaoService,
     EventosService,
-    // MonitoramentoAluguelSocialService removido - existe módulo específico
     PendenciaService,
   ],
 })

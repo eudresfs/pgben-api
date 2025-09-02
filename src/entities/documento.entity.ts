@@ -24,6 +24,7 @@ import { Usuario } from './usuario.entity';
 import { Cidadao } from './cidadao.entity';
 import { TipoDocumentoEnum } from '../enums';
 import { UploadSession } from '../modules/easy-upload/entities/upload-session.entity';
+import { Pendencia } from './pendencia.entity';
 
 /**
  * Entidade Documento
@@ -35,6 +36,7 @@ import { UploadSession } from '../modules/easy-upload/entities/upload-session.en
 @Entity('documentos')
 @Index(['cidadao_id'])
 @Index(['solicitacao_id'])
+@Index(['pendencia_id'])
 @Index(['tipo'])
 @Index(['usuario_upload_id'])
 @Index(['data_upload'])
@@ -54,6 +56,17 @@ export class Documento {
   })
   @JoinColumn({ name: 'solicitacao_id' })
   solicitacao?: Solicitacao;
+
+  @Column({ nullable: true })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID da pendência deve ser um UUID válido' })
+  pendencia_id?: string;
+
+  @ManyToOne(() => Pendencia, (pendencia) => pendencia.documentos, {
+    nullable: true,
+  })
+  @JoinColumn({ name: 'pendencia_id' })
+  pendencia?: Pendencia;
 
   @Column()
   @IsNotEmpty({ message: 'Cidadão é obrigatório' })
