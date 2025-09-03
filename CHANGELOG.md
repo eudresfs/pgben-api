@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/kemosoft-team/pgben-server/compare/v1.1.0...v1.2.0) (2025-09-03)
+
+
+### Features
+
+* add CORS logging and approval tracking improvements ([d21c63c](https://github.com/kemosoft-team/pgben-server/commit/d21c63c487250a46a8a9c9b17be998973dac0edb))
+* **metrics:** add specialized services for social impact and operational management metrics ([9d0108a](https://github.com/kemosoft-team/pgben-server/commit/9d0108a6e15d3ede03f2f7f294c259a18c2bc56b))
+* **metrics:** implement real queries for dashboard metrics ([97e3e99](https://github.com/kemosoft-team/pgben-server/commit/97e3e99cd090b577b082fd7984095f81646f360e))
+* **pagamento:** add parcelas support and update aluguel social rules ([ad86c48](https://github.com/kemosoft-team/pgben-server/commit/ad86c48a120000baa2b29a378e2819cb3d655448))
+* **payment:** add diaLimite to benefit strategies ([fe7ae51](https://github.com/kemosoft-team/pgben-server/commit/fe7ae517b55171c314ae060e52a28074ca51853d))
+* **pendencia:** add history tracking for status changes ([2e368fb](https://github.com/kemosoft-team/pgben-server/commit/2e368fb899d119a75aaf519d270e5ee3d1b997a0))
+* **unidade:** add pagination metadata to findAll response ([ea3c932](https://github.com/kemosoft-team/pgben-server/commit/ea3c932d436cc73081bb95f1268b7056913332b1))
+
+
+### Bug Fixes
+
+* **pagamento:** update payment status transition rules ([0b42966](https://github.com/kemosoft-team/pgben-server/commit/0b429663cf713bdde84f675773c53fbe9f9f8cde))
+
 ## [1.1.0](https://github.com/kemosoft-team/pgben-server/compare/v0.1.15...v1.1.0) (2025-09-01)
 
 
