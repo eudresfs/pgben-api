@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, MinLength, Matches } from 'class-validator';
+import { IsString, MinLength, Matches, IsStrongPassword } from 'class-validator';
 import { Match } from '../../../shared/validators/match.validator';
 
 /**
@@ -13,9 +13,12 @@ export class AlterarSenhaPrimeiroAcessoDto {
   })
   @IsString({ message: 'A nova senha deve ser uma string' })
   @MinLength(8, { message: 'A nova senha deve ter pelo menos 8 caracteres' })
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
-    message:
-      'A nova senha deve conter pelo menos: 1 letra minúscula, 1 maiúscula, 1 número e 1 caractere especial',
+  @IsStrongPassword({
+    minLength: 8,
+    minLowercase: 1,
+    minUppercase: 1,
+    minNumbers: 1,
+    minSymbols: 1,
   })
   nova_senha: string;
 

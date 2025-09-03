@@ -121,7 +121,6 @@ export class PendenciaService {
            cidadao_id: solicitacao.beneficiario_id,
            pendencia_id: pendenciaSalva.id,
            solicitacao_id: solicitacao.id,
-           upload_session_id: uuidv4(),
            tipo: TipoDocumentoEnum.PENDENCIA,
            arquivo: arquivo,
            descricao: `Documento anexado à pendência: ${createPendenciaDto.descricao}`,
@@ -202,7 +201,7 @@ export class PendenciaService {
     // Buscar a pendência com os relacionamentos necessários
     const pendenciaCompleta = await this.pendenciaRepository.findOne({
       where: { id: pendenciaSalva.id },
-      relations: ['registrado_por', 'resolvido_por'],
+      relations: ['registrado_por', 'resolvido_por', 'documentos'],
     });
 
     if (!pendenciaCompleta) {
@@ -265,7 +264,6 @@ export class PendenciaService {
          const uploadDto: UploadDocumentoDto = {
            cidadao_id: pendencia.solicitacao.beneficiario_id,
            solicitacao_id: pendencia.solicitacao_id,
-           upload_session_id: uuidv4(),
            tipo: TipoDocumentoEnum.PENDENCIA,
            arquivo: arquivo,
            descricao: `Documento de resolução da pendência: ${resolverPendenciaDto.observacao_resolucao || 'Sem observação'}`,
@@ -534,7 +532,7 @@ export class PendenciaService {
   ): Promise<PendenciaResponseDto> {
     const pendencia = await this.pendenciaRepository.findOne({
       where: { id: pendenciaId },
-      relations: ['registrado_por', 'resolvido_por', 'solicitacao'],
+      relations: ['registrado_por', 'resolvido_por', 'solicitacao', 'documentos'],
     });
 
     if (!pendencia) {
