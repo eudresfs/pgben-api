@@ -14,6 +14,7 @@ export interface FindAllOptions {
   bairro?: string;
   unidade_id?: string;
   includeRelations?: boolean;
+  include_removed?: boolean;
 }
 
 /**
@@ -49,10 +50,16 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       bairro,
       unidade_id,
       includeRelations = false,
+      include_removed = false,
     } = options;
 
     // Criar QueryBuilder com escopo aplicado automaticamente
     const query = this.createScopedQueryBuilder('cidadao');
+
+    // Aplicar filtro de soft delete (por padrão, excluir registros removidos)
+    if (!include_removed) {
+      query.andWhere('cidadao.removed_at IS NULL');
+    }
 
     // JOIN com composição familiar para busca
     query.leftJoin('cidadao.composicao_familiar', 'composicao_familiar_search');
@@ -252,11 +259,17 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
   async findById(
     id: string,
     includeRelations = false,
+    include_removed = false,
   ): Promise<Cidadao | null> {
     const query = this.createScopedQueryBuilder('cidadao').where(
       'cidadao.id = :id',
       { id },
     );
+
+    // Aplicar filtro de soft delete se necessário
+    if (!include_removed) {
+      query.andWhere('cidadao.removed_at IS NULL');
+    }
 
     // Sempre carregar relações essenciais
     query.leftJoinAndSelect('cidadao.unidade', 'unidade');
@@ -291,12 +304,66 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
   async findByCpf(
     cpf: string,
     includeRelations = false,
+    include_removed = false,
   ): Promise<Cidadao | null> {
     const cpfClean = cpf.replace(/\D/g, '');
     const query = this.createScopedQueryBuilder('cidadao').where(
       'cidadao.cpf = :cpf',
       { cpf: cpfClean },
     );
+
+    // Aplicar filtro de soft delete se necessário
+    if (!include_removed) {
+      query.andWhere('cidadao.removed_at IS NULL');
+    }
+
+    if (includeRelations) {
+      query.leftJoinAndSelect('cidadao.unidade', 'unidade');
+      query.leftJoinAndSelect('cidadao.contatos', 'contato');
+      query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
+      query.leftJoinAndSelect('cidadao.info_bancaria', 'info_bancaria');
+      query.leftJoinAndSelect(
+        'cidadao.composicao_familiar',
+        'composicao_familiar',
+      );
+    } else {
+      query.leftJoinAndSelect('cidadao.unidade', 'unidade');
+      query.leftJoinAndSelect('cidadao.info_bancaria', 'info_bancaria');
+      query.leftJoinAndSelect(
+        'cidadao.enderecos',
+        'endereco',
+        'endereco.data_fim_vigencia IS NULL',
+      );
+    }
+
+    return query.getOne();
+  }
+
+  /**
+   * Busca cidadão por CPF ignorando escopo (busca global)
+   * Usado para verificação de duplicidade de CPF em todo o sistema
+   *
+   * @param cpf - CPF do cidadão
+   * @param includeRelations - Se deve incluir relacionamentos
+   * @param include_removed - Se deve incluir registros removidos
+   * @returns Cidadão encontrado ou null
+   */
+  async findByCpfGlobal(
+    cpf: string,
+    includeRelations = false,
+    include_removed = false,
+  ): Promise<Cidadao | null> {
+    const cpfClean = cpf.replace(/\D/g, '');
+    
+    const query = this.createQueryBuilder('cidadao').where(
+      'cidadao.cpf = :cpf',
+      { cpf: cpfClean },
+    );
+
+    // Se include_removed for true, usar withDeleted() para incluir registros removidos
+    if (include_removed) {
+      query.withDeleted();
+    }
 
     if (includeRelations) {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
@@ -330,12 +397,18 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
   async findByNis(
     nis: string,
     includeRelations = false,
+    include_removed = false,
   ): Promise<Cidadao | null> {
     const nisClean = nis.replace(/\D/g, '');
     const query = this.createScopedQueryBuilder('cidadao').where(
       'cidadao.nis = :nis',
       { nis: nisClean },
     );
+
+    // Aplicar filtro de soft delete se necessário
+    if (!include_removed) {
+      query.andWhere('cidadao.removed_at IS NULL');
+    }
 
     // Sempre carregar relações essenciais
     query.leftJoinAndSelect('cidadao.unidade', 'unidade');
@@ -367,16 +440,17 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
    * @returns Cidadão criado
    */
   async createCidadao(data: Partial<Cidadao>): Promise<Cidadao> {
-    // Verificar duplicatas usando métodos com escopo
+    // Verificar duplicatas usando métodos com escopo (incluindo registros removidos)
+    // Isso previne violações de constraint no banco de dados
     if (data.cpf) {
-      const existingCpf = await this.findByCpf(data.cpf);
+      const existingCpf = await this.findByCpf(data.cpf, false, true);
       if (existingCpf) {
         throw new ConflictException('CPF já cadastrado');
       }
     }
 
     if (data.nis) {
-      const existingNis = await this.findByNis(data.nis);
+      const existingNis = await this.findByNis(data.nis, false, true);
       if (existingNis) {
         throw new ConflictException('NIS já cadastrado');
       }

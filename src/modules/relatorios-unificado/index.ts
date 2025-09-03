@@ -14,7 +14,7 @@
  */
 
 // Exporta o módulo principal
-export * from './relatorios-unificado.module';
+export * from './relatorios.module';
 
 // Exporta controllers
 export * from './controllers';

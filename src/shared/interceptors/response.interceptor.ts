@@ -47,7 +47,7 @@ export class ResponseInterceptor implements NestInterceptor {
         return {
           data: data,
           meta: null,
-          message: 'sucesso',
+          message: null,
         };
       }),
     );

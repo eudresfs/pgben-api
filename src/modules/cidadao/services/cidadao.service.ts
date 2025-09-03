@@ -49,7 +49,7 @@ export class CidadaoService {
     private readonly auditEmitter: AuditEventEmitter,
     private readonly httpService: HttpService,
     private readonly enhancedCacheService: EnhancedCacheService,
-  ) {}
+  ) { }
 
   async findAll(
     options: {
@@ -59,6 +59,7 @@ export class CidadaoService {
       bairro?: string;
       unidade_id?: string;
       includeRelations?: boolean;
+      include_removed?: boolean;
     } = {},
   ): Promise<CidadaoPaginatedResponseDto> {
     const {
@@ -68,6 +69,7 @@ export class CidadaoService {
       bairro,
       unidade_id,
       includeRelations = false,
+      include_removed = false,
     } = options;
 
     const skip = (page - 1) * limit;
@@ -80,6 +82,7 @@ export class CidadaoService {
       bairro,
       unidade_id,
       includeRelations,
+      include_removed,
     });
 
     const items = cidadaos.map((cidadao) =>
@@ -105,13 +108,19 @@ export class CidadaoService {
     id: string,
     includeRelations = false,
     userId?: string,
+    includeRemoved = false,
   ): Promise<CidadaoResponseDto> {
     if (!id || typeof id !== 'string') {
       throw new BadRequestException('ID inválido');
     }
 
-    const cidadao = await this.cidadaoRepository.findById(id, includeRelations);
+    const cidadao = await this.cidadaoRepository.findById(id, includeRelations, includeRemoved);
     if (!cidadao) {
+      throw new NotFoundException('Cidadão não encontrado');
+    }
+
+    // Verificar se o cidadão foi removido e includeRemoved é false
+    if (!includeRemoved && cidadao.foiRemovido()) {
       throw new NotFoundException('Cidadão não encontrado');
     }
 
@@ -127,6 +136,7 @@ export class CidadaoService {
     cpf: string,
     includeRelations = false,
     userId?: string,
+    includeRemoved = false,
   ): Promise<CidadaoResponseDto | DadosPortalTransparenciaDto> {
     if (!cpf || cpf.trim() === '') {
       throw new BadRequestException('CPF é obrigatório');
@@ -141,28 +151,34 @@ export class CidadaoService {
     const cidadao = await this.cidadaoRepository.findByCpf(
       cpfClean,
       includeRelations,
+      includeRemoved,
     );
 
     if (cidadao) {
-      // Cidadão encontrado na base local
-      // Auditoria de acesso a dados sensíveis por CPF
-      await this.auditEmitter.emitSensitiveDataEvent(
-        AuditEventType.SENSITIVE_DATA_ACCESSED,
-        'Cidadao',
-        cidadao.id,
-        userId || SYSTEM_USER_UUID,
-        ['cpf'],
-        'Consulta por CPF - Base Local',
-      );
+      // Verificar se o cidadão foi removido e includeRemoved é false
+      if (!includeRemoved && cidadao.foiRemovido()) {
+        // Continuar para busca no Portal da Transparência se cidadão foi removido
+      } else {
+        // Cidadão encontrado na base local
+        // Auditoria de acesso a dados sensíveis por CPF
+        await this.auditEmitter.emitSensitiveDataEvent(
+          AuditEventType.SENSITIVE_DATA_ACCESSED,
+          'Cidadao',
+          cidadao.id,
+          userId || SYSTEM_USER_UUID,
+          ['cpf'],
+          'Consulta por CPF - Base Local',
+        );
 
-      return plainToInstance(CidadaoResponseDto, cidadao, {
-        excludeExtraneousValues: true,
-      });
+        return plainToInstance(CidadaoResponseDto, cidadao, {
+          excludeExtraneousValues: true,
+        });
+      }
     }
 
     // Fallback: consultar Portal da Transparência se não encontrado localmente
     this.logger.debug(`Cidadão não encontrado na base local para CPF: ${cpfClean.substring(0, 3)}***. Consultando Portal da Transparência...`);
-    
+
     const dadosPortalTransparencia = await this.consultarPortalTransparencia(
       cpfClean,
       userId,
@@ -182,6 +198,7 @@ export class CidadaoService {
     nis: string,
     includeRelations = false,
     userId?: string,
+    includeRemoved = false,
   ): Promise<CidadaoResponseDto> {
     if (!nis || nis.trim() === '') {
       throw new BadRequestException('NIS é obrigatório');
@@ -195,8 +212,14 @@ export class CidadaoService {
     const cidadao = await this.cidadaoRepository.findByNis(
       nisClean,
       includeRelations,
+      includeRemoved,
     );
     if (!cidadao) {
+      throw new NotFoundException('Cidadão não encontrado');
+    }
+
+    // Verificar se o cidadão foi removido e includeRemoved é false
+    if (!includeRemoved && cidadao.foiRemovido()) {
       throw new NotFoundException('Cidadão não encontrado');
     }
 
@@ -242,7 +265,7 @@ export class CidadaoService {
         cacheKey,
         'portal_transparencia'
       );
-      
+
       if (dadosCache) {
         this.logger.debug(`Dados encontrados no cache para CPF: ${cpfClean.substring(0, 3)}***`);
         return dadosCache;
@@ -403,113 +426,113 @@ export class CidadaoService {
     });
   }
 
-/**
- * Valida se o NIS é válido, ignorando valores inválidos conhecidos
- * @param nis Número de Identificação Social
- * @returns NIS válido ou null se inválido
- */
-private validarNis(nis?: string): string | null {
-  const nisClean = nis?.replace(/\D/g, '') ?? '';
+  /**
+   * Valida se o NIS é válido, ignorando valores inválidos conhecidos
+   * @param nis Número de Identificação Social
+   * @returns NIS válido ou null se inválido
+   */
+  private validarNis(nis?: string): string | null {
+    const nisClean = nis?.replace(/\D/g, '') ?? '';
 
-  if (
-    nisClean.length !== 11 ||
-    /^(\d)\1{10}$/.test(nisClean) // repete o mesmo dígito 11 vezes
-  ) {
-    this.logger?.debug?.(`NIS inválido ignorado: ${nisClean}`);
-    return null;
+    if (
+      nisClean.length !== 11 ||
+      /^(\d)\1{10}$/.test(nisClean) // repete o mesmo dígito 11 vezes
+    ) {
+      this.logger?.debug?.(`NIS inválido ignorado: ${nisClean}`);
+      return null;
+    }
+
+    return nisClean;
   }
 
-  return nisClean;
-}
+  /**
+   * Consulta dados do Novo Bolsa Família sacado por NIS
+   * @param nis Número de Identificação Social
+   * @param anoMesReferencia Ano e mês de referência no formato YYYYMM
+   * @param pagina Número da página para paginação
+   * @param userId ID do usuário para auditoria
+   * @returns Dados do Novo Bolsa Família sacado ou null se não encontrado
+   */
+  private async consultarNovoBolsaFamiliaSacado(
+    nis: string,
+    anoMesReferencia: string = '202506',
+    pagina: number = 1,
+    userId?: string,
+  ): Promise<NovoBolsaFamiliaSacadoResponseDto[]> {
+    try {
+      // Obter chave da API do Portal da Transparência
+      const apiKey = this.configService.get<string>('API_PORTAL_TRANSPARENCIA');
+      if (!apiKey) {
+        this.logger.warn('Chave da API do Portal da Transparência não configurada');
+        return [];
+      }
 
-/**
- * Consulta dados do Novo Bolsa Família sacado por NIS
- * @param nis Número de Identificação Social
- * @param anoMesReferencia Ano e mês de referência no formato YYYYMM
- * @param pagina Número da página para paginação
- * @param userId ID do usuário para auditoria
- * @returns Dados do Novo Bolsa Família sacado ou null se não encontrado
- */
-private async consultarNovoBolsaFamiliaSacado(
-  nis: string,
-  anoMesReferencia: string = '202506',
-  pagina: number = 1,
-  userId?: string,
-): Promise<NovoBolsaFamiliaSacadoResponseDto[]> {
-  try {
-    // Obter chave da API do Portal da Transparência
-    const apiKey = this.configService.get<string>('API_PORTAL_TRANSPARENCIA');
-    if (!apiKey) {
-      this.logger.warn('Chave da API do Portal da Transparência não configurada');
-      return [];
-    }
+      // Configurar URL e headers da requisição
+      const url = 'https://api.portaldatransparencia.gov.br/api-de-dados/novo-bolsa-familia-sacado-por-nis';
+      const headers = {
+        'chave-api-dados': apiKey,
+        'Accept': 'application/json',
+        'User-Agent': 'PGBEN-Server/1.0',
+      };
 
-    // Configurar URL e headers da requisição
-    const url = 'https://api.portaldatransparencia.gov.br/api-de-dados/novo-bolsa-familia-sacado-por-nis';
-    const headers = {
-      'chave-api-dados': apiKey,
-      'Accept': 'application/json',
-      'User-Agent': 'PGBEN-Server/1.0',
-    };
+      const params = {
+        nis,
+        anoMesReferencia,
+        pagina: pagina.toString(),
+      };
 
-    const params = {
-      nis,
-      anoMesReferencia,
-      pagina: pagina.toString(),
-    };
-
-    // Realizar requisição HTTP
-    const response = await firstValueFrom(
-      this.httpService.get<NovoBolsaFamiliaSacadoResponseDto[]>(url, {
-        headers,
-        params,
-        timeout: 8000,
-      }),
-    );
-
-    if (!response.data || !Array.isArray(response.data)) {
-      this.logger.warn('Portal da Transparência retornou resposta vazia para Novo Bolsa Família');
-      return [];
-    }
-
-    // Adicionar propriedade naturalidade a cada item
-    const dadosComNaturalidade = response.data.map(item => ({
-      ...item,
-      naturalidade: `${item.municipio.nomeIBGE}/${item.municipio.uf.nome}`,
-    }));
-
-    // Auditoria da consulta externa
-    await this.auditEmitter.emitSensitiveDataEvent(
-      AuditEventType.SENSITIVE_DATA_ACCESSED,
-      'PortalTransparencia-NovoBolsaFamilia',
-      nis,
-      userId || SYSTEM_USER_UUID,
-      ['nis', 'nome', 'cpf', 'valorSaque'],
-      'Consulta do Novo Bolsa Família sacado por NIS',
-    );
-
-    this.logger.debug(`Dados do Novo Bolsa Família obtidos para NIS: ${nis}`);
-
-    return dadosComNaturalidade;
-  } catch (error) {
-    // Log do erro sem expor dados sensíveis
-    this.logger.error(
-      `Erro ao consultar Novo Bolsa Família por NIS: ${error.message}`,
-      error.stack,
-    );
-
-    // Se for erro de API (401, 403, etc.), retornar array vazio ao invés de lançar exceção
-    if (error.response?.status >= 400 && error.response?.status < 500) {
-      this.logger.warn(
-        `Erro de autenticação/autorização no Portal da Transparência (Novo Bolsa Família): ${error.response.status}`,
+      // Realizar requisição HTTP
+      const response = await firstValueFrom(
+        this.httpService.get<NovoBolsaFamiliaSacadoResponseDto[]>(url, {
+          headers,
+          params,
+          timeout: 8000,
+        }),
       );
+
+      if (!response.data || !Array.isArray(response.data)) {
+        this.logger.warn('Portal da Transparência retornou resposta vazia para Novo Bolsa Família');
+        return [];
+      }
+
+      // Adicionar propriedade naturalidade a cada item
+      const dadosComNaturalidade = response.data.map(item => ({
+        ...item,
+        naturalidade: `${item.municipio.nomeIBGE}/${item.municipio.uf.nome}`,
+      }));
+
+      // Auditoria da consulta externa
+      await this.auditEmitter.emitSensitiveDataEvent(
+        AuditEventType.SENSITIVE_DATA_ACCESSED,
+        'PortalTransparencia-NovoBolsaFamilia',
+        nis,
+        userId || SYSTEM_USER_UUID,
+        ['nis', 'nome', 'cpf', 'valorSaque'],
+        'Consulta do Novo Bolsa Família sacado por NIS',
+      );
+
+      this.logger.debug(`Dados do Novo Bolsa Família obtidos para NIS: ${nis}`);
+
+      return dadosComNaturalidade;
+    } catch (error) {
+      // Log do erro sem expor dados sensíveis
+      this.logger.error(
+        `Erro ao consultar Novo Bolsa Família por NIS: ${error.message}`,
+        error.stack,
+      );
+
+      // Se for erro de API (401, 403, etc.), retornar array vazio ao invés de lançar exceção
+      if (error.response?.status >= 400 && error.response?.status < 500) {
+        this.logger.warn(
+          `Erro de autenticação/autorização no Portal da Transparência (Novo Bolsa Família): ${error.response.status}`,
+        );
+        return [];
+      }
+
+      // Para outros erros, também retornar array vazio para não quebrar o fluxo
       return [];
     }
-
-    // Para outros erros, também retornar array vazio para não quebrar o fluxo
-    return [];
   }
-}
 
   async create(
     createCidadaoDto: CreateCidadaoDto,
@@ -534,11 +557,49 @@ private async consultarNovoBolsaFamiliaSacado(
       }
     }
 
-    // Verificar se já existe um cidadão com o CPF informado
-    const cidadaoExistente = await this.cidadaoRepository.findByCpf(cpfClean);
-    
+    // Verificar se já existe um cidadão com o CPF informado (incluindo removidos) - busca global
+    const cidadaoExistente = await this.cidadaoRepository.findByCpfGlobal(cpfClean, false, true);
+
     if (cidadaoExistente) {
-      // Se existe, atualizar os dados do cidadão existente (upsert)
+      // Se o cidadão foi removido, reativá-lo
+      if (cidadaoExistente.foiRemovido()) {
+        // Preparar dados para reativação
+        const dadosReativacao: Partial<Cidadao> = {
+          removed_at: null,
+        };
+
+        // Se o cidadão está em uma unidade diferente, transferir para a unidade atual
+        if (cidadaoExistente.unidade_id !== unidade_id) {
+          dadosReativacao.unidade_id = unidade_id;
+        }
+
+        // Aplicar dados de reativação ao cidadão existente
+        Object.assign(cidadaoExistente, dadosReativacao);
+        
+        // Reativar o cidadão usando saveWithScope
+        await this.cidadaoRepository.saveWithScope(cidadaoExistente);
+
+        // Emitir evento de auditoria para reativação
+        await this.auditEmitter.emitEntityUpdated(
+          'Cidadao',
+          cidadaoExistente.id,
+          { 
+            removed_at: cidadaoExistente.removed_at,
+            unidade_id: cidadaoExistente.unidade_id 
+          },
+          dadosReativacao,
+          usuario_id,
+        );
+      } else {
+        // Cidadão existe e não foi removido - verificar se está na mesma unidade
+        if (cidadaoExistente.unidade_id !== unidade_id) {
+          throw new ConflictException(
+            `CPF ${cpfClean} já está cadastrado em outra unidade. Entre em contato com o administrador para transferência.`
+          );
+        }
+      }
+
+      // Atualizar os dados do cidadão existente (upsert)
       return this.update(cidadaoExistente.id, createCidadaoDto, usuario_id);
     }
 
@@ -666,8 +727,8 @@ private async consultarNovoBolsaFamiliaSacado(
     if (dadosAtualizacao.cpf) {
       const cpfClean = dadosAtualizacao.cpf.replace(/\D/g, '');
       if (cpfClean !== cidadao.cpf) {
-        const existingCpf = await this.cidadaoRepository.findByCpf(cpfClean);
-        if (existingCpf) {
+        const existingCpf = await this.cidadaoRepository.findByCpf(cpfClean, false, true);
+        if (existingCpf && existingCpf.id !== id) {
           throw new ConflictException('CPF já cadastrado');
         }
         dadosAtualizacao.cpf = cpfClean;
@@ -678,8 +739,8 @@ private async consultarNovoBolsaFamiliaSacado(
     if ('nis' in dadosAtualizacao && dadosAtualizacao.nis !== cidadao.nis) {
       const nisClean = dadosAtualizacao.nis?.replace(/\D/g, '') || undefined;
       if (nisClean) {
-        const existingNis = await this.cidadaoRepository.findByNis(nisClean);
-        if (existingNis) {
+        const existingNis = await this.cidadaoRepository.findByNis(nisClean, false, true);
+        if (existingNis && existingNis.id !== id) {
           throw new ConflictException('NIS já cadastrado');
         }
       }
@@ -765,8 +826,58 @@ private async consultarNovoBolsaFamiliaSacado(
     });
   }
 
-  async remove(id: string): Promise<void> {
+  /**
+   * Remove logicamente um cidadão do sistema (soft delete)
+   * 
+   * @param id - ID do cidadão a ser removido
+   * @param userId - ID do usuário que está realizando a operação
+   * @returns Objeto com mensagem de sucesso e data de remoção
+   * @throws NotFoundException - Quando o cidadão não é encontrado
+   * @throws BadRequestException - Quando o cidadão já foi removido anteriormente
+   */
+  async remove(id: string, userId?: string): Promise<{ message: string; removedAt: Date }> {
+    // Buscar o cidadão incluindo registros removidos para verificar se existe
+    const cidadao = await this.cidadaoRepository.findOne({
+      where: { id },
+      withDeleted: true, // Incluir registros com soft delete
+    });
+
+    if (!cidadao) {
+      throw new NotFoundException('Cidadão não encontrado');
+    }
+
+    // Verificar se já foi removido anteriormente
+    if (cidadao.foiRemovido()) {
+      throw new BadRequestException('Cidadão já foi removido anteriormente');
+    }
+
+    // Realizar o soft delete
     await this.cidadaoRepository.removeCidadao(id);
+
+    // Buscar o cidadão atualizado para obter a data de remoção
+    const cidadaoRemovido = await this.cidadaoRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+
+    // Emitir evento de auditoria
+    await this.auditEmitter.emitEntityDeleted(
+      'Cidadao',
+      id,
+      {
+        nome: cidadao.nome,
+        cpf: cidadao.cpf,
+        removed_at: null,
+      },
+      userId || SYSTEM_USER_UUID,
+    );
+
+    this.logger.log(`Cidadão ${cidadao.nome} (${cidadao.cpf}) removido com sucesso por usuário ${userId}`);
+
+    return {
+      message: 'Cidadão removido com sucesso',
+      removedAt: cidadaoRemovido?.removed_at || new Date(),
+    };
   }
 
   /**
