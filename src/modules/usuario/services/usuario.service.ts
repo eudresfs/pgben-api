@@ -118,7 +118,7 @@ export class UsuarioService {
           senha: senha,
           matricula: usuario.matricula,
           sistema_url:
-            process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
+            process.env.FRONTEND_URL || 'https://semtas-natal.pgben.com.br',
           data_criacao: new Date().toLocaleDateString('pt-BR'),
         },
       });
@@ -146,7 +146,7 @@ export class UsuarioService {
     const {
       relations = true,
       page = 1,
-      limit = 10,
+      limit = 500,
       search,
       ...filters
     } = options || {};
@@ -272,6 +272,27 @@ export class UsuarioService {
         pages: Math.ceil(total / limit),
       },
     };
+  }
+
+  /**
+   * Busca usuários por unidade
+   * @param unidade_id ID da unidade
+   * @returns Lista de usuários da unidade
+   */
+  async findByUnidade(unidade_id: string) {
+    const usuarios = await this.usuarioRepository.findByUnidade(unidade_id);
+
+    if (!usuarios) {
+      throwUserNotFound(unidade_id);
+    }
+
+    // Remover campos sensíveis
+    const usuariosSemSenha = usuarios.map((usuario) => {
+      const { senhaHash, ...usuarioSemSenha } = usuario;
+      return usuarioSemSenha;
+    });
+
+    return usuariosSemSenha;
   }
 
   /**
@@ -972,6 +993,7 @@ export class UsuarioService {
         'GESTOR': 2,
         'COORDENADOR': 1,
         'TECNICO_SEMTAS': 1,
+        'MONITORAMENTO': 1,
       };
 
       const ROLES_IGNORADAS = ['SUPER_ADMIN', 'AUDITOR', 'CIDADAO'];

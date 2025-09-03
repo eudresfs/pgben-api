@@ -46,7 +46,7 @@ export class UnidadeService {
     tipo?: string;
     status?: string;
   }) {
-    const { page = 1, limit = 10, search, tipo, status } = options || {};
+    const { page = 1, limit = 50, search, tipo, status } = options || {};
 
     // Construir filtros
     const where: {

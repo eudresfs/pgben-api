@@ -15,12 +15,9 @@ import { UsuarioService } from '../../usuario/services/usuario.service';
 import { CidadaoService } from '../../cidadao/services/cidadao.service';
 import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
-import { ConcessaoService } from '@/modules/beneficio/services/concessao.service';
 import { StatusConcessao } from '@/entities';
-import { Public } from '../../../auth/decorators/public.decorator';
 import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { UserAccessTokenClaims } from '../../../auth/dtos/auth-token-output.dto';
-import { Status } from '@/enums';
 
 /**
  * Interface para item do cache com TTL
@@ -128,7 +125,7 @@ export class ReferenciaController {
     }
 
     // Se não estiver em cache, buscar dados otimizados do banco
-    const referencias = await this.buscarDadosOtimizados();
+    const referencias = await this.buscarDadosOtimizados(user);
 
     // Armazenar no cache
     this.cache.set(this.CACHE_KEY, referencias, this.CACHE_TTL);
@@ -171,14 +168,16 @@ export class ReferenciaController {
    * Busca dados otimizados do banco de dados
    * Executa consultas em paralelo com campos específicos e limites reduzidos
    */
-  private async buscarDadosOtimizados() {
+  private async buscarDadosOtimizados(user?: UserAccessTokenClaims) {
+    const escopo = user?.escopo === 'UNIDADE';
     // Executar todas as consultas em paralelo com otimizações
-    const [tiposBeneficio, unidades, usuarios, roles, bairros] =
+    const [tiposBeneficio, unidades, usuarios, usuarios_unidade, roles, bairros] =
       await Promise.all([
         this.beneficioService.findAll({}), 
-        this.unidadeService.findAll({limit: 50}), 
-        this.usuarioService.findAll({limit: 500}), 
-        this.usuarioService.findAllRoles({limit: 500}),
+        this.unidadeService.findAll(), 
+        this.usuarioService.findAll(), 
+        this.usuarioService.findByUnidade(user?.unidade_id),
+        this.usuarioService.findAllRoles(),
         this.cidadaoService.findAllBairros(),
       ]);
 
@@ -190,8 +189,8 @@ export class ReferenciaController {
       unidades: this.mapearUnidades(unidades.items),
       statusPagamento: this.mapearStatusPagamento(),
       bairros,
-      usuarios: this.mapearUsuarios(usuarios.items),
-      roles: this.mapearRoles(roles),
+      usuarios: escopo ? this.mapearUsuarios(usuarios_unidade) : this.mapearUsuarios(usuarios.items), 
+      roles: escopo ? this.mapearRoles(roles) : [],
     };
   }
 
