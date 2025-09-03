@@ -1,11 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RequestContextHolder } from '../../../common/services/request-context-holder.service';
 import { ImpactoSocialData } from '../interfaces/impacto-social.interface';
 import { GestaoOperacionalData } from '../interfaces/gestao-operacional.interface';
 import { MetricasFiltrosAvancadosDto } from '../dto/metricas-filtros-avancados.dto';
 import { ImpactoSocialService } from './impacto-social.service';
 import { GestaoOperacionalService } from './gestao-operacional.service';
-import { RequestContext } from '@/shared/request-context/request-context.dto';
 
 /**
  * Serviço principal para métricas do dashboard
@@ -37,11 +35,7 @@ export class MetricasDashboardService {
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<ImpactoSocialData> {
     try {
-      this.logger.log('Iniciando cálculo de métricas de impacto social');
-      
       const resultado = await this.impactoSocialService.getImpactoSocial(filtros);
-      
-      this.logger.log('Métricas de impacto social calculadas com sucesso');
       return resultado;
     } catch (error) {
       this.logger.error('Erro ao calcular métricas de impacto social', error.stack);
@@ -59,11 +53,7 @@ export class MetricasDashboardService {
     filtros?: MetricasFiltrosAvancadosDto,
   ): Promise<GestaoOperacionalData> {
     try {
-      this.logger.log('Iniciando cálculo de métricas de gestão operacional');
-      
       const resultado = await this.gestaoOperacionalService.getGestaoOperacional(filtros);
-      
-      this.logger.log('Métricas de gestão operacional calculadas com sucesso');
       return resultado;
     } catch (error) {
       this.logger.error('Erro ao calcular métricas de gestão operacional', error.stack);
@@ -81,11 +71,7 @@ export class MetricasDashboardService {
     porStatus: { status: string; quantidade: number }[] 
   }> {
     try {
-      this.logger.log('Obtendo solicitações por status para debug');
-      
       const resultado = await this.gestaoOperacionalService.obterSolicitacoesPorStatus();
-      
-      this.logger.log('Solicitações por status obtidas com sucesso');
       return resultado;
     } catch (error) {
       this.logger.error('Erro ao obter solicitações por status', error.stack);

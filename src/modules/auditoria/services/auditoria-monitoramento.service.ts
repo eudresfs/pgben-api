@@ -409,11 +409,6 @@ export class AuditoriaMonitoramentoService implements OnModuleInit {
         10000,
       );
 
-      if (crescimentoDiario > limiteCrescimentoDiario) {
-        this.logger.warn(
-          `ALERTA: Crescimento diário acima do limite (${crescimentoDiario} logs nas últimas 24h)`,
-        );
-      }
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Erro desconhecido';

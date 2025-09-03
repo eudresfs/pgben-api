@@ -208,7 +208,7 @@ export class NotificacaoProativaService {
       titulo,
       conteudo,
       entidade_tipo: 'solicitacao',
-      link: `/solicitacoes/${solicitacao.id}`,
+      link: `/solicitacoes/detalhes/${solicitacao.id}`,
       prioridade: this.determinarPrioridadePrazo(descricaoPrazo),
       dados: {
         entidade_relacionada_id: solicitacao.id,
