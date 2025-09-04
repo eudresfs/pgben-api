@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.0](https://github.com/kemosoft-team/pgben-server/compare/v1.3.0...v1.4.0) (2025-09-04)
+
+
+### Features
+
+* **pendencia:** add optimistic locking and transaction handling for pendencia operations ([2b665e6](https://github.com/kemosoft-team/pgben-server/commit/2b665e6fb5884941ec360bb9e1a3a6d016b181a3))
+
+
+### Bug Fixes
+
+* **concessao:** change benefit end date calculation to use parcel count ([e8ff437](https://github.com/kemosoft-team/pgben-server/commit/e8ff43751083df7fd875be6091b4b202ddfedcc0))
+
 ## [1.3.0](https://github.com/kemosoft-team/pgben-server/compare/v1.2.0...v1.3.0) (2025-09-04)
 
 
