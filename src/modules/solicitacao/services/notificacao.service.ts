@@ -55,6 +55,19 @@ export interface DadosNotificacaoSolicitacao {
  */
 @Injectable()
 export class NotificacaoService {
+  private readonly logger = new Logger(NotificacaoService.name);
+
+  constructor(
+    @InjectRepository(Solicitacao)
+    private readonly solicitacaoRepository: Repository<Solicitacao>,
+    private readonly prazoService: PrazoSolicitacaoService,
+    private readonly priorizacaoService: PriorizacaoSolicitacaoService,
+    private readonly configService: ConfigService,
+    private readonly eventEmitter: EventEmitter2,
+    @Inject(forwardRef(() => NotificacaoSistemaService))
+    private readonly notificacaoSistemaService: NotificacaoSistemaService,
+  ) {}
+
   /**
    * Notifica sobre criação de pendência
    */
@@ -110,18 +123,6 @@ export class NotificacaoService {
       );
     }
   }
-  private readonly logger = new Logger(NotificacaoService.name);
-
-  constructor(
-    @InjectRepository(Solicitacao)
-    private readonly solicitacaoRepository: Repository<Solicitacao>,
-    private readonly prazoService: PrazoSolicitacaoService,
-    private readonly priorizacaoService: PriorizacaoSolicitacaoService,
-    private readonly configService: ConfigService,
-    private readonly eventEmitter: EventEmitter2,
-    @Inject(forwardRef(() => NotificacaoSistemaService))
-    private readonly notificacaoSistemaService: NotificacaoSistemaService,
-  ) {}
 
   /**
    * Envia uma notificação para o sistema

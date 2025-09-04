@@ -50,7 +50,7 @@ export class SolicitacaoEventListener {
       // Buscar a solicitação criada com relacionamentos necessários
       const solicitacao = await this.solicitacaoRepository.findOne({
         where: { id: evento.solicitacaoId },
-        relations: ['requerente', 'tipo_beneficio', 'tecnico', 'unidade'],
+        relations: ['beneficiario', 'solicitante', 'tipo_beneficio', 'tecnico', 'unidade'],
       });
 
       if (!solicitacao) {
@@ -383,7 +383,7 @@ export class SolicitacaoEventListener {
 
       const solicitacao = await this.solicitacaoRepository.findOne({
         where: { id: evento.solicitacaoId.toString() },
-        relations: ['requerente', 'tipo_beneficio'],
+        relations: ['beneficiario', 'solicitante', 'tipo_beneficio'],
       });
 
       if (solicitacao) {
@@ -419,7 +419,7 @@ export class SolicitacaoEventListener {
 
       const solicitacao = await this.solicitacaoRepository.findOne({
         where: { id: evento.solicitacaoId.toString() },
-        relations: ['requerente', 'tipo_beneficio'],
+        relations: ['beneficiario', 'solicitante', 'tipo_beneficio'],
       });
 
       if (solicitacao) {
@@ -455,7 +455,7 @@ export class SolicitacaoEventListener {
 
       const solicitacao = await this.solicitacaoRepository.findOne({
         where: { id: evento.solicitacaoId.toString() },
-        relations: ['requerente', 'tipo_beneficio'],
+        relations: ['beneficiario', 'solicitante', 'tipo_beneficio'],
       });
 
       if (solicitacao) {

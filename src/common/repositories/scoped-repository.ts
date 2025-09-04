@@ -235,10 +235,24 @@ export class ScopedRepository<Entity> extends Repository<Entity> {
     }
 
     // Aplicar atualização usando critérios corretos
-    await this.update({ id }, updateData as any);
+    const updateResult = await this.update({ id }, updateData as any);
+
+    // Verificar se a atualização foi bem-sucedida
+    if (updateResult.affected === 0) {
+      throw new ScopeViolationException(
+        `Falha ao atualizar entidade com ID ${id} - nenhuma linha afetada`,
+      );
+    }
 
     // Retornar entidade atualizada
-    return this.findById(id);
+    const updatedEntity = await this.findById(id);
+    if (!updatedEntity) {
+      throw new ScopeViolationException(
+        `Entidade com ID ${id} não encontrada após atualização`,
+      );
+    }
+
+    return updatedEntity;
   }
 
   /**

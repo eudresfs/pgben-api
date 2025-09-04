@@ -148,7 +148,7 @@ export class CidadaoService {
     }
 
     // Primeiro, tentar encontrar na base local
-    const cidadao = await this.cidadaoRepository.findByCpf(
+    const cidadao = await this.cidadaoRepository.findByCpfGlobal(
       cpfClean,
       includeRelations,
       includeRemoved,
@@ -727,7 +727,7 @@ export class CidadaoService {
     if (dadosAtualizacao.cpf) {
       const cpfClean = dadosAtualizacao.cpf.replace(/\D/g, '');
       if (cpfClean !== cidadao.cpf) {
-        const existingCpf = await this.cidadaoRepository.findByCpf(cpfClean, false, true);
+        const existingCpf = await this.cidadaoRepository.findByCpfGlobal(cpfClean, false, true);
         if (existingCpf && existingCpf.id !== id) {
           throw new ConflictException('CPF já cadastrado');
         }
@@ -957,36 +957,77 @@ export class CidadaoService {
       cpf: cidadao.cpf,
     };
 
-    // Atualizar a unidade do cidadão
-    const cidadaoAtualizado = await this.cidadaoRepository.updateCidadao(
-      cidadaoId,
-      { unidade_id },
-    );
+    // Executar transferência em transação para garantir consistência
+    const queryRunner = this.cidadaoRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // Processar novo endereço se fornecido
-    if (endereco) {
-      // Finalizar endereços atuais (definir data_fim_vigencia)
-      const enderecosAtuais =
-        await this.enderecoService.findByCidadaoId(cidadaoId);
+    try {
+      // Atualizar a unidade do cidadão
+      const updateResult = await queryRunner.manager.update(
+        'cidadao',
+        { id: cidadaoId },
+        { unidade_id, updated_at: new Date() }
+      );
 
-      const dataAtual = new Date().toISOString().split('T')[0];
-
-      // Finalizar endereços vigentes
-      for (const enderecoAtual of enderecosAtuais) {
-        if (!enderecoAtual.data_fim_vigencia) {
-          await this.enderecoService.update(enderecoAtual.id, {
-            ...enderecoAtual,
-            data_fim_vigencia: dataAtual,
-          });
-        }
+      if (updateResult.affected === 0) {
+        throw new BadRequestException('Falha ao atualizar unidade do cidadão');
       }
 
-      // Criar novo endereço
-      await this.enderecoService.create({
-        ...endereco,
-        cidadao_id: cidadaoId,
-        data_inicio_vigencia: endereco.data_inicio_vigencia || dataAtual,
-      });
+      // Processar novo endereço se fornecido
+      if (endereco) {
+        // Finalizar endereços atuais (definir data_fim_vigencia)
+        const enderecosAtuais =
+          await this.enderecoService.findByCidadaoId(cidadaoId);
+
+        const dataAtual = new Date().toISOString().split('T')[0];
+
+        // Finalizar endereços vigentes
+        for (const enderecoAtual of enderecosAtuais) {
+          if (!enderecoAtual.data_fim_vigencia) {
+            await queryRunner.manager.update(
+              'endereco',
+              { id: enderecoAtual.id },
+              { data_fim_vigencia: dataAtual }
+            );
+          }
+        }
+
+        // Criar novo endereço
+        await queryRunner.manager.insert('endereco', {
+          ...endereco,
+          cidadao_id: cidadaoId,
+          data_inicio_vigencia: endereco.data_inicio_vigencia || dataAtual,
+          created_at: new Date(),
+          updated_at: new Date(),
+        });
+      }
+
+      // Confirmar transação
+      await queryRunner.commitTransaction();
+
+      this.logger.log(
+        `Unidade do cidadão ${cidadaoId} transferida com sucesso para ${unidade_id}`,
+      );
+
+    } catch (error) {
+      // Reverter transação em caso de erro
+      await queryRunner.rollbackTransaction();
+      this.logger.error(
+        `Erro ao transferir unidade do cidadão ${cidadaoId}: ${error.message}`,
+      );
+      throw new BadRequestException(
+        `Falha na transferência de unidade: ${error.message}`,
+      );
+    } finally {
+      // Liberar conexão
+      await queryRunner.release();
+    }
+
+    // Buscar cidadão atualizado
+    const cidadaoAtualizado = await this.cidadaoRepository.findById(cidadaoId);
+    if (!cidadaoAtualizado) {
+      throw new NotFoundException('Cidadão não encontrado após atualização');
     }
 
     // Auditoria da transferência

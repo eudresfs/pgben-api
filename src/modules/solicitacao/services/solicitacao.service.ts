@@ -777,11 +777,46 @@ export class SolicitacaoService {
         unidadeTecnico = user.unidade_id;
       }
 
+      // VALIDACAO ESPECIAL: Verificar se o cidadao esta na unidade MIGRATION
+      // Se sim, transferir automaticamente para a unidade do tecnico
+      if (beneficiario.unidade && beneficiario.unidade.codigo === 'MIGRATION') {
+        this.logger.log(
+          `Cidadao ${beneficiario.id} sem unidade definida. Transferindo para unidade do tecnico: ${unidadeTecnico}`,
+        );
+        
+        try {
+          // Atualizar a unidade do beneficiario para a unidade do tecnico
+          await this.cidadaoService.transferirUnidade(
+            beneficiario.id,
+            {
+              unidade_id: unidadeTecnico,
+              motivo: 'Transferencia automatica durante criacao de solicitacao - cidadao estava sem unidade definida',
+            },
+            user.id,
+          );
+          
+          // Atualizar o objeto beneficiario com a nova unidade
+          beneficiario.unidade_id = unidadeTecnico;
+          
+          this.logger.log(
+            `Cidadao ${beneficiario.id} transferido com sucesso para a unidade ${unidadeTecnico}`,
+          );
+        } catch (error) {
+          this.logger.error(
+            `Erro ao transferir cidadao ${beneficiario.id} sem unidade definida: ${error.message}`,
+            error.stack,
+          );
+          throw new BadRequestException(
+            'Erro ao transferir cidadao sem unidade definida. Tente novamente.',
+          );
+        }
+      }
+
       // Validar se a unidade do beneficiario e igual a unidade do tecnico
       if (beneficiario.unidade_id !== unidadeTecnico && user.escopo !== 'GLOBAL') {
         throw new BadRequestException(
-          'Solicitacoes so podem ser feitas pela unidade atual do beneficiario. ' +
-            'Em caso de mudanca de endereco, transfira o beneficiario de unidade antes.',
+          'Solicitacões só podem ser feitas pela unidade atual do beneficiário. ' +
+            'Em caso de mudança de endereço, transfira o beneficiário de unidade antes.',
         );
       }
 

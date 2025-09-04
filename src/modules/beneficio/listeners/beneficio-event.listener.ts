@@ -52,7 +52,12 @@ export class BeneficioEventListener {
       // Buscar a concessão com relacionamentos
       const concessao = await this.concessaoRepository.findOne({
         where: { id: evento.concessaoId },
-        relations: ['requerente', 'tipo_beneficio', 'solicitacao'],
+        relations: [
+          'solicitacao',
+          'solicitacao.beneficiario',
+          'solicitacao.solicitante',
+          'solicitacao.tipo_beneficio'
+        ],
       });
 
       if (!concessao) {

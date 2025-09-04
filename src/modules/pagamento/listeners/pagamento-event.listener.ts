@@ -59,7 +59,13 @@ export class PagamentoEventListener {
       // Buscar o pagamento com relacionamentos
       const pagamento = await this.pagamentoRepository.findOne({
         where: { id: evento.pagamentoId },
-        relations: ['concessao', 'concessao.requerente', 'concessao.tipo_beneficio'],
+        relations: [
+          'concessao',
+          'concessao.solicitacao',
+          'concessao.solicitacao.beneficiario',
+          'concessao.solicitacao.solicitante',
+          'concessao.solicitacao.tipo_beneficio'
+        ],
       });
 
       if (!pagamento) {
@@ -117,7 +123,12 @@ export class PagamentoEventListener {
       // Buscar o pagamento com relacionamentos
       const pagamento = await this.pagamentoRepository.findOne({
         where: { id: evento.pagamentoId },
-        relations: ['concessao', 'concessao.requerente'],
+        relations: [
+          'concessao',
+          'concessao.solicitacao',
+          'concessao.solicitacao.beneficiario',
+          'concessao.solicitacao.solicitante'
+        ],
       });
 
       if (!pagamento) {
@@ -176,7 +187,12 @@ export class PagamentoEventListener {
       // Buscar o pagamento com relacionamentos
       const pagamento = await this.pagamentoRepository.findOne({
         where: { id: evento.pagamentoId },
-        relations: ['concessao', 'concessao.requerente'],
+        relations: [
+          'concessao',
+          'concessao.solicitacao',
+          'concessao.solicitacao.beneficiario',
+          'concessao.solicitacao.solicitante'
+        ],
       });
 
       if (!pagamento) {
@@ -239,7 +255,12 @@ export class PagamentoEventListener {
       // Buscar o pagamento com relacionamentos
       const pagamento = await this.pagamentoRepository.findOne({
         where: { id: evento.pagamentoId },
-        relations: ['concessao', 'concessao.requerente'],
+        relations: [
+          'concessao',
+          'concessao.solicitacao',
+          'concessao.solicitacao.beneficiario',
+          'concessao.solicitacao.solicitante'
+        ],
       });
 
       if (!pagamento) {
@@ -298,7 +319,12 @@ export class PagamentoEventListener {
       // Buscar o pagamento com relacionamentos
       const pagamento = await this.pagamentoRepository.findOne({
         where: { id: evento.pagamentoId },
-        relations: ['concessao', 'concessao.requerente'],
+        relations: [
+          'concessao',
+          'concessao.solicitacao',
+          'concessao.solicitacao.beneficiario',
+          'concessao.solicitacao.solicitante'
+        ],
       });
 
       if (!pagamento) {
@@ -357,7 +383,12 @@ export class PagamentoEventListener {
       // Buscar o pagamento com relacionamentos
       const pagamento = await this.pagamentoRepository.findOne({
         where: { id: evento.pagamentoId },
-        relations: ['concessao', 'concessao.requerente'],
+        relations: [
+          'concessao',
+          'concessao.solicitacao',
+          'concessao.solicitacao.beneficiario',
+          'concessao.solicitacao.solicitante'
+        ],
       });
 
       if (!pagamento) {
@@ -416,7 +447,12 @@ export class PagamentoEventListener {
       // Buscar o pagamento com relacionamentos
       const pagamento = await this.pagamentoRepository.findOne({
         where: { id: evento.pagamentoId },
-        relations: ['concessao', 'concessao.requerente'],
+        relations: [
+          'concessao',
+          'concessao.solicitacao',
+          'concessao.solicitacao.beneficiario',
+          'concessao.solicitacao.solicitante'
+        ],
       });
 
       if (!pagamento) {
@@ -475,7 +511,12 @@ export class PagamentoEventListener {
       // Buscar o pagamento com relacionamentos
       const pagamento = await this.pagamentoRepository.findOne({
         where: { id: evento.pagamentoId },
-        relations: ['concessao', 'concessao.requerente'],
+        relations: [
+          'concessao',
+          'concessao.solicitacao',
+          'concessao.solicitacao.beneficiario',
+          'concessao.solicitacao.solicitante'
+        ],
       });
 
       if (!pagamento) {
@@ -529,7 +570,12 @@ export class PagamentoEventListener {
       // Buscar o pagamento com relacionamentos
       const pagamento = await this.pagamentoRepository.findOne({
         where: { id: evento.pagamentoId },
-        relations: ['concessao', 'concessao.requerente'],
+        relations: [
+          'concessao',
+          'concessao.solicitacao',
+          'concessao.solicitacao.beneficiario',
+          'concessao.solicitacao.solicitante'
+        ],
       });
 
       if (!pagamento) {
@@ -591,7 +637,12 @@ export class PagamentoEventListener {
       // Buscar o pagamento com relacionamentos
       const pagamento = await this.pagamentoRepository.findOne({
         where: { id: evento.pagamentoId },
-        relations: ['concessao', 'concessao.requerente'],
+        relations: [
+          'concessao',
+          'concessao.solicitacao',
+          'concessao.solicitacao.beneficiario',
+          'concessao.solicitacao.solicitante'
+        ],
       });
 
       if (!pagamento) {
