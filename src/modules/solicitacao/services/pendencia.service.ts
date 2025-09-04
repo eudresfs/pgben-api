@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository, SelectQueryBuilder, DataSource } from 'typeorm';
 import { plainToClass } from 'class-transformer';
 import { Pendencia, StatusPendencia } from '../../../entities/pendencia.entity';
 import {
@@ -59,6 +59,7 @@ export class PendenciaService {
     private readonly permissionService: PermissionService,
     private readonly eventEmitter: EventEmitter2,
     private readonly documentoService: DocumentoService,
+    private readonly dataSource: DataSource,
   ) { }
 
   /**
@@ -70,142 +71,193 @@ export class PendenciaService {
     auditContext?: AuditContext,
     documentos?: Express.Multer.File[],
   ): Promise<PendenciaResponseDto> {
-    // Verificar se a solicitação existe
-    const solicitacao = await this.solicitacaoRepository.findOne({
-      where: { id: createPendenciaDto.solicitacao_id },
-      relations: ['beneficiario'],
-    });
+    // Executar transação principal para criar a pendência
+    const pendenciaCompleta = await this.dataSource.transaction(async (manager) => {
+      // Buscar a solicitação primeiro para obter a versão atual
+      const solicitacaoAtual = await manager.findOne(Solicitacao, {
+        where: { id: createPendenciaDto.solicitacao_id },
+        relations: ['beneficiario'],
+      });
 
-    if (!solicitacao) {
-      throw new NotFoundException('Solicitação não encontrada');
-    }
+      if (!solicitacaoAtual) {
+        throw new NotFoundException('Solicitação não encontrada');
+      }
 
-    // Verificar se o prazo de resolução é maior que a data atual
-    if (createPendenciaDto.prazo_resolucao) {
-      const prazoResolucao = new Date(createPendenciaDto.prazo_resolucao);
-      const agora = new Date();
+      // Buscar a solicitação com lock otimista usando a versão atual
+      const solicitacao = await manager.findOne(Solicitacao, {
+        where: { id: createPendenciaDto.solicitacao_id },
+        relations: ['beneficiario'],
+        lock: { mode: 'optimistic', version: solicitacaoAtual.version },
+      });
 
-      if (prazoResolucao <= agora) {
+      if (!solicitacao) {
         throw new BadRequestException(
-          'O prazo de resolução deve ser maior que a data atual',
+          'A solicitação foi modificada por outro usuário. Recarregue a página e tente novamente.',
         );
       }
-    }
 
-    // Verificar se o usuário existe
-    const usuario = await this.usuarioRepository.findOne({
-      where: { id: usuarioId },
-    });
+      // Verificar se o prazo de resolução é maior que a data atual
+      if (createPendenciaDto.prazo_resolucao) {
+        const prazoResolucao = new Date(createPendenciaDto.prazo_resolucao);
+        const agora = new Date();
 
-    if (!usuario) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
+        if (prazoResolucao <= agora) {
+          throw new BadRequestException(
+            'O prazo de resolução deve ser maior que a data atual',
+          );
+        }
+      }
 
-    // Criar a pendência
-    const pendencia = this.pendenciaRepository.create({
-      solicitacao_id: createPendenciaDto.solicitacao_id,
-      descricao: createPendenciaDto.descricao,
-      registrado_por_id: usuarioId,
-      prazo_resolucao: createPendenciaDto.prazo_resolucao
-        ? new Date(createPendenciaDto.prazo_resolucao)
-        : null,
-      status: StatusPendencia.ABERTA,
-    });
+      // Verificar se o usuário existe
+      const usuario = await manager.findOne(Usuario, {
+        where: { id: usuarioId },
+      });
 
-    const pendenciaSalva = await this.pendenciaRepository.save(pendencia);
-    
-    // Alterar status da solicitação para PENDENTE
-    solicitacao.status = StatusSolicitacao.PENDENTE;
-    await this.solicitacaoRepository.save(solicitacao);
+      if (!usuario) {
+        throw new NotFoundException('Usuário não encontrado');
+      }
 
-    // Processar upload de documentos se fornecidos
-     if (documentos && documentos.length > 0) {
-       for (const arquivo of documentos) {
-         const uploadDto: UploadDocumentoDto = {
-           cidadao_id: solicitacao.beneficiario_id,
-           pendencia_id: pendenciaSalva.id,
-           solicitacao_id: solicitacao.id,
-           tipo: TipoDocumentoEnum.PENDENCIA,
-           arquivo: arquivo,
-           descricao: `Documento anexado à pendência: ${createPendenciaDto.descricao}`,
-           reutilizavel: false
-         };
- 
-         await this.documentoService.upload(
-           arquivo,
-           uploadDto,
-           usuarioId
-         );
-       }
-     }
-
-    // Registrar a pendência no historico
-    await this.historicoRepository.save({
-      solicitacao_id: solicitacao.id,
-      status_anterior: StatusSolicitacao.EM_ANALISE,
-      status_atual: StatusSolicitacao.PENDENTE,
-      usuario_id: usuarioId,
-      observacao: `Uma ou mais pendências foram criadas. Solicitação movida para pendente pelo sistema`,
-      data_alteracao: new Date(),
-    });
-
-    // Emitir evento
-    await this.eventosService.emitirEvento({
-      type: SolicitacaoEventType.PENDENCY_CREATED,
-      solicitacaoId: solicitacao.id,
-      timestamp: new Date(),
-      data: {
-        pendenciaId: pendenciaSalva.id,
+      // Criar a pendência
+      const pendencia = manager.create(Pendencia, {
+        solicitacao_id: createPendenciaDto.solicitacao_id,
         descricao: createPendenciaDto.descricao,
-        prazo: createPendenciaDto.prazo_resolucao
+        registrado_por_id: usuarioId,
+        prazo_resolucao: createPendenciaDto.prazo_resolucao
           ? new Date(createPendenciaDto.prazo_resolucao)
-          : undefined,
-        usuarioId: usuarioId,
-      },
-    });
+          : null,
+        status: StatusPendencia.ABERTA,
+      });
 
-    // Registrar auditoria
-    await this.auditEmitter.emitEntityCreated(
-      'Pendencia',
-      pendenciaSalva.id,
-      {
-        solicitacao_id: pendenciaSalva.solicitacao_id,
-        descricao: pendenciaSalva.descricao,
-        status: pendenciaSalva.status,
-        prazo_resolucao: pendenciaSalva.prazo_resolucao,
-        registrado_por_id: pendenciaSalva.registrado_por_id,
-        // Campos sensíveis identificados
-        _sensitive_fields: ['descricao'],
-        // Contexto adicional
-        _context: {
-          ip: auditContext?.ip,
-          userAgent: auditContext?.userAgent,
-          action: 'Criação de pendência para solicitação',
+      const pendenciaSalva = await manager.save(pendencia);
+      
+      // Verificar se o status atual da solicitação permite alteração para PENDENTE
+      const statusesPermitidos = [
+        StatusSolicitacao.EM_ANALISE,
+        StatusSolicitacao.PENDENTE, // Permite múltiplas pendências
+        StatusSolicitacao.AGUARDANDO_DOCUMENTOS,
+      ];
+
+      if (!statusesPermitidos.includes(solicitacao.status)) {
+        throw new BadRequestException(
+          `Não é possível criar pendência para solicitação com status ${solicitacao.status}`,
+        );
+      }
+
+      // Alterar status da solicitação para PENDENTE apenas se não estiver já neste status
+      const statusAnterior = solicitacao.status;
+      if (solicitacao.status !== StatusSolicitacao.PENDENTE) {
+        solicitacao.status = StatusSolicitacao.PENDENTE;
+        await manager.save(solicitacao);
+
+        // Registrar a alteração no histórico apenas se houve mudança de status
+        await manager.save(HistoricoSolicitacao, {
           solicitacao_id: solicitacao.id,
+          status_anterior: statusAnterior,
+          status_atual: StatusSolicitacao.PENDENTE,
+          usuario_id: usuarioId,
+          observacao: `Status alterado para PENDENTE devido à criação de pendência: ${createPendenciaDto.descricao}`,
+          data_alteracao: new Date(),
+        });
+      }
+
+      // Registrar a pendência no historico
+      await manager.save(HistoricoSolicitacao, {
+        solicitacao_id: solicitacao.id,
+        status_anterior: StatusSolicitacao.EM_ANALISE,
+        status_atual: StatusSolicitacao.PENDENTE,
+        usuario_id: usuarioId,
+        observacao: `Uma ou mais pendências foram criadas. Solicitação movida para pendente pelo sistema`,
+        data_alteracao: new Date(),
+      });
+
+      // Emitir evento
+      await this.eventosService.emitirEvento({
+        type: SolicitacaoEventType.PENDENCY_CREATED,
+        solicitacaoId: solicitacao.id,
+        timestamp: new Date(),
+        data: {
+          pendenciaId: pendenciaSalva.id,
+          descricao: createPendenciaDto.descricao,
+          prazo: createPendenciaDto.prazo_resolucao
+            ? new Date(createPendenciaDto.prazo_resolucao)
+            : undefined,
+          usuarioId: usuarioId,
         },
-      },
-      usuarioId,
-    );
+      });
 
-    // Emitir evento de pendência criada (o listener processará as notificações)
-    this.eventEmitter.emit('solicitacao.pendency_created', {
-      pendenciaId: pendenciaSalva.id,
-      solicitacaoId: solicitacao.id,
-      descricao: createPendenciaDto.descricao,
-      prazo: createPendenciaDto.prazo_resolucao
-        ? new Date(createPendenciaDto.prazo_resolucao)
-        : undefined,
-      usuarioId: usuarioId,
+      // Registrar auditoria
+      await this.auditEmitter.emitEntityCreated(
+        'Pendencia',
+        pendenciaSalva.id,
+        {
+          solicitacao_id: pendenciaSalva.solicitacao_id,
+          descricao: pendenciaSalva.descricao,
+          status: pendenciaSalva.status,
+          prazo_resolucao: pendenciaSalva.prazo_resolucao,
+          registrado_por_id: pendenciaSalva.registrado_por_id,
+          // Campos sensíveis identificados
+          _sensitive_fields: ['descricao'],
+          // Contexto adicional
+          _context: {
+            ip: auditContext?.ip,
+            userAgent: auditContext?.userAgent,
+            action: 'Criação de pendência para solicitação',
+            solicitacao_id: solicitacao.id,
+          },
+        },
+        usuarioId,
+      );
+
+      // Buscar a pendência com os relacionamentos necessários
+      const pendenciaCompleta = await manager.findOne(Pendencia, {
+        where: { id: pendenciaSalva.id },
+        relations: ['registrado_por', 'resolvido_por', 'documentos'],
+      });
+
+      if (!pendenciaCompleta) {
+        throw new NotFoundException('Erro ao buscar pendência criada');
+      }
+
+      return pendenciaCompleta;
     });
 
-    // Buscar a pendência com os relacionamentos necessários
-    const pendenciaCompleta = await this.pendenciaRepository.findOne({
-      where: { id: pendenciaSalva.id },
-      relations: ['registrado_por', 'resolvido_por', 'documentos'],
-    });
+    // Processar upload de documentos após a transação (para evitar problemas de foreign key)
+    if (documentos && documentos.length > 0) {
+      try {
+        // Buscar a solicitação para obter o beneficiario_id
+        const solicitacao = await this.solicitacaoRepository.findOne({
+          where: { id: pendenciaCompleta.solicitacao_id },
+        });
 
-    if (!pendenciaCompleta) {
-      throw new NotFoundException('Erro ao buscar pendência criada');
+        if (!solicitacao) {
+          throw new NotFoundException('Solicitação não encontrada para upload de documentos');
+        }
+
+        for (const arquivo of documentos) {
+          const uploadDto: UploadDocumentoDto = {
+            cidadao_id: solicitacao.beneficiario_id,
+            pendencia_id: pendenciaCompleta.id,
+            solicitacao_id: pendenciaCompleta.solicitacao_id,
+            tipo: TipoDocumentoEnum.PENDENCIA,
+            arquivo: arquivo,
+            descricao: `Documento anexado à pendência: ${createPendenciaDto.descricao}`,
+            reutilizavel: false
+          };
+
+          await this.documentoService.upload(
+            arquivo,
+            uploadDto,
+            usuarioId
+          );
+        }
+      } catch (uploadError) {
+        // Se o upload falhar, registrar o erro mas não falhar a criação da pendência
+        // A pendência já foi criada com sucesso
+        console.error('Erro no upload de documentos da pendência:', uploadError);
+        
+        // Opcionalmente, você pode adicionar uma observação na pendência sobre o erro
+        // ou implementar uma estratégia de retry
+      }
     }
 
     return plainToClass(PendenciaResponseDto, pendenciaCompleta, {
@@ -223,164 +275,190 @@ export class PendenciaService {
     auditContext?: AuditContext,
     documentos?: Express.Multer.File[],
   ): Promise<PendenciaResponseDto> {
-    const pendencia = await this.pendenciaRepository.findOne({
-      where: { id: pendenciaId },
-      relations: ['solicitacao', 'registrado_por', 'resolvido_por'],
-    });
-
-    if (!pendencia) {
-      throw new NotFoundException('Pendência não encontrada');
-    }
-
-    if (pendencia.status !== StatusPendencia.ABERTA) {
-      throw new BadRequestException(
-        'Apenas pendências abertas podem ser resolvidas',
-      );
-    }
-
-    // Verificar se o usuário existe
-    const usuario = await this.usuarioRepository.findOne({
-      where: { id: usuarioId },
-    });
-
-    if (!usuario) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
-
-    const dadosAnteriores = { ...pendencia };
-
-    // Atualizar a pendência
-    pendencia.status = StatusPendencia.RESOLVIDA;
-    pendencia.resolvido_por_id = usuarioId;
-    pendencia.data_resolucao = new Date();
-    pendencia.observacao_resolucao =
-      resolverPendenciaDto.observacao_resolucao || null;
-
-    const pendenciaAtualizada = await this.pendenciaRepository.save(pendencia);
-
-    // Processar upload de documentos de resolução se fornecidos
-     if (documentos && documentos.length > 0) {
-       for (const arquivo of documentos) {
-         const uploadDto: UploadDocumentoDto = {
-           cidadao_id: pendencia.solicitacao.beneficiario_id,
-           solicitacao_id: pendencia.solicitacao_id,
-           tipo: TipoDocumentoEnum.PENDENCIA,
-           arquivo: arquivo,
-           descricao: `Documento de resolução da pendência: ${resolverPendenciaDto.observacao_resolucao || 'Sem observação'}`,
-           reutilizavel: false
-         };
- 
-         await this.documentoService.upload(
-           arquivo,
-           uploadDto,
-           usuarioId
-         );
-       }
-     }
-
-    // Verificar se todas as pendências da solicitação foram sanadas
-    const todasPendenciasSanadas = await this.verificarTodasPendenciasSanadas(
-      pendencia.solicitacao_id,
-    );
-
-    // Alterar status da solicitação para EM_ANALISE apenas se todas as pendências foram sanadas
-    if (todasPendenciasSanadas) {
-      const solicitacao = await this.solicitacaoRepository.findOne({
-        where: { id: pendencia.solicitacao_id },
+    return await this.dataSource.transaction(async (manager) => {
+      // Buscar pendência primeiro para obter a versão atual
+      const pendenciaAtual = await manager.findOne(Pendencia, {
+        where: { id: pendenciaId },
+        relations: ['solicitacao', 'registrado_por', 'resolvido_por'],
       });
 
-      if (solicitacao) {
-        solicitacao.status = StatusSolicitacao.EM_ANALISE;
-        await this.solicitacaoRepository.save(solicitacao);
-
-        // Registrar a exclusao no historico
-        await this.historicoRepository.save({
-          solicitacao_id: pendencia.solicitacao_id,
-          status_anterior: StatusSolicitacao.PENDENTE,
-          status_atual: StatusSolicitacao.EM_ANALISE,
-          usuario_id: usuarioId,
-          observacao: `Todas as pendências foram sanadas. Solicitação movida novamente para análise pelo sistema`,
-          data_alteracao: new Date(),
-        });
+      if (!pendenciaAtual) {
+        throw new NotFoundException('Pendência não encontrada');
       }
-    }
 
-    // Registrar evento
-    await this.eventosService.emitirEvento({
-      type: SolicitacaoEventType.PENDENCY_RESOLVED,
-      solicitacaoId: pendencia.solicitacao_id,
-      timestamp: new Date(),
-      data: {
-        pendenciaId: pendencia.id,
-        resolucao: resolverPendenciaDto.observacao_resolucao,
-        usuarioId: usuarioId,
-        dataResolucao: new Date(),
-      },
-    });
+      // Buscar pendência com lock otimista usando a versão atual
+      const pendencia = await manager.findOne(Pendencia, {
+        where: { id: pendenciaId },
+        relations: ['solicitacao', 'registrado_por', 'resolvido_por']
+      });
 
-    // Registrar auditoria
-    await this.auditEmitter.emitEntityUpdated(
-      'Pendencia',
-      pendencia.id,
-      {
-        status: dadosAnteriores.status,
-        resolvido_por_id: dadosAnteriores.resolvido_por_id,
-        data_resolucao: dadosAnteriores.data_resolucao,
-        observacao_resolucao: dadosAnteriores.observacao_resolucao,
-        // Campos sensíveis identificados
-        _sensitive_fields: ['observacao_resolucao'],
-        // Contexto adicional
-        _context: {
-          ip: auditContext?.ip,
-          userAgent: auditContext?.userAgent,
-          action: 'Resolução de pendência',
-          solicitacao_id: pendencia.solicitacao?.id,
-          pendencia_descricao: pendencia.descricao,
+      if (!pendencia) {
+        throw new BadRequestException(
+          'A pendência foi modificada por outro usuário. Recarregue a página e tente novamente.',
+        );
+      }
+
+      if (pendencia.status !== StatusPendencia.ABERTA) {
+        throw new BadRequestException(
+          'Apenas pendências abertas podem ser resolvidas',
+        );
+      }
+
+      // Verificar se o usuário existe
+      const usuario = await manager.findOne(Usuario, {
+        where: { id: usuarioId },
+      });
+
+      if (!usuario) {
+        throw new NotFoundException('Usuário não encontrado');
+      }
+
+      const dadosAnteriores = { ...pendencia };
+
+      // Atualizar a pendência
+      pendencia.status = StatusPendencia.RESOLVIDA;
+      pendencia.resolvido_por_id = usuarioId;
+      pendencia.data_resolucao = new Date();
+      pendencia.observacao_resolucao =
+        resolverPendenciaDto.observacao_resolucao || null;
+
+      const pendenciaAtualizada = await manager.save(pendencia);
+
+      // Processar upload de documentos de resolução se fornecidos
+      if (documentos && documentos.length > 0) {
+        for (const arquivo of documentos) {
+          const uploadDto: UploadDocumentoDto = {
+            cidadao_id: pendencia.solicitacao.beneficiario_id,
+            solicitacao_id: pendencia.solicitacao_id,
+            tipo: TipoDocumentoEnum.PENDENCIA,
+            arquivo: arquivo,
+            descricao: `Documento de resolução da pendência: ${resolverPendenciaDto.observacao_resolucao || 'Sem observação'}`,
+            reutilizavel: false
+          };
+  
+          await this.documentoService.upload(
+            arquivo,
+            uploadDto,
+            usuarioId
+          );
+        }
+      }
+
+      // Verificar se todas as pendências da solicitação foram sanadas usando o manager da transação
+      const pendenciasAbertas = await manager.count(Pendencia, {
+        where: {
+          solicitacao_id: pendencia.solicitacao_id,
+          status: StatusPendencia.ABERTA,
         },
-      },
-      {
-        status: pendenciaAtualizada.status,
-        resolvido_por_id: pendenciaAtualizada.resolvido_por_id,
-        data_resolucao: pendenciaAtualizada.data_resolucao,
-        observacao_resolucao: pendenciaAtualizada.observacao_resolucao,
-        // Campos sensíveis identificados
-        _sensitive_fields: ['observacao_resolucao'],
-        // Contexto adicional
-        _context: {
-          ip: auditContext?.ip,
-          userAgent: auditContext?.userAgent,
-          action: 'Resolução de pendência',
-          solicitacao_id: pendencia.solicitacao?.id,
-          pendencia_descricao: pendencia.descricao,
-        },
-      },
-      usuarioId,
-    );
+      });
 
-    // Buscar dados do usuário que resolveu a pendência
-    const usuarioResolveu = await this.pendenciaRepository.manager
-      .getRepository('Usuario')
-      .findOne({ where: { id: usuarioId } });
+      const todasPendenciasSanadas = pendenciasAbertas === 0;
 
-    // Emitir evento de pendência resolvida (o listener processará as notificações)
-    this.eventEmitter.emit('solicitacao.pendency_resolved', {
-      pendenciaId: pendencia.id,
-      solicitacaoId: pendencia.solicitacao_id,
-      resolucao: resolverPendenciaDto.observacao_resolucao,
-      usuarioId: usuarioId,
-      usuarioNome: usuarioResolveu?.nome || 'Sistema',
-      dataResolucao: new Date(),
-    });
+      // Alterar status da solicitação para EM_ANALISE apenas se todas as pendências foram sanadas
+      if (todasPendenciasSanadas) {
+        // Buscar solicitação com lock para evitar race conditions
+        const solicitacao = await manager.findOne(Solicitacao, {
+          where: { id: pendencia.solicitacao_id },
+          lock: { mode: 'pessimistic_write' },
+        });
 
-    // Se todas as pendências foram sanadas, emitir evento específico
-    if (todasPendenciasSanadas) {
-      this.eventEmitter.emit('solicitacao.all_pendencies_resolved', {
+        if (solicitacao && solicitacao.status === StatusSolicitacao.PENDENTE) {
+          const statusAnterior = solicitacao.status;
+          solicitacao.status = StatusSolicitacao.EM_ANALISE;
+          await manager.save(solicitacao);
+
+          // Registrar a alteração no histórico
+          await manager.save(HistoricoSolicitacao, {
+            solicitacao_id: pendencia.solicitacao_id,
+            status_anterior: statusAnterior,
+            status_atual: StatusSolicitacao.EM_ANALISE,
+            usuario_id: usuarioId,
+            observacao: `Todas as pendências foram sanadas. Solicitação movida novamente para análise pelo sistema`,
+            data_alteracao: new Date(),
+          });
+        }
+      }
+
+      // Registrar evento
+      await this.eventosService.emitirEvento({
+        type: SolicitacaoEventType.PENDENCY_RESOLVED,
         solicitacaoId: pendencia.solicitacao_id,
         timestamp: new Date(),
+        data: {
+          pendenciaId: pendencia.id,
+          resolucao: resolverPendenciaDto.observacao_resolucao,
+          usuarioId: usuarioId,
+          dataResolucao: new Date(),
+        },
       });
-    }
 
-    return this.buscarPorId(pendencia.id);
+      // Registrar auditoria
+      await this.auditEmitter.emitEntityUpdated(
+        'Pendencia',
+        pendencia.id,
+        {
+          status: dadosAnteriores.status,
+          resolvido_por_id: dadosAnteriores.resolvido_por_id,
+          data_resolucao: dadosAnteriores.data_resolucao,
+          observacao_resolucao: dadosAnteriores.observacao_resolucao,
+          // Campos sensíveis identificados
+          _sensitive_fields: ['observacao_resolucao'],
+          // Contexto adicional
+          _context: {
+            ip: auditContext?.ip,
+            userAgent: auditContext?.userAgent,
+            action: 'Resolução de pendência',
+            solicitacao_id: pendencia.solicitacao?.id,
+            pendencia_descricao: pendencia.descricao,
+          },
+        },
+        {
+          status: pendenciaAtualizada.status,
+          resolvido_por_id: pendenciaAtualizada.resolvido_por_id,
+          data_resolucao: pendenciaAtualizada.data_resolucao,
+          observacao_resolucao: pendenciaAtualizada.observacao_resolucao,
+          // Campos sensíveis identificados
+          _sensitive_fields: ['observacao_resolucao'],
+          // Contexto adicional
+          _context: {
+            ip: auditContext?.ip,
+            userAgent: auditContext?.userAgent,
+            action: 'Resolução de pendência',
+            solicitacao_id: pendencia.solicitacao?.id,
+            pendencia_descricao: pendencia.descricao,
+          },
+        },
+        usuarioId,
+      );
+
+      // Buscar dados do usuário que resolveu a pendência
+      const usuarioResolveu = await manager.findOne(Usuario, {
+        where: { id: usuarioId },
+      });
+
+
+      // Se todas as pendências foram sanadas, emitir evento específico
+      if (todasPendenciasSanadas) {
+        this.eventEmitter.emit('solicitacao.all_pendencies_resolved', {
+          solicitacaoId: pendencia.solicitacao_id,
+        timestamp: new Date(),
+        });
+      }
+
+      // Buscar a pendência com os relacionamentos necessários
+      const pendenciaCompleta = await manager.findOne(Pendencia, {
+        where: { id: pendencia.id },
+        relations: ['registrado_por', 'resolvido_por', 'documentos'],
+      });
+
+      if (!pendenciaCompleta) {
+        throw new NotFoundException('Erro ao buscar pendência resolvida');
+      }
+
+      return plainToClass(PendenciaResponseDto, pendenciaCompleta, {
+        excludeExtraneousValues: true,
+      });
+    });
   }
 
   /**

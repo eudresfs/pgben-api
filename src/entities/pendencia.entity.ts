@@ -9,6 +9,7 @@ import {
   OneToMany,
   JoinColumn,
   Index,
+  VersionColumn,
 } from 'typeorm';
 import { IsNotEmpty, IsOptional } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';

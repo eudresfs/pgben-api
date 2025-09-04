@@ -203,13 +203,6 @@ export class InputValidationInterceptor implements NestInterceptor {
   private validateBody(request: Request): void {
     if (!request.body || typeof request.body !== 'object') return;
 
-    // Verificar tamanho do body (proteção contra DoS)
-    const bodyString = JSON.stringify(request.body);
-    if (bodyString.length > 50000) {
-      // 50KB
-      throw new BadRequestException('Body da requisição muito grande');
-    }
-
     // Validar recursivamente todos os valores string no body
     this.validateObjectRecursively(request.body, 'body');
   }

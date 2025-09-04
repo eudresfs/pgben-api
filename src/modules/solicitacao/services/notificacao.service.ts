@@ -125,6 +125,42 @@ export class NotificacaoService {
   }
 
   /**
+   * Notifica o criador da pendência sobre sua resolução
+   */
+  async notificarCriadorPendenciaResolvida(
+    pendenciaAtualizada: Pendencia,
+    solicitacao: Solicitacao,
+    usuarioQueResolveu: Usuario,
+  ): Promise<void> {
+    this.logger.log(
+      `Notificando criador da pendência resolvida: ${pendenciaAtualizada.id} para solicitação ${solicitacao.id}`,
+    );
+
+    try {
+      // Verificar se existe um criador da pendência
+      if (!pendenciaAtualizada.registrado_por_id) {
+        this.logger.warn(
+          `Pendência ${pendenciaAtualizada.id} não possui criador registrado`,
+        );
+        return;
+      }
+
+      await this.notificacaoSistemaService.criarNotificacaoPendencia({
+        destinatario_id: pendenciaAtualizada.registrado_por_id,
+        titulo: 'Sua pendência foi resolvida',
+        conteudo: `A pendência que você criou para a solicitação ${solicitacao.protocolo} foi resolvida por ${usuarioQueResolveu.nome}`,
+        solicitacao_id: solicitacao.id,
+        link: `${this.configService.get('FRONTEND_URL') || 'https://semtas-natal.pgben.com.br'}/solicitacoes/detalhes/${solicitacao.id}`,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Erro ao enviar notificação para criador da pendência resolvida: ${error.message}`,
+        error.stack,
+      );
+    }
+  }
+
+  /**
    * Envia uma notificação para o sistema
    * @param notificacao Dados da notificação a ser enviada
    */

@@ -287,27 +287,43 @@ export class SolicitacaoEventListener {
         return;
       }
 
-      // Buscar a pendência resolvida com relacionamentos
+      // Buscar a pendência resolvida com relacionamentos (incluindo quem criou)
       const pendenciaResolvida = await this.solicitacaoRepository.manager
         .getRepository('Pendencia')
         .findOne({
           where: { id: evento.pendenciaId },
-          relations: ['resolvido_por'],
+          relations: ['resolvido_por', 'registrado_por'],
         });
 
       if (pendenciaResolvida) {
-        // Criar objeto usuário com os dados do evento
-        const usuario = {
+        // Criar objeto usuário com os dados do evento (quem resolveu)
+        const usuarioResolveu = {
           id: evento.usuarioId,
           nome: evento.usuarioNome || 'Sistema',
         };
 
-        // Enviar notificação sobre a pendência resolvida
+        // Enviar notificação para o técnico responsável sobre a pendência resolvida
         await this.notificacaoService.notificarPendenciaResolvida(
           pendenciaResolvida as any,
           solicitacao,
-          usuario as any,
+          usuarioResolveu as any,
         );
+
+        // Enviar notificação para o usuário que criou a pendência
+        if (pendenciaResolvida.registrado_por_id) {
+          try {
+            await this.notificacaoService.notificarCriadorPendenciaResolvida(
+              pendenciaResolvida as any,
+              solicitacao,
+              usuarioResolveu as any,
+            );
+          } catch (notificationError) {
+            this.logger.error(
+              `Erro ao notificar criador da pendência ${evento.pendenciaId}: ${notificationError.message}`,
+              notificationError.stack,
+            );
+          }
+        }
       }
 
       // Verificar se existem outras pendências abertas
