@@ -48,24 +48,24 @@ export class LocalStorageAdapter implements StorageProvider {
     metadados?: Record<string, any>,
   ): Promise<string> {
     try {
-      // Extrair informações dos metadados
-      const solicitacaoId = metadados?.solicitacaoId || 'default';
-      const tipoDocumento = metadados?.tipoDocumento || 'OUTRO';
-
-      // Criar estrutura de diretórios
-      const dirPath = path.join(this.baseDir, solicitacaoId, tipoDocumento);
-      if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
+      // O nomeArquivo já contém o caminho hierárquico completo gerado por generateStoragePath
+      // Exemplo: 'documentos/2024/01/15/123/TIPO_DOC/arquivo.pdf'
+      
+      // Extrair diretório e nome do arquivo
+      const dirPath = path.dirname(nomeArquivo);
+      const fileName = path.basename(nomeArquivo);
+      
+      // Criar caminho completo do diretório
+      const fullDirPath = path.join(this.baseDir, dirPath);
+      
+      // Criar estrutura de diretórios hierárquica
+      if (!fs.existsSync(fullDirPath)) {
+        fs.mkdirSync(fullDirPath, { recursive: true });
+        this.logger.debug(`Estrutura de diretórios criada: ${fullDirPath}`);
       }
 
-      // Gerar nome de arquivo único
-      const timestamp = Date.now();
-      const randomString = crypto.randomBytes(8).toString('hex');
-      const fileExtension = path.extname(nomeArquivo);
-      const fileName = `${timestamp}-${randomString}${fileExtension}`;
-
       // Caminho completo do arquivo
-      const filePath = path.join(dirPath, fileName);
+      const filePath = path.join(fullDirPath, fileName);
 
       // Salvar arquivo
       fs.writeFileSync(filePath, buffer);
@@ -79,8 +79,9 @@ export class LocalStorageAdapter implements StorageProvider {
             {
               ...metadados,
               mimetype,
-              originalName: nomeArquivo,
-              timestamp,
+              originalName: fileName,
+              hierarchicalPath: nomeArquivo,
+              timestamp: Date.now(),
             },
             null,
             2,
@@ -88,11 +89,11 @@ export class LocalStorageAdapter implements StorageProvider {
         );
       }
 
-      // Retornar caminho relativo
-      const relativePath = path.join(solicitacaoId, tipoDocumento, fileName);
-      this.logger.debug(`Arquivo salvo com sucesso: ${relativePath}`);
+      // Retornar caminho hierárquico normalizado
+      const normalizedPath = nomeArquivo.replace(/\\/g, '/');
+      this.logger.debug(`Arquivo salvo com sucesso na estrutura hierárquica: ${normalizedPath}`);
 
-      return relativePath.replace(/\\/g, '/'); // Normalizar para formato de caminho com barras
+      return normalizedPath;
     } catch (error) {
       this.logger.error(`Erro ao salvar arquivo: ${error.message}`);
       throw new Error(`Erro ao salvar arquivo: ${error.message}`);

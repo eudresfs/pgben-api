@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsDateString,
   MaxLength,
+  IsArray,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { BaseDto } from '../../../../shared/dtos/base.dto';
@@ -59,4 +60,17 @@ export class CreatePendenciaDto extends BaseDto {
   @MaxLength(500, { message: 'Observações não podem exceder 500 caracteres' })
   @Transform(({ value }) => value?.trim())
   observacoes?: string;
+
+  @ApiPropertyOptional({
+    description: 'Documentos anexados à pendência',
+    type: 'array',
+    items: {
+      type: 'string',
+      format: 'binary',
+    },
+    example: ['documento1.pdf', 'documento2.jpg'],
+  })
+  @IsOptional()
+  @IsArray({ message: 'Documentos devem ser um array' })
+  documentos?: Express.Multer.File[];
 }

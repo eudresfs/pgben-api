@@ -11,8 +11,12 @@ import {
   HttpStatus,
   ParseUUIDPipe,
   Req,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { PendenciaFileValidationInterceptor } from '../interceptors/pendencia-file-validation.interceptor';
 import {
   ApiTags,
   ApiOperation,
@@ -21,6 +25,7 @@ import {
   ApiQuery,
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
@@ -56,14 +61,19 @@ export class PendenciaController {
    * Cria uma nova pendência
    */
   @Post()
+  @UseInterceptors(
+    FilesInterceptor('documentos', 10),
+    PendenciaFileValidationInterceptor,
+  )
   @RequiresPermission({
     permissionName: 'pendencia.criar',
     scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({
     summary: 'Criar nova pendência',
-    description: 'Registra uma nova pendência para uma solicitação',
+    description: 'Registra uma nova pendência para uma solicitação com documentos opcionais',
   })
+  @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreatePendenciaDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -87,6 +97,7 @@ export class PendenciaController {
   })
   async criarPendencia(
     @Body() createPendenciaDto: CreatePendenciaDto,
+    @UploadedFiles() documentos: Express.Multer.File[],
     @GetUser() usuario: Usuario,
     @Req() req: Request,
   ): Promise<PendenciaResponseDto> {
@@ -97,6 +108,7 @@ export class PendenciaController {
         ip: req.ip,
         userAgent: req.headers['user-agent'],
       },
+      documentos,
     );
   }
 
@@ -172,14 +184,19 @@ export class PendenciaController {
    * Resolve uma pendência
    */
   @Put(':pendenciaId/resolver')
+  @UseInterceptors(
+    FilesInterceptor('documentos', 10),
+    PendenciaFileValidationInterceptor,
+  )
   @RequiresPermission({
     permissionName: 'pendencia.resolver',
     scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({
     summary: 'Resolver pendência',
-    description: 'Marca uma pendência como resolvida',
+    description: 'Marca uma pendência como resolvida com documentos opcionais de resolução',
   })
+  @ApiConsumes('multipart/form-data')
   @ApiParam({
     name: 'pendenciaId',
     description: 'ID da pendência',
@@ -210,6 +227,7 @@ export class PendenciaController {
   async resolverPendencia(
     @Param('pendenciaId', ParseUUIDPipe) pendenciaId: string,
     @Body() resolverPendenciaDto: ResolverPendenciaDto,
+    @UploadedFiles() documentos: Express.Multer.File[],
     @GetUser() usuario: Usuario,
     @Req() req: Request,
   ): Promise<PendenciaResponseDto> {
@@ -221,6 +239,7 @@ export class PendenciaController {
         ip: req.ip,
         userAgent: req.headers['user-agent'],
       },
+      documentos,
     );
   }
 
@@ -343,5 +362,45 @@ export class PendenciaController {
   })
   async buscarPendenciasVencidas(): Promise<PendenciaResponseDto[]> {
     return this.pendenciaService.buscarPendenciasVencidas();
+  }
+
+  /**
+   * Busca documentos de uma pendência
+   */
+  @Get(':pendenciaId/documentos')
+  @RequiresPermission({
+    permissionName: 'pendencia.ler',
+    scopeType: TipoEscopo.UNIDADE,
+  })
+  @ApiOperation({
+    summary: 'Buscar documentos de uma pendência',
+    description: 'Retorna todos os documentos anexados a uma pendência específica',
+  })
+  @ApiParam({
+    name: 'pendenciaId',
+    description: 'ID da pendência',
+    type: 'string',
+    format: 'uuid',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lista de documentos da pendência',
+    type: 'array',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Pendência não encontrada',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Sem permissão para visualizar documentos da pendência',
+    type: ErrorResponseDto,
+  })
+  async buscarDocumentosPendencia(
+    @Param('pendenciaId', ParseUUIDPipe) pendenciaId: string,
+    @GetUser() usuario: Usuario,
+  ) {
+    return this.pendenciaService.buscarDocumentosPendencia(pendenciaId, usuario.id);
   }
 }

@@ -46,7 +46,7 @@ export class UnidadeService {
     tipo?: string;
     status?: string;
   }) {
-    const { page = 1, limit = 10, search, tipo, status } = options || {};
+    const { page = 1, limit = 50, search, tipo, status } = options || {};
 
     // Construir filtros
     const where: {
@@ -290,13 +290,23 @@ export class UnidadeService {
       filtros
     );
 
-    // Executar query para obter resultados
-    const [unidades, total] = await queryComFiltros.getManyAndCount();
+    // Obter contagem total antes da paginação
+    const total = await queryComFiltros.getCount();
 
-    // Calcular metadados de paginação
-    const pages = Math.ceil(total / filtros.limit);
-    const hasNext = filtros.page < pages;
-    const hasPrev = filtros.page > 1;
+    // Aplicar paginação com validações robustas
+    const page = Math.max(1, filtros.page || 1); // Garantir que page seja pelo menos 1
+    const limit = Math.min(Math.max(1, filtros.limit || 10), 100); // Garantir que limit esteja entre 1 e 100
+    const offset = (page - 1) * limit;
+
+    queryComFiltros.limit(limit).offset(offset);
+
+    // Executar query para obter resultados
+    const unidades = await queryComFiltros.getMany();
+
+    // Calcular metadados de paginação com tratamento de casos extremos
+    const pages = total > 0 ? Math.ceil(total / limit) : 1;
+    const hasNext = total > 0 && page < pages;
+    const hasPrev = total > 0 && page > 1;
 
     this.logger.log(
       `Busca avançada concluída: ${unidades.length} unidades encontradas de ${total} total`,
@@ -311,13 +321,13 @@ export class UnidadeService {
         search: filtros.search || null,
       },
       meta: {
-        page: filtros.page,
-        offset: (filtros.page - 1) * filtros.limit,
-        limit: filtros.limit,
-        pages: pages,
+        page,
+        limit,
         total,
+        pages,
         hasNext,
         hasPrev,
+        offset
       },
       tempo_execucao: 0,
     };

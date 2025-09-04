@@ -28,6 +28,10 @@ import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { SolicitacaoEventType } from '../events/solicitacao-events';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { HistoricoSolicitacao } from '@/entities';
+import { DocumentoService } from '../../documento/services/documento.service';
+import { UploadDocumentoDto } from '../../documento/dto/upload-documento.dto';
+import { TipoDocumentoEnum } from '../../../enums/tipo-documento.enum';
+import { v4 as uuidv4 } from 'uuid';
 
 interface AuditContext {
   ip?: string;
@@ -54,6 +58,7 @@ export class PendenciaService {
     private readonly eventosService: EventosService,
     private readonly permissionService: PermissionService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly documentoService: DocumentoService,
   ) { }
 
   /**
@@ -63,6 +68,7 @@ export class PendenciaService {
     createPendenciaDto: CreatePendenciaDto,
     usuarioId: string,
     auditContext?: AuditContext,
+    documentos?: Express.Multer.File[],
   ): Promise<PendenciaResponseDto> {
     // Verificar se a solicitação existe
     const solicitacao = await this.solicitacaoRepository.findOne({
@@ -108,6 +114,27 @@ export class PendenciaService {
 
     const pendenciaSalva = await this.pendenciaRepository.save(pendencia);
 
+    // Processar upload de documentos se fornecidos
+     if (documentos && documentos.length > 0) {
+       for (const arquivo of documentos) {
+         const uploadDto: UploadDocumentoDto = {
+           cidadao_id: solicitacao.beneficiario_id,
+           pendencia_id: pendenciaSalva.id,
+           solicitacao_id: solicitacao.id,
+           tipo: TipoDocumentoEnum.PENDENCIA,
+           arquivo: arquivo,
+           descricao: `Documento anexado à pendência: ${createPendenciaDto.descricao}`,
+           reutilizavel: false
+         };
+ 
+         await this.documentoService.upload(
+           arquivo,
+           uploadDto,
+           usuarioId
+         );
+       }
+     }
+
     // Alterar status da solicitação para PENDENTE
     solicitacao.status = StatusSolicitacao.PENDENTE;
     await this.solicitacaoRepository.save(solicitacao);
@@ -116,7 +143,7 @@ export class PendenciaService {
     await this.historicoRepository.save({
       solicitacao_id: solicitacao.id,
       status_anterior: StatusSolicitacao.EM_ANALISE,
-      status_novo: StatusSolicitacao.PENDENTE,
+      status_atual: StatusSolicitacao.PENDENTE,
       usuario_id: usuarioId,
       observacao: `Uma ou mais pendências foram criadas. Solicitação movida para pendente pelo sistema`,
       data_alteracao: new Date(),
@@ -174,7 +201,7 @@ export class PendenciaService {
     // Buscar a pendência com os relacionamentos necessários
     const pendenciaCompleta = await this.pendenciaRepository.findOne({
       where: { id: pendenciaSalva.id },
-      relations: ['registrado_por', 'resolvido_por'],
+      relations: ['registrado_por', 'resolvido_por', 'documentos'],
     });
 
     if (!pendenciaCompleta) {
@@ -194,6 +221,7 @@ export class PendenciaService {
     resolverPendenciaDto: ResolverPendenciaDto,
     usuarioId: string,
     auditContext?: AuditContext,
+    documentos?: Express.Multer.File[],
   ): Promise<PendenciaResponseDto> {
     const pendencia = await this.pendenciaRepository.findOne({
       where: { id: pendenciaId },
@@ -230,6 +258,26 @@ export class PendenciaService {
 
     const pendenciaAtualizada = await this.pendenciaRepository.save(pendencia);
 
+    // Processar upload de documentos de resolução se fornecidos
+     if (documentos && documentos.length > 0) {
+       for (const arquivo of documentos) {
+         const uploadDto: UploadDocumentoDto = {
+           cidadao_id: pendencia.solicitacao.beneficiario_id,
+           solicitacao_id: pendencia.solicitacao_id,
+           tipo: TipoDocumentoEnum.PENDENCIA,
+           arquivo: arquivo,
+           descricao: `Documento de resolução da pendência: ${resolverPendenciaDto.observacao_resolucao || 'Sem observação'}`,
+           reutilizavel: false
+         };
+ 
+         await this.documentoService.upload(
+           arquivo,
+           uploadDto,
+           usuarioId
+         );
+       }
+     }
+
     // Verificar se todas as pendências da solicitação foram sanadas
     const todasPendenciasSanadas = await this.verificarTodasPendenciasSanadas(
       pendencia.solicitacao_id,
@@ -249,7 +297,7 @@ export class PendenciaService {
         await this.historicoRepository.save({
           solicitacao_id: pendencia.solicitacao_id,
           status_anterior: StatusSolicitacao.PENDENTE,
-          status_novo: StatusSolicitacao.EM_ANALISE,
+          status_atual: StatusSolicitacao.EM_ANALISE,
           usuario_id: usuarioId,
           observacao: `Todas as pendências foram sanadas. Solicitação movida novamente para análise pelo sistema`,
           data_alteracao: new Date(),
@@ -392,7 +440,7 @@ export class PendenciaService {
         await this.historicoRepository.save({
           solicitacao_id: solicitacao.id,
           status_anterior: StatusSolicitacao.PENDENTE,
-          status_novo: StatusSolicitacao.EM_ANALISE,
+          status_atual: StatusSolicitacao.EM_ANALISE,
           usuario_id: usuarioId,
           observacao: `Todas as pendências foram canceladas. Solicitação movida novamente para análise pelo sistema`,
           data_alteracao: new Date(),
@@ -484,7 +532,7 @@ export class PendenciaService {
   ): Promise<PendenciaResponseDto> {
     const pendencia = await this.pendenciaRepository.findOne({
       where: { id: pendenciaId },
-      relations: ['registrado_por', 'resolvido_por', 'solicitacao'],
+      relations: ['registrado_por', 'resolvido_por', 'solicitacao', 'documentos'],
     });
 
     if (!pendencia) {
@@ -578,6 +626,28 @@ export class PendenciaService {
   }
 
   /**
+   * Busca documentos associados a uma pendência
+   */
+  async buscarDocumentosPendencia(
+     pendenciaId: string,
+     usuarioId: string,
+   ) {
+     // Verificar se a pendência existe e se o usuário tem acesso
+     const pendencia = await this.pendenciaRepository.findOne({
+       where: { id: pendenciaId },
+       relations: ['documentos', 'documentos.usuario_upload']
+     });
+     
+     if (!pendencia) {
+       throw new NotFoundException('Pendência não encontrada');
+     }
+
+     // Retornar documentos associados à pendência
+     return pendencia.documentos || [];
+   }
+
+
+  /**
    * Verifica se todas as pendências de uma solicitação foram sanadas
    */
   private async verificarTodasPendenciasSanadas(
@@ -602,7 +672,9 @@ export class PendenciaService {
     const queryBuilder = this.pendenciaRepository
       .createQueryBuilder('pendencia')
       .leftJoinAndSelect('pendencia.registrado_por', 'registrado_por')
-      .leftJoinAndSelect('pendencia.resolvido_por', 'resolvido_por');
+      .leftJoinAndSelect('pendencia.resolvido_por', 'resolvido_por')
+      .leftJoinAndSelect('pendencia.documentos', 'documentos')
+      .leftJoinAndSelect('documentos.usuario_upload', 'documento_usuario');
 
     if (incluirSolicitacao) {
       queryBuilder.leftJoinAndSelect('pendencia.solicitacao', 'solicitacao');

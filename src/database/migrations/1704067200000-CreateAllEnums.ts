@@ -248,7 +248,10 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
                     'declaracao_hipossuficiencia',
                     
                     -- Documentos diversos
-                    'procuracao', 'termo_responsabilidade', 'foto_3x4', 'outro'
+                    'procuracao', 'termo_responsabilidade', 'foto_3x4', 'outro',
+                    
+                    -- Documentos de pendências
+                    'pendencia'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;

@@ -63,7 +63,7 @@ export class UsuarioRepository {
       queryBuilder
         .leftJoinAndSelect('usuario.unidade', 'unidade')
         .leftJoinAndSelect('usuario.role', 'role')
-      .leftJoinAndSelect('usuario.setor', 'setor');
+        .leftJoinAndSelect('usuario.setor', 'setor');
     }
 
     // Aplicar filtros where adicionais se fornecidos
@@ -76,11 +76,11 @@ export class UsuarioRepository {
             where.forEach((condition, index) => {
               const orConditions: string[] = [];
               const orParams: Record<string, any> = {};
-              
+
               Object.entries(condition).forEach(([key, value]) => {
                 const paramKey = `${key}_${index}`;
                 const columnName = key.includes('.') ? key : `usuario.${key}`;
-                
+
                 if (value instanceof FindOperator) {
                   // Para operadores como ILike
                   orConditions.push(`${columnName} ${(value as any)._type} :${paramKey}`);
@@ -91,7 +91,7 @@ export class UsuarioRepository {
                   orParams[paramKey] = value;
                 }
               });
-              
+
               if (orConditions.length > 0) {
                 const conditionString = orConditions.join(' AND ');
                 if (index === 0) {
@@ -107,7 +107,7 @@ export class UsuarioRepository {
         // Aplicar condições AND normais
         Object.entries(where).forEach(([key, value]) => {
           const columnName = key.includes('.') ? key : `usuario.${key}`;
-          
+
           if (value instanceof FindOperator) {
             // Para operadores como ILike
             queryBuilder.andWhere(`${columnName} ${(value as any)._type} :${key}`, { [key]: (value as any)._value });
@@ -139,6 +139,23 @@ export class UsuarioRepository {
   }
 
   /**
+   * Busca usuários por unidade
+   * @param unidade_id ID da unidade
+   * @returns Lista de usuários da unidade
+   */
+  async findByUnidade(unidade_id: string) {
+    const usuarios = await this.scopedRepository.createScopedQueryBuilder('usuario')
+      .where('usuario.unidade_id = :unidade_id', { unidade_id })
+      .getMany();
+
+    if (!usuarios) {
+      throwUserNotFound(unidade_id);
+    }
+
+    return usuarios;
+  }
+
+  /**
    * Busca um usuário pelo ID com escopo aplicado
    * @param id ID do usuário
    * @returns Usuário encontrado dentro do escopo
@@ -146,7 +163,7 @@ export class UsuarioRepository {
    */
   async findById(id: string): Promise<Usuario> {
     const queryBuilder = this.scopedRepository.createScopedQueryBuilder('usuario');
-    
+
     queryBuilder
       .leftJoinAndSelect('usuario.role', 'role')
       .leftJoinAndSelect('usuario.unidade', 'unidade')
@@ -169,7 +186,7 @@ export class UsuarioRepository {
    */
   async findByEmail(email: string): Promise<Usuario | null> {
     const queryBuilder = this.scopedRepository.createScopedQueryBuilder('usuario');
-    
+
     queryBuilder
       .leftJoinAndSelect('usuario.role', 'role')
       .leftJoinAndSelect('usuario.unidade', 'unidade')
@@ -186,7 +203,7 @@ export class UsuarioRepository {
    */
   async findByCpf(cpf: string): Promise<Usuario | null> {
     const queryBuilder = this.scopedRepository.createScopedQueryBuilder('usuario');
-    
+
     queryBuilder
       .leftJoinAndSelect('usuario.role', 'role')
       .leftJoinAndSelect('usuario.unidade', 'unidade')
@@ -203,7 +220,7 @@ export class UsuarioRepository {
    */
   async findByMatricula(matricula: string): Promise<Usuario | null> {
     const queryBuilder = this.scopedRepository.createScopedQueryBuilder('usuario');
-    
+
     queryBuilder
       .leftJoinAndSelect('usuario.role', 'role')
       .leftJoinAndSelect('usuario.unidade', 'unidade')

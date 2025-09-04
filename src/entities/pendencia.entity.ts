@@ -6,12 +6,14 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   Index,
 } from 'typeorm';
 import { IsNotEmpty, IsOptional } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
 import { Usuario } from './usuario.entity';
+import { Documento } from './documento.entity';
 
 export enum StatusPendencia {
   ABERTA = 'aberta',
@@ -73,6 +75,9 @@ export class Pendencia {
   @Column({ type: 'date', nullable: true })
   @IsOptional()
   prazo_resolucao: Date | null;
+
+  @OneToMany(() => Documento, (documento) => documento.pendencia)
+  documentos: Documento[];
 
   @CreateDateColumn()
   created_at: Date;

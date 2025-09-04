@@ -72,6 +72,7 @@ export class DocumentoPersistenceService
       const documento = this.documentoRepository.create({
         cidadao_id: uploadDocumentoDto.cidadao_id,
         solicitacao_id: uploadDocumentoDto.solicitacao_id,
+        pendencia_id: uploadDocumentoDto.pendencia_id,
         tipo: uploadDocumentoDto.tipo,
         usuario_upload_id: usuarioId,
         nome_arquivo: fileProcessing.fileName,

@@ -117,6 +117,13 @@ export class DocumentoResponseDto {
   @Expose()
   solicitacao_id?: string;
 
+  @ApiPropertyOptional({
+    description: 'ID da pendência vinculada',
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+  })
+  @Expose()
+  pendencia_id?: string;
+
   @ApiProperty({
     description: 'ID do cidadão proprietário',
     example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',

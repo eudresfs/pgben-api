@@ -189,6 +189,7 @@ export class UsuarioFiltrosResponseDto implements IResultadoFiltros {
   meta: {
     limit: number;
     offset: number;
+    total: number;
     page: number;
     pages: number;
     hasNext: boolean;

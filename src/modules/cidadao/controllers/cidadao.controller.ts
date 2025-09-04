@@ -12,6 +12,7 @@ import {
   ParseIntPipe,
   Request,
   Logger,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -120,6 +121,14 @@ export class CidadaoController {
       'Incluir dados relacionados (contatos, endereços, composição familiar)',
     example: false,
   })
+  @ApiQuery({
+    name: 'include_removed',
+    required: false,
+    type: Boolean,
+    description:
+      'Incluir cidadãos removidos logicamente (soft delete). Por padrão, apenas cidadãos ativos são retornados.',
+    example: false,
+  })
   async findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
@@ -128,6 +137,8 @@ export class CidadaoController {
     @Query('bairro') bairro?: string,
     @Query('includeRelations', new DefaultValuePipe(false))
     includeRelations?: boolean,
+    @Query('include_removed', new DefaultValuePipe(false))
+    include_removed?: boolean,
   ): Promise<CidadaoPaginatedResponseDto> {
     return this.cidadaoService.findAll({
       page,
@@ -136,6 +147,7 @@ export class CidadaoController {
       bairro,
       unidade_id,
       includeRelations,
+      include_removed,
     });
   }
 
@@ -231,6 +243,14 @@ export class CidadaoController {
       'Incluir todos os dados relacionados (contatos, endereços, composição familiar, dados sociais, situação de moradia, informações bancárias)',
     example: true,
   })
+  @ApiQuery({
+    name: 'include_removed',
+    required: false,
+    type: Boolean,
+    description:
+      'Incluir cidadãos removidos logicamente (soft delete). Por padrão, apenas cidadãos ativos são retornados.',
+    example: false,
+  })
   @ApiResponse({
     status: 200,
     type: CidadaoResponseDto,
@@ -250,15 +270,17 @@ export class CidadaoController {
   })
   @ApiResponse({
     status: 404,
-    description: 'Cidadão não encontrado',
+    description: 'Cidadão não encontrado ou foi removido logicamente',
   })
   async findOne(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Query('includeRelations', new DefaultValuePipe(false))
     includeRelations: boolean,
+    @Query('include_removed', new DefaultValuePipe(false))
+    include_removed: boolean,
     @Request() req,
   ): Promise<CidadaoResponseDto> {
-    return this.cidadaoService.findById(id, includeRelations, req.user.id);
+    return this.cidadaoService.findById(id, includeRelations, req.user.id, include_removed);
   }
 
   @Post()
@@ -270,13 +292,39 @@ export class CidadaoController {
   @ApiOperation({
     summary: 'Criar ou atualizar cidadão com dados relacionados (Upsert)',
     description:
-      'Cria um novo cidadão ou atualiza um existente baseado no CPF. Se o CPF já estiver cadastrado, os dados do cidadão existente serão atualizados. Suporta operação completa incluindo dados relacionados como contatos, endereços, composição familiar, dados sociais, situação de moradia e informações bancárias em uma única transação. Utiliza padrão Aggregate Root para garantir consistência dos dados.',
+      'Cria um novo cidadão ou atualiza um existente baseado no CPF. Se o CPF já estiver cadastrado, os dados do cidadão existente serão atualizados. Se o cidadão foi removido logicamente (soft delete), ele será automaticamente reativado. Suporta operação completa incluindo dados relacionados como contatos, endereços, composição familiar, dados sociais, situação de moradia e informações bancárias em uma única transação. Utiliza padrão Aggregate Root para garantir consistência dos dados.',
   })
   @ApiResponse({
     status: 201,
     type: CidadaoResponseDto,
     description:
-      'Cidadão criado ou atualizado com sucesso, incluindo todos os dados relacionados processados',
+      'Cidadão criado, atualizado ou reativado com sucesso, incluindo todos os dados relacionados processados',
+    examples: {
+       'cidadao-criado': {
+         summary: 'Novo cidadão criado',
+         value: {
+           id: '550e8400-e29b-41d4-a716-446655440000',
+           nome: 'João Silva',
+           cpf: '123.456.789-00',
+           nis: '12345678901',
+           created_at: '2024-01-15T10:30:00.000Z',
+           updated_at: '2024-01-15T10:30:00.000Z',
+           removed_at: null
+         }
+       },
+       'cidadao-reativado': {
+         summary: 'Cidadão removido reativado',
+         value: {
+           id: '550e8400-e29b-41d4-a716-446655440000',
+           nome: 'Maria Santos',
+           cpf: '987.654.321-00',
+           nis: '10987654321',
+           created_at: '2024-01-10T08:00:00.000Z',
+           updated_at: '2024-01-15T10:30:00.000Z',
+           removed_at: null
+         }
+       }
+     }
   })
   @ApiResponse({
     status: 400,
@@ -384,6 +432,14 @@ export class CidadaoController {
     description: 'CPF do cidadão (com ou sem formatação)',
     example: '123.456.789-00',
   })
+  @ApiQuery({
+    name: 'include_removed',
+    required: false,
+    type: Boolean,
+    description:
+      'Incluir cidadãos removidos logicamente (soft delete). Por padrão, apenas cidadãos ativos são retornados.',
+    example: false,
+  })
   @ApiResponse({
     status: 200,
     type: CidadaoResponseDto,
@@ -404,13 +460,15 @@ export class CidadaoController {
   })
   @ApiResponse({
     status: 404,
-    description: 'Cidadão não encontrado com o CPF informado',
+    description: 'Cidadão não encontrado com o CPF informado ou foi removido logicamente',
   })
   async findByCpf(
     @Param('cpf') cpf: string,
+    @Query('include_removed', new DefaultValuePipe(false))
+    include_removed: boolean,
     @Request() req,
   ): Promise<CidadaoResponseDto | DadosPortalTransparenciaDto> {
-    return this.cidadaoService.findByCpf(cpf, true, req.user.id);
+    return this.cidadaoService.findByCpf(cpf, true, req.user.id, include_removed);
   }
 
   @Get('nis/:nis')
@@ -428,6 +486,14 @@ export class CidadaoController {
     name: 'nis',
     description: 'NIS (Número de Identificação Social) do cidadão',
     example: '12345678901',
+  })
+  @ApiQuery({
+    name: 'include_removed',
+    required: false,
+    type: Boolean,
+    description:
+      'Incluir cidadãos removidos logicamente (soft delete). Por padrão, apenas cidadãos ativos são retornados.',
+    example: false,
   })
   @ApiResponse({
     status: 200,
@@ -449,13 +515,15 @@ export class CidadaoController {
   })
   @ApiResponse({
     status: 404,
-    description: 'Cidadão não encontrado com o NIS informado',
+    description: 'Cidadão não encontrado com o NIS informado ou foi removido logicamente',
   })
   async findByNis(
     @Param('nis') nis: string,
+    @Query('include_removed', new DefaultValuePipe(false))
+    include_removed: boolean,
     @Request() req,
   ): Promise<CidadaoResponseDto> {
-    return this.cidadaoService.findByNis(nis, true, req.user.id);
+    return this.cidadaoService.findByNis(nis, true, req.user.id, include_removed);
   }
 
   @Put(':id/transferir-unidade')
@@ -514,5 +582,73 @@ export class CidadaoController {
       transferirUnidadeDto,
       req.user.id,
     );
+  }
+
+  @Delete(':id')
+  @RequiresPermission({
+    permissionName: 'cidadao.remover',
+  })
+  @SensitiveDataAccess(['id'], {
+    requiresConsent: false,
+    maskInLogs: false,
+  })
+  @ApiOperation({
+    summary: 'Remove um cidadão (soft delete)',
+    description: 'Remove logicamente um cidadão do sistema, mantendo os dados no banco com removed_at preenchido',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID único do cidadão',
+    type: 'string',
+    format: 'uuid',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Cidadão removido com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Cidadão removido com sucesso',
+        },
+        removedAt: {
+          type: 'string',
+          format: 'date-time',
+          example: '2024-01-15T10:30:00.000Z',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Cidadão não encontrado',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 404 },
+        message: { type: 'string', example: 'Cidadão não encontrado' },
+        error: { type: 'string', example: 'Not Found' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Cidadão já foi removido anteriormente',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 400 },
+        message: { type: 'string', example: 'Cidadão já foi removido anteriormente' },
+        error: { type: 'string', example: 'Bad Request' },
+      },
+    },
+  })
+  async remove(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Request() req,
+  ): Promise<{ message: string; removedAt: Date }> {
+    return this.cidadaoService.remove(id, req.user.id);
   }
 }

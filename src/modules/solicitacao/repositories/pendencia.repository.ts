@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Repository, DataSource, SelectQueryBuilder } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Pendencia, StatusPendencia } from '../../../entities';
+import { Pendencia, StatusPendencia, Documento } from '../../../entities';
 import {
   EntityNotFoundException,
   InvalidOperationException,
@@ -9,6 +9,7 @@ import {
 import { FiltrosPendenciaDto } from '../dto/pendencia';
 import { ScopedRepository } from '../../../common/repositories/scoped-repository';
 import { InjectScopedRepository } from '../../../common/providers/scoped-repository.provider';
+import { TipoDocumentoEnum } from '../../../enums/tipo-documento.enum';
 
 /**
  * Interface para filtros de busca de pendências (compatibilidade)
@@ -47,6 +48,8 @@ export class PendenciaRepository {
   constructor(
     @InjectScopedRepository(Pendencia)
     private readonly scopedRepository: ScopedRepository<Pendencia>,
+    @InjectRepository(Documento)
+    private readonly documentoRepository: Repository<Documento>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -76,6 +79,75 @@ export class PendenciaRepository {
 
     return queryBuilder.getMany();
   }
+
+  /**
+   * Busca documentos associados a uma pendência específica
+   * @param pendenciaId ID da pendência
+   * @returns Lista de documentos da pendência
+   */
+  async buscarDocumentosPorPendencia(filtros: {
+    pendencia_id: string;
+  }): Promise<Documento[]> {
+    const pendencia = await this.buscarPorId(filtros.pendencia_id);
+    if (!pendencia) {
+      throw new EntityNotFoundException('Pendencia', 'Pendência não encontrada');
+    }
+
+    return this.documentoRepository
+      .createQueryBuilder('documento')
+      .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')
+      .leftJoinAndSelect('documento.usuario_verificacao', 'usuario_verificacao')
+      .where('documento.pendencia_id = :pendenciaId', { 
+        pendenciaId: filtros.pendencia_id 
+      })
+      .andWhere('documento.tipo = :tipo', { tipo: TipoDocumentoEnum.PENDENCIA })
+      .andWhere('documento.removed_at IS NULL')
+      .orderBy('documento.data_upload', 'DESC')
+      .getMany();
+  }
+
+  /**
+   * Busca documentos de pendências por solicitação
+   * @param solicitacaoId ID da solicitação
+   * @returns Lista de documentos de pendências da solicitação
+   */
+  async buscarDocumentosPendenciasPorSolicitacao(solicitacaoId: string): Promise<Documento[]> {
+    return this.documentoRepository
+      .createQueryBuilder('documento')
+      .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')
+      .leftJoinAndSelect('documento.usuario_verificacao', 'usuario_verificacao')
+      .where('documento.solicitacao_id = :solicitacaoId', { solicitacaoId })
+      .andWhere('documento.tipo = :tipo', { tipo: TipoDocumentoEnum.PENDENCIA })
+      .andWhere('documento.removed_at IS NULL')
+      .orderBy('documento.data_upload', 'DESC')
+      .getMany();
+  }
+
+  /**
+   * Conta documentos associados a pendências de uma solicitação
+   * @param solicitacaoId ID da solicitação
+   * @returns Número de documentos de pendências
+   */
+  async contarDocumentosPendencias(solicitacaoId: string): Promise<number> {
+    return this.documentoRepository
+      .createQueryBuilder('documento')
+      .where('documento.solicitacao_id = :solicitacaoId', { solicitacaoId })
+      .andWhere('documento.tipo = :tipo', { tipo: TipoDocumentoEnum.PENDENCIA })
+      .andWhere('documento.removed_at IS NULL')
+      .getCount();
+  }
+
+  /**
+    * Verifica se uma pendência possui documentos anexados
+    * @param pendenciaId ID da pendência
+    * @returns True se possui documentos, false caso contrário
+    */
+   async possuiDocumentos(pendenciaId: string): Promise<boolean> {
+     const documentos = await this.buscarDocumentosPorPendencia({
+      pendencia_id: pendenciaId,
+     });
+     return documentos.length > 0;
+   }
 
   /**
    * Busca pendências abertas de uma solicitação

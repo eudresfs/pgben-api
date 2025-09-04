@@ -59,6 +59,19 @@ export class UnidadeController {
   @ApiResponse({
     status: 200,
     description: 'Lista de unidades retornada com sucesso',
+    content: {
+      'application/json': {
+        example: {
+          items: [],
+          meta: {
+            total: 0,
+            page: 1,
+            limit: 10,
+            pages: 0,
+          },
+        },
+      },
+    },
   })
   @ApiQuery({
     name: 'page',
@@ -97,15 +110,15 @@ export class UnidadeController {
     @Query('tipo') tipo?: string,
     @Query('status') status?: string,
   ) {
-    const unidades = this.unidadeService.findAll({
+    const filtros = {
       page: page ? +page : undefined,
       limit: limit ? +limit : undefined,
       search,
       tipo,
       status,
-    });
+    };
 
-    return unidades
+    return await this.unidadeService.findAll(filtros);
   }
 
   /**

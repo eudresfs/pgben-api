@@ -32,7 +32,7 @@ export class ResponseInterceptor implements NestInterceptor {
             data: data.items,
             meta: {
               ...data.meta,
-              total: data.total, // Preservar o campo total
+              total: data.total || data.meta.total,
             },
             message: data.message || null,
           };
