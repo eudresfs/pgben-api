@@ -22,7 +22,6 @@ export class CreatePendenciaDto extends BaseDto {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsNotEmpty({ message: 'ID da solicitação é obrigatório' })
-  @IsUUID('4', { message: 'ID da solicitação deve ser um UUID válido' })
   solicitacao_id: string;
 
   @ApiProperty({
