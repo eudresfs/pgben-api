@@ -605,11 +605,10 @@ export class ConcessaoService {
       let dataEncerramento: Date | null = null;
 
       // Para benefícios com duração definida, calcular data de encerramento
-      if (solicitacao.tipo_beneficio?.especificacoes?.duracao_maxima_meses) {
+      if (solicitacao?.quantidade_parcelas) {
         dataEncerramento = new Date(dataInicio);
         dataEncerramento.setMonth(
-          dataEncerramento.getMonth() +
-          solicitacao.tipo_beneficio.especificacoes.duracao_maxima_meses,
+          dataEncerramento.getMonth() + solicitacao.quantidade_parcelas,
         );
       }
 

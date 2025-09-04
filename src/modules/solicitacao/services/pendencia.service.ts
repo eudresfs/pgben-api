@@ -113,6 +113,10 @@ export class PendenciaService {
     });
 
     const pendenciaSalva = await this.pendenciaRepository.save(pendencia);
+    
+    // Alterar status da solicitação para PENDENTE
+    solicitacao.status = StatusSolicitacao.PENDENTE;
+    await this.solicitacaoRepository.save(solicitacao);
 
     // Processar upload de documentos se fornecidos
      if (documentos && documentos.length > 0) {
@@ -134,10 +138,6 @@ export class PendenciaService {
          );
        }
      }
-
-    // Alterar status da solicitação para PENDENTE
-    solicitacao.status = StatusSolicitacao.PENDENTE;
-    await this.solicitacaoRepository.save(solicitacao);
 
     // Registrar a pendência no historico
     await this.historicoRepository.save({
