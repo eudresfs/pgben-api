@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/kemosoft-team/pgben-server/compare/v1.2.0...v1.3.0) (2025-09-04)
+
+
+### Features
+
+* **cidadao:** implement soft delete and include_removed flag for queries ([2b2a7e0](https://github.com/kemosoft-team/pgben-server/commit/2b2a7e0692765c78f5518a0fc02ebadd5abadbe5))
+* **documento:** add pendencia_id field to document response and persistence ([a195efa](https://github.com/kemosoft-team/pgben-server/commit/a195efa13d49d3055f83ee5d16d4b692b7edc55f))
+* **pendencia:** add document support for pendencia entity ([c4f9e1b](https://github.com/kemosoft-team/pgben-server/commit/c4f9e1bfde60cf0804b0f6bfb587ca0f6f4dc5ac))
+* **usuario:** add findByUnidade method and increase pagination limits ([6aa8538](https://github.com/kemosoft-team/pgben-server/commit/6aa8538c408b92a75593c964343f03fa58d9cb92))
+
+
+### Bug Fixes
+
+* **workflow:** add history entry for priority bypass cases ([1100446](https://github.com/kemosoft-team/pgben-server/commit/1100446880f7f51fa4f71d307103f34a7d26cabf))
+
 ## [1.2.0](https://github.com/kemosoft-team/pgben-server/compare/v1.1.0...v1.2.0) (2025-09-03)
 
 
