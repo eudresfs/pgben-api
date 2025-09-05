@@ -28,6 +28,7 @@ export class DocumentoReuseService implements IDocumentoReuseService {
 
   /**
    * Verifica se um documento pode ser reutilizado
+   * MODIFICADO: Sempre retorna false para garantir que todos os uploads sejam processados
    * @param uploadDocumentoDto DTO com dados do upload
    * @param fileHash Hash do arquivo
    * @param uploadId ID único do upload
@@ -39,7 +40,7 @@ export class DocumentoReuseService implements IDocumentoReuseService {
     uploadId: string,
   ): Promise<DocumentReusabilityCheck> {
     this.logger.debug(
-      `Verificando reutilização de documento [${uploadId}]`,
+      `Verificando reutilização de documento [${uploadId}] - REUTILIZAÇÃO DESABILITADA`,
       DocumentoReuseService.name,
       {
         uploadId,
@@ -49,37 +50,17 @@ export class DocumentoReuseService implements IDocumentoReuseService {
       },
     );
 
-    // Buscar documento existente
+    // MODIFICAÇÃO: Buscar documento existente apenas para auditoria
     const existingDocument = await this.findExistingDocument(
       fileHash,
       uploadDocumentoDto,
     );
 
-    if (!existingDocument) {
-      this.logger.debug(
-        `Nenhum documento reutilizável encontrado [${uploadId}]`,
-        DocumentoReuseService.name,
-        { uploadId, fileHash },
-      );
-
-      return {
-        canReuse: false,
-        reason: 'Nenhum documento existente encontrado com o mesmo hash',
-      };
-    }
-
-    // Verificar se pode ser reutilizado
-    const canReuse = this.canReuseDocument(
-      existingDocument,
-      uploadDocumentoDto,
-    );
-
+    // MODIFICAÇÃO: Sempre retornar canReuse: false para forçar novo upload
     const result: DocumentReusabilityCheck = {
-      canReuse,
-      existingDocument: canReuse ? existingDocument : undefined,
-      reason: canReuse
-        ? 'Documento existente pode ser reutilizado'
-        : 'Documento existente não atende aos critérios de reutilização',
+      canReuse: false,
+      existingDocument: undefined,
+      reason: 'Reutilização desabilitada - todos os uploads são processados como novos documentos',
     };
 
     // Auditoria - Verificação de reutilização
@@ -89,14 +70,14 @@ export class DocumentoReuseService implements IDocumentoReuseService {
       auditContext.userId,
       {
         action: 'VERIFICACAO_REUTILIZACAO_DOCUMENTO',
-        severity: canReuse ? 'info' : 'warning',
-        description: `Verificação de reutilização ${canReuse ? 'bem-sucedida' : 'sem resultado'}`,
+        severity: 'info',
+        description: 'Verificação de reutilização - reutilização desabilitada, processando como novo documento',
         userAgent: auditContext.userAgent,
         ip: auditContext.ipAddress,
         additionalContext: {
           uploadId,
           fileHash,
-          canReuse,
+          canReuse: false,
           existingDocumentId: existingDocument?.id,
           existingDocumentInfo: existingDocument ? {
             nomeOriginal: existingDocument.nome_original,
@@ -125,7 +106,7 @@ export class DocumentoReuseService implements IDocumentoReuseService {
       DocumentoReuseService.name,
       {
         uploadId,
-        canReuse,
+        // canReuse,
         existingDocumentId: existingDocument.id,
         reason: result.reason,
       },
