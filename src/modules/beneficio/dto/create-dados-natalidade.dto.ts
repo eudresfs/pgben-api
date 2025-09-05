@@ -100,15 +100,11 @@ export class CreateDadosNatalidadeDto {
 
   @ApiProperty({
     description: 'Quantidade de filhos que já possui',
-    example: 2,
-    minimum: 1,
-    maximum: 20,
+    example: 2
   })
   @ValidateIf((o) => o.ja_tem_filhos === true)
   @IsNotEmpty()
   @IsNumber()
-  @Min(0)
-  @Max(20)
   @Type(() => Number)
   quantidade_filhos?: number;
 
