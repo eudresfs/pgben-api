@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.0](https://github.com/kemosoft-team/pgben-server/compare/v1.4.0...v1.5.0) (2025-09-05)
+
+
+### Features
+
+* **document:** add file reuse functionality and audit type ([cf36ca3](https://github.com/kemosoft-team/pgben-server/commit/cf36ca375ca591db0aa8196dfdd6590c2490f460))
+
+
+### Bug Fixes
+
+* **documento-reuse:** disable document reuse to ensure all uploads are processed ([14ad655](https://github.com/kemosoft-team/pgben-server/commit/14ad655aa8d1e3e4d7aaa4e2b3d1e3856641e874))
+* **solicitacao:** improve error message for beneficiary unit validation ([a8e5170](https://github.com/kemosoft-team/pgben-server/commit/a8e51702e0e66fb8f13e21b8a5c94beb2cc72d1c))
+
 ## [1.4.0](https://github.com/kemosoft-team/pgben-server/compare/v1.3.0...v1.4.0) (2025-09-04)
 
 
