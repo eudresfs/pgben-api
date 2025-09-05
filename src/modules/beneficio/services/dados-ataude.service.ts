@@ -289,14 +289,6 @@ export class DadosAtaudeService extends AbstractDadosBeneficioService<
         );
       }
 
-      // Validação de translado (se fornecido)
-      if (
-        data.translado &&
-        !Object.values(TransladoEnum).includes(data.translado)
-      ) {
-        errorBuilder.add('translado', 'Tipo de translado inválido.');
-      }
-
       // Validação de endereço do velório (se fornecido)
       if (
         data.endereco_velorio &&
