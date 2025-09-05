@@ -383,13 +383,17 @@ export class DocumentoService {
         validation.uploadId,
       );
 
+      // Verificar se pode reutilizar arquivo físico
       if (reuseCheck.canReuse && reuseCheck.existingDocument) {
         this.logger.info(
-          `Documento reutilizado: ${reuseCheck.existingDocument.id}`,
+          `Arquivo físico reutilizado, criando novo registro: ${reuseCheck.existingDocument.id}`,
           DocumentoService.name,
         );
 
-        // Auditar reutilização com contexto completo
+        // Reutilizar o caminho do arquivo existente
+        caminhoArmazenamento = reuseCheck.existingDocument.caminho;
+
+        // Auditar reutilização de arquivo físico
         await this.auditService.auditAccess(this.getAuditContext(usuarioId), {
           documentoId: reuseCheck.existingDocument.id,
           filename: reuseCheck.existingDocument.nome_original,
@@ -397,36 +401,34 @@ export class DocumentoService {
           fileSize: reuseCheck.existingDocument.tamanho,
           cidadaoId: reuseCheck.existingDocument.cidadao_id,
           solicitacaoId: reuseCheck.existingDocument.solicitacao_id,
-          accessType: 'view',
+          accessType: 'reuse',
           success: true,
         });
+      } else {
+        // 4. Geração do caminho de armazenamento
+        const storagePath = this.storageService.generateStoragePath(
+          uploadDocumentoDto,
+          fileProcessingResult.fileName,
+        );
 
-        return reuseCheck.existingDocument;
+        this.logger.debug(
+          `Caminho de storage gerado: ${storagePath}`,
+          DocumentoService.name,
+        );
+
+        // 5. Salvamento no storage
+        caminhoArmazenamento = await this.storageService.saveFile(
+          arquivo,
+          storagePath,
+          uploadDocumentoDto,
+          validation.uploadId,
+        );
+
+        this.logger.debug(
+          `Arquivo salvo no storage: ${caminhoArmazenamento}`,
+          DocumentoService.name,
+        );
       }
-
-      // 4. Geração do caminho de armazenamento
-      const storagePath = this.storageService.generateStoragePath(
-        uploadDocumentoDto,
-        fileProcessingResult.fileName,
-      );
-
-      this.logger.debug(
-        `Caminho de storage gerado: ${storagePath}`,
-        DocumentoService.name,
-      );
-
-      // 5. Salvamento no storage
-      caminhoArmazenamento = await this.storageService.saveFile(
-        arquivo,
-        storagePath,
-        uploadDocumentoDto,
-        validation.uploadId,
-      );
-
-      this.logger.debug(
-        `Arquivo salvo no storage: ${caminhoArmazenamento}`,
-        DocumentoService.name,
-      );
 
       // 6. Criação dos metadados
       const metadata = this.metadataService.createMetadata(

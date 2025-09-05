@@ -23,7 +23,7 @@ export interface DocumentoAccessAuditData {
   fileSize: number;
   cidadaoId: string;
   solicitacaoId?: string;
-  accessType: 'view' | 'download' | 'upload' | 'verify' | 'delete';
+  accessType: 'view' | 'download' | 'upload' | 'verify' | 'delete' | 'reuse';
   success: boolean;
   errorReason?: string;
   metadata?: Record<string, any>;
