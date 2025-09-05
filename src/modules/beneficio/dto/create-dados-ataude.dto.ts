@@ -94,14 +94,11 @@ export class CreateDadosAtaudeDto {
   declaracao_obito?: string;
 
   @ApiPropertyOptional({
-    description: 'Tipo de translado necessário',
-    enum: TransladoEnum,
-    example: TransladoEnum.SVO,
-    default: TransladoEnum.NAO_NECESSARIO,
+    description: 'Rota de translado necessário',
+    example: ''
   })
   @IsOptional()
-  @IsEnum(TransladoEnum, { message: 'Tipo de translado inválido' })
-  translado?: TransladoEnum;
+  translado?: string;
 
   @ApiPropertyOptional({
     description: 'Endereço do local do velório',
