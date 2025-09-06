@@ -94,4 +94,4 @@ export enum CategoriaDocumento {
 }
 
 // Importar TipoDocumentoEnum do arquivo de enums centralizado
-export { TipoDocumentoEnum as TipoDocumento } from '@/enums';
+export { TipoDocumentoEnum } from '../../../enums/tipo-documento.enum';

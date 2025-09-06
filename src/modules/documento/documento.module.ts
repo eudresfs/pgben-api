@@ -5,7 +5,9 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { DocumentoController } from './controllers/documento.controller';
 import { DocumentoOrganizacionalController } from './controllers/documento-organizacional.controller';
 import { DocumentoBatchController } from './controllers/documento-batch.controller';
+import { DocumentoPdfController } from './controllers/documento-pdf.controller';
 import { DocumentoService } from './services/documento.service';
+import { DocumentoPdfService } from './services/documento-pdf.service';
 import { DocumentoBatchService } from './services/batch-download/documento-batch.service';
 import { DocumentoBatchSchedulerService } from './services/batch-download/documento-batch-scheduler.service';
 import { DocumentoUrlService } from './services/documento-url.service';
@@ -18,7 +20,7 @@ import { DocumentoAuditService } from './services/documento-audit.service';
 import { InputSanitizerValidator } from './validators/input-sanitizer.validator';
 import { memoryStorage } from 'multer';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { Documento, DocumentoBatchJob } from '../../entities';
+import { Documento, DocumentoBatchJob, Solicitacao, Usuario } from '../../entities';
 import { AuthModule } from '../../auth/auth.module';
 import { LoggingModule } from '../../shared/logging/logging.module';
 import { SharedModule } from '../../shared/shared.module';
@@ -63,7 +65,7 @@ import { DocumentFilterService } from './services/batch-download/document-filter
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Documento, DocumentoBatchJob]),
+    TypeOrmModule.forFeature([Documento, DocumentoBatchJob, Solicitacao, Usuario]),
     MulterModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -108,9 +110,11 @@ import { DocumentFilterService } from './services/batch-download/document-filter
     DocumentoController,
     DocumentoOrganizacionalController,
     DocumentoBatchController,
+    DocumentoPdfController,
   ],
   providers: [
     DocumentoService,
+    DocumentoPdfService,
     DocumentoBatchService,
     DocumentoBatchSchedulerService,
     DocumentoUrlService,
@@ -172,6 +176,7 @@ import { DocumentFilterService } from './services/batch-download/document-filter
   ],
   exports: [
     DocumentoService,
+    DocumentoPdfService,
     DocumentoBatchService,
     DocumentoUrlService,
     StorageProviderFactory,

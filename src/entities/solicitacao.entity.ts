@@ -15,21 +15,26 @@ import {
   VersionColumn,
 } from 'typeorm';
 import { IsNotEmpty, IsOptional } from 'class-validator';
-import { Cidadao } from './cidadao.entity';
-import { TipoBeneficio } from './tipo-beneficio.entity';
-import { Usuario } from './usuario.entity';
-import { Unidade } from './unidade.entity';
-import { Documento } from './documento.entity';
-import { HistoricoSolicitacao } from './historico-solicitacao.entity';
-import { Pendencia } from './pendencia.entity';
-import { ProcessoJudicial } from './processo-judicial.entity';
-import { DeterminacaoJudicial } from './determinacao-judicial.entity';
 import { StatusSolicitacao } from '../enums/status-solicitacao.enum';
 import { SubStatusSolicitacao } from '../enums/sub-status-solicitacao.enum';
-import { InfoBancaria } from './info-bancaria.entity';
-import { Pagamento } from './pagamento.entity';
-import { Concessao } from './concessao.entity';
-import { DadosAluguelSocial } from './dados-aluguel-social.entity';
+import { 
+  DadosCestaBasica, 
+  DadosNatalidade, 
+  DadosAtaude, 
+  DadosAluguelSocial,
+  Cidadao,
+  TipoBeneficio,
+  Usuario,
+  Unidade,
+  Documento,
+  HistoricoSolicitacao,
+  Pendencia,
+  ProcessoJudicial,
+  DeterminacaoJudicial,
+  InfoBancaria,
+  Pagamento,
+  Concessao
+} from '.';
 
 @Entity('solicitacao')
 @Index(['protocolo'], { unique: true })
@@ -331,6 +336,24 @@ export class Solicitacao {
    */
   @OneToOne(() => DadosAluguelSocial, (dados) => dados.solicitacao, { nullable: true })
   dados_aluguel_social?: DadosAluguelSocial;
+
+  /**
+   * Relação com dados específicos do auxílio ataúde
+   */
+  @OneToOne(() => DadosAtaude, (dados) => dados.solicitacao, { nullable: true })
+  dados_ataude?: DadosAtaude;
+
+    /**
+   * Relação com dados específicos do auxílio ataúde
+   */
+  @OneToOne(() => DadosNatalidade, (dados) => dados.solicitacao, { nullable: true })
+  dados_natalidade?: DadosNatalidade;
+
+    /**
+   * Relação com dados específicos do auxílio ataúde
+   */
+  @OneToOne(() => DadosCestaBasica, (dados) => dados.solicitacao, { nullable: true })
+  dados_cesta_basica?: DadosCestaBasica;
 
   @CreateDateColumn()
   created_at: Date;
