@@ -92,7 +92,8 @@ export class AutorizacaoAtaudeTemplate extends DocumentoBaseTemplate {
     }
 
     const tipoUrna = dados.dados_ataude.tipo_urna;
-    const descricaoUrna = this.obterDescricaoUrna(tipoUrna);
+    const translado = dados.dados_ataude.translado
+    const descricaoUrna = this.obterDescricaoUrna(tipoUrna, translado);
 
     return {
       stack: [
@@ -206,41 +207,65 @@ export class AutorizacaoAtaudeTemplate extends DocumentoBaseTemplate {
    * @param tipoUrna - Tipo da urna (ESPECIAL, PADRAO, OBESO, INFANTIL)
    * @returns Descrição completa da urna e serviços inclusos
    */
-  private obterDescricaoUrna(tipoUrna: string): string {
+  private obterDescricaoUrna(tipoUrna: string, translado: string): string {
     const descricoes = {
-      ESPECIAL: `FUNERAL COMPOSTO POR URNA, EDREDOM, HIGIENIZAÇÃO SIMPLES, SUPORTE PARA URNA, CASTIÇAL E TRANSLADO DENTRO DO MUNICÍPIO DE NATAL.
+      ESPECIAL: `FUNERAL COMPOSTO POR: urna sextavada em madeira de pinus, edredom, higienização simples, suporte para urna, castiçais e traslado no município de Natal.
 
-URNA MORTUÁRIA - MODELO: SEXTAVADO - CAIXA: CONFECCIONADA EM MADEIRA DE PINUS, FUNDO MISTO EM MADEIRA E CHAPADUR DE ALTA RESISTÊNCIA COLADO E GRAMPEADO, BORDADA EM RELEVO NAS LATERAIS, COM CAPACIDADE PARA ATÉ 100 KG. TAMPA: CONFECCIONADA EM MADEIRA DE PINUS BORDADAS NAS LATERAIS, COM ENCAIXES E GUIAS, COM 4 CHAVETAS PARA SEU FECHAMENTO. TAMPO: CONFECCIONADO EM CHAPADUR (FIBRA DE EUCALIPTO) DECORADO ARTISTICAMENTE EM SILK SCREEN DOURADO SEM MOTIVOS RELIGIOSOS, COM VISOR NA MEDIDA DE ¼. SOBRE TAMPA: FECHAMENTO DO SOBRE TAMPO COM 3 CHAVETAS DOURADAS. ALÇAS: PARREIRAS ARTICULADAS DOURADAS, SENDO 3 EM CADA LATERAL DA CAIXA. ACABAMENTO INTERNO: FORRADA EM MATERIAL BIODEGRADÁVEL BRANCO, BABADO DE TECIDO DE 8 CM E TRAVESSEIRO SOLTO. ACABAMENTO EXTERNO: NA COR CASTANHO ESCURO, COM VERNIZ DE ALTO BRILHO.
-MEDIDAS INTERNAS: COMPRIMENTO: 1,96M X LARGURA: 56CM X ALTURA: 35CM.
-MEDIDAS EXTERNAS: COMPRIMENTO: 2,00M X LARGURA: 61CM X ALTURA: 41CM.
+URNA MORTUÁRIA
+- Caixa: madeira de pinus, fundo misto (madeira + chapadur de alta resistência).
+- Tampa: pinus, com encaixes, guias e 4 chavetas de fechamento.
+- Tampo: chapadur (fibra de eucalipto) com silk screen dourado (sem símbolos religiosos), visor de ¼, sobre-tampo com 3 chavetas douradas.
+- Alças: 3 parreiras articuladas douradas em cada lateral.
+- Acabamento interno: material biodegradável branco, babado de tecido (8 cm) e travesseiro solto.
+- Acabamento externo: castanho-escuro com verniz alto brilho.
+- Capacidade: até 100 kg.
+- Medidas internas: 1,96m x 56cm x 35cm.
+- Medidas externas: 2,00m x 61cm x 41cm.
 
-O TRANSLADO DO LOCAL DO ÓBITO PARA O SVO E/OU ITEP, DO SVO E/OU ITEP PARA O LOCAL DO VELÓRIO E DO LOCAL DO VELÓRIO PARA UM DOS CEMITÉRIOS DA CIDADE DO NATAL.`,
+TRASLADO: ${translado}`,
 
-      PADRAO: `FUNERAL COMPOSTO POR URNA, EDREDOM, HIGIENIZAÇÃO SIMPLES, SUPORTE PARA URNA, CASTIÇAL E TRANSLADO DENTRO DO MUNICÍPIO DE NATAL.
+      PADRAO: `FUNERAL COMPOSTO POR: urna em pinus, edredom, higienização simples, suporte para urna, castiçais e traslado no município de Natal.
 
-A URNA EM PINOS, COM TAMPA EM DURATEX E 2 SOBRE TAMPOS EM MDF, VISOR DE ¼, COM ALÇA PARREIRA, ACABAMENTO EXTERNO PADRÃO NA COR IMBUIA EM VERNIZ BRILHANTE. COM CAPACIDADE PARA ATÉ 100 KG.
-MEDIDAS INTERNAS: COMPRIMENTO: 1,96 X LARGURA: 56cm X ALTURA: 35cm.
-MEDIDAS EXTERNAS: COMPRIMENTO: 2,00M X LARGURA: 61cm X ALTURA: 41cm.
+URNA MORTUÁRIA
+- Caixa: pinus, tampa em Duratex e 2 sobre-tampos em MDF.
+- Tampo: visor de ¼, fechamento com 3 chavetas douradas.
+- Alças: 3 parreiras articuladas douradas em cada lateral.
+- Acabamento interno: material biodegradável branco, babado de tecido (8 cm) e travesseiro solto.
+- Acabamento externo: cor imbuia, verniz brilhante.
+- Capacidade: até 100 kg.
+- Medidas internas: 1,96m x 56cm x 35cm.
+- Medidas externas: 2,00m x 61cm x 41cm.
 
-CHAVETAS: FECHAMENTO DO SOBRE TAMPO COM 3 CHAVETAS DOURADAS. ALÇAS: PARREIRAS ARTICULADAS DOURADAS, SENDO 3 EM CADA LATERAL DA CAIXA. ACABAMENTO INTERNO: FORRADA EM MATERIAL BIODEGRADÁVEL BRANCO, BABADO DE TECIDO DE 8 CM E TRAVESSEIRO SOLTO
+TRASLADO: ${translado}`,
 
-O TRANSLADO DO LOCAL DO ÓBITO PARA O SVO E/OU ITEP, DO SVO E/OU ITEP PARA O LOCAL DO VELÓRIO E DO LOCAL DO VELÓRIO PARA UM DOS CEMITÉRIOS DA CIDADE DO NATAL.`,
+      OBESO: `FUNERAL COMPOSTO POR: urna reforçada em pinus, edredom, higienização simples, suporte para urna, castiçais e traslado no município de Natal.
 
-      OBESO: `FUNERAL COMPOSTO POR URNA, EDREDOM, HIGIENIZAÇÃO SIMPLES, SUPORTE PARA URNA, CASTIÇAL E TRANSLADO DENTRO DO MUNICÍPIO.
+URNA MORTUÁRIA
+- Caixa: pinus, tampa em Duratex e 2 sobre-tampos em MDF.
+- Tampo: visor de ¼, fechamento com 3 chavetas douradas.
+- Alças: 3 parreiras articuladas douradas em cada lateral.
+- Acabamento interno: material biodegradável branco, babado de tecido (8 cm) e travesseiro solto.
+- Acabamento externo: cor imbuia, verniz brilhante.
+- Capacidade: até 150 kg.
+- Medidas internas: 2,05m x 76cm x 35cm.
+- Medidas externas: 2,10m x 78cm x 41cm.
 
-A URNA EM PINOS, COM TAMPA EM DURATEX E 2 SOBRE TAMPOS EM MDF, VISOR DE ¼, ALÇA PARREIRA, ACABAMENTO EXTERNO PADRÃO NA COR IMBUIA EM VERNIZ BRILHANTE. COM CAPACIDADE PARA ATÉ 150 KG.
-MEDIDAS INTERNAS: COMPRIMENTO: 2,05 X LARGURA: 76cm X ALTURA: 35cm.
-MEDIDAS EXTERNAS: COMPRIMENTO: 2,10M X LARGURA: 78cm X ALTURA: 41cm.
+TRASLADO: ${translado}`,
 
-CHAVETAS: FECHAMENTO DO SOBRE TAMPO COM 3 CHAVETAS DOURADAS. ALÇAS: PARREIRAS ARTICULADAS DOURADAS, SENDO 3 EM CADA LATERAL DA CAIXA. ACABAMENTO INTERNO: FORRADA EM MATERIAL BIODEGRADÁVEL BRANCO, BABADO DE TECIDO DE 8 CM E TRAVESSEIRO SOLTO
+      INFANTIL: `FUNERAL COMPOSTO POR: urna infantil, edredom, suporte para urna, castiçais e traslado no município de Natal.
 
-O TRANSLADO DO LOCAL DO ÓBITO PARA O SVO E/OU ITEP, DO SVO E/OU ITEP PARA O LOCAL DO VELÓRIO E DO LOCAL DO VELÓRIO PARA UM DOS CEMITÉRIOS DA CIDADE DO NATAL.`,
+URNA MORTUÁRIA
+- Caixa: fundo em compensado, tampa em eucatex, forro interior completo.
+- Acabamento externo: cor imbuia.
+- Capacidade: até 50 kg.
+- Medida: 1,50m de comprimento.
 
-      INFANTIL: `FUNERAL COMPOSTO DE URNA FUNERÁRIA COM FUNDO EM COMPENSADO, TAMPA EM EUCATEX E FORRO INTERIOR COMPLETO NA COR IMBUIA, COM CAPACIDADE PARA 50 KG, MEDINDO 1,50M, EDREDON, SUPORTE PARA URNA, CASTIÇAL E TRANSLADO DO LOCAL DO ÓBITO PARA O SVO E/OU ITEP DO SVO E/OU ITEP PARA O LOCAL DO VELÓRIO E DO LOCAL DO VELÓRIO PARA UM DOS CEMITÉRIOS DA CIDADE DO NATAL.`
+TRASLADO: ${translado}`
     };
 
     return descricoes[tipoUrna?.toUpperCase()] || descricoes.PADRAO;
   }
+
 
   /**
    * Formata valor monetário

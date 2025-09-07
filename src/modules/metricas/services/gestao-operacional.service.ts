@@ -8,6 +8,7 @@ import {
   Cidadao,
   TipoBeneficio,
   Unidade,
+  StatusConcessao,
 } from '../../../entities';
 import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
@@ -139,7 +140,8 @@ export class GestaoOperacionalService {
       // Contar concessões realizadas com escopo aplicado
       const concessoesQuery = this.concessaoScopedRepository
         .createScopedQueryBuilder('concessao')
-        .where('concessao.data_inicio >= :dataLimite', { dataLimite });
+        .where('concessao.data_inicio >= :dataLimite', { dataLimite })
+        .andWhere('concessao.status not in (:...status)', { status: [StatusConcessao.APTO] });
 
       // Aplicar filtros dinâmicos
       if (filtros && !this.filtrosEstaoVazios(filtros)) {

@@ -92,6 +92,7 @@ export interface IBeneficioAtaudeDocumento {
   valor_autorizado?: number;
   data_autorizacao?: string;
   observacoes?: string;
+  translado?: string;
   funeraria?: {
     nome: string;
     endereco?: string;

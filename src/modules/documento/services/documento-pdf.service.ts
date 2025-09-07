@@ -507,7 +507,7 @@ export class DocumentoPdfService {
             nome: solicitacao.beneficiario.nome,
             cpf: solicitacao.beneficiario.cpf,
             rg: solicitacao.beneficiario.rg,
-            data_nascimento: new Date(solicitacao.beneficiario.data_nascimento),
+            endereco: solicitacao.beneficiario?.enderecos?.[0],
           }
         : solicitacao.solicitante
         ? {
