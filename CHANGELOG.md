@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.0](https://github.com/kemosoft-team/pgben-server/compare/v1.5.0...v1.6.0) (2025-09-08)
+
+
+### Features
+
+* **documento:** add PDF document generation for funeral benefit authorization ([f36b03a](https://github.com/kemosoft-team/pgben-server/commit/f36b03ac8098b263f9e7e940600b941da6ca2266))
+* **documento:** add translado field and update urn descriptions ([104f467](https://github.com/kemosoft-team/pgben-server/commit/104f467abfcdc34cba959bc35d77c504cd3ed4c2))
+
 ## [1.5.0](https://github.com/kemosoft-team/pgben-server/compare/v1.4.0...v1.5.0) (2025-09-05)
 
 
