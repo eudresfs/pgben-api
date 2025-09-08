@@ -60,6 +60,8 @@ export enum TipoDocumentoEnum {
   TERMO_ACOLHIMENTO = 'termo_acolhimento',
   RELATORIO_SOCIAL = 'relatorio_social',
   PARECER_TECNICO = 'parecer_tecnico',
+  COMPROVANTE_BENEFICIO = 'comprovante_beneficio',
+  DECLARACAO_COMPARECIMENTO = 'declaracao_comparecimento',
 
   // Documentos de programas sociais
   CARTAO_CADUNICO = 'cartao_cadunico',
@@ -79,6 +81,7 @@ export enum TipoDocumentoEnum {
   // Documentos específicos para mortalidade
   DECLARACAO_OBITO = 'declaracao_obito',
   AUTORIZACAO_SEPULTAMENTO = 'autorizacao_sepultamento',
+  AUTORIZACAO_ATAUDE = 'autorizacao_ataude',
   COMPROVANTE_PARENTESCO = 'comprovante_parentesco',
 
   // Documentos específicos para natalidade
