@@ -3,6 +3,9 @@ export enum TipoDocumentoEnum {
   CPF = 'cpf',
   RG = 'rg',
   CNH = 'cnh',
+  NIS = 'nis',
+  RG_REQUERENTE = 'rg_requerente',
+  CPF_REQUERENTE = 'cpf_requerente',
   PASSAPORTE = 'passaporte',
   DOCUMENTO_IDENTIFICACAO = 'documento_identificacao',
 
