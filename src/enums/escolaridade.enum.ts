@@ -1,5 +1,6 @@
 export enum EscolaridadeEnum {
   ANALFABETO = 'analfabeto',
+  ENSINO_INFANTIL = 'ensino_infantil',
   FUNDAMENTAL_INCOMPLETO = 'fundamental_incompleto',
   FUNDAMENTAL_COMPLETO = 'fundamental_completo',
   MEDIO_INCOMPLETO = 'medio_incompleto',
