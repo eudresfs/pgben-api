@@ -148,7 +148,7 @@ export class ReferenciaController {
     }
 
     // Roles que podem visualizar unidades
-    const rolesAutorizadas = ['SUPER_ADMIN', 'ADMIN', 'GESTOR'];
+    const rolesAutorizadas = ['SUPER_ADMIN', 'ADMIN', 'GESTOR', 'TECNICO_SEMTAS'];
 
     // Verificar se o usuário possui uma das roles autorizadas
     const temRoleAutorizada = user.roles?.some((role) =>
