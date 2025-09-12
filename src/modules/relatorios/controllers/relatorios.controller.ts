@@ -28,6 +28,7 @@ import {
   RelatorioBeneficiosDto,
   RelatorioSolicitacoesDto,
   RelatorioAtendimentosDto,
+  RelatorioPagamentosPdfDto,
 } from '../dto';
 
 /**
@@ -323,5 +324,70 @@ export class RelatoriosController {
     }
 
     return res.send(relatorio);
+  }
+
+  /**
+   * Gera documento PDF baseado em lista de IDs de pagamentos
+   * Valida se todos os pagamentos são do mesmo tipo de benefício
+   *
+   * @param req Request Express
+   * @param res Response Express
+   * @param dto Parâmetros com lista de IDs de pagamentos
+   * @returns Stream do PDF gerado
+   */
+  @Post('pagamentos-pdf')
+  @RequiresPermission({
+    permissionName: 'relatorio.pagamentos.pdf',
+    scopeType: ScopeType.GLOBAL,
+  })
+  @ApiOperation({
+    summary: 'Gerar PDF de pagamentos do mesmo tipo de benefício',
+    description: 'Gera documento PDF baseado em lista de IDs de pagamentos. Todos os pagamentos devem ser do mesmo tipo de benefício.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'PDF gerado com sucesso',
+    content: {
+      'application/pdf': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Parâmetros inválidos ou pagamentos de tipos de benefício diferentes',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso negado',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Erro interno do servidor',
+  })
+  async gerarPdfsPagamentos(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Body() dto: RelatorioPagamentosPdfDto,
+  ): Promise<void> {
+    // Gerar PDF baseado nos IDs de pagamentos fornecidos
+    // Valida se todos os pagamentos são do mesmo tipo de benefício
+    const pdf = await this.relatoriosService.gerarPdfsPagamentos({
+      pagamentoIds: dto.pagamento_ids,
+      observacoes: dto.observacoes,
+      user: req.user,
+    });
+
+    // Configurar cabeçalhos da resposta para PDF
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=relatorio-pagamentos.pdf',
+    );
+
+    res.send(pdf);
   }
 }

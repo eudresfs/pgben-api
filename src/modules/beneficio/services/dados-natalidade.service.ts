@@ -106,14 +106,14 @@ export class DadosNatalidadeService extends AbstractDadosBeneficioService<
       ) {
         errorBuilder.add(
           'atendida_psf_ubs',
-          'Campo atendida_psf_ubs é obrigatório. Validação de campo obrigatório falhou.',
+          'Campo Atendida PSF/UBS é obrigatório. Validação de campo obrigatório falhou.',
         );
       }
 
       if (data.gravidez_risco === undefined || data.gravidez_risco === null) {
         errorBuilder.add(
           'gravidez_risco',
-          'Campo gravidez_risco é obrigatório. Validação de campo obrigatório falhou.',
+          'Campo Gravidez de risco é obrigatório.',
         );
       }
 
@@ -123,14 +123,14 @@ export class DadosNatalidadeService extends AbstractDadosBeneficioService<
       ) {
         errorBuilder.add(
           'gemeos_trigemeos',
-          'Campo gemeos_trigemeos é obrigatório. Validação de campo obrigatório falhou.',
+          'Campo Gêmeos/Trigêmeos é obrigatório.',
         );
       }
 
       if (data.ja_tem_filhos === undefined || data.ja_tem_filhos === null) {
         errorBuilder.add(
           'ja_tem_filhos',
-          'Campo ja_tem_filhos é obrigatório. Validação de campo obrigatório falhou.',
+          'É obrigatório informar se o beneficiário já possui filhos.',
         );
       }
 
@@ -138,7 +138,7 @@ export class DadosNatalidadeService extends AbstractDadosBeneficioService<
       if (!data.data_provavel_parto) {
         errorBuilder.add(
           'data_provavel_parto',
-          'Campo data_provavel_parto é obrigatório. Validação de campo obrigatório falhou.',
+          'Campo data provável do parto é obrigatório.',
         );
       } else {
         const hoje = new Date();
@@ -148,7 +148,7 @@ export class DadosNatalidadeService extends AbstractDadosBeneficioService<
         if (isNaN(dataProvavel.getTime())) {
           errorBuilder.add(
             'data_provavel_parto',
-            'Data provável do parto inválida. Validação de formato falhou.',
+            'Data provável do parto inválida.',
           );
         } else {
           const diasDiferenca = Math.floor(
@@ -178,7 +178,7 @@ export class DadosNatalidadeService extends AbstractDadosBeneficioService<
         if (!data.quantidade_filhos || data.quantidade_filhos <= 0) {
           errorBuilder.add(
             'quantidade_filhos',
-            'Campo quantidade_filhos é obrigatório quando ja_tem_filhos é verdadeiro. Validação de campo obrigatório falhou.',
+            'É obrigatório informar a quantidade de filhos.',
           );
         } else if (data.quantidade_filhos > rules.MAX_FILHOS) {
           errorBuilder.add(
@@ -189,7 +189,7 @@ export class DadosNatalidadeService extends AbstractDadosBeneficioService<
       } else if (data.quantidade_filhos && data.quantidade_filhos > 0) {
         errorBuilder.add(
           'quantidade_filhos',
-          'Campo quantidade_filhos deve ser zero ou nulo quando ja_tem_filhos é falso. Validação de consistência falhou.',
+          'Campo quantidade_filhos deve ser zero ou nulo quando ja_tem_filhos é falso.',
         );
       }
 

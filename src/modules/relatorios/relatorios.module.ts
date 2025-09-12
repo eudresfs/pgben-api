@@ -6,10 +6,11 @@ import { AuthModule } from '../../auth/auth.module';
 
 // Entidades
 import { Solicitacao, Unidade, TipoBeneficio } from '../../entities';
+import { Pagamento } from '../../entities/pagamento.entity';
 
 // Componentes do módulo usando os arquivos de índice
 import { RelatoriosController } from './controllers';
-import { RelatoriosService, TempFilesService } from './services';
+import { RelatoriosService, TempFilesService, PdfTemplatesService } from './services';
 import { PdfStrategy, ExcelStrategy, CsvStrategy } from './strategies';
 import { RelatoriosAuditInterceptor } from './interceptors';
 
@@ -22,7 +23,7 @@ import { RelatoriosAuditInterceptor } from './interceptors';
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Solicitacao, Unidade, TipoBeneficio]),
+    TypeOrmModule.forFeature([Solicitacao, Unidade, TipoBeneficio, Pagamento]),
     CacheModule.register({
       ttl: 300, // 5 minutos de cache
       max: 100, // máximo de 100 itens em cache
@@ -34,6 +35,7 @@ import { RelatoriosAuditInterceptor } from './interceptors';
   providers: [
     RelatoriosService,
     TempFilesService,
+    PdfTemplatesService,
     PdfStrategy,
     ExcelStrategy,
     CsvStrategy,
@@ -44,4 +46,4 @@ import { RelatoriosAuditInterceptor } from './interceptors';
   ],
   exports: [RelatoriosService, TempFilesService],
 })
-export class RelatoriosUnificadoModule {}
+export class RelatoriosModule {}

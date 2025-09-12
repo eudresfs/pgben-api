@@ -24,6 +24,7 @@ import { CidadaoModule } from './modules/cidadao/cidadao.module';
 import { BeneficioModule } from './modules/beneficio/beneficio.module';
 import { DocumentoModule } from './modules/documento/documento.module';
 import { MetricasModule } from './modules/metricas/metricas.module';
+import { RelatoriosModule } from './modules/relatorios/relatorios.module'
 import { RecursoModule } from './modules/recurso/recurso.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { PagamentoModule } from './modules/pagamento/pagamento.module';
@@ -186,6 +187,9 @@ import { CommonModule } from './common/common.module';
     EasyUploadModule,
     // Módulo de feedback
     // FeedbackModule,
+
+    // Módulo de relatórios
+    RelatoriosModule,
   ],
   controllers: [AppController],
   providers: [

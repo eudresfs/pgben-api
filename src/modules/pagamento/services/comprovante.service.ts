@@ -18,9 +18,10 @@ import { Documento } from '../../../entities/documento.entity';
 import { TipoDocumentoEnum } from '../../../enums/tipo-documento.enum';
 import { Pagamento } from '../../../entities/pagamento.entity';
 import { StatusPagamentoEnum } from '../../../enums';
-import { PdfGeneratorUtil } from '../utils/pdf-generator.util';
+import { ComprovantePdfAdapter } from '../adapters/comprovante-pdf.adapter';
 import { ComprovanteDadosMapper } from '../mappers/comprovante-dados.mapper';
 import { PDFDocument } from 'pdf-lib';
+import { TipoComprovante } from '../dtos/gerar-comprovante.dto';
 
 /**
  * Service simplificado para gerenciamento de comprovantes
@@ -47,6 +48,7 @@ export class ComprovanteService {
     private readonly pagamentoRepository: PagamentoRepository,
     private readonly storageProviderFactory: StorageProviderFactory,
     private readonly documentoUrlService: DocumentoUrlService,
+    private readonly comprovantePdfAdapter: ComprovantePdfAdapter,
   ) {}
 
   /**
@@ -293,22 +295,17 @@ export class ComprovanteService {
     // Validar dados obrigatórios
     ComprovanteDadosMapper.validarDadosObrigatorios(pagamento);
 
-    // Determinar tipo de comprovante baseado no código do tipo de benefício
-    const tipoComprovante = this.determinarTipoComprovante(pagamento.solicitacao.tipo_beneficio.codigo);
-
     // Mapear dados para o formato do comprovante
     const dadosComprovante = ComprovanteDadosMapper.mapearParaComprovante(pagamento);
 
-    // Gerar PDF
-    const pdfGenerator = new PdfGeneratorUtil();
-    const template = pdfGenerator.criarConfiguracao(tipoComprovante);
-    const pdfBuffer = await pdfGenerator.gerarComprovante(dadosComprovante, template);
+    // Gerar PDF usando o adapter
+    const pdfBuffer = await this.comprovantePdfAdapter.gerarComprovante(dadosComprovante);
     
     // Gerar nome do arquivo
-    const nomeArquivo = pdfGenerator.gerarNomeArquivo(dadosComprovante, template);
+    const nomeArquivo = this.gerarNomeArquivo(dadosComprovante);
     
     // Converter para base64 se necessário
-    const conteudoBase64 = gerarDto.formato === 'base64' ? pdfGenerator.converterParaBase64(pdfBuffer) : undefined;
+    const conteudoBase64 = gerarDto.formato === 'base64' ? pdfBuffer.toString('base64') : undefined;
 
     this.logger.log(`Comprovante PDF gerado com sucesso: ${nomeArquivo}`);
 
@@ -317,7 +314,7 @@ export class ComprovanteService {
       tipoMime: 'application/pdf',
       tamanho: pdfBuffer.length,
       dataGeracao: new Date(),
-      tipoComprovante: tipoComprovante as any,
+      tipoComprovante: this.determinarTipoComprovanteEnum(dadosComprovante),
       conteudoBase64,
     };
   }
@@ -334,16 +331,11 @@ export class ComprovanteService {
     // Buscar pagamento com todos os relacionamentos necessários
     const pagamento = await this.buscarPagamentoCompleto(pagamentoId);
 
-    // Determinar tipo de comprovante baseado no código do tipo de benefício
-    const tipoComprovante = this.determinarTipoComprovante(pagamento.solicitacao.tipo_beneficio.codigo);
-
     // Mapear dados para o formato do comprovante
     const dadosComprovante = ComprovanteDadosMapper.mapearParaComprovante(pagamento);
 
-    // Gerar PDF
-    const pdfGenerator = new PdfGeneratorUtil();
-    const template = pdfGenerator.criarConfiguracao(tipoComprovante);
-    const pdfBuffer = await pdfGenerator.gerarComprovante(dadosComprovante, template);
+    // Gerar PDF usando o adapter
+    const pdfBuffer = await this.comprovantePdfAdapter.gerarComprovante(dadosComprovante);
     
     this.logger.log(`Buffer PDF gerado com sucesso para pagamento ${pagamentoId}`);
     
@@ -572,6 +564,27 @@ export class ComprovanteService {
     }
 
     return tipoComprovante;
+  }
+
+  /**
+   * Determina o enum do tipo de comprovante baseado nos dados
+   */
+  private determinarTipoComprovanteEnum(dadosComprovante: any): TipoComprovante {
+    if (dadosComprovante.locador) {
+      return TipoComprovante.ALUGUEL_SOCIAL;
+    }
+    return TipoComprovante.CESTA_BASICA;
+  }
+
+  /**
+   * Gera nome do arquivo baseado nos dados do comprovante
+   */
+  private gerarNomeArquivo(dadosComprovante: any): string {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const nomeBeneficiario = dadosComprovante.beneficiario?.nome?.replace(/\s+/g, '_') || 'beneficiario';
+    const tipo = dadosComprovante.locador ? 'aluguel_social' : 'cesta_basica';
+    
+    return `comprovante_${tipo}_${nomeBeneficiario}_${timestamp}.pdf`;
   }
 
   /**

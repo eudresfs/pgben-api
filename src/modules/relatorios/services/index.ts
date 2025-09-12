@@ -3,3 +3,4 @@
  */
 export * from './relatorios.service';
 export * from './temp-files.service';
+export * from './pdf-templates.service';

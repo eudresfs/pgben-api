@@ -26,6 +26,7 @@ export class NatalidadeStrategy implements IBeneficioCalculatorStrategy {
     diasParaLiberacao: 3,
     diasParaVencimento: 30,
     diaLimite: 25,
+    valorPadrao: 600,
   };
 
   constructor(private readonly feriadoService: FeriadoService) {}
@@ -38,8 +39,8 @@ export class NatalidadeStrategy implements IBeneficioCalculatorStrategy {
     const valorParcela = dados.valor;
 
     // Calcula datas
-    const dataLiberacao = await this.calcularDataLiberacao(dados.dataInicio);
-    const dataVencimento = await this.calcularDataVencimento(dataLiberacao);
+    const dataLiberacao = await this.calcularDataLiberacao(dados.dadosEspecificos.data_provavel_parto);
+    const dataVencimento = await this.calcularDataVencimento(dados.dadosEspecificos.data_provavel_parto);
 
     return {
       quantidadeParcelas,

@@ -16,6 +16,10 @@ const mockCacheInvalidationService = {
   emitCacheInvalidationEvent: jest.fn(),
 };
 
+const mockPagamentoEventosService = {
+  emitirEventoStatusAtualizado: jest.fn(),
+};
+
 // Mock do PagamentoValidationUtil
 jest.mock('../utils/pagamento-validation.util', () => ({
   PagamentoValidationUtil: {
@@ -59,6 +63,8 @@ describe('PagamentoService - updateStatus', () => {
       mockConcessaoService as any,
       {} as any, // mapper
       {} as any, // pagamentoCalculatorService
+      {} as any, // filtrosAvancadosService
+      mockPagamentoEventosService as any, // pagamentoEventosService
     );
 
     // Limpar mocks

@@ -27,6 +27,7 @@ export class CestaBasicaStrategy implements IBeneficioCalculatorStrategy {
     diasParaLiberacao: 3,
     diasParaVencimento: 30,
     diaLimite: 25,
+    valorPadrao: 107,
   };
 
   constructor(private readonly feriadoService: FeriadoService) {}
@@ -41,7 +42,7 @@ export class CestaBasicaStrategy implements IBeneficioCalculatorStrategy {
 
     return {
       quantidadeParcelas,
-      valorParcela: dados.valor,
+      valorParcela: dados.valor * dados.quantidadeCestas,
       dataLiberacao,
       dataVencimento,
       intervaloParcelas: this.configuracao.intervaloParcelas,
@@ -61,6 +62,16 @@ export class CestaBasicaStrategy implements IBeneficioCalculatorStrategy {
 
     // Usa valor padrão
     return this.configuracao.parcelasPadrao;
+  }
+
+    private determinarValorParcelas(dados: DadosPagamento): number {
+    // Verifica se há dados específicos com quantidade de cestas
+    if (dados.dadosEspecificos?.quantidadeCestas) {
+      return dados.dadosEspecificos.quantidadeCestas;
+    }
+
+    // Usa valor padrão
+    return this.configuracao.valorPadrao;
   }
 
   private async calcularDataLiberacao(dataInicio: Date): Promise<Date> {

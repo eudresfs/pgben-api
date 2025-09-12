@@ -22,11 +22,12 @@ export class AluguelSocialStrategy implements IBeneficioCalculatorStrategy {
   readonly tipoBeneficio = TipoBeneficio.ALUGUEL_SOCIAL;
 
   private readonly configuracao: ConfiguracaoBeneficio = {
-    parcelasPadrao: 6,
+    parcelasPadrao: 12,
     intervaloParcelas: 30,
     diasParaLiberacao: 5,
     diasParaVencimento: 10,
     diaLimite: 25,
+    valorPadrao: 600,
   };
 
   constructor(private readonly feriadoService: FeriadoService) { }
@@ -49,14 +50,15 @@ export class AluguelSocialStrategy implements IBeneficioCalculatorStrategy {
   }
 
   private determinarQuantidadeParcelas(dados: DadosPagamento): number {
-    // Verifica se foi informada a quantidade de parcelas
-    if (dados.quantidadeParcelas) {
-      return dados.quantidadeParcelas;
-    }
-
     // Verifica se há dados específicos com quantidade de parcelas
     if (dados.dadosEspecificos?.quantidadeParcelas) {
       return dados.dadosEspecificos.quantidadeParcelas;
+    }
+
+
+    // Verifica se foi informada a quantidade de parcelas
+    if (dados.quantidadeParcelas) {
+      return dados.quantidadeParcelas;
     }
 
     // Verifica se há dados específicos com período em meses

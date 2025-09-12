@@ -7,6 +7,8 @@ import {
   ConfiguracaoBeneficio,
 } from '../interfaces/pagamento-calculator.interface';
 import { FeriadoService } from '../../../shared/services/feriado.service';
+import { TipoUrnaEnum } from '@/enums';
+import { DataSourceOptions } from 'typeorm';
 
 /**
  * Estratégia de cálculo para benefício de Funeral
@@ -26,6 +28,7 @@ export class FuneralStrategy implements IBeneficioCalculatorStrategy {
     diasParaLiberacao: 2,
     diasParaVencimento: 15,
     diaLimite: 25,
+    valorPadrao: 2390,
   };
 
   constructor(private readonly feriadoService: FeriadoService) {}
@@ -33,6 +36,7 @@ export class FuneralStrategy implements IBeneficioCalculatorStrategy {
   async calcular(dados: DadosPagamento): Promise<ResultadoCalculoPagamento> {
     // Funeral sempre é pagamento único
     const quantidadeParcelas = 1;
+    const tipoUrna = dados.dadosEspecificos.tipoUrna || TipoUrnaEnum.PADRAO;
 
     // Calcula datas com prioridade (urgência)
     const dataLiberacao = await this.calcularDataLiberacao(dados.dataInicio);
@@ -40,11 +44,24 @@ export class FuneralStrategy implements IBeneficioCalculatorStrategy {
 
     return {
       quantidadeParcelas,
-      valorParcela: dados.valor,
+      valorParcela: await this.calcularValor(tipoUrna),
       dataLiberacao,
       dataVencimento,
       intervaloParcelas: this.configuracao.intervaloParcelas,
     };
+  }
+
+  private async calcularValor(tipoUrna: TipoUrnaEnum) {
+    switch (tipoUrna) {
+      case TipoUrnaEnum.INFANTIL:
+        return 1666.66;
+      case TipoUrnaEnum.ESPECIAL:
+        return 2490;
+      case TipoUrnaEnum.OBESO:
+        return 2690;
+      default:
+        return this.configuracao.valorPadrao;
+    }
   }
 
   private async calcularDataLiberacao(dataInicio: Date): Promise<Date> {

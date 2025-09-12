@@ -338,29 +338,29 @@ export class PagamentoUnifiedMapper {
       };
     }
 
-    // Verificar se existe pagamento anterior
-    if (!pagamentoAnterior) {
-      return {
-        pode_liberar: false,
-        motivo_liberacao: `Parcela ${pagamento.numero_parcela} bloqueada: pagamento da parcela ${pagamento.numero_parcela - 1} não encontrado`,
-      };
-    }
+    // // Verificar se existe pagamento anterior
+    // if (!pagamentoAnterior) {
+    //   return {
+    //     pode_liberar: false,
+    //     motivo_liberacao: `Parcela ${pagamento.numero_parcela} bloqueada: pagamento da parcela ${pagamento.numero_parcela - 1} não encontrado`,
+    //   };
+    // }
 
-    // Verificar se pagamento anterior está confirmado
-    if (pagamentoAnterior.status !== 'confirmado') {
-      return {
-        pode_liberar: false,
-        motivo_liberacao: `Parcela ${pagamento.numero_parcela} bloqueada: parcela ${pagamentoAnterior.numero_parcela} com status '${pagamentoAnterior.status}' (requer CONFIRMADO)`,
-      };
-    }
+    // // Verificar se pagamento anterior está confirmado
+    // if (pagamentoAnterior.status !== 'confirmado') {
+    //   return {
+    //     pode_liberar: false,
+    //     motivo_liberacao: `Parcela ${pagamento.numero_parcela} bloqueada: parcela ${pagamentoAnterior.numero_parcela} com status '${pagamentoAnterior.status}' (requer CONFIRMADO)`,
+    //   };
+    // }
 
-    // Verificar se pagamento anterior tem comprovante
-    if (!pagamentoAnterior.comprovante_id) {
-      return {
-        pode_liberar: false,
-        motivo_liberacao: `Parcela ${pagamento.numero_parcela} bloqueada: parcela ${pagamentoAnterior.numero_parcela} sem comprovante de pagamento`,
-      };
-    }
+    // // Verificar se pagamento anterior tem comprovante
+    // if (!pagamentoAnterior.comprovante_id) {
+    //   return {
+    //     pode_liberar: false,
+    //     motivo_liberacao: `Parcela ${pagamento.numero_parcela} bloqueada: parcela ${pagamentoAnterior.numero_parcela} sem comprovante de pagamento`,
+    //   };
+    // }
 
     // Todos os critérios atendidos
     return {

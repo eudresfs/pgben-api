@@ -9,8 +9,10 @@ import {
 import {
   CestaBasicaTemplate,
   AluguelSocialTemplate,
-} from '../templates';
+} from '../../../common/pdf/templates/comprovantes';
 import { TipoComprovante } from '../dtos/gerar-comprovante.dto';
+import { CestaBasicaTemplateDto } from '../../../common/pdf/dtos/cesta-basica-template.dto';
+import { AluguelSocialTemplateDto } from '../../../common/pdf/dtos/aluguel-social-template.dto';
 
 /**
  * Utilitário para geração de PDFs de comprovantes
@@ -20,6 +22,12 @@ import { TipoComprovante } from '../dtos/gerar-comprovante.dto';
 export class PdfGeneratorUtil implements IComprovantePdfService {
   private readonly printer: any;
   private readonly fonts = {
+    Helvetica: {
+      normal: 'Helvetica',
+      bold: 'Helvetica-Bold',
+      italics: 'Helvetica-Oblique',
+      bolditalics: 'Helvetica-BoldOblique',
+    },
     Roboto: {
       normal: 'Helvetica',
       bold: 'Helvetica-Bold',
@@ -80,7 +88,8 @@ export class PdfGeneratorUtil implements IComprovantePdfService {
     template: IComprovanteTemplate,
   ): TDocumentDefinitions {
     const templateInstance = this.obterInstanciaTemplate(template.tipo as TipoComprovante);
-    return templateInstance.criarDefinicaoDocumento(dados);
+    const dadosTemplate = this.converterDadosParaTemplate(dados, template.tipo as TipoComprovante);
+    return templateInstance.criarDefinicaoDocumento(dadosTemplate);
   }
 
   /**
@@ -192,45 +201,28 @@ export class PdfGeneratorUtil implements IComprovantePdfService {
    * @param dados Dados do comprovante
    */
   public validarDados(dados: IDadosComprovante): void {
-    const camposObrigatorios = [
+    // Validar apenas campos essenciais mínimos
+    const camposEssenciais = [
       'beneficiario.nome',
       'beneficiario.cpf',
-      'pagamento.id',
       'pagamento.valor',
-      'pagamento.dataLiberacao',
-      'pagamento.metodoPagamento',
-      'pagamento.tipoBeneficio.nome',
       'unidade.nome',
-      'dataGeracao',
     ];
 
     // Validar campos básicos obrigatórios
-    for (const campo of camposObrigatorios) {
+    for (const campo of camposEssenciais) {
       const valor = this.obterValorPorCaminho(dados, campo);
       if (valor === undefined || valor === null || valor === '') {
         throw new Error(`Campo obrigatório ausente: ${campo}`);
       }
     }
 
-    // Validar endereço apenas para tipos de benefício que exigem
-    const tiposBeneficioComEndereco = ['aluguel-social', 'auxilio-moradia'];
-    const tipoBeneficio = dados.pagamento.tipoBeneficio.nome.toLowerCase();
-    
-    if (tiposBeneficioComEndereco.some(tipo => tipoBeneficio.includes(tipo))) {
-      const camposEndereco = [
-        'beneficiario.endereco.logradouro',
-        'beneficiario.endereco.numero',
-        'beneficiario.endereco.bairro',
-        'beneficiario.endereco.cidade',
-        'beneficiario.endereco.estado',
-        'beneficiario.endereco.cep',
-      ];
-
-      for (const campo of camposEndereco) {
-        const valor = this.obterValorPorCaminho(dados, campo);
-        if (valor === undefined || valor === null || valor === '') {
-          throw new Error(`Campo obrigatório ausente para este tipo de benefício: ${campo}`);
-        }
+    // Validação específica para aluguel social
+    const tipoBeneficio = dados.pagamento?.tipoBeneficio?.nome?.toLowerCase() || '';
+    if (tipoBeneficio.includes('aluguel') || tipoBeneficio.includes('moradia')) {
+      // Para aluguel social, validar apenas se os dados existem quando fornecidos
+      if (dados.locador && (!dados.locador.nome || !dados.locador.cpf)) {
+        console.warn('Dados do locador incompletos para aluguel social');
       }
     }
   }
@@ -255,5 +247,101 @@ export class PdfGeneratorUtil implements IComprovantePdfService {
     const baseSize = 50000; // 50KB base
     const contentFactor = JSON.stringify(dados).length * 10;
     return baseSize + contentFactor;
+  }
+
+  /**
+   * Converte dados do formato antigo para o novo formato de template
+   * @param dados Dados no formato antigo
+   * @param tipo Tipo do comprovante
+   * @returns Dados no formato do novo template
+   */
+  private converterDadosParaTemplate(dados: IDadosComprovante, tipo: TipoComprovante): CestaBasicaTemplateDto | AluguelSocialTemplateDto {
+    // Função auxiliar para converter endereço
+    const converterEndereco = (endereco: any) => {
+      if (typeof endereco === 'string') {
+        return {
+          logradouro: endereco,
+          numero: '',
+          complemento: '',
+          bairro: '',
+          cidade: '',
+          estado: '',
+          cep: ''
+        };
+      }
+      return {
+        logradouro: endereco?.logradouro || '',
+        numero: endereco?.numero || '',
+        complemento: endereco?.complemento || '',
+        bairro: endereco?.bairro || '',
+        cidade: endereco?.cidade || '',
+        estado: endereco?.estado || '',
+        cep: endereco?.cep || ''
+      };
+    };
+
+    const dadosBase = {
+      beneficiario: {
+        nome: dados.beneficiario?.nome || 'Nome não informado',
+        cpf: dados.beneficiario?.cpf || '000.000.000-00',
+        rg: dados.beneficiario?.rg || 'RG não informado',
+        endereco: converterEndereco(dados.beneficiario?.endereco)
+      },
+      unidade: {
+        nome: dados.unidade?.nome || 'Unidade não informada',
+        endereco: converterEndereco(dados.unidade?.endereco),
+        telefone: dados.unidade?.telefone || '',
+        email: dados.unidade?.email || ''
+      },
+      pagamento: {
+        id: dados.pagamento?.id || 'PAG-' + Date.now(),
+        valor: dados.pagamento?.valor || 0,
+        numeroParcela: dados.pagamento?.numeroParcela || 1,
+        totalParcelas: dados.pagamento?.totalParcelas || 1,
+        dataLiberacao: dados.pagamento?.dataLiberacao || new Date(),
+        metodoPagamento: dados.pagamento?.metodoPagamento || 'PIX'
+      },
+      observacoes: dados.observacoes || ''
+    };
+
+    switch (tipo) {
+      case TipoComprovante.CESTA_BASICA:
+        return {
+          ...dadosBase,
+          dadosEspecificos: {
+            motivoSolicitacao: 'Necessidade alimentar',
+            quantidadePessoas: 1,
+            situacaoVulnerabilidade: 'Vulnerabilidade social'
+          }
+        } as CestaBasicaTemplateDto;
+
+      case TipoComprovante.ALUGUEL_SOCIAL:
+        return {
+          ...dadosBase,
+          locador: {
+            nome: dados.locador?.nome || '',
+            cpf: dados.locador?.cpf || ''
+          },
+          imovel: {
+            endereco: typeof (dados.imovel?.endereco) === 'string' 
+              ? dados.imovel.endereco 
+              : typeof dados.beneficiario.endereco === 'string'
+                ? dados.beneficiario.endereco
+                : JSON.stringify(dados.beneficiario.endereco),
+            valorAluguel: parseFloat(dados.imovel?.valorAluguel || '0') || dados.pagamento?.valor || 0,
+            tipoImovel: 'Residencial',
+            descricao: 'Imóvel para moradia'
+          },
+          dadosEspecificos: {
+            motivoSolicitacao: 'Auxílio moradia',
+            situacaoVulnerabilidade: 'Vulnerabilidade social',
+            periodoMeses: 12,
+            observacoesTecnicas: dados.observacoes || ''
+          }
+        } as AluguelSocialTemplateDto;
+
+      default:
+        throw new Error(`Tipo de comprovante não suportado: ${tipo}`);
+    }
   }
 }

@@ -118,42 +118,6 @@ export class PagamentoService {
       throw new NotFoundException('Pagamento não encontrado');
     }
 
-    // Buscar dados necessários para cálculo dos critérios de liberação
-    let concessao = null;
-    let pagamentoAnterior = null;
-
-    try {
-      // Buscar concessão relacionada
-      if (pagamento.concessao_id) {
-        concessao = await this.concessaoService.findById(pagamento.concessao_id);
-      }
-
-      // Buscar pagamento anterior se não for a primeira parcela
-      if (pagamento.numero_parcela > 1) {
-        const pagamentosConcessao = await this.pagamentoRepository.findByConcessao(
-          pagamento.concessao_id,
-        );
-        pagamentoAnterior = pagamentosConcessao.find(
-          (p) => p.numero_parcela === pagamento.numero_parcela - 1,
-        );
-      }
-    } catch (error) {
-      this.logger.warn(
-        `Erro ao buscar dados para cálculo de critérios de liberação: ${error.message}`,
-      );
-    }
-
-    // Calcular critérios de liberação usando o mapper
-    const criterios = PagamentoUnifiedMapper.calcularCriteriosLiberacao(
-      pagamento,
-      pagamentoAnterior,
-      concessao,
-    );
-
-    // Adicionar as propriedades calculadas ao pagamento
-    (pagamento as any).pode_liberar = criterios.pode_liberar;
-    (pagamento as any).motivo_liberacao = criterios.motivo_liberacao;
-
     return pagamento;
   }
 

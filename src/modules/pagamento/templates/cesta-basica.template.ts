@@ -96,7 +96,7 @@ export class CestaBasicaTemplate {
             { text: "Se não, qual o grau de parentesco a quem foi entregue: ___________________________", margin: [0, 0, 0, 30] },
 
             { 
-                text: `Natal, ${data} de ${mes} de ${ano}`, 
+                text: `Natal, ___ de ${mes} de ${ano}`, 
                 margin: [0, 0, 0, 40], 
                 alignment: "center"
             },

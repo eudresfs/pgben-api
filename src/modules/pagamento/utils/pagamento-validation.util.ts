@@ -48,11 +48,12 @@ export class PagamentoValidationUtil {
     const statusPermitidos = [
       StatusPagamentoEnum.LIBERADO,
       StatusPagamentoEnum.PAGO,
+      StatusPagamentoEnum.RECEBIDO,
     ];
 
     if (!statusPermitidos.includes(pagamento.status)) {
       throw new ConflictException(
-        `Pagamento deve estar liberado ou pago para receber confirmação. Status atual: ${pagamento.status}`,
+        `Pagamento deve estar liberado, pago ou recebido para receber confirmação. Status atual: ${pagamento.status}`,
       );
     }
 
