@@ -322,66 +322,66 @@ export class PagamentoController {
     };
   }
 
-  // /**
-  //  * Busca pagamentos por solicitação
-  //  */
-  // @Get('solicitacao/:solicitacao_id')
-  // @AuditoriaPagamento.Consulta('Consulta de pagamentos por solicitação')
-  // @RequiresPermission({
-  //   permissionName: 'pagamento.listar',
-  //   scopeType: TipoEscopo.UNIDADE,
-  // })
-  // @ApiOperation({ summary: 'Busca pagamentos de uma solicitação' })
-  // @ApiParam({
-  //   name: 'solicitacao_id',
-  //   type: 'string',
-  //   description: 'ID da solicitação',
-  // })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'Lista de pagamentos da solicitação',
-  // })
-  // async findBySolicitacao(
-  //   @Param('solicitacao_id', ParseUUIDPipe) solicitacao_id: string,
-  // ) {
-  //   const pagamentos =
-  //     await this.pagamentoService.findBySolicitacao(solicitacao_id);
+  /**
+   * Busca pagamentos por solicitação
+   */
+  @Get('solicitacao/:solicitacao_id')
+  @AuditoriaPagamento.Consulta('Consulta de pagamentos por solicitação')
+  @RequiresPermission({
+    permissionName: 'pagamento.listar',
+    scopeType: TipoEscopo.UNIDADE,
+  })
+  @ApiOperation({ summary: 'Busca pagamentos de uma solicitação' })
+  @ApiParam({
+    name: 'solicitacao_id',
+    type: 'string',
+    description: 'ID da solicitação',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de pagamentos da solicitação',
+  })
+  async findBySolicitacao(
+    @Param('solicitacao_id', ParseUUIDPipe) solicitacao_id: string,
+  ) {
+    const pagamentos =
+      await this.pagamentoService.findBySolicitacao(solicitacao_id);
 
-  //   return {
-  //     success: true,
-  //     data: pagamentos,
-  //     total: pagamentos.length,
-  //   };
-  // }
+    return {
+      success: true,
+      data: pagamentos,
+      total: pagamentos.length,
+    };
+  }
 
-  // /**
-  //  * Busca pagamentos por concessão
-  //  */
-  // @Get('concessao/:concessao_id')
-  // @AuditoriaPagamento.Consulta('Consulta de pagamentos por concessão')
-  // @RequiresPermission({
-  //   permissionName: 'pagamento.listar',
-  //   scopeType: TipoEscopo.UNIDADE,
-  // })
-  // @ApiOperation({ summary: 'Busca pagamentos de uma concessão' })
-  // @ApiParam({
-  //   name: 'concessao_id',
-  //   type: 'string',
-  //   description: 'ID da concessão',
-  // })
-  // @ApiResponse({ status: 200, description: 'Lista de pagamentos da concessão' })
-  // async findByConcessao(
-  //   @Param('concessao_id', ParseUUIDPipe) concessao_id: string,
-  // ) {
-  //   const pagamentos =
-  //     await this.pagamentoService.findByConcessao(concessao_id);
+  /**
+   * Busca pagamentos por concessão
+   */
+  @Get('concessao/:concessao_id')
+  @AuditoriaPagamento.Consulta('Consulta de pagamentos por concessão')
+  @RequiresPermission({
+    permissionName: 'pagamento.listar',
+    scopeType: TipoEscopo.UNIDADE,
+  })
+  @ApiOperation({ summary: 'Busca pagamentos de uma concessão' })
+  @ApiParam({
+    name: 'concessao_id',
+    type: 'string',
+    description: 'ID da concessão',
+  })
+  @ApiResponse({ status: 200, description: 'Lista de pagamentos da concessão' })
+  async findByConcessao(
+    @Param('concessao_id', ParseUUIDPipe) concessao_id: string,
+  ) {
+    const pagamentos =
+      await this.pagamentoService.findByConcessao(concessao_id);
 
-  //   return {
-  //     success: true,
-  //     data: pagamentos,
-  //     total: pagamentos.length,
-  //   };
-  // }
+    return {
+      success: true,
+      data: pagamentos,
+      total: pagamentos.length,
+    };
+  }
 
   /**
    * Busca pagamentos pendentes de monitoramento
