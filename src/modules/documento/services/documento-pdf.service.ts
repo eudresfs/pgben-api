@@ -17,7 +17,9 @@ import {
   DocumentoGeradoDto,
   ListarDocumentosDto,
 } from '../dtos/gerar-documento.dto';
-import { DocumentoPdfGeneratorUtil } from '../utils/pdf-generator.util';
+import { PdfCommonService } from '@/common/pdf/services/pdf-common.service';
+import { AutorizacaoAtaudeTemplate } from '@/common/pdf/templates/comprovantes/autorizacao-ataude.template';
+import { DocumentoAdapter } from '../adapters/documento.adapter';
 import { Solicitacao } from '../../../entities/solicitacao.entity';
 import { Usuario } from '../../../entities/usuario.entity';
 import { Documento } from '../../../entities/documento.entity';
@@ -30,12 +32,11 @@ import { TipoDocumentoEnum } from '@/enums';
 
 /**
  * Service para geração de documentos PDF
- * Segue os mesmos padrões do módulo de pagamento
+ * Refatorado para usar o módulo comum de PDF
  */
 @Injectable()
 export class DocumentoPdfService {
   private readonly logger = new Logger(DocumentoPdfService.name);
-  private readonly documentoPdfGenerator: DocumentoPdfGeneratorUtil;
 
   constructor(
     @InjectRepository(Solicitacao)
@@ -45,9 +46,10 @@ export class DocumentoPdfService {
     @InjectRepository(Documento)
     private readonly documentoRepository: Repository<Documento>,
     private readonly configService: ConfigService,
-  ) {
-    this.documentoPdfGenerator = new DocumentoPdfGeneratorUtil(configService);
-  }
+    private readonly pdfCommonService: PdfCommonService,
+    private readonly autorizacaoAtaudeTemplate: AutorizacaoAtaudeTemplate,
+    private readonly documentoAdapter: DocumentoAdapter,
+  ) {}
 
   /**
    * Gera um documento PDF baseado nos parâmetros fornecidos
@@ -72,10 +74,10 @@ export class DocumentoPdfService {
       // Obter template apropriado
       const template = this.obterTemplate(gerarDocumentoDto.tipoDocumento);
 
-      // Gerar PDF
-      const buffer = await this.documentoPdfGenerator.gerarDocumento(
+      // Gerar PDF usando o novo sistema
+      const buffer = await this.gerarPdfComNovoSistema(
         dadosDocumento,
-        template,
+        gerarDocumentoDto.tipoDocumento,
       );
       
       const nomeArquivo = `documento_${gerarDocumentoDto.solicitacaoId}_${Date.now()}.pdf`;
@@ -118,6 +120,72 @@ export class DocumentoPdfService {
         'Erro interno ao gerar documento',
       );
     }
+  }
+
+  /**
+   * Gera PDF usando o novo sistema padronizado
+   */
+  private async gerarPdfComNovoSistema(
+    dadosDocumento: IDadosDocumento,
+    tipoDocumento: TipoDocumentoEnum,
+  ): Promise<Buffer> {
+    try {
+      switch (tipoDocumento) {
+        case TipoDocumentoEnum.AUTORIZACAO_ATAUDE:
+          // Converter dados para o novo formato
+          const dadosConvertidos = this.documentoAdapter.converterParaAutorizacaoAtaude(dadosDocumento);
+          
+          // Gerar PDF usando o template padronizado
+          const documentDefinition = this.autorizacaoAtaudeTemplate.criarDefinicaoDocumento(dadosConvertidos);
+          
+          // Usar o PdfCommonService para gerar o buffer
+          return await this.gerarBufferPdf(documentDefinition);
+          
+        default:
+          throw new BadRequestException(`Tipo de documento não suportado: ${tipoDocumento}`);
+      }
+    } catch (error) {
+      this.logger.error(`Erro ao gerar PDF com novo sistema: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Gera buffer do PDF a partir da definição do documento
+   */
+  private async gerarBufferPdf(documentDefinition: any): Promise<Buffer> {
+    // Simular a interface do PdfCommonService
+    // Como o PdfCommonService espera IPdfDados, vamos usar uma abordagem direta
+    const PdfPrinter = require('pdfmake');
+    
+    const fonts = {
+      Roboto: {
+        normal: 'Helvetica',
+        bold: 'Helvetica-Bold',
+        italics: 'Helvetica-Oblique',
+        bolditalics: 'Helvetica-BoldOblique'
+      }
+    };
+
+    const printer = new PdfPrinter(fonts);
+    const pdfDoc = printer.createPdfKitDocument(documentDefinition);
+    const chunks: Buffer[] = [];
+
+    return new Promise((resolve, reject) => {
+      pdfDoc.on('data', (chunk: Buffer) => {
+        chunks.push(chunk);
+      });
+
+      pdfDoc.on('end', () => {
+        resolve(Buffer.concat(chunks));
+      });
+
+      pdfDoc.on('error', (error) => {
+        reject(error);
+      });
+
+      pdfDoc.end();
+    });
   }
 
   /**

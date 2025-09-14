@@ -49,9 +49,9 @@ export abstract class TemplatePadronizadoBase<T = any> {
       const documentDefinition: TDocumentDefinitions = {
         pageSize: 'A4',
         pageOrientation: 'portrait',
-        
+
         // Margens da página: [esquerda, superior, direita, inferior]
-        pageMargins: [40, 180, 40, 80],
+        pageMargins: [40, 180, 40, 40],
 
         // Configuração de imagens com tratamento de erro
         images: images,
@@ -71,7 +71,7 @@ export abstract class TemplatePadronizadoBase<T = any> {
         // Configurações padrão
         defaultStyle: {
           fontSize: 10,
-          font: 'Helvetica'
+          font: 'Roboto',
         }
       };
 
@@ -85,42 +85,42 @@ export abstract class TemplatePadronizadoBase<T = any> {
    * Cria o header padronizado obrigatório
    */
   private criarHeaderPadronizado(): any {
-    return function(currentPage: number, pageCount: number) {
+    return function (currentPage: number, pageCount: number) {
       return {
-            stack: [
-              { image: "logo", width: 300, alignment: "center", margin: [0, 50, 0, 10] },
-              // {
-              //   text: 'SECRETARIA MUNICIPAL DO TRABALHO E ASSISTÊNCIA SOCIAL',
-              //   fontSize: 13,
-              //   bold: true,
-              //   alignment: 'center',
-              //   margin: [0, 0, 0, 5]
-              // },
-              {
-                text: 'DEPARTAMENTO DE PROTEÇÃO SOCIAL BÁSICA - DPSB',
-                fontSize: 13,
-                bold: true,
-                alignment: 'center',
-                margin: [0, 0, 0, 5]
-              },
-              {
-                text: 'SETOR DE GESTÃO DE BENEFÍCIOS',
-                fontSize: 13,
-                bold: true,
-                alignment: 'center',
-                margin: [0, 0, 0, 5]
-              }
-            ]
+        stack: [
+          { image: "logo", width: 300, alignment: "center", margin: [0, 50, 0, 10] },
+          // {
+          //   text: 'SECRETARIA MUNICIPAL DO TRABALHO E ASSISTÊNCIA SOCIAL',
+          //   fontSize: 13,
+          //   bold: true,
+          //   alignment: 'center',
+          //   margin: [0, 0, 0, 5]
+          // },
+          {
+            text: 'DEPARTAMENTO DE PROTEÇÃO SOCIAL BÁSICA - DPSB',
+            fontSize: 13,
+            bold: true,
+            alignment: 'center',
+            margin: [0, 0, 0, 5]
+          },
+          {
+            text: 'SETOR DE GESTÃO DE BENEFÍCIOS',
+            fontSize: 13,
+            bold: true,
+            alignment: 'center',
+            margin: [0, 0, 0, 20]
           }
-      };
+        ]
+      }
     };
+  };
 
   /**
    * Cria o footer padronizado obrigatório
    */
   private criarFooterPadronizado(): Content {
     return {
-      margin: [50, 10, 50, 20],
+      margin: [50, 10, 50, 10],
       stack: [
         {
           text: 'Gestão de Benefícios Eventuais/ SEMTAS - Av. Nevaldo Rocha, nº 2180 – Dix-Sept Rosado CEP: 59054-000 – Natal/RN',
@@ -165,7 +165,7 @@ export abstract class TemplatePadronizadoBase<T = any> {
           {
             text: '_'.repeat(40),
             alignment: 'center',
-            margin: [0, 30, 0, 5]
+            margin: [0, 20, 0, 5]
           },
           {
             text: this.obterNomeAssinatura(tipo),
@@ -281,7 +281,8 @@ export abstract class TemplatePadronizadoBase<T = any> {
         bold: true
       },
       value: {
-        fontSize: 12
+        fontSize: 11,
+        lineHeight: 1.2
       },
       headerTitle: {
         fontSize: 14,
@@ -317,7 +318,7 @@ export abstract class TemplatePadronizadoBase<T = any> {
         fillColor: '#f0f0f0'
       },
       tabelaConteudo: {
-        fontSize: 12
+        fontSize: 11
       }
     };
   }

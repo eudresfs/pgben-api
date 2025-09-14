@@ -2,27 +2,6 @@ import { IsString, IsOptional, IsNotEmpty, ValidateNested } from 'class-validato
 import { Type } from 'class-transformer';
 
 /**
- * DTO base para dados de beneficiário
- */
-export class BeneficiarioBaseDto {
-  @IsString()
-  @IsNotEmpty()
-  nome: string;
-
-  @IsString()
-  @IsNotEmpty()
-  cpf: string;
-
-  @IsString()
-  @IsOptional()
-  rg?: string;
-
-  @ValidateNested()
-  @Type(() => EnderecoDto)
-  endereco: EnderecoDto;
-}
-
-/**
  * DTO para endereço
  */
 export class EnderecoDto {
@@ -54,6 +33,29 @@ export class EnderecoDto {
   @IsNotEmpty()
   cep: string;
 }
+
+/**
+ * DTO base para dados de beneficiário
+ */
+export class BeneficiarioBaseDto {
+  @IsString()
+  @IsNotEmpty()
+  nome: string;
+
+  @IsString()
+  @IsNotEmpty()
+  cpf: string;
+
+  @IsString()
+  @IsOptional()
+  rg?: string;
+
+  @ValidateNested()
+  @Type(() => EnderecoDto)
+  endereco: EnderecoDto;
+}
+
+
 
 /**
  * DTO base para dados de unidade
