@@ -22,6 +22,7 @@ import { ExcelStrategy } from '../strategies/excel.strategy';
 import { CsvStrategy } from '../strategies/csv.strategy';
 import { TempFilesService } from './temp-files.service';
 import { PdfTemplatesService } from './pdf-templates.service';
+import { PdfAdapterService } from './pdf-adapter.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 
@@ -52,6 +53,7 @@ export class RelatoriosService {
 
     private readonly tempFilesService: TempFilesService,
     private readonly pdfTemplatesService: PdfTemplatesService,
+    private readonly pdfAdapterService: PdfAdapterService,
 
     @Inject(CACHE_MANAGER)
     private cacheManager: Cache,
@@ -530,17 +532,20 @@ export class RelatoriosService {
 
       if (pagamentos.length === 0) {
         this.logger.warn('Nenhum pagamento encontrado para os IDs fornecidos');
-        // Retornar PDF vazio conforme requisito
-        return await this.gerarPdfVazio();
+        // Retornar PDF vazio conforme requisito usando o novo módulo PDF
+        return await this.pdfAdapterService.gerarPdfVazio();
       }
 
       // Validar se todos os pagamentos são do mesmo tipo de benefício
       const tiposBeneficio = new Set<string>();
       
       for (const pagamento of pagamentos) {
-        const tipoBeneficio = pagamento.concessao?.solicitacao?.tipo_beneficio;
+        // Corrigir caminho para acessar tipo_beneficio através da solicitacao diretamente
+        const tipoBeneficio = pagamento.solicitacao?.tipo_beneficio;
         if (tipoBeneficio) {
           tiposBeneficio.add(tipoBeneficio.codigo);
+        } else {
+          this.logger.warn(`Pagamento ${pagamento.id} não possui tipo de benefício associado`);
         }
       }
 
@@ -589,6 +594,366 @@ export class RelatoriosService {
       );
     }
   }
+
+  /**
+   * Gera PDF baseado em filtros avançados de pagamentos
+   * Utiliza a mesma lógica de filtragem do endpoint de listagem de pagamentos
+   * @param options Opções contendo filtros avançados e usuário
+   * @returns Buffer contendo PDF único
+   */
+  async gerarPdfsPagamentosComFiltros(options: {
+    filtros: any; // RelatorioPagamentosFiltrosDto
+    observacoes?: string;
+    user: any;
+  }): Promise<Buffer> {
+    const { filtros, observacoes, user } = options;
+
+    this.logger.log(
+      `Gerando PDF com filtros avançados pelo usuário ${user.id}`,
+    );
+
+    try {
+      // Construir query base com relacionamentos necessários
+      const queryBuilder = this.pagamentoRepository
+        .createQueryBuilder('pagamento')
+        .select([
+          'pagamento.id',
+          'pagamento.valor',
+          'pagamento.data_pagamento',
+          'pagamento.data_liberacao',
+          'pagamento.numero_parcela',
+          'pagamento.total_parcelas',
+          'pagamento.status',
+          'pagamento.metodo_pagamento',
+          'pagamento.observacoes',
+          'pagamento.comprovante_id',
+          'concessao.id',
+          'concessao.data_inicio',
+          'solicitacao.id',
+          'solicitacao.protocolo',
+          'solicitacao.data_abertura',
+          'solicitacao.unidade_id',
+          'solicitacao.tipo_beneficio',
+          'beneficiario.id',
+          'beneficiario.nome',
+          'beneficiario.cpf',
+          'beneficiario.rg',
+          'beneficiario.data_nascimento',
+          'tipo_beneficio.id',
+          'tipo_beneficio.nome',
+          'tipo_beneficio.codigo',
+          'unidade.id',
+          'unidade.nome',
+        ])
+        .leftJoin('pagamento.solicitacao', 'solicitacao')
+        .leftJoin('pagamento.concessao', 'concessao')
+        .leftJoin('solicitacao.beneficiario', 'beneficiario')
+        .leftJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
+        .leftJoin('solicitacao.unidade', 'unidade');
+
+      // Aplicar filtros condicionalmente
+      if (filtros.unidades?.length > 0) {
+        queryBuilder.andWhere('solicitacao.unidade_id IN (:...unidades)', {
+          unidades: filtros.unidades,
+        });
+      }
+
+      if (filtros.beneficios?.length > 0) {
+        queryBuilder.andWhere('solicitacao.tipo_beneficio IN (:...beneficios)', {
+          beneficios: filtros.beneficios,
+        });
+      }
+
+      if (filtros.status?.length > 0) {
+        queryBuilder.andWhere('pagamento.status IN (:...status)', {
+          status: filtros.status,
+        });
+      }
+
+      if (filtros.metodos_pagamento?.length > 0) {
+        queryBuilder.andWhere('pagamento.metodo_pagamento IN (:...metodos)', {
+          metodos: filtros.metodos_pagamento,
+        });
+      }
+
+      if (filtros.solicitacoes?.length > 0) {
+        queryBuilder.andWhere('pagamento.solicitacao_id IN (:...solicitacoes)', {
+          solicitacoes: filtros.solicitacoes,
+        });
+      }
+
+      if (filtros.concessoes?.length > 0) {
+        queryBuilder.andWhere('pagamento.concessao_id IN (:...concessoes)', {
+          concessoes: filtros.concessoes,
+        });
+      }
+
+      // Aplicar filtros de período usando a mesma lógica do PagamentoService
+      this.aplicarFiltrosPeriodo(queryBuilder, filtros);
+
+      // Filtros de data específicos (sobrescrevem período se fornecidos)
+      if (filtros.data_inicio) {
+        queryBuilder.andWhere('pagamento.data_liberacao >= :dataInicio', {
+          dataInicio: filtros.data_inicio,
+        });
+      }
+
+      if (filtros.data_fim) {
+        queryBuilder.andWhere('pagamento.data_liberacao <= :dataFim', {
+          dataFim: filtros.data_fim,
+        });
+      }
+
+      if (filtros.data_pagamento_inicio) {
+        queryBuilder.andWhere('pagamento.data_pagamento >= :dataPagamentoInicio', {
+          dataPagamentoInicio: filtros.data_pagamento_inicio,
+        });
+      }
+
+      if (filtros.data_pagamento_fim) {
+        queryBuilder.andWhere('pagamento.data_pagamento <= :dataPagamentoFim', {
+          dataPagamentoFim: filtros.data_pagamento_fim,
+        });
+      }
+
+      // Filtros de valor - EXATAMENTE como no PagamentoService
+      if (filtros.valor_min !== undefined) {
+        queryBuilder.andWhere('pagamento.valor >= :valorMin', {
+          valorMin: filtros.valor_min,
+        });
+      }
+
+      if (filtros.valor_max !== undefined) {
+        queryBuilder.andWhere('pagamento.valor <= :valorMax', {
+          valorMax: filtros.valor_max,
+        });
+      }
+
+      // Filtros de parcela - EXATAMENTE como no PagamentoService
+      if (filtros.parcela_min !== undefined) {
+        queryBuilder.andWhere('pagamento.numero_parcela >= :parcelaMin', {
+          parcelaMin: filtros.parcela_min,
+        });
+      }
+
+      if (filtros.parcela_max !== undefined) {
+        queryBuilder.andWhere('pagamento.numero_parcela <= :parcelaMax', {
+          parcelaMax: filtros.parcela_max,
+        });
+      }
+
+      // Filtro de comprovante - EXATAMENTE como no PagamentoService
+      if (filtros.com_comprovante !== undefined) {
+        if (filtros.com_comprovante) {
+          queryBuilder.andWhere('pagamento.comprovante_id IS NOT NULL');
+        } else {
+          queryBuilder.andWhere('pagamento.comprovante_id IS NULL');
+        }
+      }
+
+      // Filtro de busca textual - EXATAMENTE como no PagamentoService
+       if (filtros.search) {
+         queryBuilder.andWhere(
+           '(beneficiario.nome ILIKE :search OR beneficiario.cpf ILIKE :search OR pagamento.observacoes ILIKE :search)',
+           { search: `%${filtros.search}%` },
+         );
+       }
+
+      // Incluir relacionamentos opcionais - EXATAMENTE como no PagamentoService
+      if (filtros.include_relations?.includes('comprovante')) {
+        queryBuilder.leftJoinAndSelect('pagamento.comprovante', 'comprovante');
+      }
+
+      if (filtros.include_relations?.includes('monitoramento')) {
+        queryBuilder.leftJoinAndSelect('pagamento.agendamentos', 'agendamentos');
+        queryBuilder.leftJoinAndSelect('agendamentos.visitas', 'visitas');
+      }
+
+      // Aplicar ordenação - EXATAMENTE como no PagamentoService
+      const sortField = filtros.sort_by || 'data_liberacao';
+      const sortOrder = filtros.sort_order || 'DESC';
+      queryBuilder.orderBy(`pagamento.${sortField}`, sortOrder);
+
+      // Executar query
+      const pagamentos = await queryBuilder.getMany();
+
+      if (pagamentos.length === 0) {
+        this.logger.warn('Nenhum pagamento encontrado com os filtros especificados');
+        throw new BadRequestException(
+          'Nenhum pagamento encontrado com os filtros especificados',
+        );
+      }
+
+      this.logger.log(`Encontrados ${pagamentos.length} pagamentos para geração do PDF`);
+
+      // Validar se todos os pagamentos são do mesmo tipo de benefício
+      const tiposBeneficio = new Set<string>();
+      
+      for (const pagamento of pagamentos) {
+        const tipoBeneficio = pagamento.concessao?.solicitacao?.tipo_beneficio;
+        if (tipoBeneficio) {
+          tiposBeneficio.add(tipoBeneficio.codigo);
+        }
+      }
+
+      // Verificar se há mais de um tipo de benefício
+      if (tiposBeneficio.size > 1) {
+        const tipos = Array.from(tiposBeneficio).join(', ');
+        this.logger.error(
+          `Erro: Pagamentos contêm tipos de benefício diferentes: ${tipos}`,
+        );
+        throw new BadRequestException(
+          `Todos os pagamentos devem ser do mesmo tipo de benefício. ` +
+          `Tipos encontrados: ${tipos}. Cada benefício possui templates de relatório distintos.`,
+        );
+      }
+
+      // Agrupar pagamentos por tipo de benefício (será apenas um tipo)
+      const pagamentosPorTipo = new Map<string, any[]>();
+      
+      for (const pagamento of pagamentos) {
+        // Corrigir caminho para acessar tipo_beneficio através da solicitacao diretamente
+        const tipoBeneficio = pagamento.solicitacao?.tipo_beneficio;
+        if (!tipoBeneficio) {
+          this.logger.warn(`Pagamento ${pagamento.id} sem tipo de benefício associado`);
+          continue;
+        }
+
+        const key = tipoBeneficio.codigo;
+        if (!pagamentosPorTipo.has(key)) {
+          pagamentosPorTipo.set(key, []);
+        }
+        pagamentosPorTipo.get(key)!.push(pagamento);
+      }
+
+      // Verificar se há pagamentos válidos após o agrupamento
+      if (pagamentosPorTipo.size === 0) {
+        this.logger.warn('Nenhum pagamento válido encontrado após agrupamento por tipo de benefício');
+        throw new BadRequestException(
+          'Nenhum pagamento válido encontrado. Todos os pagamentos devem ter um tipo de benefício associado.'
+        );
+      }
+
+      // Gerar PDF único
+      return await this.gerarPdfPorTipoBeneficio(pagamentosPorTipo, observacoes);
+
+    } catch (error) {
+      this.logger.error(
+        `Erro ao gerar PDF com filtros avançados: ${error.message}`,
+        error.stack,
+      );
+      
+      // Re-lançar BadRequestException sem modificar
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      throw new InternalServerErrorException(
+        'Erro ao gerar PDF. Por favor, tente novamente.',
+      );
+    }
+  }
+
+  /**
+    * Aplica filtros de período aos pagamentos - EXATAMENTE como no PagamentoService
+    * @param queryBuilder Query builder para aplicar os filtros
+    * @param filtros Filtros contendo informações de período
+    */
+   private aplicarFiltrosPeriodo(queryBuilder: any, filtros: any): void {
+     // Se não tem período definido, não aplicar filtro
+     if (!filtros.periodo) {
+       return;
+     }
+
+     const agora = new Date();
+     let dataInicio: Date;
+     let dataFim: Date;
+ 
+     switch (filtros.periodo) {
+       case 'hoje':
+         dataInicio = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+         dataFim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59);
+         break;
+ 
+       case 'ontem':
+         const ontem = new Date(agora);
+         ontem.setDate(ontem.getDate() - 1);
+         dataInicio = new Date(ontem.getFullYear(), ontem.getMonth(), ontem.getDate());
+         dataFim = new Date(ontem.getFullYear(), ontem.getMonth(), ontem.getDate(), 23, 59, 59);
+         break;
+ 
+       case 'esta_semana':
+         const inicioSemana = new Date(agora);
+         const diaSemana = agora.getDay();
+         const diasParaSegunda = diaSemana === 0 ? -6 : 1 - diaSemana;
+         inicioSemana.setDate(agora.getDate() + diasParaSegunda);
+         dataInicio = new Date(inicioSemana.getFullYear(), inicioSemana.getMonth(), inicioSemana.getDate());
+         dataFim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59);
+         break;
+ 
+       case 'semana_passada':
+         const inicioSemanaPassada = new Date(agora);
+         const diaSemanaPassada = agora.getDay();
+         const diasParaSegundaPassada = diaSemanaPassada === 0 ? -13 : -6 - diaSemanaPassada;
+         inicioSemanaPassada.setDate(agora.getDate() + diasParaSegundaPassada);
+         const fimSemanaPassada = new Date(inicioSemanaPassada);
+         fimSemanaPassada.setDate(inicioSemanaPassada.getDate() + 6);
+         dataInicio = new Date(inicioSemanaPassada.getFullYear(), inicioSemanaPassada.getMonth(), inicioSemanaPassada.getDate());
+         dataFim = new Date(fimSemanaPassada.getFullYear(), fimSemanaPassada.getMonth(), fimSemanaPassada.getDate(), 23, 59, 59);
+         break;
+ 
+       case 'este_mes':
+         dataInicio = new Date(agora.getFullYear(), agora.getMonth(), 1);
+         dataFim = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59);
+         break;
+ 
+       case 'mes_passado':
+         dataInicio = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
+         dataFim = new Date(agora.getFullYear(), agora.getMonth(), 0, 23, 59, 59);
+         break;
+ 
+       case 'este_ano':
+         dataInicio = new Date(agora.getFullYear(), 0, 1);
+         dataFim = new Date(agora.getFullYear(), 11, 31, 23, 59, 59);
+         break;
+ 
+       case 'ano_passado':
+         dataInicio = new Date(agora.getFullYear() - 1, 0, 1);
+         dataFim = new Date(agora.getFullYear() - 1, 11, 31, 23, 59, 59);
+         break;
+ 
+       case 'ultimos_7_dias':
+         dataInicio = new Date(agora);
+         dataInicio.setDate(agora.getDate() - 6);
+         dataInicio = new Date(dataInicio.getFullYear(), dataInicio.getMonth(), dataInicio.getDate());
+         dataFim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59);
+         break;
+ 
+       case 'ultimos_30_dias':
+         dataInicio = new Date(agora);
+         dataInicio.setDate(agora.getDate() - 29);
+         dataInicio = new Date(dataInicio.getFullYear(), dataInicio.getMonth(), dataInicio.getDate());
+         dataFim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59);
+         break;
+ 
+       case 'ultimos_90_dias':
+         dataInicio = new Date(agora);
+         dataInicio.setDate(agora.getDate() - 89);
+         dataInicio = new Date(dataInicio.getFullYear(), dataInicio.getMonth(), dataInicio.getDate());
+         dataFim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59);
+         break;
+ 
+       default:
+         // Se não há período específico reconhecido, não aplicar filtro de data
+         return;
+     }
+ 
+     // Aplicar filtros de data na query
+     queryBuilder.andWhere('pagamento.data_liberacao >= :dataInicio', { dataInicio });
+     queryBuilder.andWhere('pagamento.data_liberacao <= :dataFim', { dataFim });
+   }
+
+
 
   /**
    * Gera PDF vazio quando não há dados
@@ -676,20 +1041,45 @@ export class RelatoriosService {
     observacoes?: string,
   ): Promise<Buffer> {
     try {
+      // Validar se o Map não está vazio
+      if (!pagamentosPorTipo || pagamentosPorTipo.size === 0) {
+        this.logger.error('Map de pagamentos por tipo está vazio ou undefined');
+        throw new BadRequestException(
+          'Nenhum pagamento válido encontrado para geração do PDF.'
+        );
+      }
+
       // Obter o primeiro tipo de benefício (já validado que há apenas um)
-      const [tipoBeneficio, pagamentos] = Array.from(pagamentosPorTipo)[0];
+      const entries = Array.from(pagamentosPorTipo);
+      if (entries.length === 0) {
+        this.logger.error('Nenhuma entrada encontrada no Map de pagamentos');
+        throw new BadRequestException(
+          'Nenhum pagamento válido encontrado para geração do PDF.'
+        );
+      }
+
+      const [tipoBeneficio, pagamentos] = entries[0];
+      
+      // Validar se há pagamentos no array
+      if (!pagamentos || pagamentos.length === 0) {
+        this.logger.error(`Nenhum pagamento encontrado para o tipo de benefício: ${tipoBeneficio}`);
+        throw new BadRequestException(
+          'Nenhum pagamento válido encontrado para geração do PDF.'
+        );
+      }
       
       // Obter o código do tipo de benefício do primeiro pagamento
       // Corrigir acesso à estrutura de dados retornada pela query
       const primeiroPagamento = pagamentos[0];
-      const tipoBeneficioObj = primeiroPagamento?.concessao?.solicitacao?.tipo_beneficio;
+      const tipoBeneficioObj = primeiroPagamento?.solicitacao?.tipo_beneficio;
       const codigoTipoBeneficio = tipoBeneficioObj?.codigo;
       
       // Preparar dados dos pagamentos para o template
       const dadosPagamentos = pagamentos.map(pagamento => {
-        const solicitacao = pagamento.concessao?.solicitacao;
+        const solicitacao = pagamento.solicitacao;
         const beneficiario = solicitacao?.beneficiario;
-        
+        const unidade = solicitacao?.unidade;
+
         return {
           id: pagamento.id,
           valor: Number(pagamento.valor || 0),
@@ -697,7 +1087,6 @@ export class RelatoriosService {
           data_liberacao: pagamento.data_liberacao,
           numero_parcela: pagamento.numero_parcela || 1,
           total_parcelas: pagamento.total_parcelas || 1,
-          status: 'PAGO', // Status fixo para pagamentos já realizados
           solicitacao: {
             id: solicitacao?.id,
             protocolo: solicitacao?.protocolo,
@@ -715,8 +1104,8 @@ export class RelatoriosService {
               codigo: codigoTipoBeneficio,
             },
             unidade: {
-              id: solicitacao?.unidade?.id,
-              nome: solicitacao?.unidade?.nome || 'N/A'
+              id: unidade?.id,
+              nome: unidade?.nome || 'SEMTAS'
             }
           },
           concessao: {
@@ -731,10 +1120,19 @@ export class RelatoriosService {
         return total + pagamento.valor;
       }, 0);
 
+      // Obter mês e ano atuais para o subtítulo
+      const dataAtual = new Date();
+      const ano = dataAtual.getFullYear();
+      const meses = [
+        'JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO',
+        'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'
+      ];
+      const mesAtualNome = meses[dataAtual.getMonth()];
+
       // Preparar dados para o template
       const dadosRelatorio = {
-        titulo: `Relatório de Pagamentos - ${tipoBeneficio}`,
-        subtitulo: `Período: ${new Date().toLocaleDateString('pt-BR')}`,
+        titulo: `RELAÇÃO NOMINAL DA CONCESSÃO DE ${tipoBeneficioObj?.nome.toUpperCase() || tipoBeneficio.toUpperCase()} PAGO EM ${mesAtualNome} - ${ano}`,
+        dataEmissao: new Date().toLocaleDateString('pt-BR'),
         tipoBeneficio,
         pagamentos: dadosPagamentos,
         totalPagamentos: dadosPagamentos.length,
@@ -743,8 +1141,8 @@ export class RelatoriosService {
         observacoes: observacoes || ''
       };
 
-      // Usar o PdfTemplatesService para gerar o PDF com template específico baseado no código do tipo de benefício
-      return await this.pdfTemplatesService.gerarRelatorioPagamentos(
+      // Usar o PdfAdapterService para gerar o PDF com o novo módulo PDF comum
+      return await this.pdfAdapterService.gerarRelatorioPagamentos(
         dadosRelatorio,
         codigoTipoBeneficio,
         observacoes

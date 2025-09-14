@@ -30,6 +30,7 @@ import {
   RelatorioAtendimentosDto,
   RelatorioPagamentosPdfDto,
 } from '../dto';
+import { RelatorioPagamentosFiltrosDto } from '../dto/relatorio-pagamentos-filtros.dto';
 
 /**
  * Controlador de Relatórios
@@ -327,13 +328,14 @@ export class RelatoriosController {
   }
 
   /**
-   * Gera documento PDF baseado em lista de IDs de pagamentos
-   * Valida se todos os pagamentos são do mesmo tipo de benefício
-   *
-   * @param req Request Express
-   * @param res Response Express
-   * @param dto Parâmetros com lista de IDs de pagamentos
-   * @returns Stream do PDF gerado
+   * Gera PDFs de pagamentos agrupados por tipo de benefício usando filtros avançados
+   * 
+   * Este endpoint utiliza filtros avançados para localizar pagamentos e gera PDFs
+   * organizados por tipo de benefício. Cada tipo de benefício resulta
+   * em um PDF separado contendo apenas os pagamentos daquele tipo.
+   * 
+   * @param dto Filtros avançados para localizar pagamentos e observações opcionais
+   * @returns Buffer do PDF gerado
    */
   @Post('pagamentos-pdf')
   @RequiresPermission({
@@ -341,8 +343,29 @@ export class RelatoriosController {
     scopeType: ScopeType.GLOBAL,
   })
   @ApiOperation({
-    summary: 'Gerar PDF de pagamentos do mesmo tipo de benefício',
-    description: 'Gera documento PDF baseado em lista de IDs de pagamentos. Todos os pagamentos devem ser do mesmo tipo de benefício.',
+    summary: 'Gera PDFs de pagamentos por tipo de benefício usando filtros avançados',
+    description: `Gera relatórios PDF organizados por tipo de benefício a partir de filtros avançados de pagamentos.
+    
+    **Funcionalidades:**
+    - Utiliza os mesmos filtros avançados do endpoint de listagem de pagamentos
+    - Agrupa pagamentos por tipo de benefício automaticamente
+    - Gera um PDF para cada tipo de benefício encontrado
+    - Inclui informações detalhadas dos pagamentos e beneficiários
+    - Permite adicionar observações personalizadas ao relatório
+    - Suporta filtros por unidade, status, período, valores, etc.
+    
+    **Filtros disponíveis:**
+    - Unidades, status de pagamento, métodos de pagamento
+    - Períodos predefinidos ou datas customizadas
+    - Valores mínimos e máximos
+    - Busca textual por beneficiário ou protocolo
+    - Filtros por comprovante e monitoramento
+    
+    **Formato de saída:**
+    - PDF otimizado para impressão
+    - Layout padronizado com header e footer institucionais
+    - Tabelas organizadas com informações dos beneficiários
+    - Totalizadores por tipo de benefício`,
   })
   @ApiResponse({
     status: 200,
@@ -351,32 +374,28 @@ export class RelatoriosController {
       'application/pdf': {
         schema: {
           type: 'string',
-          format: 'binary',
-        },
-      },
-    },
+          format: 'binary'
+        }
+      }
+    }
   })
   @ApiResponse({
     status: 400,
-    description: 'Parâmetros inválidos ou pagamentos de tipos de benefício diferentes',
+    description: 'Filtros inválidos ou nenhum pagamento encontrado'
   })
   @ApiResponse({
     status: 403,
-    description: 'Acesso negado',
-  })
-  @ApiResponse({
-    status: 500,
-    description: 'Erro interno do servidor',
+    description: 'Acesso negado - Permissões insuficientes para gerar relatórios'
   })
   async gerarPdfsPagamentos(
     @Req() req: Request,
     @Res() res: Response,
-    @Body() dto: RelatorioPagamentosPdfDto,
+    @Body() dto: RelatorioPagamentosFiltrosDto,
   ): Promise<void> {
-    // Gerar PDF baseado nos IDs de pagamentos fornecidos
-    // Valida se todos os pagamentos são do mesmo tipo de benefício
-    const pdf = await this.relatoriosService.gerarPdfsPagamentos({
-      pagamentoIds: dto.pagamento_ids,
+    // Gerar PDF baseado nos filtros avançados fornecidos
+    // Utiliza a mesma lógica de filtragem do endpoint de pagamentos
+    const pdf = await this.relatoriosService.gerarPdfsPagamentosComFiltros({
+      filtros: dto,
       observacoes: dto.observacoes,
       user: req.user,
     });

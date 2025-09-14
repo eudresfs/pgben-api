@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
 import { IPdfTemplateConfig, IPdfTipoConteudoConfig, IPdfAssinaturaConfig } from '../interfaces/pdf-template-config.interface';
 import { PdfTipoAssinatura } from '../enums/pdf-tipo-assinatura.enum';
+import PdfPrinter from 'pdfmake';
 import * as path from 'path';
 
 /**
@@ -10,6 +11,26 @@ import * as path from 'path';
  */
 @Injectable()
 export abstract class TemplatePadronizadoBase<T = any> {
+  private printer: PdfPrinter;
+
+  constructor() {
+    this.inicializarPrinter();
+  }
+
+  /**
+   * Inicializa o printer do pdfmake
+   */
+  private inicializarPrinter(): void {
+    const fonts = {
+      Helvetica: {
+        normal: 'Helvetica',
+        bold: 'Helvetica-Bold',
+        italics: 'Helvetica-Oblique',
+        bolditalics: 'Helvetica-BoldOblique'
+      }
+    };
+    this.printer = new PdfPrinter(fonts);
+  }
   /**
    * Configuração do template (deve ser implementada pelas classes filhas)
    */
@@ -24,6 +45,33 @@ export abstract class TemplatePadronizadoBase<T = any> {
    * Método abstrato para validar dados específicos do template
    */
   abstract validarDados(dados: T): boolean;
+
+  /**
+   * Gera o documento PDF usando pdfmake diretamente
+   */
+  public async gerarDocumento(dados: T): Promise<Buffer> {
+    this.validarDados(dados);
+    const definicao = this.criarDefinicaoDocumento(dados);
+    
+    return new Promise<Buffer>((resolve, reject) => {
+      const pdfDoc = this.printer.createPdfKitDocument(definicao);
+      const chunks: Buffer[] = [];
+      
+      pdfDoc.on('data', (chunk: Buffer) => {
+        chunks.push(chunk);
+      });
+      
+      pdfDoc.on('end', () => {
+        resolve(Buffer.concat(chunks));
+      });
+      
+      pdfDoc.on('error', (error: Error) => {
+        reject(error);
+      });
+      
+      pdfDoc.end();
+    });
+  }
 
   /**
    * Cria a definição completa do documento PDF com padrão obrigatório
@@ -70,8 +118,8 @@ export abstract class TemplatePadronizadoBase<T = any> {
 
         // Configurações padrão
         defaultStyle: {
-          fontSize: 10,
-          font: 'Roboto',
+          fontSize: 11,
+          font: 'Helvetica',
         }
       };
 

@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthModule } from '../../auth/auth.module';
+import { PdfCommonModule } from '../../common/pdf/pdf-common.module';
 
 // Entidades
 import { Solicitacao, Unidade, TipoBeneficio } from '../../entities';
@@ -10,7 +11,9 @@ import { Pagamento } from '../../entities/pagamento.entity';
 
 // Componentes do módulo usando os arquivos de índice
 import { RelatoriosController } from './controllers';
-import { RelatoriosService, TempFilesService, PdfTemplatesService } from './services';
+import { RelatoriosService, TempFilesService, PdfTemplatesService, PdfAdapterService } from './services';
+import { RelatorioPagamentosTemplate } from '../../common/pdf/templates/relatorios/relatorio-pagamentos.template';
+import { PdfVazioTemplate } from '../../common/pdf/templates/relatorios/pdf-vazio.template';
 import { PdfStrategy, ExcelStrategy, CsvStrategy } from './strategies';
 import { RelatoriosAuditInterceptor } from './interceptors';
 
@@ -30,12 +33,17 @@ import { RelatoriosAuditInterceptor } from './interceptors';
     }),
     // Importa o módulo compartilhado de autenticação
     AuthModule,
+    // Importa o módulo comum de PDF
+    PdfCommonModule,
   ],
   controllers: [RelatoriosController],
   providers: [
     RelatoriosService,
     TempFilesService,
     PdfTemplatesService,
+    PdfAdapterService,
+    RelatorioPagamentosTemplate,
+    PdfVazioTemplate,
     PdfStrategy,
     ExcelStrategy,
     CsvStrategy,

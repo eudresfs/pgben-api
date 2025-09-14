@@ -72,7 +72,7 @@ export class AutorizacaoAtaudeTemplate extends TemplatePadronizadoBase<Autorizac
     // Formatação do endereço do beneficiário
     const enderecoBeneficiario = dados.beneficiario.endereco
       ? `${dados.beneficiario.endereco.logradouro}, ${dados.beneficiario.endereco.numero || 'S/N'}, ${dados.beneficiario.endereco.bairro}, ${dados.beneficiario.endereco.cidade}/${dados.beneficiario.endereco.estado}`
-      : '_'.repeat(50);
+      : 'Endereço não informado';
 
     // Dados do locador (funerária)
     const nomeFuneraria = dados.dadosAtaude.funeraria?.nome || 'FUNERÁRIA PADRE CÍCERO';
@@ -84,7 +84,7 @@ export class AutorizacaoAtaudeTemplate extends TemplatePadronizadoBase<Autorizac
         text: `AUTORIZAÇÃO Nº ${dados.pagamento.solicitacao?.protocolo || dados.numeroAutorizacao || '___________'}`,
         style: 'headerSetor',
         alignment: 'center',
-        margin: [0, 10, 0, 10]
+        margin: [0, 20, 0, 30]
       },
 
       // Datas
@@ -102,7 +102,7 @@ export class AutorizacaoAtaudeTemplate extends TemplatePadronizadoBase<Autorizac
               {
                 text: `DATA AUTORIZAÇÃO: ${dados.dadosAtaude.dataAutorizacao || '__/__/_____'}`,
                 alignment: 'right',
-                margin: [0, 0, 0, 10]
+                margin: [0, 0, 0, 30]
               }
             ]
           }
@@ -139,7 +139,7 @@ export class AutorizacaoAtaudeTemplate extends TemplatePadronizadoBase<Autorizac
           },
           {
             text: 'Solicitamos a prestação do serviço abaixo relacionado.',
-            margin: [0, 10, 0, 10],
+            margin: [0, 30, 0, 10],
             style: 'value'
           }
         ]
@@ -167,7 +167,7 @@ export class AutorizacaoAtaudeTemplate extends TemplatePadronizadoBase<Autorizac
           hLineColor: function () { return 'black'; },
           vLineColor: function () { return 'black'; }
         },
-        margin: [0, 5, 0, 10]
+        margin: [0, 5, 0, 15]
       },
 
       // Texto de autorização principal
@@ -176,20 +176,20 @@ export class AutorizacaoAtaudeTemplate extends TemplatePadronizadoBase<Autorizac
           { text: `Em benefício de ${dados.beneficiario.nome} (conforme atestado de óbito ou declaração médica), documento D.O. nº ${dados.dadosAtaude?.declaracaoObito || '_'.repeat(15)}. ` },
           { text: `Residente à ${dados.beneficiario.endereco?.logradouro || '_'.repeat(35)}, bairro ${dados.beneficiario.endereco?.bairro || '_'.repeat(15)} nesta cidade do Natal.` }
         ],
-        margin: [0, 10, 0, 10],
+        margin: [0, 20, 0, 20],
         alignment: "justify",
         style: 'value'
       },
 
       // Dados do requerente
       {
-        style: 'tabelaConteudo',
-        margin: [0, 10, 0, 10],
+        style: 'value',
+        margin: [0, 20, 0, 20],
         table: {
           widths: ['auto', '*'],
           body: [
             [
-              { text: 'REQUERENTE:', bold: true, colSpan: 2, margin: [0, 0, 0, 10], },
+              { text: 'REQUERENTE:', bold: true, colSpan: 2, margin: [0, 0, 0, 10] },
               {}
             ],
             [
@@ -205,6 +205,12 @@ export class AutorizacaoAtaudeTemplate extends TemplatePadronizadoBase<Autorizac
               { text: dados.requerente?.telefone || '_'.repeat(15), noWrap: true }
             ],
             [
+              { text: 'Endereço:', bold: true },
+              {
+                text: `Residente à ${dados.requerente?.endereco?.logradouro || '_'.repeat(35)}, bairro ${dados.requerente?.endereco?.bairro || '_'.repeat(20)} nesta cidade do Natal.`
+              }
+            ],
+            [
               { text: 'Grau de parentesco:', bold: true, noWrap: true },
               { text: dados.dadosAtaude?.grauParentesco || dados.requerente?.grauParentesco || '_'.repeat(20), noWrap: true }
             ]
@@ -212,11 +218,17 @@ export class AutorizacaoAtaudeTemplate extends TemplatePadronizadoBase<Autorizac
         },
         layout: 'noBorders'
       },
-      {
-        text: `Residente à ${dados.requerente?.endereco?.logradouro || '_'.repeat(35)}, bairro ${dados.requerente?.endereco?.bairro || '_'.repeat(20)} nesta cidade do Natal.`,
-        lineHeight: 1.2,
-        fontSize: 11
-      },
+
+      // Observações (se houver)
+      ...(dados.dadosAtaude.observacoes ? [{
+        text: [
+          { text: 'OBSERVAÇÕES: ', bold: true },
+          { text: dados.dadosAtaude.observacoes }
+        ],
+        margin: [0, 10, 0, 30] as [number, number, number, number],
+        style: 'value',
+        lineHeight: 1.5
+      }] : []),
 
       // Seção de assinaturas
       ...this.criarSecaoAssinaturas(dados)
