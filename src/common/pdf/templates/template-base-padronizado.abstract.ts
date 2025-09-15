@@ -329,8 +329,7 @@ export abstract class TemplatePadronizadoBase<T = any> {
         bold: true
       },
       value: {
-        fontSize: 11,
-        lineHeight: 1.2
+        fontSize: 11
       },
       headerTitle: {
         fontSize: 14,

@@ -49,7 +49,7 @@ export class DocumentoPdfService {
     private readonly pdfCommonService: PdfCommonService,
     private readonly autorizacaoAtaudeTemplate: AutorizacaoAtaudeTemplate,
     private readonly documentoAdapter: DocumentoAdapter,
-  ) {}
+  ) { }
 
   /**
    * Gera um documento PDF baseado nos parâmetros fornecidos
@@ -79,7 +79,7 @@ export class DocumentoPdfService {
         dadosDocumento,
         gerarDocumentoDto.tipoDocumento,
       );
-      
+
       const nomeArquivo = `documento_${gerarDocumentoDto.solicitacaoId}_${Date.now()}.pdf`;
 
       // Salvar documento no sistema de arquivos
@@ -134,13 +134,11 @@ export class DocumentoPdfService {
         case TipoDocumentoEnum.AUTORIZACAO_ATAUDE:
           // Converter dados para o novo formato
           const dadosConvertidos = this.documentoAdapter.converterParaAutorizacaoAtaude(dadosDocumento);
-          
-          // Gerar PDF usando o template padronizado
-          const documentDefinition = this.autorizacaoAtaudeTemplate.criarDefinicaoDocumento(dadosConvertidos);
-          
-          // Usar o PdfCommonService para gerar o buffer
-          return await this.gerarBufferPdf(documentDefinition);
-          
+
+          // Gerar PDF usando o template padronizado com header e footer
+          // O método gerarDocumento do template base já inclui header e footer padronizados
+          return await this.autorizacaoAtaudeTemplate.gerarDocumento(dadosConvertidos);
+
         default:
           throw new BadRequestException(`Tipo de documento não suportado: ${tipoDocumento}`);
       }
@@ -154,21 +152,36 @@ export class DocumentoPdfService {
    * Gera buffer do PDF a partir da definição do documento
    */
   private async gerarBufferPdf(documentDefinition: any): Promise<Buffer> {
-    // Simular a interface do PdfCommonService
-    // Como o PdfCommonService espera IPdfDados, vamos usar uma abordagem direta
     const PdfPrinter = require('pdfmake');
-    
+
+    // Configuração correta das fontes padrão do sistema
     const fonts = {
-      Roboto: {
+      Helvetica: {
         normal: 'Helvetica',
         bold: 'Helvetica-Bold',
         italics: 'Helvetica-Oblique',
         bolditalics: 'Helvetica-BoldOblique'
+      },
+      Courier: {
+        normal: 'Courier',
+        bold: 'Courier-Bold',
+        italics: 'Courier-Oblique',
+        bolditalics: 'Courier-BoldOblique'
+      },
+      Times: {
+        normal: 'Times-Roman',
+        bold: 'Times-Bold',
+        italics: 'Times-Italic',
+        bolditalics: 'Times-BoldItalic'
       }
     };
 
     const printer = new PdfPrinter(fonts);
-    const pdfDoc = printer.createPdfKitDocument(documentDefinition);
+
+    // Garantir que o documento usa a fonte segura e remover bold problemático
+    const documentDefinitionSeguro = this.prepararDocumentoSeguro(documentDefinition);
+
+    const pdfDoc = printer.createPdfKitDocument(documentDefinitionSeguro);
     const chunks: Buffer[] = [];
 
     return new Promise((resolve, reject) => {
@@ -181,10 +194,72 @@ export class DocumentoPdfService {
       });
 
       pdfDoc.on('error', (error) => {
+        this.logger.error('Erro ao gerar PDF:', error);
         reject(error);
       });
 
       pdfDoc.end();
+    });
+  }
+
+  /**
+   * Prepara documento removendo estilos problemáticos
+   */
+  private prepararDocumentoSeguro(documentDefinition: any): any {
+    const documento = JSON.parse(JSON.stringify(documentDefinition)); // Deep clone
+
+    // Definir estilo padrão seguro
+    documento.defaultStyle = {
+      font: 'Helvetica',
+      fontSize: 10,
+      ...documento.defaultStyle
+    };
+
+    // Remover estilos bold/italic de todos os elementos
+    this.removerEstilosProblematicos(documento);
+
+    return documento;
+  }
+
+  /**
+   * Remove estilos problemáticos que podem causar erros de fonte
+   * Recursivamente percorre o documento e ajusta estilos
+   */
+  private removerEstilosProblematicos(obj: any): void {
+    if (!obj || typeof obj !== 'object') {
+      return;
+    }
+
+    // Se é um array, processar cada item
+    if (Array.isArray(obj)) {
+      obj.forEach(item => this.removerEstilosProblematicos(item));
+      return;
+    }
+
+    // Processar propriedades do objeto
+    Object.keys(obj).forEach(key => {
+      const value = obj[key];
+
+      // Se encontrar propriedade 'bold' com valor true, manter mas garantir que a fonte suporte
+      if (key === 'bold' && value === true) {
+        // Garantir que a fonte está definida como Helvetica (que suporta bold)
+        if (!obj.font) {
+          obj.font = 'Helvetica';
+        }
+      }
+
+      // Se encontrar propriedade 'italics' com valor true, manter mas garantir que a fonte suporte
+      if (key === 'italics' && value === true) {
+        // Garantir que a fonte está definida como Helvetica (que suporta italics)
+        if (!obj.font) {
+          obj.font = 'Helvetica';
+        }
+      }
+
+      // Recursivamente processar objetos aninhados
+      if (typeof value === 'object') {
+        this.removerEstilosProblematicos(value);
+      }
     });
   }
 
@@ -572,19 +647,19 @@ export class DocumentoPdfService {
       },
       beneficiario: solicitacao.beneficiario
         ? {
-            nome: solicitacao.beneficiario.nome,
-            cpf: solicitacao.beneficiario.cpf,
-            rg: solicitacao.beneficiario.rg,
-            endereco: solicitacao.beneficiario?.enderecos?.[0],
-          }
+          nome: solicitacao.beneficiario.nome,
+          cpf: solicitacao.beneficiario.cpf,
+          rg: solicitacao.beneficiario.rg,
+          endereco: solicitacao.beneficiario?.enderecos?.[0],
+        }
         : solicitacao.solicitante
-        ? {
+          ? {
             nome: solicitacao.solicitante.nome,
             cpf: solicitacao.solicitante.cpf,
             rg: solicitacao.solicitante.rg || '',
             data_nascimento: solicitacao.solicitante.data_nascimento ? new Date(solicitacao.solicitante.data_nascimento) : new Date(),
           }
-        : {
+          : {
             nome: 'BENEFICIÁRIO NÃO INFORMADO',
             cpf: '',
             rg: '',
@@ -592,37 +667,37 @@ export class DocumentoPdfService {
           },
       unidade: solicitacao.unidade
         ? {
-            nome: solicitacao.unidade.nome,
-            endereco: solicitacao.unidade.endereco,
-            telefone: solicitacao.unidade.telefone,
-          }
+          nome: solicitacao.unidade.nome,
+          endereco: solicitacao.unidade.endereco,
+          telefone: solicitacao.unidade.telefone,
+        }
         : undefined,
       tecnico: solicitacao.tecnico
         ? {
-            nome: solicitacao.tecnico.nome
-          }
+          nome: solicitacao.tecnico.nome
+        }
         : undefined,
       requerente: solicitacao.solicitante,
       dados_ataude: solicitacao.dados_ataude
         ? {
-            tipo_urna: solicitacao.dados_ataude.tipo_urna_necessaria,
-            data_autorizacao: new Date(solicitacao.dados_ataude.data_autorizacao).toLocaleDateString('pt-BR'),
-            grau_parentesco: solicitacao.dados_ataude.grau_parentesco_requerente,
-            observacoes: solicitacao.dados_ataude.observacoes,
-            data_obito: solicitacao.dados_ataude.data_obito ? new Date(solicitacao.dados_ataude.data_obito).toLocaleDateString('pt-BR') : undefined,
-            declaracao_obito: solicitacao.dados_ataude.declaracao_obito,
-            valor_urna: solicitacao.valor || 0,
-            valor_autorizado: solicitacao.valor || 0,
-            cemiterio: solicitacao.dados_ataude.endereco_cemiterio
-              ? {
-                  nome: `${solicitacao.dados_ataude.endereco_cemiterio.logradouro}, ${solicitacao.dados_ataude.endereco_cemiterio.numero}`,
-                  endereco: `${solicitacao.dados_ataude.endereco_cemiterio.bairro}, ${solicitacao.dados_ataude.endereco_cemiterio.cidade} - ${solicitacao.dados_ataude.endereco_cemiterio.estado}`,
-                }
-              : {
-                  nome: 'Não informado',
-                  endereco: 'Não informado',
-                },
-          }
+          tipo_urna: solicitacao.dados_ataude.tipo_urna_necessaria,
+          data_autorizacao: new Date(solicitacao.dados_ataude.data_autorizacao).toLocaleDateString('pt-BR'),
+          grau_parentesco: solicitacao.dados_ataude.grau_parentesco_requerente,
+          observacoes: solicitacao.dados_ataude.observacoes,
+          data_obito: solicitacao.dados_ataude.data_obito ? new Date(solicitacao.dados_ataude.data_obito).toLocaleDateString('pt-BR') : undefined,
+          declaracao_obito: solicitacao.dados_ataude.declaracao_obito,
+          valor_urna: solicitacao.valor || 0,
+          valor_autorizado: solicitacao.valor || 0,
+          cemiterio: solicitacao.dados_ataude.endereco_cemiterio
+            ? {
+              nome: `${solicitacao.dados_ataude.endereco_cemiterio.logradouro}, ${solicitacao.dados_ataude.endereco_cemiterio.numero}`,
+              endereco: `${solicitacao.dados_ataude.endereco_cemiterio.bairro}, ${solicitacao.dados_ataude.endereco_cemiterio.cidade} - ${solicitacao.dados_ataude.endereco_cemiterio.estado}`,
+            }
+            : {
+              nome: 'Não informado',
+              endereco: 'Não informado',
+            },
+        }
         : undefined,
       data_geracao: new Date().toLocaleDateString('pt-BR'),
     };

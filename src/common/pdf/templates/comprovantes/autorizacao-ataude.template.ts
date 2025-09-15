@@ -84,65 +84,50 @@ export class AutorizacaoAtaudeTemplate extends TemplatePadronizadoBase<Autorizac
         text: `AUTORIZAÇÃO Nº ${dados.pagamento.solicitacao?.protocolo || dados.numeroAutorizacao || '___________'}`,
         style: 'headerSetor',
         alignment: 'center',
-        margin: [0, 20, 0, 30]
+        margin: [0, 25, 0, 35] // Margem superior um pouco maior e inferior consistente
       },
 
-      // Datas
+      // Título da autorização
       {
-        columns: [
-          { width: '*', text: '' },
-          {
-            width: 'auto',
-            stack: [
-              {
-                text: `DATA ÓBITO: ${dados.dadosAtaude.dataObito || '__/__/_____'}`,
-                alignment: 'right',
-                margin: [0, 5, 0, 5]
-              },
-              {
-                text: `DATA AUTORIZAÇÃO: ${dados.dadosAtaude.dataAutorizacao || '__/__/_____'}`,
-                alignment: 'right',
-                margin: [0, 0, 0, 30]
-              }
+        style: 'tabelaConteudo',
+        table: {
+          widths: ['auto', '*', 'auto'], // terceira coluna reservada para as datas
+          body: [
+            [
+              { text: 'OBJETO:', bold: true },
+              { text: `FUNERAL ${dados.dadosAtaude.tipoUrna?.toString().toUpperCase() || 'PADRÃO'}` },
+              { text: `DATA ÓBITO: ${dados.dadosAtaude.dataObito || '__/__/_____'}`, alignment: 'right', noWrap: true }
+            ],
+            [
+              { text: 'DESTINO:', bold: true },
+              { text: nomeFuneraria },
+              { text: `DATA AUTORIZAÇÃO: ${dados.dadosAtaude.dataAutorizacao || '__/__/_____'}`, alignment: 'right', noWrap: true }
+            ],
+            [
+              { text: 'ENDEREÇO:', bold: true },
+              { text: enderecoFuneraria },
+              { text: '' } // vazio para não quebrar alinhamento
+            ],
+            [
+              { text: 'ORIGEM:', bold: true },
+              { text: dados.unidade.nome },
+              { text: '' }
             ]
-          }
-        ]
+          ]
+        },
+        layout: {
+          hLineWidth: () => 0,
+          vLineWidth: () => 0,
+          paddingLeft: () => 0,
+          paddingRight: () => 0,
+          paddingTop: () => 2,
+          paddingBottom: () => 2
+        }
       },
-
-      // Informações do objeto e destino
       {
-        stack: [
-          {
-            style: 'tabelaConteudo',
-            table: {
-              widths: ['auto', '*'],
-              body: [
-                [
-                  { text: 'OBJETO:', bold: true },
-                  { text: `FUNERAL ${dados.dadosAtaude.tipoUrna?.toString().toUpperCase() || 'PADRÃO'}` }
-                ],
-                [
-                  { text: 'DESTINO:', bold: true },
-                  { text: nomeFuneraria }
-                ],
-                [
-                  { text: 'ENDEREÇO:', bold: true },
-                  { text: enderecoFuneraria }
-                ],
-                [
-                  { text: 'ORIGEM:', bold: true },
-                  { text: dados.unidade.nome }
-                ]
-              ]
-            },
-            layout: 'noBorders'
-          },
-          {
-            text: 'Solicitamos a prestação do serviço abaixo relacionado.',
-            margin: [0, 30, 0, 10],
-            style: 'value'
-          }
-        ]
+        text: 'Solicitamos a prestação do serviço abaixo relacionado.',
+        margin: [0, 15, 0, 15],
+        style: 'value'
       },
 
       // Tabela com detalhes do benefício
@@ -176,7 +161,7 @@ export class AutorizacaoAtaudeTemplate extends TemplatePadronizadoBase<Autorizac
           { text: `Em benefício de ${dados.beneficiario.nome} (conforme atestado de óbito ou declaração médica), documento D.O. nº ${dados.dadosAtaude?.declaracaoObito || '_'.repeat(15)}. ` },
           { text: `Residente à ${dados.beneficiario.endereco?.logradouro || '_'.repeat(35)}, bairro ${dados.beneficiario.endereco?.bairro || '_'.repeat(15)} nesta cidade do Natal.` }
         ],
-        margin: [0, 20, 0, 20],
+        margin: [0, 10, 0, 20],
         alignment: "justify",
         style: 'value'
       },
@@ -184,7 +169,7 @@ export class AutorizacaoAtaudeTemplate extends TemplatePadronizadoBase<Autorizac
       // Dados do requerente
       {
         style: 'value',
-        margin: [0, 20, 0, 20],
+        margin: [0, 10, 0, 20],
         table: {
           widths: ['auto', '*'],
           body: [
@@ -205,18 +190,16 @@ export class AutorizacaoAtaudeTemplate extends TemplatePadronizadoBase<Autorizac
               { text: dados.requerente?.telefone || '_'.repeat(15), noWrap: true }
             ],
             [
-              { text: 'Endereço:', bold: true },
-              {
-                text: `Residente à ${dados.requerente?.endereco?.logradouro || '_'.repeat(35)}, bairro ${dados.requerente?.endereco?.bairro || '_'.repeat(20)} nesta cidade do Natal.`
-              }
-            ],
-            [
               { text: 'Grau de parentesco:', bold: true, noWrap: true },
               { text: dados.dadosAtaude?.grauParentesco || dados.requerente?.grauParentesco || '_'.repeat(20), noWrap: true }
             ]
           ]
         },
         layout: 'noBorders'
+      },
+
+      {
+        text: `Residente à ${dados.requerente?.endereco?.logradouro || '_'.repeat(35)}, bairro ${dados.requerente?.endereco?.bairro || '_'.repeat(20)} nesta cidade do Natal.`
       },
 
       // Observações (se houver)
