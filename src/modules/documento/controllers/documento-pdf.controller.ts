@@ -94,7 +94,7 @@ export class DocumentoPdfController {
 
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${nomeArquivo}"`,
+      'Content-Disposition': `inline; filename="${nomeArquivo}"`,
       'Content-Length': buffer.length.toString(),
     });
 
@@ -208,7 +208,7 @@ export class DocumentoPdfController {
 
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${nomeArquivo}"`,
+      'Content-Disposition': `inline; filename="${nomeArquivo}"`,
       'Content-Length': buffer.length.toString(),
     });
 

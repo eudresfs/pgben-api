@@ -204,7 +204,7 @@ export class DocumentoBatchController {
     // Headers para download do ZIP (igual ao endpoint individual que funciona)
     res.set({
       'Content-Type': 'application/zip',
-      'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+      'Content-Disposition': `inline; filename="${encodeURIComponent(filename)}"`,
       'Content-Length': zipBuffer.length.toString(),
       'Cache-Control': 'no-cache, no-store, must-revalidate',
       'Pragma': 'no-cache',

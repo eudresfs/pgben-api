@@ -41,27 +41,50 @@ export class AutorizacaoAtaudeTemplate extends TemplatePadronizadoBase<Autorizac
    * Valida os dados necessários para o template
    */
   validarDados(dados: AutorizacaoAtaudeTemplateDto): boolean {
+    console.log('[AutorizacaoAtaudeTemplate] Iniciando validação de dados...');
+    
     if (!dados) {
+      console.error('[AutorizacaoAtaudeTemplate] Dados são null ou undefined');
       return false;
     }
 
+    console.log('[AutorizacaoAtaudeTemplate] Dados recebidos:', JSON.stringify(dados, null, 2));
+
     // Validações obrigatórias
     if (!dados.beneficiario?.nome || !dados.beneficiario?.cpf) {
+      console.error('[AutorizacaoAtaudeTemplate] Beneficiário inválido:', {
+        nome: dados.beneficiario?.nome,
+        cpf: dados.beneficiario?.cpf
+      });
       return false;
     }
 
     if (!dados.dadosAtaude?.tipoUrna) {
+      console.error('[AutorizacaoAtaudeTemplate] Dados do ataúde inválidos:', {
+        dadosAtaude: dados.dadosAtaude,
+        tipoUrna: dados.dadosAtaude?.tipoUrna
+      });
       return false;
     }
 
     if (!dados.unidade?.nome) {
+      console.error('[AutorizacaoAtaudeTemplate] Unidade inválida:', {
+        unidade: dados.unidade,
+        nome: dados.unidade?.nome
+      });
       return false;
     }
 
     if (!dados.pagamento?.solicitacao?.protocolo) {
+      console.error('[AutorizacaoAtaudeTemplate] Pagamento/solicitação inválidos:', {
+        pagamento: dados.pagamento,
+        solicitacao: dados.pagamento?.solicitacao,
+        protocolo: dados.pagamento?.solicitacao?.protocolo
+      });
       return false;
     }
 
+    console.log('[AutorizacaoAtaudeTemplate] Validação concluída com sucesso');
     return true;
   }
 

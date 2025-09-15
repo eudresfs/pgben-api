@@ -51,15 +51,23 @@ export class AluguelSocialTemplate extends TemplatePadronizadoBase<AluguelSocial
     const mesNominal = this.obterNomeMes(agora.getMonth());
 
     // Dados específicos do aluguel social - endereço do imóvel pretendido
-    const endereco = dados.imovel?.endereco
-      ? dados.imovel.endereco
-      : dados.beneficiario.endereco
-        ? `${dados.beneficiario.endereco.logradouro}, ${dados.beneficiario.endereco.numero || 'S/N'}, ${dados.beneficiario.endereco.bairro}, ${dados.beneficiario.endereco.cidade}/${dados.beneficiario.endereco.estado}, ${dados.beneficiario.endereco.cep}`
-        : '_________________________________________________________';
+    const enderecoObj = dados.imovel?.endereco
+      ? (() => {
+        try {
+          return JSON.parse(dados.imovel.endereco);
+        } catch {
+          return null;
+        }
+      })()
+      : dados.beneficiario?.endereco ?? null;
+
+    const endereco = enderecoObj
+      ? `${enderecoObj.logradouro || ''}, ${enderecoObj.numero || 'S/N'}, ${enderecoObj.bairro || ''}, ${enderecoObj.cidade || ''}/${enderecoObj.estado || ''}, ${enderecoObj.cep || ''}`
+      : '_'.repeat(40);
 
     // Dados do locador obtidos da entidade DadosAluguelSocial
-    const nomeCompletoLocador = dados.locador?.nome || '_________________________________';
-    const cpfFormatadoLocador = dados.locador?.cpf || '__________________';
+    const nomeCompletoLocador = dados.locador?.nome || '_'.repeat(20);
+    const cpfFormatadoLocador = dados.locador?.cpf || '_'.repeat(11);
 
     return [
       {

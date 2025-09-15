@@ -329,7 +329,7 @@ export class DocumentoController {
     // Headers de segurança para download
     res.set({
       'Content-Type': resultado.mimetype,
-      'Content-Disposition': `attachment; filename="${resultado.nomeOriginal}"`,
+      'Content-Disposition': `inline; filename="${resultado.nomeOriginal}"`,
       'Content-Length': resultado.buffer.length.toString(),
       'Cache-Control': 'no-cache, no-store, must-revalidate',
       Pragma: 'no-cache',
@@ -368,7 +368,7 @@ export class DocumentoController {
 
     res.set({
       'Content-Type': resultado.mimetype,
-      'Content-Disposition': `attachment; filename="${resultado.nomeOriginal}"`,
+      'Content-Disposition': `inline; filename="${resultado.nomeOriginal}"`,
       'Content-Length': resultado.buffer.length.toString(),
     });
 
@@ -404,7 +404,7 @@ export class DocumentoController {
 
     res.set({
       'Content-Type': resultado.mimetype,
-      'Content-Disposition': `attachment; filename="${resultado.nomeOriginal}"`,
+      'Content-Disposition': `inline; filename="${resultado.nomeOriginal}"`,
       'Content-Length': resultado.buffer.length.toString(),
     });
 

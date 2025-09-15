@@ -50,27 +50,51 @@ export abstract class TemplatePadronizadoBase<T = any> {
    * Gera o documento PDF usando pdfmake diretamente
    */
   public async gerarDocumento(dados: T): Promise<Buffer> {
-    this.validarDados(dados);
-    const definicao = this.criarDefinicaoDocumento(dados);
-    
-    return new Promise<Buffer>((resolve, reject) => {
-      const pdfDoc = this.printer.createPdfKitDocument(definicao);
-      const chunks: Buffer[] = [];
+    try {
+      console.log('[TemplatePadronizadoBase] Iniciando geração do documento...');
       
-      pdfDoc.on('data', (chunk: Buffer) => {
-        chunks.push(chunk);
+      console.log('[TemplatePadronizadoBase] Validando dados...');
+      const validacao = this.validarDados(dados);
+      if (!validacao) {
+        throw new Error('Dados não passaram na validação');
+      }
+      
+      console.log('[TemplatePadronizadoBase] Criando definição do documento...');
+      const definicao = this.criarDefinicaoDocumento(dados);
+      if (!definicao) {
+        throw new Error('Definição do documento é undefined');
+      }
+      
+      console.log('[TemplatePadronizadoBase] Criando documento PDF...');
+      return new Promise<Buffer>((resolve, reject) => {
+        try {
+          const pdfDoc = this.printer.createPdfKitDocument(definicao);
+          const chunks: Buffer[] = [];
+          
+          pdfDoc.on('data', (chunk: Buffer) => {
+            chunks.push(chunk);
+          });
+          
+          pdfDoc.on('end', () => {
+            console.log('[TemplatePadronizadoBase] PDF gerado com sucesso');
+            resolve(Buffer.concat(chunks));
+          });
+          
+          pdfDoc.on('error', (error: Error) => {
+            console.error('[TemplatePadronizadoBase] Erro no PDFKit:', error);
+            reject(error);
+          });
+          
+          pdfDoc.end();
+        } catch (error) {
+          console.error('[TemplatePadronizadoBase] Erro ao criar documento PDF:', error);
+          reject(error);
+        }
       });
-      
-      pdfDoc.on('end', () => {
-        resolve(Buffer.concat(chunks));
-      });
-      
-      pdfDoc.on('error', (error: Error) => {
-        reject(error);
-      });
-      
-      pdfDoc.end();
-    });
+    } catch (error) {
+      console.error('[TemplatePadronizadoBase] Erro geral na geração do documento:', error);
+      throw error;
+    }
   }
 
   /**

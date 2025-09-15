@@ -130,20 +130,58 @@ export class DocumentoPdfService {
     tipoDocumento: TipoDocumentoEnum,
   ): Promise<Buffer> {
     try {
+      this.logger.log(`Iniciando geração com novo sistema para tipo: ${tipoDocumento}`);
+      
       switch (tipoDocumento) {
         case TipoDocumentoEnum.AUTORIZACAO_ATAUDE:
+          this.logger.log('Verificando dados de entrada...');
+          this.logger.debug(`Dados documento: ${JSON.stringify(dadosDocumento, null, 2)}`);
+          
+          // Verificar se o adapter está disponível
+          if (!this.documentoAdapter) {
+            throw new Error('DocumentoAdapter não está disponível');
+          }
+          
           // Converter dados para o novo formato
+          this.logger.log('Convertendo dados para o novo formato...');
           const dadosConvertidos = this.documentoAdapter.converterParaAutorizacaoAtaude(dadosDocumento);
-
+          
+          if (!dadosConvertidos) {
+            throw new Error('Dados convertidos são undefined');
+          }
+          
+          this.logger.debug(`Dados convertidos: ${JSON.stringify(dadosConvertidos, null, 2)}`);
+          
+          // Verificar se o template está disponível
+          if (!this.autorizacaoAtaudeTemplate) {
+            throw new Error('AutorizacaoAtaudeTemplate não está disponível');
+          }
+          
+          // Validar dados antes de gerar
+          this.logger.log('Validando dados convertidos...');
+          const dadosValidos = this.autorizacaoAtaudeTemplate.validarDados(dadosConvertidos);
+          
+          if (!dadosValidos) {
+            throw new Error('Dados convertidos não passaram na validação do template');
+          }
+          
           // Gerar PDF usando o template padronizado com header e footer
-          // O método gerarDocumento do template base já inclui header e footer padronizados
-          return await this.autorizacaoAtaudeTemplate.gerarDocumento(dadosConvertidos);
+          this.logger.log('Gerando documento PDF...');
+          const buffer = await this.autorizacaoAtaudeTemplate.gerarDocumento(dadosConvertidos);
+          
+          if (!buffer) {
+            throw new Error('Buffer do PDF é undefined');
+          }
+          
+          this.logger.log(`PDF gerado com sucesso. Tamanho: ${buffer.length} bytes`);
+          return buffer;
 
         default:
           throw new BadRequestException(`Tipo de documento não suportado: ${tipoDocumento}`);
       }
     } catch (error) {
       this.logger.error(`Erro ao gerar PDF com novo sistema: ${error.message}`);
+      this.logger.error(`Stack trace: ${error.stack}`);
       throw error;
     }
   }
