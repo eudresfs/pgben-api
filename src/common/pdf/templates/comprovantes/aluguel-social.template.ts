@@ -61,9 +61,23 @@ export class AluguelSocialTemplate extends TemplatePadronizadoBase<AluguelSocial
       })()
       : dados.beneficiario?.endereco ?? null;
 
-    const endereco = enderecoObj
-      ? `${enderecoObj.logradouro || ''}, ${enderecoObj.numero || 'S/N'}, ${enderecoObj.bairro || ''}, ${enderecoObj.cidade || ''}/${enderecoObj.estado || ''}, ${enderecoObj.cep || ''}`
-      : '_'.repeat(40);
+    let endereco = '_'.repeat(50);
+
+    if (enderecoObj) {
+      const partes = [
+        enderecoObj.logradouro,
+        enderecoObj.numero || (enderecoObj.logradouro ? 'S/N' : null), // só põe S/N se tiver logradouro
+        enderecoObj.bairro,
+        enderecoObj.cidade && enderecoObj.estado
+          ? `${enderecoObj.cidade}/${enderecoObj.estado}`
+          : enderecoObj.cidade || enderecoObj.estado,
+        enderecoObj.cep,
+      ].filter(Boolean);
+
+      if (partes.length > 0) {
+        endereco = partes.join(', ');
+      }
+    }
 
     // Dados do locador obtidos da entidade DadosAluguelSocial
     const nomeCompletoLocador = dados.locador?.nome || '_'.repeat(20);
