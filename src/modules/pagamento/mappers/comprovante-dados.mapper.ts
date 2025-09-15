@@ -55,13 +55,14 @@ export class ComprovanteDadosMapper {
         id: pagamento.id,
         solicitacao_id: pagamento.solicitacao.id,
         valor: Number(pagamento.valor),
-        dataLiberacao: pagamento.data_liberacao,
+        dataLiberacao: pagamento.data_liberacao || new Date(),
         metodoPagamento: pagamento.metodo_pagamento || 'Não informado',
         numeroParcela: pagamento.numero_parcela || undefined,
         totalParcelas: pagamento.total_parcelas || undefined,
         status: pagamento.status,
         tipoBeneficio: {
           nome: pagamento.solicitacao.tipo_beneficio.nome,
+          codigo: pagamento.solicitacao.tipo_beneficio.codigo,
           descricao: pagamento.solicitacao.tipo_beneficio.descricao || undefined,
         },
         solicitacao: {
@@ -144,6 +145,7 @@ export class ComprovanteDadosMapper {
         status: dto.pagamento.status,
         tipoBeneficio: {
           nome: dto.pagamento.tipoBeneficio.nome,
+          codigo: dto.pagamento.tipoBeneficio.codigo,
           descricao: dto.pagamento.tipoBeneficio.descricao,
         },
         solicitacao: {
@@ -259,9 +261,10 @@ export class ComprovanteDadosMapper {
       erros.push('Valor do pagamento é obrigatório');
     }
 
-    if (!pagamento.data_liberacao) {
-      erros.push('Data de liberação é obrigatória');
-    }
+    // Data de liberação é opcional - usar data atual se não fornecida
+    // if (!pagamento.data_liberacao) {
+    //   erros.push('Data de liberação é obrigatória');
+    // }
 
     if (erros.length > 0) {
       throw new Error(`Dados obrigatórios ausentes: ${erros.join(', ')}`);
@@ -303,6 +306,7 @@ export class ComprovanteDadosMapper {
         status: 'LIBERADO',
         tipoBeneficio: {
           nome: 'Cesta Básica',
+          codigo: 'cesta-basica',
           descricao: 'Benefício de segurança alimentar',
         },
         solicitacao: {

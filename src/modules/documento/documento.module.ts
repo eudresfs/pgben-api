@@ -26,6 +26,7 @@ import { LoggingModule } from '../../shared/logging/logging.module';
 import { SharedModule } from '../../shared/shared.module';
 import { StorageHealthService } from './services/storage-health.service';
 import { AuditoriaSharedModule } from '../../shared/auditoria/auditoria-shared.module';
+import { PdfCommonModule } from '../../common/pdf/pdf-common.module';
 
 // Novos componentes de segurança
 import { InputValidationInterceptor } from './interceptors/input-validation.interceptor';
@@ -56,6 +57,8 @@ import { OfficeConverterService } from './services/office-converter/office-conve
 import { BatchJobManagerService } from './services/batch-download/batch-job-manager.service';
 import { ZipGeneratorService } from './services/batch-download/zip-generator.service';
 import { DocumentFilterService } from './services/batch-download/document-filter.service';
+import { DocumentoAdapter } from './adapters/documento.adapter';
+import { AutorizacaoAtaudeTemplate } from '../../common/pdf/templates/comprovantes/autorizacao-ataude.template';
 
 /**
  * Módulo de Documentos
@@ -104,6 +107,7 @@ import { DocumentFilterService } from './services/batch-download/document-filter
     SharedModule,
     AuditoriaSharedModule,
     CacheModule,
+    PdfCommonModule,
     // BatchDownloadModule removido para evitar dependência circular
   ],
   controllers: [
@@ -160,6 +164,8 @@ import { DocumentFilterService } from './services/batch-download/document-filter
     BatchJobManagerService,
     ZipGeneratorService,
     DocumentFilterService,
+    DocumentoAdapter,
+    AutorizacaoAtaudeTemplate,
 
     // Interceptors de segurança
     {

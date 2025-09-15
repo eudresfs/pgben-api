@@ -95,6 +95,10 @@ export class TipoBeneficioComprovanteDto {
   @IsString()
   nome: string;
 
+  @ApiProperty({ description: 'Código do benefício', example: 'cesta-basica' })
+  @IsString()
+  codigo: string;
+
   @ApiPropertyOptional({ description: 'Descrição do benefício' })
   @IsOptional()
   @IsString()

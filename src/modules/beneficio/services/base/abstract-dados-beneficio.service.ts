@@ -31,6 +31,7 @@ export interface IDadosBeneficioEntity {
  */
 export interface ICreateDadosBeneficioDto {
   solicitacao_id: string;
+  prioridade?: number;
   [key: string]: any;
 }
 
@@ -267,6 +268,14 @@ export abstract class AbstractDadosBeneficioService<
         updateData.quantidade_parcelas = createDto.quantidade_parcelas as number;
         this.logger.log(
           `Campo quantidade_parcelas atualizado para ${createDto.quantidade_parcelas} na solicitação ${solicitacaoId}`,
+        );
+      }
+
+      // Atualizar prioridade se presente nos dados do benefício
+      if ('prioridade' in createDto && createDto.prioridade !== undefined) {
+        updateData.prioridade = createDto.prioridade as number;
+        this.logger.log(
+          `Campo prioridade atualizado para ${createDto.prioridade} na solicitação ${solicitacaoId}`,
         );
       }
 

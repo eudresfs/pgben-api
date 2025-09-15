@@ -13,6 +13,7 @@ import { Solicitacao } from '../../../entities/solicitacao.entity';
 import { Cidadao } from '../../../entities/cidadao.entity';
 import { Endereco } from '../../../entities/endereco.entity';
 import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
+import { ComprovantePdfAdapter } from '../adapters/comprovante-pdf.adapter';
 // import { StatusPagamentoEnum } from '../../../enums';
 
 // Mock do PdfGeneratorUtil
@@ -30,7 +31,7 @@ jest.mock('../utils/pdf-generator.util', () => {
           testemunha: false,
         },
       }),
-      gerarComprovante: jest.fn().mockResolvedValue(Buffer.alloc(1024, 'pdf-content')),
+      gerarComprovante: jest.fn().mockResolvedValue(Buffer.from('mock-pdf-content')),
       gerarNomeArquivo: jest.fn().mockReturnValue('comprovante-test.pdf'),
       converterParaBase64: jest.fn().mockReturnValue('base64content'),
     })),
@@ -42,33 +43,68 @@ jest.mock('../mappers/comprovante-dados.mapper', () => {
   return {
     ComprovanteDadosMapper: {
       validarDadosObrigatorios: jest.fn(),
-      mapearParaComprovante: jest.fn().mockReturnValue({
-        beneficiario: {
-          nome: 'João da Silva',
-          cpf: '123.456.789-00',
-          endereco: {
-            logradouro: 'Rua Teste',
-            numero: '123',
-            bairro: 'Centro',
-            cidade: 'São Paulo',
-            estado: 'SP',
-            cep: '01234-567',
+      mapearParaComprovante: jest.fn().mockImplementation((pagamento) => {
+        const isAluguelSocial = pagamento?.solicitacao?.tipo_beneficio?.codigo === 'aluguel-social';
+        
+        const dadosBase = {
+          beneficiario: {
+            nome: 'João da Silva',
+            cpf: '123.456.789-00',
+            endereco: {
+              logradouro: 'Rua Teste',
+              numero: '123',
+              bairro: 'Centro',
+              cidade: 'São Paulo',
+              estado: 'SP',
+              cep: '01234-567',
+            },
           },
-        },
-        pagamento: {
-          id: 'pagamento-id',
-          valor: 150.50,
-          dataLiberacao: new Date(),
-          status: 'liberado' as any,
-          tipoBeneficio: {
-            nome: 'Cesta Básica',
+          pagamento: {
+            id: 'pagamento-id',
+            valor: 150.50,
+            dataLiberacao: new Date(),
+            status: 'liberado' as any,
+            tipoBeneficio: {
+              nome: isAluguelSocial ? 'Aluguel Social' : 'Cesta Básica',
+            },
           },
-        },
-        unidade: {
-          nome: 'SEMTAS',
-        },
-        dataGeracao: new Date(),
-        numeroComprovante: 'COMP-202401-ABC12345',
+          unidade: {
+            nome: 'SEMTAS',
+          },
+          dataGeracao: new Date(),
+          numeroComprovante: 'COMP-202401-ABC12345',
+        };
+
+        // Adiciona dados de locador se for aluguel social
+        if (isAluguelSocial) {
+          return {
+            ...dadosBase,
+            locador: {
+              nome: 'Maria dos Santos',
+              cpf: '987.654.321-00',
+              endereco: {
+                logradouro: 'Av. Principal',
+                numero: '456',
+                bairro: 'Centro',
+                cidade: 'São Paulo',
+                estado: 'SP',
+                cep: '01234-567',
+              },
+            },
+            imovel: {
+              endereco: {
+                logradouro: 'Rua do Imóvel',
+                numero: '789',
+                bairro: 'Vila Nova',
+                cidade: 'São Paulo',
+                estado: 'SP',
+                cep: '01234-567',
+              },
+            },
+          };
+        }
+
+        return dadosBase;
       }),
     },
   };
@@ -137,6 +173,37 @@ describe('ComprovanteService - Geração de PDF', () => {
       generatePublicUrl: jest.fn(),
     };
 
+    const mockComprovantePdfAdapter = {
+      gerarComprovante: jest.fn().mockResolvedValue(Buffer.from('mock-pdf-content')),
+      gerarComprovantesLote: jest.fn().mockResolvedValue([
+        { id: '1', buffer: Buffer.from('mock-pdf-1') },
+        { id: '2', buffer: Buffer.from('mock-pdf-2') }
+      ]),
+      criarConfiguracaoTemplate: jest.fn().mockImplementation((dados) => {
+        const tipo = dados.locador ? 'aluguel_social' : 'cesta_basica';
+        return {
+          orientacao: 'PORTRAIT',
+          tamanho: 'A4',
+          margens: { superior: 20, inferior: 20, esquerda: 20, direita: 20 },
+          tipo,
+          titulo: 'COMPROVANTE DE RECEBIMENTO - CESTA BÁSICA',
+          subtitulo: 'Programa de Segurança Alimentar e Nutricional',
+          rodape: 'Este documento comprova o recebimento do benefício.',
+          camposAssinatura: {
+            beneficiario: true,
+            tecnico: true,
+            testemunha: false,
+          },
+        };
+      }),
+      determinarTipoComprovante: jest.fn().mockImplementation((dados) => {
+        return dados.locador ? 'aluguel_social' : 'cesta_basica';
+      }),
+      validarDados: jest.fn().mockReturnValue(true),
+      gerarNomeArquivo: jest.fn().mockReturnValue('comprovante-test.pdf'),
+      calcularTamanhoEstimado: jest.fn().mockReturnValue(16),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ComprovanteService,
@@ -155,6 +222,10 @@ describe('ComprovanteService - Geração de PDF', () => {
         {
           provide: DocumentoUrlService,
           useValue: mockDocumentoUrlService,
+        },
+        {
+          provide: ComprovantePdfAdapter,
+          useValue: mockComprovantePdfAdapter,
         },
       ],
     }).compile();
@@ -180,9 +251,9 @@ describe('ComprovanteService - Geração de PDF', () => {
 
       // Assert
       expect(resultado).toBeDefined();
-      expect(resultado.nomeArquivo).toBe('comprovante-test.pdf');
+      expect(resultado.nomeArquivo).toContain('comprovante_cesta_basica_');
       expect(resultado.tipoMime).toBe('application/pdf');
-      expect(resultado.tamanho).toBe(1024);
+      expect(resultado.tamanho).toBe(16);
       expect(resultado.tipoComprovante).toBe(TipoComprovante.CESTA_BASICA);
       expect(resultado.dataGeracao).toBeInstanceOf(Date);
     });
@@ -200,7 +271,7 @@ describe('ComprovanteService - Geração de PDF', () => {
       );
 
       // Assert
-      expect(resultado.conteudoBase64).toBe('base64content');
+      expect(resultado.conteudoBase64).toBe('bW9jay1wZGYtY29udGVudA==');
     });
 
     it('deve gerar comprovante de aluguel social', async () => {

@@ -6,6 +6,9 @@ import {
   IsOptional,
   IsUUID,
   MinLength,
+  IsNumber,
+  Min,
+  Max,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ParentescoEnum, TipoUrnaEnum, TransladoEnum } from '@/enums';
@@ -24,6 +27,18 @@ export class CreateDadosAtaudeDto {
   @IsUUID('4', { message: 'ID da solicitação inválido' })
   @ValidateTipoBeneficio('ataude')
   solicitacao_id: string;
+
+  @ApiPropertyOptional({
+    description: 'Prioridade da solicitação (1-5, onde 1 é mais prioritário)',
+    example: 3,
+    minimum: 1,
+    maximum: 5,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'Prioridade deve ser um número' })
+  @Min(1, { message: 'Prioridade deve ser no mínimo 1' })
+  @Max(5, { message: 'Prioridade deve ser no máximo 5' })
+  prioridade?: number;
 
   @ApiProperty({
     description: 'Nome completo da pessoa falecida',

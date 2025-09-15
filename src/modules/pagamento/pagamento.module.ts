@@ -88,6 +88,14 @@ import { CidadaoModule } from '../cidadao/cidadao.module';
 import { NotificacaoModule } from '../notificacao/notificacao.module';
 import { SharedModule } from '../../shared/shared.module';
 import { CacheModule } from '../../shared/cache/cache.module';
+import { PdfCommonModule } from '../../common/pdf/pdf-common.module';
+// import { PagamentoEventMapper } from './mappers/pagamento-event.mapper';
+// import { PagamentoCreatedEvent } from './events/pagamento-created.event';
+// import { PagamentoUpdatedEvent } from './events/pagamento-updated.event';
+// import { PagamentoDeletedEvent } from './events/pagamento-deleted.event';
+// import { PagamentoStatusChangedEvent } from './events/pagamento-status-changed.event';
+import { ComprovantePdfAdapter } from './adapters/comprovante-pdf.adapter';
+import { PdfGeneratorUtil } from './utils/pdf-generator.util';
 
 /**
  * Módulo de Pagamento/Liberação
@@ -118,6 +126,7 @@ import { CacheModule } from '../../shared/cache/cache.module';
     AuthModule,
     SharedModule,
     CacheModule,
+    PdfCommonModule,
     UsuarioModule,
     forwardRef(() => SolicitacaoModule),
     forwardRef(() => BeneficioModule),
@@ -216,6 +225,15 @@ import { CacheModule } from '../../shared/cache/cache.module';
     // Eventos
     PagamentoEventosService,
     PagamentoEventListener,
+    // PagamentoEventMapper,
+    // PagamentoCreatedEvent,
+    // PagamentoUpdatedEvent,
+    // PagamentoDeletedEvent,
+    // PagamentoStatusChangedEvent,
+    
+    // PDF
+    ComprovantePdfAdapter,
+    PdfGeneratorUtil,
   ],
   exports: [
     TypeOrmModule,

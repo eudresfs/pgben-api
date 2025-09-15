@@ -14,6 +14,7 @@ export interface IDadosBeneficio {
  */
 export interface ICreateDadosBeneficioDto {
   solicitacao_id: string;
+  prioridade?: number;
   [key: string]: any;
 }
 

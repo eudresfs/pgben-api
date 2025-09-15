@@ -27,15 +27,18 @@ describe('PdfGeneratorUtil', () => {
         estado: 'SP',
         cep: '01234-567',
       },
-      telefone: '(11) 98765-4321',
-      email: 'joao@email.com',
+      contatos: {
+        telefone: '(11) 98765-4321',
+        email: 'joao@email.com',
+      },
     },
     pagamento: {
       id: 'pagamento-123',
       valor: 150.50,
       dataLiberacao: new Date('2024-01-15'),
       metodoPagamento: 'PIX',
-      numeroParcelas: 1,
+      numeroParcela: 1,
+      totalParcelas: 1,
       status: StatusPagamentoEnum.LIBERADO,
       tipoBeneficio: {
         nome: 'Cesta Básica',

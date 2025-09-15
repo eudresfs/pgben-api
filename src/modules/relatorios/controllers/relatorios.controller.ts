@@ -28,7 +28,9 @@ import {
   RelatorioBeneficiosDto,
   RelatorioSolicitacoesDto,
   RelatorioAtendimentosDto,
+  RelatorioPagamentosPdfDto,
 } from '../dto';
+import { RelatorioPagamentosFiltrosDto } from '../dto/relatorio-pagamentos-filtros.dto';
 
 /**
  * Controlador de Relatórios
@@ -323,5 +325,88 @@ export class RelatoriosController {
     }
 
     return res.send(relatorio);
+  }
+
+  /**
+   * Gera PDFs de pagamentos agrupados por tipo de benefício usando filtros avançados
+   * 
+   * Este endpoint utiliza filtros avançados para localizar pagamentos e gera PDFs
+   * organizados por tipo de benefício. Cada tipo de benefício resulta
+   * em um PDF separado contendo apenas os pagamentos daquele tipo.
+   * 
+   * @param dto Filtros avançados para localizar pagamentos e observações opcionais
+   * @returns Buffer do PDF gerado
+   */
+  @Post('pagamentos-pdf')
+  @RequiresPermission({
+    permissionName: 'relatorio.pagamentos.pdf',
+    scopeType: ScopeType.GLOBAL,
+  })
+  @ApiOperation({
+    summary: 'Gera PDFs de pagamentos por tipo de benefício usando filtros avançados',
+    description: `Gera relatórios PDF organizados por tipo de benefício a partir de filtros avançados de pagamentos.
+    
+    **Funcionalidades:**
+    - Utiliza os mesmos filtros avançados do endpoint de listagem de pagamentos
+    - Agrupa pagamentos por tipo de benefício automaticamente
+    - Gera um PDF para cada tipo de benefício encontrado
+    - Inclui informações detalhadas dos pagamentos e beneficiários
+    - Permite adicionar observações personalizadas ao relatório
+    - Suporta filtros por unidade, status, período, valores, etc.
+    
+    **Filtros disponíveis:**
+    - Unidades, status de pagamento, métodos de pagamento
+    - Períodos predefinidos ou datas customizadas
+    - Valores mínimos e máximos
+    - Busca textual por beneficiário ou protocolo
+    - Filtros por comprovante e monitoramento
+    
+    **Formato de saída:**
+    - PDF otimizado para impressão
+    - Layout padronizado com header e footer institucionais
+    - Tabelas organizadas com informações dos beneficiários
+    - Totalizadores por tipo de benefício`,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'PDF gerado com sucesso',
+    content: {
+      'application/pdf': {
+        schema: {
+          type: 'string',
+          format: 'binary'
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Filtros inválidos ou nenhum pagamento encontrado'
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso negado - Permissões insuficientes para gerar relatórios'
+  })
+  async gerarPdfsPagamentos(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Body() dto: RelatorioPagamentosFiltrosDto,
+  ): Promise<void> {
+    // Gerar PDF baseado nos filtros avançados fornecidos
+    // Utiliza a mesma lógica de filtragem do endpoint de pagamentos
+    const pdf = await this.relatoriosService.gerarPdfsPagamentosComFiltros({
+      filtros: dto,
+      observacoes: dto.observacoes,
+      user: req.user,
+    });
+
+    // Configurar cabeçalhos da resposta para PDF
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=relatorio-pagamentos.pdf',
+    );
+
+    res.send(pdf);
   }
 }

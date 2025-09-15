@@ -76,15 +76,29 @@ export class DocumentoPdfController {
     description: 'Erro interno do servidor',
   })
   @ApiConsumes('application/json')
-  @ApiProduces('application/json')
+  @ApiProduces('application/pdf')
   async gerarDocumento(
     @Body(ValidationPipe) gerarDocumentoDto: GerarDocumentoDto,
     @GetUser() usuario: any,
-  ): Promise<DocumentoGeradoDto> {
-    return this.documentoPdfService.gerarDocumento(
+    @Res() res: Response,
+  ): Promise<void> {
+    const documentoGerado = await this.documentoPdfService.gerarDocumento(
       gerarDocumentoDto,
       usuario.id,
     );
+
+     const { buffer, nomeArquivo } = await this.documentoPdfService.downloadDocumento(
+      documentoGerado.id,
+      usuario.id,
+    );
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `inline; filename="${nomeArquivo}"`,
+      'Content-Length': buffer.length.toString(),
+    });
+
+    res.send(buffer);
   }
 
   /**
@@ -194,7 +208,7 @@ export class DocumentoPdfController {
 
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${nomeArquivo}"`,
+      'Content-Disposition': `inline; filename="${nomeArquivo}"`,
       'Content-Length': buffer.length.toString(),
     });
 

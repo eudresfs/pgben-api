@@ -6,6 +6,9 @@ import {
 import { TipoDocumentoEnum } from '../../../enums/tipo-documento.enum';
 
 /**
+ * @deprecated Esta classe base foi substituída por TemplatePadronizadoBase do módulo common/pdf
+ * Use TemplatePadronizadoBase que oferece funcionalidades mais robustas e padronizadas
+ * 
  * Template base abstrato para geração de documentos
  * Segue os mesmos padrões do módulo de pagamento
  */

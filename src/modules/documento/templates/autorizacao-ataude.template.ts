@@ -1,3 +1,7 @@
+/**
+ * @deprecated Este template foi migrado para common/pdf/templates/comprovantes/autorizacao-ataude.template.ts
+ * Use AutorizacaoAtaudeTemplate do módulo common/pdf que estende TemplatePadronizadoBase
+ */
 import { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
 import { DocumentoBaseTemplate } from './documento-base.template';
 import { IDadosDocumento, IDocumentoTemplate } from '../interfaces/documento-pdf.interface';

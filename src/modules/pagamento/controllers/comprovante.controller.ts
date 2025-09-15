@@ -263,7 +263,7 @@ export class ComprovanteController {
 
     res.set({
       'Content-Type': mimetype,
-      'Content-Disposition': `attachment; filename="${nomeOriginal}"`,
+      'Content-Disposition': `inline; filename="${nomeOriginal}"`,
       'Content-Length': buffer.length.toString(),
     });
 
@@ -370,7 +370,7 @@ export class ComprovanteController {
 
       res.set({
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${nomeArquivo}"`,
+        'Content-Disposition': `inline; filename="${nomeArquivo}"`,
         'Content-Length': pdfBuffer.length.toString(),
       });
 

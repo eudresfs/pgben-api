@@ -14,6 +14,9 @@ export interface DadosPagamento {
   /** Quantidade de parcelas */
   quantidadeParcelas: number;
 
+  /** Quantidade de cestas básicas */
+  quantidadeCestas?: number;
+
   /** Dados específicos do benefício (opcional) */
   dadosEspecificos?: any;
 }
@@ -102,6 +105,9 @@ export interface ConfiguracaoBeneficio {
 
   /** Dia limite para liberação no mês vigente */
   diaLimite: number;
+
+  /** Valor padrão */
+  valorPadrao: number;
 }
 
 /**

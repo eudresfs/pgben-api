@@ -22,6 +22,9 @@ interface IConfiguracaoDocumentoPdf {
 }
 
 /**
+ * @deprecated Este utilitário foi substituído pelo PdfCommonService do módulo common/pdf
+ * Use PdfCommonService junto com AutorizacaoAtaudeTemplate e DocumentoAdapter
+ * 
  * Utilitário para geração de documentos PDF
  * Segue os mesmos padrões do módulo de pagamento
  */
