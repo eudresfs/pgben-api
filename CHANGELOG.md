@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.7.0](https://github.com/kemosoft-team/pgben-server/compare/v1.6.0...v1.7.0) (2025-09-15)
+
+
+### Features
+
+* **beneficio:** add priority field to benefit requests ([93f332a](https://github.com/kemosoft-team/pgben-server/commit/93f332a2c644cdc61ac7377edfd7edcd3308e0c3))
+* **comprovante:** removido a data padrão "hoje" ([681d367](https://github.com/kemosoft-team/pgben-server/commit/681d3670638ca6b84364fd1492dcd13bdd6f2b1c))
+* **documento-pdf:** change response to PDF download instead of JSON ([37b2ac5](https://github.com/kemosoft-team/pgben-server/commit/37b2ac5f38d0e16768b4cc3bade09c5ac1e98da2))
+* **escolaridade:** Adição do novo valor ensino_infantil ([1fed4fb](https://github.com/kemosoft-team/pgben-server/commit/1fed4fb2b28533acc66cfe777e786ad29fa3a842))
+* **pagamentos:** reativar endpoint de busca por id de solicitacao e concessao ([a15ec7d](https://github.com/kemosoft-team/pgben-server/commit/a15ec7dbc6a641ffb0bd71210ac0830994d6e387))
+* **pagamentos:** reativar endpoint de busca por id de solicitacao e concessao ([cb510e4](https://github.com/kemosoft-team/pgben-server/commit/cb510e4e0d3cba5c0d4a2a51b6c35b0a2d489d3c))
+* **pdf:** migrate PDF generation to common module ([84a57ec](https://github.com/kemosoft-team/pgben-server/commit/84a57ec335b0f172972e70f2d97b6896030c5fac))
+* **relatorios:** implement pdf generation with advanced filters and templates ([8d00c0a](https://github.com/kemosoft-team/pgben-server/commit/8d00c0a20583643ee2abe04f518b0b8839d43d92))
+* **relatorios:** migrate and consolidate relatorios-unificado module into relatorios ([d189074](https://github.com/kemosoft-team/pgben-server/commit/d1890744c7b4b09d3561fa5aac3d85b7ca01d3b5))
+
+
+### Bug Fixes
+
+* **documento:** make required fields mandatory in ataúde interfaces ([b7e1e14](https://github.com/kemosoft-team/pgben-server/commit/b7e1e14650d52345c254fd260fcb9ef346c74c23))
+* **download:** change Content-Disposition from attachment to inline for file downloads ([1d86c14](https://github.com/kemosoft-team/pgben-server/commit/1d86c1476bd82112573db0d1d1b3fcfe487f0b64))
+* **filtros:** Adicionar TECNICO SEMTAS à permissão do filtro de unidade ([7731276](https://github.com/kemosoft-team/pgben-server/commit/7731276175934bab646d7921011247e836df35bc))
+* **pdf-template:** improve address formatting in aluguel-social template ([768d457](https://github.com/kemosoft-team/pgben-server/commit/768d457761694610d16298f5d5d37b4dfb34dbcf))
+
 ## [1.6.0](https://github.com/kemosoft-team/pgben-server/compare/v1.5.0...v1.6.0) (2025-09-08)
 
 
