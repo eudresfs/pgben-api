@@ -80,7 +80,7 @@ export class DadosAtaudeDto {
 
   @IsString()
   @IsOptional()
-  grauParentesco?: string;
+  grauParentesco: string;
 
   @IsNumber()
   @IsOptional()
@@ -92,7 +92,7 @@ export class DadosAtaudeDto {
 
   @IsString()
   @IsOptional()
-  dataObito?: string;
+  dataObito: string;
 
   @IsString()
   @IsOptional()
@@ -100,7 +100,7 @@ export class DadosAtaudeDto {
 
   @IsString()
   @IsOptional()
-  translado?: string;
+  translado: string;
 
   @IsString()
   @IsOptional()

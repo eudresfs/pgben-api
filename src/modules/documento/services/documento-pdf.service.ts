@@ -718,6 +718,7 @@ export class DocumentoPdfService {
       requerente: solicitacao.solicitante,
       dados_ataude: solicitacao.dados_ataude
         ? {
+          translado: solicitacao.dados_ataude.translado,
           tipo_urna: solicitacao.dados_ataude.tipo_urna_necessaria,
           data_autorizacao: new Date(solicitacao.dados_ataude.data_autorizacao).toLocaleDateString('pt-BR'),
           grau_parentesco: solicitacao.dados_ataude.grau_parentesco_requerente,
