@@ -184,7 +184,7 @@ export class AutorizacaoAtaudeTemplate extends TemplatePadronizadoBase<Autorizac
           { text: `Em benefício de ${dados.beneficiario.nome} (conforme atestado de óbito ou declaração médica), documento D.O. nº ${dados.dadosAtaude?.declaracaoObito || '_'.repeat(15)}. ` },
           { text: `Residente à ${dados.beneficiario.endereco?.logradouro || '_'.repeat(35)}, bairro ${dados.beneficiario.endereco?.bairro || '_'.repeat(15)} nesta cidade do Natal.` }
         ],
-        margin: [0, 10, 0, 20],
+        margin: [0, 10, 0, 15],
         alignment: "justify",
         style: 'value'
       },
@@ -192,12 +192,12 @@ export class AutorizacaoAtaudeTemplate extends TemplatePadronizadoBase<Autorizac
       // Dados do requerente
       {
         style: 'value',
-        margin: [0, 10, 0, 20],
+        margin: [0, 5, 0, 5],
         table: {
           widths: ['auto', '*'],
           body: [
             [
-              { text: 'REQUERENTE:', bold: true, colSpan: 2, margin: [0, 0, 0, 10] },
+              { text: 'REQUERENTE:', bold: true, colSpan: 2, margin: [0, 0, 0, 5] },
               {}
             ],
             [
