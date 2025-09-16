@@ -72,6 +72,11 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
   }
 
   use(req: Request, res: Response, next: NextFunction): void {
+    // Declarar variáveis fora do bloco try para que estejam disponíveis no catch
+    let userId: string = '';
+    let identificationStrategy: UserIdentificationStrategy = UserIdentificationStrategy.IP_FALLBACK;
+    let operationType: keyof typeof this.limits | null = null;
+
     try {
       // Permitir requisições OPTIONS (preflight) sem rate limiting
       if (req.method === 'OPTIONS') {
@@ -79,8 +84,6 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
       }
 
       const user = (req as any).user;
-      let userId: string;
-      let identificationStrategy: UserIdentificationStrategy;
 
       // Priorizar usuário autenticado, usar identificação inteligente como fallback
       if (user && user.id) {
@@ -93,7 +96,7 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
         identificationStrategy = identificationResult.strategy;
       }
 
-      const operationType = this.getOperationType(req);
+      operationType = this.getOperationType(req);
 
       // Se não é uma operação que precisa de rate limiting, continuar
       if (!operationType) {
