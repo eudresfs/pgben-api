@@ -404,7 +404,7 @@ export class RelatoriosController {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
-      'attachment; filename=relatorio-pagamentos.pdf',
+      'inline; filename=relatorio-pagamentos.pdf',
     );
 
     res.send(pdf);
