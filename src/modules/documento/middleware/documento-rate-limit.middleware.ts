@@ -69,6 +69,11 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
   }
 
   use(req: Request, res: Response, next: NextFunction): void {
+    // TEMPORARIAMENTE DESABILITADO - INVESTIGAÇÃO DE RATE LIMITING
+    // Permite todas as requisições sem verificação de rate limit
+    return next();
+    
+    /* CÓDIGO ORIGINAL - MANTER PARA RESTAURAÇÃO POSTERIOR
     // Permitir requisições OPTIONS (preflight) sem rate limiting
     if (req.method === 'OPTIONS') {
       return next();
@@ -88,7 +93,9 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
     if (!operationType) {
       return next();
     }
+    */
 
+    /* RESTANTE DA LÓGICA ORIGINAL - COMENTADO PARA INVESTIGAÇÃO
     try {
       const isAllowed = this.checkRateLimit(userId, operationType, req);
 
@@ -164,6 +171,7 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
       // Em caso de erro, permitir a requisição
       next();
     }
+    */
   }
 
   private getOperationType(req: Request): keyof typeof this.limits | null {

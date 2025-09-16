@@ -29,10 +29,16 @@ export class RateLimitMiddleware implements NestMiddleware {
    * @param next Next function
    */
   use(req: Request, res: Response, next: NextFunction) {
+    // TEMPORARIAMENTE DESABILITADO - INVESTIGAÇÃO DE RATE LIMITING
+    // Permite todas as requisições sem verificação de rate limit
+    return next();
+    
+    /* CÓDIGO ORIGINAL - MANTER PARA RESTAURAÇÃO POSTERIOR
     // Aplicar rate limiting apenas para rotas de autenticação
     if (!this.isAuthRoute(req.path)) {
       return next();
     }
+    */
 
     const clientId = this.getClientIdentifier(req);
     const now = new Date();

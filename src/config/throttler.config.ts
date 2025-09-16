@@ -41,6 +41,11 @@ export const createThrottlerConfig = (
       },
     ],
     skipIf: (context) => {
+      // TEMPORARIAMENTE DESABILITADO - INVESTIGAÇÃO DE RATE LIMITING
+      // Retorna sempre true para desabilitar completamente o rate limiting
+      return true;
+      
+      /* CÓDIGO ORIGINAL - MANTER PARA RESTAURAÇÃO POSTERIOR
       // Pular rate limiting em desenvolvimento se configurado
       if (nodeEnv === 'development') {
         const skipInDev = configService.get<boolean>(
@@ -60,6 +65,7 @@ export const createThrottlerConfig = (
         request.url?.includes('/status');
 
       return isHealthCheck;
+      */
     },
     errorMessage: 'Muitas tentativas. Tente novamente em alguns minutos.',
   };
