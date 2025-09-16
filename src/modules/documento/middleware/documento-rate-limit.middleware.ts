@@ -7,6 +7,8 @@ import {
 import { Request, Response, NextFunction } from 'express';
 import { LoggingService } from '../../../shared/logging/logging.service';
 import { ConfigService } from '@nestjs/config';
+import { UserIdentifierService } from '../../../common/services/user-identifier.service';
+import { UserIdentificationStrategy } from '../../../common/interfaces/user-identifier.interface';
 
 interface RateLimitEntry {
   count: number;
@@ -61,6 +63,7 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
   constructor(
     private readonly logger: LoggingService,
     private readonly configService: ConfigService,
+    private readonly userIdentifierService: UserIdentifierService,
   ) {
     // Limpeza automática a cada 10 minutos
     this.cleanupInterval = setInterval(() => {
@@ -69,34 +72,39 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
   }
 
   use(req: Request, res: Response, next: NextFunction): void {
-    // TEMPORARIAMENTE DESABILITADO - INVESTIGAÇÃO DE RATE LIMITING
-    // Permite todas as requisições sem verificação de rate limit
-    return next();
-    
-    /* CÓDIGO ORIGINAL - MANTER PARA RESTAURAÇÃO POSTERIOR
-    // Permitir requisições OPTIONS (preflight) sem rate limiting
-    if (req.method === 'OPTIONS') {
-      return next();
-    }
-
-    const user = (req as any).user;
-
-    // Se não há usuário autenticado, permitir (será bloqueado por outros guards)
-    if (!user || !user.id) {
-      return next();
-    }
-
-    const userId = user.id;
-    const operationType = this.getOperationType(req);
-
-    // Se não é uma operação que precisa de rate limiting, continuar
-    if (!operationType) {
-      return next();
-    }
-    */
-
-    /* RESTANTE DA LÓGICA ORIGINAL - COMENTADO PARA INVESTIGAÇÃO
     try {
+      // Permitir requisições OPTIONS (preflight) sem rate limiting
+      if (req.method === 'OPTIONS') {
+        return next();
+      }
+
+      const user = (req as any).user;
+      let userId: string;
+      let identificationStrategy: UserIdentificationStrategy;
+
+      // Priorizar usuário autenticado, usar identificação inteligente como fallback
+      if (user && user.id) {
+        userId = `user:${user.id}`;
+        identificationStrategy = UserIdentificationStrategy.USER_ID;
+      } else {
+        // Usar UserIdentifierService para identificação inteligente
+        const identificationResult = this.userIdentifierService.identifyUser(req);
+        userId = identificationResult.identifier;
+        identificationStrategy = identificationResult.strategy;
+      }
+
+      const operationType = this.getOperationType(req);
+
+      // Se não é uma operação que precisa de rate limiting, continuar
+      if (!operationType) {
+        return next();
+      }
+
+      // Log da identificação para auditoria
+      this.logger.debug(
+        `Documento rate limiting check - ID: ${userId}, Strategy: ${identificationStrategy}, Operation: ${operationType}`,
+        DocumentoRateLimitMiddleware.name,
+      );
       const isAllowed = this.checkRateLimit(userId, operationType, req);
 
       if (!isAllowed) {
@@ -104,10 +112,11 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
         const resetTime = Math.ceil(limit.windowMs / 1000 / 60); // em minutos
 
         this.logger.warn(
-          `Rate limit excedido para usuário ${userId} na operação ${operationType}`,
+          `Rate limit excedido - ID: ${userId}, Strategy: ${identificationStrategy}, Operation: ${operationType}`,
           DocumentoRateLimitMiddleware.name,
           {
             userId,
+            identificationStrategy,
             operationType,
             limit: limit.max,
             windowMinutes: resetTime,
@@ -162,16 +171,15 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
       }
 
       this.logger.error(
-        `Erro no rate limiting para usuário ${userId}`,
+        `Erro no rate limiting - ID: ${userId}, Strategy: ${identificationStrategy}`,
         error,
         DocumentoRateLimitMiddleware.name,
-        { userId, operationType },
+        { userId, identificationStrategy, operationType },
       );
 
       // Em caso de erro, permitir a requisição
       next();
     }
-    */
   }
 
   private getOperationType(req: Request): keyof typeof this.limits | null {
@@ -235,7 +243,7 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
     // Log para monitoramento
     if (operationLimit.count === 1) {
       this.logger.debug(
-        `Iniciando janela de rate limit para usuário ${userId} - ${operationType}`,
+        `Iniciando janela de rate limit - ID: ${userId}, Operation: ${operationType}`,
         DocumentoRateLimitMiddleware.name,
         { userId, operationType, windowMs: limit.windowMs },
       );
@@ -244,7 +252,7 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
     // Log de aviso quando próximo do limite
     if (operationLimit.count >= limit.max * 0.8) {
       this.logger.warn(
-        `Usuário ${userId} próximo do limite de ${operationType}: ${operationLimit.count}/${limit.max}`,
+        `Próximo do limite de rate limit - ID: ${userId}, Operation: ${operationType}: ${operationLimit.count}/${limit.max}`,
         DocumentoRateLimitMiddleware.name,
         {
           userId,

@@ -3,6 +3,11 @@ export { ScopeType } from '../enums/scope-type.enum';
 
 // Interfaces
 export { IScopeContext } from './interfaces/scope-context.interface';
+export {
+  IUserIdentifierService,
+  UserIdentificationResult,
+  UserIdentificationStrategy,
+} from './interfaces/user-identifier.interface';
 
 // Exceptions
 export {
@@ -13,6 +18,7 @@ export {
 
 // Services
 export { RequestContextHolder } from './services/request-context-holder.service';
+export { UserIdentifierService } from './services/user-identifier.service';
 
 // Repositories
 export { ScopedRepository } from './repositories/scoped-repository';

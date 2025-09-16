@@ -3,15 +3,20 @@ import {
   NestMiddleware,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
+import { UserIdentifierService } from '../services/user-identifier.service';
+import { UserIdentificationStrategy } from '../interfaces/user-identifier.interface';
 
 /**
  * Middleware para controle de rate limiting e bloqueio por tentativas de login
- * Implementa proteção contra ataques de força bruta
+ * Implementa proteção contra ataques de força bruta usando identificação inteligente de usuários
  */
 @Injectable()
 export class RateLimitMiddleware implements NestMiddleware {
+  private readonly logger = new Logger(RateLimitMiddleware.name);
+  
   private attempts: Map<
     string,
     { count: number; lastAttempt: Date; blockedUntil?: Date }
@@ -22,6 +27,8 @@ export class RateLimitMiddleware implements NestMiddleware {
   private readonly BLOCK_DURATION = 15 * 60 * 1000; // 15 minutos em ms
   private readonly WINDOW_DURATION = 5 * 60 * 1000; // 5 minutos em ms
 
+  constructor(private readonly userIdentifierService: UserIdentifierService) {}
+
   /**
    * Middleware principal para controle de rate limiting
    * @param req Request object
@@ -29,62 +36,89 @@ export class RateLimitMiddleware implements NestMiddleware {
    * @param next Next function
    */
   use(req: Request, res: Response, next: NextFunction) {
-    // TEMPORARIAMENTE DESABILITADO - INVESTIGAÇÃO DE RATE LIMITING
-    // Permite todas as requisições sem verificação de rate limit
-    return next();
-    
-    /* CÓDIGO ORIGINAL - MANTER PARA RESTAURAÇÃO POSTERIOR
-    // Aplicar rate limiting apenas para rotas de autenticação
-    if (!this.isAuthRoute(req.path)) {
-      return next();
-    }
-    */
-
-    const clientId = this.getClientIdentifier(req);
-    const now = new Date();
-
-    // Verificar se o cliente está bloqueado
-    if (this.isBlocked(clientId, now)) {
-      const blockedUntil = this.attempts.get(clientId)?.blockedUntil;
-      const remainingTime = blockedUntil
-        ? Math.ceil((blockedUntil.getTime() - now.getTime()) / 1000)
-        : 0;
-
-      throw new HttpException(
-        {
-          message: 'Muitas tentativas de login. Tente novamente mais tarde.',
-          error: 'Too Many Requests',
-          statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          remainingTime: remainingTime,
-        },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
-    }
-
-    // Registrar a tentativa
-    this.recordAttempt(clientId, now);
-
-    // Interceptar resposta para detectar falhas de autenticação
-    const originalSend = res.send;
-    res.send = function (body: any) {
-      const response = typeof body === 'string' ? JSON.parse(body) : body;
-
-      // Se a autenticação falhou, incrementar contador
-      if (res.statusCode === 401 || (response && response.statusCode === 401)) {
-        const attempts = this.attempts.get(clientId);
-        if (attempts && attempts.count >= this.MAX_ATTEMPTS) {
-          // Bloquear cliente
-          attempts.blockedUntil = new Date(now.getTime() + this.BLOCK_DURATION);
-        }
-      } else if (res.statusCode === 200 || res.statusCode === 201) {
-        // Login bem-sucedido, limpar tentativas
-        this.attempts.delete(clientId);
+    try {
+      // Aplicar rate limiting apenas para rotas de autenticação
+      if (!this.isAuthRoute(req.path)) {
+        return next();
       }
 
-      return originalSend.call(this, body);
-    }.bind(this);
+      // Usar o UserIdentifierService para identificação inteligente
+      const identificationResult = this.userIdentifierService.identifyUser(req);
+      const clientId = identificationResult.identifier;
+      const strategy = identificationResult.strategy;
+      const now = new Date();
 
-    next();
+      // Log da identificação para auditoria
+      this.logger.debug(
+        `Rate limiting check - ID: ${clientId}, Strategy: ${strategy}, Path: ${req.path}`,
+      );
+
+      // Verificar se o cliente está bloqueado
+      if (this.isBlocked(clientId, now)) {
+        const blockedUntil = this.attempts.get(clientId)?.blockedUntil;
+        const remainingTime = blockedUntil
+          ? Math.ceil((blockedUntil.getTime() - now.getTime()) / 1000)
+          : 0;
+
+        // Log de tentativa bloqueada para auditoria
+        this.logger.warn(
+          `Rate limit exceeded - ID: ${clientId}, Strategy: ${strategy}, Remaining: ${remainingTime}s`,
+        );
+
+        throw new HttpException(
+          {
+            message: 'Muitas tentativas de login. Tente novamente mais tarde.',
+            error: 'Too Many Requests',
+            statusCode: HttpStatus.TOO_MANY_REQUESTS,
+            remainingTime: remainingTime,
+          },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+
+      // Registrar a tentativa
+      this.recordAttempt(clientId, now);
+
+      // Interceptar resposta para detectar falhas de autenticação
+      const originalSend = res.send;
+      const middlewareInstance = this;
+      res.send = function (body: any) {
+        const response = typeof body === 'string' ? JSON.parse(body) : body;
+
+        // Se a autenticação falhou, incrementar contador
+        if (res.statusCode === 401 || (response && response.statusCode === 401)) {
+          const attempts = middlewareInstance.attempts.get(clientId);
+          if (attempts && attempts.count >= middlewareInstance.MAX_ATTEMPTS) {
+            // Bloquear cliente
+            attempts.blockedUntil = new Date(now.getTime() + middlewareInstance.BLOCK_DURATION);
+            
+            // Log de bloqueio para auditoria
+            middlewareInstance.logger.warn(
+              `Client blocked due to failed attempts - ID: ${clientId}, Strategy: ${strategy}, Count: ${attempts.count}`,
+            );
+          }
+        } else if (res.statusCode === 200 || res.statusCode === 201) {
+          // Login bem-sucedido, limpar tentativas
+          middlewareInstance.attempts.delete(clientId);
+          
+          // Log de sucesso para auditoria
+          middlewareInstance.logger.log(
+            `Successful authentication - ID: ${clientId}, Strategy: ${strategy}`,
+          );
+        }
+
+        return originalSend.call(this, body);
+      };
+
+      next();
+    } catch (error) {
+      this.logger.error(
+        `Error in rate limiting middleware: ${error.message}`,
+        error.stack,
+      );
+      // Em caso de erro, permitir a requisição para não quebrar o fluxo
+      next();
+    }
   }
 
   /**
@@ -97,17 +131,7 @@ export class RateLimitMiddleware implements NestMiddleware {
     return authRoutes.some((route) => path.includes(route));
   }
 
-  /**
-   * Obtém identificador único do cliente
-   * @param req Request object
-   * @returns Identificador do cliente
-   */
-  private getClientIdentifier(req: Request): string {
-    // Usar IP + User-Agent para identificar cliente
-    const ip = req.ip || req.connection.remoteAddress || 'unknown';
-    const userAgent = req.get('User-Agent') || 'unknown';
-    return `${ip}:${userAgent}`;
-  }
+
 
   /**
    * Verifica se o cliente está bloqueado

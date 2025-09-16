@@ -309,6 +309,8 @@ export class SolicitacaoService {
         'solicitacao.observacoes',
         'solicitacao.determinacao_judicial_flag',
         'solicitacao.prioridade',
+        'solicitacao.updated_at as data_atualizacao',
+        'solicitacao.prazo_analise',
         // Dados básicos do beneficiário
         'beneficiario.id',
         'beneficiario.nome',
