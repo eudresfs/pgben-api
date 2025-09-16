@@ -95,6 +95,14 @@ export class CreateDadosAtaudeDto {
   tipo_urna_necessaria: TipoUrnaEnum;
 
   @ApiPropertyOptional({
+    description: 'Valor da urna',
+    example: 2390,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'Valor solicitado deve ser um número' })
+  valor_solicitado?: number;
+
+  @ApiPropertyOptional({
     description: 'Observações especiais sobre o caso',
     example: 'Família em situação de extrema vulnerabilidade social.',
   })
@@ -194,6 +202,14 @@ export class UpdateDadosAtaudeDto {
   @IsOptional()
   @IsEnum(TipoUrnaEnum, { message: 'Tipo de urna inválido' })
   tipo_urna_necessaria?: TipoUrnaEnum;
+
+  @ApiPropertyOptional({
+    description: 'Valor da urna',
+    example: 2390,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'Valor solicitado deve ser um número' })
+  valor_solicitado?: number;
 
   @ApiPropertyOptional({
     description: 'Observações especiais sobre o caso',

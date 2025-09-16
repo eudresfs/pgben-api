@@ -3,6 +3,8 @@ import {
   BadRequestException,
   NotFoundException,
   ConflictException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import {
   TipoDadosBeneficio,
@@ -34,10 +36,15 @@ export class DadosBeneficioFactoryService {
   private readonly codigoToTipoMap: Map<string, TipoDadosBeneficio>;
 
   constructor(
+    @Inject(forwardRef(() => DadosAluguelSocialService))
     private readonly aluguelSocialService: DadosAluguelSocialService,
+    @Inject(forwardRef(() => DadosCestaBasicaService))
     private readonly cestaBasicaService: DadosCestaBasicaService,
+    @Inject(forwardRef(() => DadosAtaudeService))
     private readonly ataudeService: DadosAtaudeService,
+    @Inject(forwardRef(() => DadosNatalidadeService))
     private readonly natalidadeService: DadosNatalidadeService,
+    @Inject(forwardRef(() => TipoBeneficioRepository))
     private readonly tipoBeneficioRepository: TipoBeneficioRepository,
 
     @InjectRepository(TipoBeneficioSchema)

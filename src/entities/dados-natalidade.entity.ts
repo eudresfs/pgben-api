@@ -83,6 +83,13 @@ export class DadosNatalidade {
   @IsBoolean({ message: 'Gêmeos/Trigêmeos deve ser um booleano' })
   gemeos_trigemeos: boolean;
 
+  @Column({ type: 'integer', default: 1 })
+  @ValidateIf((o) => o.tipo_contexto === TipoContextoNatalidade.PRE_NATAL)
+  @IsOptional()
+  @IsNumber({}, { message: 'Quantidade de bebês esperados deve ser um número' })
+  @Min(1, { message: 'Quantidade mínima de bebês esperados é 1' })
+  quantidade_bebes_esperados: number;
+
   // Campos para contexto POS_NATAL
   @Column({ type: 'date', nullable: true })
   @ValidateIf((o) => o.tipo_contexto === TipoContextoNatalidade.POS_NATAL)

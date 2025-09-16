@@ -3,10 +3,10 @@ import {
   IBeneficioCalculatorStrategy,
   DadosPagamento,
   ResultadoCalculoPagamento,
-  TipoBeneficio,
   ConfiguracaoBeneficio,
 } from '../interfaces/pagamento-calculator.interface';
 import { FeriadoService } from '../../../shared/services/feriado.service';
+import { TipoBeneficio } from '@/enums';
 
 /**
  * Estratégia de cálculo para benefício de Aluguel Social

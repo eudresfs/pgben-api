@@ -13,6 +13,7 @@ import { WorkflowInterceptor } from '../../../interceptors/workflow.interceptor'
 import { CacheInterceptor } from '../../../shared/interceptors/cache.interceptor';
 import { WorkflowSolicitacaoService } from '../../solicitacao/services/workflow-solicitacao.service';
 import { DadosAtaude } from '../../../entities/dados-ataude.entity';
+import { Solicitacao } from '../../../entities/solicitacao.entity';
 import {
   CreateDadosAtaudeDto,
   UpdateDadosAtaudeDto,
@@ -29,6 +30,8 @@ import { BENEFICIO_CONSTANTS } from '../../../shared/constants/beneficio.constan
 import { AppError } from '@/shared/exceptions';
 import { EnderecoDto } from '../../../shared/dtos/endereco.dto';
 import { TipoBeneficio } from '@/enums';
+import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
+import { PaginatedResult } from '../../../common/interfaces/paginated-result.interface';
 
 /**
  * Serviço para gerenciar dados específicos de Auxílio Ataude
@@ -50,8 +53,65 @@ export class DadosAtaudeService extends AbstractDadosBeneficioService<
     super(dadosAtaudeRepository, 'DadosAtaude', workflowSolicitacaoService);
   }
 
-  // Métodos CRUD básicos herdados da classe base AbstractDadosBeneficioService
-  // create, findOne, findBySolicitacao, update, remove, existsBySolicitacao, findAll
+  /**
+   * Criar dados de Ataude com cálculo de valor e atualização da solicitação
+   */
+  async create(data: CreateDadosAtaudeDto): Promise<DadosAtaude> {
+    this.logger.log(`Iniciando criação de dados de ataúde para solicitação ${data.solicitacao_id}`);
+
+    // Validar dados antes de criar
+    await this.validateCreateData(data);
+
+    // Calcular valor baseado no tipo de urna
+    const valorCalculado = this.calcularValorBeneficio(data.tipo_urna_necessaria);
+    this.logger.log(`Valor calculado para urna ${data.tipo_urna_necessaria}: R$ ${valorCalculado}`);
+
+    // Adicionar o valor calculado aos dados antes de criar
+    const dadosComValor = {
+      ...data,
+      valor_solicitado: valorCalculado
+    };
+
+    // Criar dados de ataúde com o valor
+    const dadosAtaude = await super.create(dadosComValor);
+
+    // Atualizar valor na solicitação
+    try {
+      await this.repository.manager.update(
+        Solicitacao,
+        { id: data.solicitacao_id },
+        { 
+          valor: valorCalculado,
+          updated_at: new Date()
+        }
+      );
+      this.logger.log(`Valor da solicitação ${data.solicitacao_id} atualizado para R$ ${valorCalculado}`);
+    } catch (error) {
+      this.logger.error(`Erro ao atualizar valor da solicitação: ${error.message}`, error.stack);
+      // Não propagar o erro para não afetar a criação dos dados
+    }
+
+    return dadosAtaude;
+  }
+
+  /**
+   * Calcular valor do benefício baseado no tipo de urna
+   */
+  private calcularValorBeneficio(tipoUrna: string): number {
+    const valores = BENEFICIO_CONSTANTS.VALORES.ATAUDE;
+
+    switch (tipoUrna?.toLowerCase()) {
+      case TipoUrnaEnum.INFANTIL:
+        return valores.URNA_INFANTIL;
+      case TipoUrnaEnum.ESPECIAL:
+        return valores.URNA_ESPECIAL;
+      case TipoUrnaEnum.OBESO:
+        return valores.URNA_OBESO;
+      case TipoUrnaEnum.PADRAO:
+      default:
+        return valores.URNA_PADRAO; // Valor padrão para urna comum
+    }
+  }
 
   /**
    * Buscar dados por grau de parentesco

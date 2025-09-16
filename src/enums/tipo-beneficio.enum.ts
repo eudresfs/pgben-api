@@ -1,8 +1,8 @@
 export enum TipoBeneficio {
   NATALIDADE = 'natalidade',
   ATAUDE = 'ataude',
-  CESTA_BASICA = 'cesta_basica',
-  ALUGUEL_SOCIAL = 'aluguel_social',
+  CESTA_BASICA = 'cesta-basica',
+  ALUGUEL_SOCIAL = 'aluguel-social',
   PASSAGEM = 'passagem',
   OUTRO = 'outro',
 }

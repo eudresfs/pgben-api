@@ -93,13 +93,27 @@ export class CreateDadosNatalidadeDto {
   data_provavel_parto: string;
 
   @ApiProperty({
-    description: 'Indica se é uma gravidez múltipla (gêmeos/trigêmeos)',
+    description: 'Indica se é uma gestação de gêmeos ou trigêmeos',
     example: false,
   })
   @ValidateIf((o) => o.tipo_contexto === TipoContextoNatalidade.PRE_NATAL)
   @IsNotEmpty()
   @IsBoolean()
   gemeos_trigemeos: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Quantidade de bebês esperados na gestação',
+    example: 1,
+    minimum: 1,
+    maximum: 5,
+  })
+  @IsOptional()
+  @ValidateIf((o) => o.tipo_contexto === TipoContextoNatalidade.PRE_NATAL)
+  @IsNumber({}, { message: 'Quantidade de bebês esperados deve ser um número' })
+  @Min(1, { message: 'Quantidade mínima de bebês esperados é 1' })
+  @Max(5, { message: 'Quantidade máxima de bebês esperados é 5' })
+  @Type(() => Number)
+  quantidade_bebes_esperados?: number;
 
   // Campos gerais
   @ApiProperty({
@@ -244,6 +258,20 @@ export class UpdateDadosNatalidadeDto {
   @ValidateIf((o) => o.tipo_contexto === TipoContextoNatalidade.PRE_NATAL)
   @IsBoolean()
   gemeos_trigemeos?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Quantidade de bebês esperados na gestação',
+    example: 1,
+    minimum: 1,
+    maximum: 5,
+  })
+  @IsOptional()
+  @ValidateIf((o) => o.tipo_contexto === TipoContextoNatalidade.PRE_NATAL)
+  @IsNumber({}, { message: 'Quantidade de bebês esperados deve ser um número' })
+  @Min(1, { message: 'Quantidade mínima de bebês esperados é 1' })
+  @Max(5, { message: 'Quantidade máxima de bebês esperados é 5' })
+  @Type(() => Number)
+  quantidade_bebes_esperados?: number;
 
   // Campos gerais
   @ApiPropertyOptional({

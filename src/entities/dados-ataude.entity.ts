@@ -69,6 +69,10 @@ export class DadosAtaude {
   @IsEnum(TipoUrnaEnum, { message: 'Tipo de urna inválido' })
   tipo_urna_necessaria: TipoUrnaEnum;
 
+  @Column({ nullable: true })
+  @IsOptional()
+  valor_solicitado?: number;
+
   @Column('text', { nullable: true })
   @IsOptional()
   observacoes?: string;

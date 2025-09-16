@@ -3,6 +3,8 @@ import {
   Logger,
   BadRequestException,
   NotFoundException,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
 import { FiltroConcessaoDto } from '../dto/filtro-concessao.dto';
 import { ConcessaoFiltrosAvancadosDto, ConcessaoFiltrosResponseDto } from '../dto/concessao-filtros-avancados.dto';
@@ -27,6 +29,7 @@ import { PeriodoPredefinido } from '../../../enums/periodo-predefinido.enum';
 import { BeneficioEventosService } from './beneficio-eventos.service';
 import { ScopedRepository } from '../../../common/repositories/scoped-repository';
 import { RequestContextHolder } from '../../../common/services/request-context-holder.service';
+import { DadosBeneficioFactoryService } from './dados-beneficio-factory.service';
 
 @Injectable()
 export class ConcessaoService {
@@ -45,6 +48,8 @@ export class ConcessaoService {
     private readonly loggingService: LoggingService,
     private readonly filtrosAvancadosService: FiltrosAvancadosService,
     private readonly beneficioEventosService: BeneficioEventosService,
+    @Inject(forwardRef(() => DadosBeneficioFactoryService))
+    private readonly dadosBeneficioFactoryService: DadosBeneficioFactoryService,
   ) {
     // Inicializar repositório com escopo usando ScopedRepository
     this.concessaoScopedRepository = new ScopedRepository(
@@ -590,7 +595,7 @@ export class ConcessaoService {
       // As validações completas são feitas antes no ValidacaoBeneficioService
       // Verifica se já existe concessão para esta solicitação e status ativo
       const existente = await this.concessaoRepo.findOne({
-        where: { solicitacaoId: solicitacao.id },
+        where: { solicitacaoId: solicitacao.id }
       });
       if (existente) {
         this.logger.log(
@@ -623,6 +628,24 @@ export class ConcessaoService {
 
       const saved = await this.concessaoRepo.save(concessao);
 
+      // Buscar dados específicos do benefício antes de gerar pagamentos
+      let dadosEspecificos = null;
+      try {
+        dadosEspecificos = await this.dadosBeneficioFactoryService.findBySolicitacao(
+          solicitacao.tipo_beneficio.codigo,
+          solicitacao.id,
+        );
+        this.logger.debug(
+          `Dados específicos encontrados para solicitação ${solicitacao.id}:`,
+          dadosEspecificos,
+        );
+      } catch (dadosError) {
+        this.logger.warn(
+          `Erro ao buscar dados específicos para solicitação ${solicitacao.id}: ${dadosError.message}`,
+        );
+        // Continua sem os dados específicos
+      }
+
       // Gera pagamentos com status PENDENTE para a concessão criada
       // Nota: usuarioId não está disponível neste contexto, usando 'system'
       try {
@@ -630,6 +653,7 @@ export class ConcessaoService {
           saved,
           solicitacao,
           solicitacao.liberador_id,
+          dadosEspecificos,
         );
       } catch (pagamentoError) {
         this.logger.error(

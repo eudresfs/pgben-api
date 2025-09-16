@@ -87,6 +87,19 @@ export const BENEFICIO_CONSTANTS = {
     },
   },
 
+  // Valores dos Benefícios
+  VALORES: {
+    ATAUDE: {
+      URNA_PADRAO: 2390.00,    // Urna padrão
+      URNA_ESPECIAL: 2490.00,   // Urna especial
+      URNA_OBESO: 2690.00,       // Urna obeso
+      URNA_INFANTIL: 1666.66,   // Urna infantil
+    },
+    NATALIDADE: {
+      VALOR_PADRAO: 600.00,     // Valor padrão por bebê
+    }
+  },
+
   // Mapeamento de Tipos (para Factory)
   TIPO_BENEFICIO_MAP: new Map([
     // Aluguel Social

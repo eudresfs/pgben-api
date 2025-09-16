@@ -1,12 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   IBeneficioCalculatorStrategy,
   DadosPagamento,
   ResultadoCalculoPagamento,
-  TipoBeneficio,
   ConfiguracaoBeneficio,
 } from '../interfaces/pagamento-calculator.interface';
 import { FeriadoService } from '../../../shared/services/feriado.service';
+import { TipoBeneficio } from '@/enums';
 
 /**
  * Estratégia de cálculo para benefício de Natalidade
@@ -19,11 +19,12 @@ import { FeriadoService } from '../../../shared/services/feriado.service';
 @Injectable()
 export class NatalidadeStrategy implements IBeneficioCalculatorStrategy {
   readonly tipoBeneficio = TipoBeneficio.NATALIDADE;
+  private readonly logger = new Logger(NatalidadeStrategy.name);
 
   private readonly configuracao: ConfiguracaoBeneficio = {
     parcelasPadrao: 1,
     intervaloParcelas: 0, // Não se aplica para pagamento único
-    diasParaLiberacao: 3,
+    diasParaLiberacao: 1,
     diasParaVencimento: 30,
     diaLimite: 25,
     valorPadrao: 600,
@@ -35,12 +36,32 @@ export class NatalidadeStrategy implements IBeneficioCalculatorStrategy {
     // Natalidade sempre é pagamento único
     const quantidadeParcelas = 1;
 
-    // Valor total em uma única parcela
-    const valorParcela = dados.valor;
+    // Sempre usa quantidade_bebes_esperados como fator multiplicador
+    const quantidadeBebes = dados.dadosEspecificos?.quantidade_bebes_esperados || 1;
+    
+    let valorBase: number;
+    if (dados.valor && dados.valor > 0) {
+      // Usa o valor da solicitação como base
+      valorBase = dados.valor;
+      this.logger.debug(`Usando valor da solicitação como base: R$ ${valorBase}`);
+    } else {
+      // Usa valor padrão como base
+      valorBase = this.configuracao.valorPadrao;
+      this.logger.debug(`Usando valor padrão como base: R$ ${valorBase}`);
+    }
+
+    // Aplica o fator multiplicador da quantidade de bebês esperados
+    const valorParcela = valorBase * quantidadeBebes;
+    this.logger.debug(`Valor final calculado: R$ ${valorParcela} (${valorBase} x ${quantidadeBebes} bebês esperados)`);
+
+    // Verifica se há data provável do parto nos dados específicos
+    const dataReferencia = dados.dadosEspecificos?.data_provavel_parto 
+      ? new Date(dados.dadosEspecificos.data_provavel_parto)
+      : dados.dataInicio;
 
     // Calcula datas
-    const dataLiberacao = await this.calcularDataLiberacao(dados.dadosEspecificos.data_provavel_parto);
-    const dataVencimento = await this.calcularDataVencimento(dados.dadosEspecificos.data_provavel_parto);
+    const dataLiberacao = await this.calcularDataLiberacao(dataReferencia);
+    const dataVencimento = await this.calcularDataVencimento(dataReferencia);
 
     return {
       quantidadeParcelas,

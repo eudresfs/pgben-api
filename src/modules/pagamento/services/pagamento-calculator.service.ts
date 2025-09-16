@@ -8,7 +8,7 @@ import { FeriadoService } from '../../../shared/services/feriado.service';
 import { BeneficioDataService } from './beneficio-data.service';
 import { AluguelSocialStrategy } from '../strategies/aluguel-social.strategy';
 import { CestaBasicaStrategy } from '../strategies/cesta-basica.strategy';
-import { FuneralStrategy } from '../strategies/funeral.strategy';
+import { AtaudeStrategy } from '../strategies/ataude.strategy'; 
 import { NatalidadeStrategy } from '../strategies/natalidade.strategy';
 import {
   IPagamentoCalculatorService,
@@ -16,7 +16,6 @@ import {
   IBeneficioDataProvider,
   DadosPagamento,
   ResultadoCalculoPagamento,
-  TipoBeneficio,
 } from '../interfaces/pagamento-calculator.interface';
 
 /**
@@ -41,7 +40,7 @@ export class PagamentoCalculatorService implements IPagamentoCalculatorService {
     private readonly beneficioDataService: BeneficioDataService,
     private readonly aluguelSocialStrategy: AluguelSocialStrategy,
     private readonly cestaBasicaStrategy: CestaBasicaStrategy,
-    private readonly funeralStrategy: FuneralStrategy,
+    private readonly ataudeStrategy: AtaudeStrategy,
     private readonly natalidadeStrategy: NatalidadeStrategy,
   ) {
     this.registrarEstrategias();
@@ -53,7 +52,7 @@ export class PagamentoCalculatorService implements IPagamentoCalculatorService {
   private registrarEstrategias(): void {
     this.registrarEstrategia(this.aluguelSocialStrategy);
     this.registrarEstrategia(this.cestaBasicaStrategy);
-    this.registrarEstrategia(this.funeralStrategy);
+    this.registrarEstrategia(this.ataudeStrategy);
     this.registrarEstrategia(this.natalidadeStrategy);
 
     this.logger.log(`${this.estrategias.size} estratégias registradas`);

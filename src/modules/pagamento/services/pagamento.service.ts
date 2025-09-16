@@ -609,6 +609,7 @@ export class PagamentoService {
     concessao: any,
     solicitacao: any,
     usuarioId: string,
+    dadosEspecificos?: any,
   ): Promise<Pagamento[]> {
     this.logger.log(`Gerando pagamentos para concessão ${concessao.id}`);
 
@@ -617,6 +618,7 @@ export class PagamentoService {
       const dadosPagamento = this.prepararDadosPagamento(
         concessao,
         solicitacao,
+        dadosEspecificos,
       );
 
       // 2. Calcular dados do pagamento usando o serviço especializado
@@ -671,6 +673,7 @@ export class PagamentoService {
   private prepararDadosPagamento(
     concessao: any,
     solicitacao: any,
+    dadosEspecificos?: any,
   ): DadosPagamento {
     // Validar data de início
     const dataInicio = concessao.data_inicio
@@ -703,12 +706,18 @@ export class PagamentoService {
       throw new Error('Tipo de benefício não informado');
     }
 
+    if (dadosEspecificos) {
+      this.logger.debug(
+        `Dados específicos recebidos para solicitação ${solicitacao.id}: ${JSON.stringify(dadosEspecificos)}`,
+      );
+    }
+
     return {
       tipoBeneficio,
       valor,
       dataInicio,
       quantidadeParcelas,
-      dadosEspecificos: solicitacao.dados_especificos,
+      dadosEspecificos,
     };
   }
 

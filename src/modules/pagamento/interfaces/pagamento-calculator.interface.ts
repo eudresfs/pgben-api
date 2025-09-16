@@ -1,8 +1,10 @@
+import { TipoBeneficio } from "@/enums";
+
 /**
  * Interface que define os dados necessários para calcular um pagamento
  */
 export interface DadosPagamento {
-  /** Tipo do benefício (aluguel-social, cesta-básica, funeral, natalidade) */
+  /** Tipo do benefício (aluguel-social, cesta-básica, ataude, natalidade) */
   tipoBeneficio: TipoBeneficio;
 
   /** Valor total do benefício */
@@ -75,16 +77,6 @@ export interface IPagamentoCalculatorService {
    * @param strategy - Estratégia a ser registrada
    */
   registrarEstrategia(strategy: IBeneficioCalculatorStrategy): void;
-}
-
-/**
- * Enum para tipos de benefício
- */
-export enum TipoBeneficio {
-  ALUGUEL_SOCIAL = 'aluguel-social',
-  CESTA_BASICA = 'cesta-basica',
-  FUNERAL = 'funeral',
-  NATALIDADE = 'natalidade',
 }
 
 /**

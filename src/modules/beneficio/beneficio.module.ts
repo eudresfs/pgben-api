@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SharedModule } from '../../shared/shared.module';
 import { CacheModule } from '../../shared/cache/cache.module';
 import { AuthModule } from '../../auth/auth.module';
+import { CommonModule } from '../../common/common.module';
 
 // Entidades
 import {
@@ -74,6 +75,7 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
       HistoricoConcessao,
     ]),
     // Módulos essenciais
+    CommonModule, // Para FiltrosAvancadosService usado pelo ConcessaoService
     SharedModule, // Serviços compartilhados
     CacheModule, // Para CacheService usado pelo CacheInterceptor
     forwardRef(() => AuthModule), // Para autenticação e autorização

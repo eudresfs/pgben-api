@@ -1,6 +1,7 @@
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { StatusConcessao } from '../../../enums/status-concessao.enum';
 import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
+import { TipoBeneficioEnum } from '../../../enums/tipo-beneficio.enum';
 
 // Mock das dependências
 const mockPagamentoRepository = {
@@ -18,6 +19,36 @@ const mockCacheInvalidationService = {
 
 const mockPagamentoEventosService = {
   emitirEventoStatusAtualizado: jest.fn(),
+};
+
+const mockPagamentoCalculatorService = {
+  calcularPagamento: jest.fn(),
+};
+
+const mockSolicitacaoService = {
+  findById: jest.fn(),
+};
+
+const mockValidationService = {
+  validarDadosPagamento: jest.fn(),
+};
+
+const mockCacheService = {
+  get: jest.fn(),
+  set: jest.fn(),
+};
+
+const mockAuditoriaService = {
+  registrarOperacao: jest.fn(),
+};
+
+const mockMapper = {
+  toEntity: jest.fn(),
+  toDto: jest.fn(),
+};
+
+const mockFiltrosAvancadosService = {
+  aplicarFiltros: jest.fn(),
 };
 
 // Mock do PagamentoValidationUtil
@@ -151,6 +182,136 @@ describe('PagamentoService - updateStatus', () => {
       // Act & Assert
       await expect(service.updateStatus(mockPagamento.id, updateDto, usuarioId)).resolves.not.toThrow();
       expect(mockConcessaoService.atualizarStatus).toHaveBeenCalled();
+    });
+  });
+
+  describe('gerarPagamentosParaConcessao', () => {
+    let service: PagamentoService;
+
+    beforeEach(async () => {
+      const module = await Test.createTestingModule({
+        providers: [
+          PagamentoService,
+          { provide: 'PagamentoRepository', useValue: mockPagamentoRepository },
+          { provide: 'ConcessaoService', useValue: mockConcessaoService },
+          { provide: 'PagamentoCacheInvalidationService', useValue: mockCacheInvalidationService },
+          { provide: 'PagamentoEventosService', useValue: mockPagamentoEventosService },
+          { provide: 'PagamentoCalculatorService', useValue: mockPagamentoCalculatorService },
+          { provide: 'SolicitacaoService', useValue: mockSolicitacaoService },
+          { provide: 'PagamentoValidationService', useValue: mockValidationService },
+          { provide: 'PagamentoCacheService', useValue: mockCacheService },
+          { provide: 'AuditoriaService', useValue: mockAuditoriaService },
+          { provide: 'PagamentoUnifiedMapper', useValue: mockMapper },
+          { provide: 'FiltrosAvancadosService', useValue: mockFiltrosAvancadosService },
+        ],
+      }).compile();
+
+      service = module.get<PagamentoService>(PagamentoService);
+    });
+
+    it('deve passar dados específicos para o calculador de pagamentos', async () => {
+      // Arrange
+      const mockConcessao = {
+        id: 'concessao-123',
+        tipo_beneficio: TipoBeneficioEnum.NATALIDADE,
+        valor_beneficio: 1000,
+        data_inicio: new Date('2024-01-01'),
+        quantidade_parcelas: 3,
+        solicitacao_id: 'solicitacao-123',
+      };
+
+      const mockSolicitacao = {
+        id: 'solicitacao-123',
+        liberador_id: 'user-123',
+      };
+
+      const mockDadosEspecificos = {
+        quantidade_bebes_esperados: 2,
+        data_provavel_parto: new Date('2024-06-01'),
+      };
+
+      const mockResultadoCalculo = {
+        pagamentos: [
+          {
+            numero_parcela: 1,
+            valor: 1000,
+            data_vencimento: new Date('2024-02-01'),
+            data_liberacao: new Date('2024-01-15'),
+          },
+        ],
+      };
+
+      mockPagamentoCalculatorService.calcularPagamento.mockReturnValue(mockResultadoCalculo);
+      mockPagamentoRepository.save = jest.fn().mockResolvedValue([]);
+
+      // Act
+      await service.gerarPagamentosParaConcessao(
+        mockConcessao as any,
+        mockSolicitacao as any,
+        'user-123',
+        mockDadosEspecificos,
+      );
+
+      // Assert
+      expect(mockPagamentoCalculatorService.calcularPagamento).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tipoBeneficio: TipoBeneficioEnum.NATALIDADE,
+          valor: 1000,
+          dataInicio: mockConcessao.data_inicio,
+          quantidadeParcelas: 3,
+          dadosEspecificos: mockDadosEspecificos,
+        }),
+      );
+    });
+
+    it('deve funcionar mesmo sem dados específicos', async () => {
+      // Arrange
+      const mockConcessao = {
+        id: 'concessao-123',
+        tipo_beneficio: TipoBeneficioEnum.CESTA_BASICA,
+        valor_beneficio: 500,
+        data_inicio: new Date('2024-01-01'),
+        quantidade_parcelas: 1,
+        solicitacao_id: 'solicitacao-123',
+      };
+
+      const mockSolicitacao = {
+        id: 'solicitacao-123',
+        liberador_id: 'user-123',
+      };
+
+      const mockResultadoCalculo = {
+        pagamentos: [
+          {
+            numero_parcela: 1,
+            valor: 500,
+            data_vencimento: new Date('2024-02-01'),
+            data_liberacao: new Date('2024-01-15'),
+          },
+        ],
+      };
+
+      mockPagamentoCalculatorService.calcularPagamento.mockReturnValue(mockResultadoCalculo);
+      mockPagamentoRepository.save = jest.fn().mockResolvedValue([]);
+
+      // Act
+      await service.gerarPagamentosParaConcessao(
+        mockConcessao as any,
+        mockSolicitacao as any,
+        'user-123',
+        null, // Sem dados específicos
+      );
+
+      // Assert
+      expect(mockPagamentoCalculatorService.calcularPagamento).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tipoBeneficio: TipoBeneficioEnum.CESTA_BASICA,
+          valor: 500,
+          dataInicio: mockConcessao.data_inicio,
+          quantidadeParcelas: 1,
+          dadosEspecificos: null,
+        }),
+      );
     });
   });
 });

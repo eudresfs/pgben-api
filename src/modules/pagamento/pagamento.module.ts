@@ -42,7 +42,7 @@ import { PagamentoCalculatorService } from './services/pagamento-calculator.serv
 import { BeneficioDataService } from './services/beneficio-data.service';
 import { AluguelSocialStrategy } from './strategies/aluguel-social.strategy';
 import { CestaBasicaStrategy } from './strategies/cesta-basica.strategy';
-import { FuneralStrategy } from './strategies/funeral.strategy';
+import { AtaudeStrategy } from './strategies/ataude.strategy';
 import { NatalidadeStrategy } from './strategies/natalidade.strategy';
 
 // Command/Query Handlers
@@ -191,7 +191,7 @@ import { PdfGeneratorUtil } from './utils/pdf-generator.util';
     BeneficioDataService,
     AluguelSocialStrategy,
     CestaBasicaStrategy,
-    FuneralStrategy,
+    AtaudeStrategy,
     NatalidadeStrategy,
 
     // Command/Query Handlers
