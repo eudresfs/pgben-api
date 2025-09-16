@@ -76,7 +76,13 @@ export class CestaBasicaStrategy implements IBeneficioCalculatorStrategy {
   }
 
   private determinarValorParcelas(dados: DadosPagamento): number {
-    // Calcula o valor baseado na quantidade de cestas solicitadas
+    // Se há valor na solicitação, usar esse valor
+    if (dados.valor !== null && dados.valor !== undefined && dados.valor > 0) {
+      this.logger.debug(`Usando valor da solicitação: R$ ${dados.valor}`);
+      return dados.valor;
+    }
+    
+    // Caso contrário, calcula o valor baseado na quantidade de cestas solicitadas
     const quantidadeCestas = dados.dadosEspecificos?.quantidade_cestas_solicitadas || 1;
     this.logger.debug(`Quantidade de cestas encontrada: ${quantidadeCestas}`);
     

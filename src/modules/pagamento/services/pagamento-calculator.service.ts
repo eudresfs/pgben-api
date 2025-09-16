@@ -127,7 +127,8 @@ export class PagamentoCalculatorService implements IPagamentoCalculatorService {
       throw new BadRequestException('Tipo de benefício é obrigatório');
     }
 
-    if (!dados.valor || dados.valor < 0) {
+    // O valor pode ser null se a estratégia for responsável por calculá-lo
+    if (dados.valor !== null && dados.valor !== undefined && dados.valor < 0) {
       throw new BadRequestException('Valor deve ser maior que zero');
     }
 

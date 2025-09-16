@@ -7,8 +7,8 @@ export interface DadosPagamento {
   /** Tipo do benefício (aluguel-social, cesta-básica, ataude, natalidade) */
   tipoBeneficio: TipoBeneficio;
 
-  /** Valor total do benefício */
-  valor: number;
+  /** Valor total do benefício (pode ser null se a estratégia calcular) */
+  valor: number | null;
 
   /** Data de início do benefício */
   dataInicio: Date;

@@ -686,12 +686,18 @@ export class PagamentoService {
     }
 
     // Validar valor do benefício
-    const valor = Number(solicitacao.valor) || 0;
-    if (valor < 0) {
+    // Para alguns benefícios (como cesta básica), o valor pode vir da estratégia, não da solicitação
+    const valorSolicitacao = solicitacao.valor ? Number(solicitacao.valor) : null;
+    
+    // Se há valor na solicitação, validar se é positivo
+    if (valorSolicitacao !== null && (isNaN(valorSolicitacao) || valorSolicitacao < 0)) {
       throw new Error(
         `Valor do benefício inválido: ${solicitacao.valor}`,
       );
     }
+    
+    // O valor final será determinado pela estratégia de cálculo
+    const valor = valorSolicitacao;
 
     const quantidadeParcelas = Number(solicitacao.quantidade_parcelas) || 0;
     if (quantidadeParcelas < 0) {
