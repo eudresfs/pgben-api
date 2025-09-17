@@ -9,7 +9,7 @@ import {
 import { FiltroConcessaoDto } from '../dto/filtro-concessao.dto';
 import { ConcessaoFiltrosAvancadosDto, ConcessaoFiltrosResponseDto } from '../dto/concessao-filtros-avancados.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { Concessao } from '../../../entities/concessao.entity';
 import { Solicitacao } from '../../../entities/solicitacao.entity';
 import { StatusConcessao } from '../../../enums/status-concessao.enum';
@@ -1405,214 +1405,228 @@ export class ConcessaoService {
 
     // Obter contexto atual para preservar durante operações assíncronas
     const context = RequestContextHolder.get();
-    
+
     return RequestContextHolder.runAsync(context, async () => {
       try {
         // Construir query base com relacionamentos necessários usando ScopedRepository
         const queryBuilder = this.concessaoScopedRepository
           .createScopedQueryBuilder('concessao')
-        .leftJoinAndSelect('concessao.solicitacao', 'solicitacao')
-        .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
-        .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
-        .leftJoinAndSelect('solicitacao.unidade', 'unidade')
-        .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
-        .select([
-          // Dados básicos da concessão
-          'concessao.id',
-          'concessao.dataInicio',
-          'concessao.status',
-          'concessao.created_at',
-          'concessao.updated_at',
-          // Dados básicos da solicitação
-          'solicitacao.id',
-          'solicitacao.protocolo',
-          'solicitacao.prioridade',
-          'solicitacao.determinacao_judicial_flag',
-          // Dados básicos do beneficiário
-          'beneficiario.id',
-          'beneficiario.nome',
-          'beneficiario.cpf',
-          // Dados básicos do tipo de benefício
-          'tipo_beneficio.id',
-          'tipo_beneficio.nome',
-          'tipo_beneficio.codigo',
-          // Dados básicos da unidade
-          'unidade.id',
-          'unidade.nome',
-          'unidade.codigo',
-          // Dados básicos do técnico
-          'tecnico.id',
-          'tecnico.nome',
-        ]);
+          .leftJoinAndSelect('concessao.solicitacao', 'solicitacao')
+          .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
+          .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
+          .leftJoinAndSelect('solicitacao.unidade', 'unidade')
+          .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
+          .select([
+            // Dados básicos da concessão
+            'concessao.id',
+            'concessao.dataInicio',
+            'concessao.status',
+            'concessao.created_at',
+            'concessao.updated_at',
+            // Dados básicos da solicitação
+            'solicitacao.id',
+            'solicitacao.protocolo',
+            'solicitacao.prioridade',
+            'solicitacao.determinacao_judicial_flag',
+            // Dados básicos do beneficiário
+            'beneficiario.id',
+            'beneficiario.nome',
+            'beneficiario.cpf',
+            // Dados básicos do tipo de benefício
+            'tipo_beneficio.id',
+            'tipo_beneficio.nome',
+            'tipo_beneficio.codigo',
+            // Dados básicos da unidade
+            'unidade.id',
+            'unidade.nome',
+            'unidade.codigo',
+            // Dados básicos do técnico
+            'tecnico.id',
+            'tecnico.nome',
+          ]);
 
-      // Aplicar filtros condicionalmente
-      if (filtros.unidades?.length > 0) {
-        queryBuilder.andWhere('solicitacao.unidade_id IN (:...unidades)', {
-          unidades: filtros.unidades,
-        });
-      }
-
-      if (filtros.status?.length > 0) {
-        queryBuilder.andWhere('concessao.status IN (:...status)', {
-          status: filtros.status,
-        });
-      }
-
-      if (filtros.beneficios?.length > 0) {
-        queryBuilder.andWhere('solicitacao.tipo_beneficio_id IN (:...beneficios)', {
-          beneficios: filtros.beneficios,
-        });
-      }
-
-      if (filtros.usuarios?.length > 0) {
-        queryBuilder.andWhere('solicitacao.tecnico_id IN (:...usuarios)', {
-          usuarios: filtros.usuarios,
-        });
-      }
-
-      if (filtros.prioridades?.length > 0) {
-        queryBuilder.andWhere('solicitacao.prioridade IN (:...prioridades)', {
-          prioridades: filtros.prioridades,
-        });
-      }
-
-      if (filtros.determinacao_judicial !== undefined) {
-        queryBuilder.andWhere('solicitacao.determinacao_judicial_flag = :determinacao_judicial', {
-          determinacao_judicial: filtros.determinacao_judicial,
-        });
-      }
-
-      // Aplicar filtros de período
-      if (filtros.periodo) {
-        const { dataInicio, dataFim } = this.filtrosAvancadosService.calcularPeriodoPredefinido(filtros.periodo);
-        queryBuilder.andWhere('concessao.dataInicio >= :dataInicio', { dataInicio });
-        queryBuilder.andWhere('concessao.dataInicio <= :dataFim', { dataFim });
-      } else {
-        if (filtros.data_inicio) {
-          queryBuilder.andWhere('concessao.dataInicio >= :data_inicio', {
-            data_inicio: filtros.data_inicio,
+        // Aplicar filtros condicionalmente
+        if (filtros.unidades?.length > 0) {
+          queryBuilder.andWhere('solicitacao.unidade_id IN (:...unidades)', {
+            unidades: filtros.unidades,
           });
         }
-        if (filtros.data_fim) {
-          queryBuilder.andWhere('concessao.dataInicio <= :data_fim', {
-            data_fim: filtros.data_fim,
+
+        if (filtros.status?.length > 0) {
+          queryBuilder.andWhere('concessao.status IN (:...status)', {
+            status: filtros.status,
           });
         }
-      }
 
-      // Aplicar busca textual
-      if (filtros.search?.trim()) {
-        const searchTerm = `%${filtros.search.toLowerCase().trim()}%`;
-        const cpfTerm = `%${filtros.search.replace(/\D/g, '')}%`;
-        queryBuilder.andWhere(
-          '(LOWER(beneficiario.nome) ILIKE :searchTerm OR beneficiario.cpf LIKE :cpfTerm OR solicitacao.protocolo ILIKE :searchTerm)',
-          { searchTerm, cpfTerm },
+        if (filtros.beneficios?.length > 0) {
+          queryBuilder.andWhere('solicitacao.tipo_beneficio_id IN (:...beneficios)', {
+            beneficios: filtros.beneficios,
+          });
+        }
+
+        if (filtros.usuarios?.length > 0) {
+          queryBuilder.andWhere('solicitacao.tecnico_id IN (:...usuarios)', {
+            usuarios: filtros.usuarios,
+          });
+        }
+
+        if (filtros.prioridades?.length > 0) {
+          queryBuilder.andWhere('solicitacao.prioridade IN (:...prioridades)', {
+            prioridades: filtros.prioridades,
+          });
+        }
+
+        if (filtros.determinacao_judicial !== undefined) {
+          queryBuilder.andWhere('solicitacao.determinacao_judicial_flag = :determinacao_judicial', {
+            determinacao_judicial: filtros.determinacao_judicial,
+          });
+        }
+
+        // Aplicar filtros de período
+        if (filtros.periodo) {
+          const { dataInicio, dataFim } = this.filtrosAvancadosService.calcularPeriodoPredefinido(filtros.periodo);
+          queryBuilder.andWhere('concessao.dataInicio >= :dataInicio', { dataInicio });
+          queryBuilder.andWhere('concessao.dataInicio <= :dataFim', { dataFim });
+        } else {
+          if (filtros.data_inicio) {
+            queryBuilder.andWhere('concessao.dataInicio >= :data_inicio', {
+              data_inicio: filtros.data_inicio,
+            });
+          }
+          if (filtros.data_fim) {
+            queryBuilder.andWhere('concessao.dataInicio <= :data_fim', {
+              data_fim: filtros.data_fim,
+            });
+          }
+        }
+
+        // Aplicar filtros de busca textual
+        if (filtros.search) {
+          const cpfTerm = `%${filtros.search.replace(/\D/g, '')}%`;
+          queryBuilder.andWhere(
+            new Brackets((qb) => {
+              qb.where('LOWER(beneficiario.nome) LIKE LOWER(:search)', {
+                search: `%${filtros.search}%`,
+              })
+                .orWhere('beneficiario.cpf = :searchExact', {
+                  searchExact: `%${cpfTerm}%`,
+                })
+                .orWhere('LOWER(solicitacao.protocolo) LIKE LOWER(:search)', {
+                  search: `%${filtros.search}%`,
+                })
+                .orWhere('LOWER(tipo_beneficio.nome) LIKE LOWER(:search)', {
+                  search: `%${filtros.search}%`,
+                })
+                .orWhere('LOWER(tipo_beneficio.codigo) LIKE LOWER(:search)', {
+                  search: `%${filtros.search}%`,
+                });
+            }),
+          );
+        }
+
+        // Obter contagem total
+        const total = await queryBuilder.getCount();
+
+        // Aplicar paginação com validações robustas
+        const page = Math.max(1, filtros.page || 1); // Garantir que page seja pelo menos 1
+        const limit = Math.min(Math.max(1, filtros.limit || 10), 100); // Garantir que limit esteja entre 1 e 100
+        const offset = (page - 1) * limit;
+
+        queryBuilder.limit(limit).offset(offset);
+
+        // Aplicar ordenação
+        const sortBy = filtros.sort_by || 'created_at';
+        const sortOrder = filtros.sort_order || 'DESC';
+
+        switch (sortBy) {
+          case 'data_inicio':
+            queryBuilder.orderBy('concessao.dataInicio', sortOrder);
+            break;
+          case 'status':
+            queryBuilder.orderBy('concessao.status', sortOrder);
+            break;
+          case 'protocolo':
+            queryBuilder.orderBy('solicitacao.protocolo', sortOrder);
+            break;
+          case 'beneficiario':
+            queryBuilder.orderBy('beneficiario.nome', sortOrder);
+            break;
+          case 'prioridade':
+            queryBuilder.orderBy('solicitacao.prioridade', sortOrder);
+            break;
+          default:
+            queryBuilder.orderBy('concessao.created_at', sortOrder);
+        }
+
+        // Executar query
+        const concessoes = await queryBuilder.getMany();
+
+        // Transformar dados para estrutura padronizada
+        const items = concessoes.map((concessao) => ({
+          id: concessao.id,
+          data_inicio: concessao.dataInicio,
+          status: concessao.status,
+          prioridade: concessao.solicitacao?.prioridade,
+          protocolo: concessao.solicitacao?.protocolo,
+          determinacao_judicial: concessao.solicitacao?.determinacao_judicial_flag || false,
+          created_at: concessao.created_at,
+          updated_at: concessao.updated_at,
+          beneficiario: concessao.solicitacao?.beneficiario
+            ? {
+              id: concessao.solicitacao.beneficiario.id,
+              nome: concessao.solicitacao.beneficiario.nome,
+              cpf: concessao.solicitacao.beneficiario.cpf,
+            }
+            : null,
+          tipo_beneficio: concessao.solicitacao?.tipo_beneficio
+            ? {
+              id: concessao.solicitacao.tipo_beneficio.id,
+              nome: concessao.solicitacao.tipo_beneficio.nome,
+              codigo: concessao.solicitacao.tipo_beneficio.codigo,
+            }
+            : null,
+          unidade: concessao.solicitacao?.unidade
+            ? {
+              id: concessao.solicitacao.unidade.id,
+              nome: concessao.solicitacao.unidade.nome,
+              codigo: concessao.solicitacao.unidade.codigo,
+            }
+            : null,
+          tecnico: concessao.solicitacao?.tecnico
+            ? {
+              id: concessao.solicitacao.tecnico.id,
+              nome: concessao.solicitacao.tecnico.nome,
+            }
+            : null,
+        }));
+
+        // Calcular metadados de paginação com tratamento de casos extremos
+        const pages = total > 0 ? Math.ceil(total / limit) : 1;
+        const hasNext = total > 0 && page < pages;
+        const hasPrev = total > 0 && page > 1;
+
+        const executionTime = Date.now() - startTime;
+
+        this.logger.log(
+          `Filtros avançados aplicados com sucesso - Total: ${total} registros em ${executionTime}ms`,
         );
-      }
 
-      // Obter contagem total
-      const total = await queryBuilder.getCount();
-
-      // Aplicar paginação com validações robustas
-      const page = Math.max(1, filtros.page || 1); // Garantir que page seja pelo menos 1
-      const limit = Math.min(Math.max(1, filtros.limit || 10), 100); // Garantir que limit esteja entre 1 e 100
-      const offset = (page - 1) * limit;
-
-      queryBuilder.limit(limit).offset(offset);
-
-      // Aplicar ordenação
-      const sortBy = filtros.sort_by || 'created_at';
-      const sortOrder = filtros.sort_order || 'DESC';
-
-      switch (sortBy) {
-        case 'data_inicio':
-          queryBuilder.orderBy('concessao.dataInicio', sortOrder);
-          break;
-        case 'status':
-          queryBuilder.orderBy('concessao.status', sortOrder);
-          break;
-        case 'protocolo':
-          queryBuilder.orderBy('solicitacao.protocolo', sortOrder);
-          break;
-        case 'beneficiario':
-          queryBuilder.orderBy('beneficiario.nome', sortOrder);
-          break;
-        case 'prioridade':
-          queryBuilder.orderBy('solicitacao.prioridade', sortOrder);
-          break;
-        default:
-          queryBuilder.orderBy('concessao.created_at', sortOrder);
-      }
-
-      // Executar query
-      const concessoes = await queryBuilder.getMany();
-
-      // Transformar dados para estrutura padronizada
-      const items = concessoes.map((concessao) => ({
-        id: concessao.id,
-        data_inicio: concessao.dataInicio,
-        status: concessao.status,
-        prioridade: concessao.solicitacao?.prioridade,
-        protocolo: concessao.solicitacao?.protocolo,
-        determinacao_judicial: concessao.solicitacao?.determinacao_judicial_flag || false,
-        created_at: concessao.created_at,
-        updated_at: concessao.updated_at,
-        beneficiario: concessao.solicitacao?.beneficiario
-          ? {
-            id: concessao.solicitacao.beneficiario.id,
-            nome: concessao.solicitacao.beneficiario.nome,
-            cpf: concessao.solicitacao.beneficiario.cpf,
-          }
-          : null,
-        tipo_beneficio: concessao.solicitacao?.tipo_beneficio
-          ? {
-            id: concessao.solicitacao.tipo_beneficio.id,
-            nome: concessao.solicitacao.tipo_beneficio.nome,
-            codigo: concessao.solicitacao.tipo_beneficio.codigo,
-          }
-          : null,
-        unidade: concessao.solicitacao?.unidade
-          ? {
-            id: concessao.solicitacao.unidade.id,
-            nome: concessao.solicitacao.unidade.nome,
-            codigo: concessao.solicitacao.unidade.codigo,
-          }
-          : null,
-        tecnico: concessao.solicitacao?.tecnico
-          ? {
-            id: concessao.solicitacao.tecnico.id,
-            nome: concessao.solicitacao.tecnico.nome,
-          }
-          : null,
-      }));
-
-      // Calcular metadados de paginação com tratamento de casos extremos
-      const pages = total > 0 ? Math.ceil(total / limit) : 1;
-      const hasNext = total > 0 && page < pages;
-      const hasPrev = total > 0 && page > 1;
-
-      const executionTime = Date.now() - startTime;
-
-      this.logger.log(
-        `Filtros avançados aplicados com sucesso - Total: ${total} registros em ${executionTime}ms`,
-      );
-
-      return {
-        items,
-        meta: {
-          page,
-          limit,
-          total,
-          pages,
-          hasNext,
-          hasPrev,
-        },
-        performance: {
-          executionTime,
-          queryCount: 1,
-          cacheHit: false,
-        },
-      };
+        return {
+          items,
+          meta: {
+            page,
+            limit,
+            total,
+            pages,
+            hasNext,
+            hasPrev,
+          },
+          performance: {
+            executionTime,
+            queryCount: 1,
+            cacheHit: false,
+          },
+        };
       } catch (error) {
         this.logger.error(
           `Erro ao aplicar filtros avançados para concessões: ${error.message}`,
