@@ -3,6 +3,12 @@ import { DataSource, Repository } from 'typeorm';
 import { DadosAluguelSocial } from '../../../entities/dados-aluguel-social.entity';
 import { PublicoPrioritarioAluguel, EspecificacaoAluguel } from '@/enums';
 
+type DadosAluguelSocialComExtras = DadosAluguelSocial & {
+  valor: number;
+  quantidade_parcelas: number;
+  determinacao_judicial_flag: boolean;
+};
+
 /**
  * Repositório customizado para DadosAluguelSocial
  * Extende o repositório base do TypeORM com métodos específicos
@@ -18,15 +24,21 @@ export class DadosAluguelSocialRepository extends Repository<DadosAluguelSocial>
    */
   async findBySolicitacaoWithRelations(
     solicitacaoId: string,
-  ): Promise<DadosAluguelSocial | null> {
-    return this.findOne({
-      where: { solicitacao_id: solicitacaoId },
-      relations: [
-        'solicitacao',
-        'solicitacao.beneficiario',
-        'solicitacao.tipo_beneficio',
-      ],
-    });
+  ): Promise<DadosAluguelSocialComExtras | null> {
+    const dados = await this.createQueryBuilder('dados')
+      .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
+      .where('dados.solicitacao_id = :solicitacaoId', { solicitacaoId })
+      .getOne();
+
+    if (!dados) return null;
+
+    return {
+      ...dados,
+      valor: dados.solicitacao.valor,
+      quantidade_parcelas: dados.solicitacao.quantidade_parcelas,
+      determinacao_judicial_flag: dados.solicitacao.determinacao_judicial_flag,
+    } as DadosAluguelSocialComExtras;
   }
 
   /**
