@@ -1505,7 +1505,7 @@ export class ConcessaoService {
         const searchTerm = `%${filtros.search.toLowerCase().trim()}%`;
         const cpfTerm = `%${filtros.search.replace(/\D/g, '')}%`;
         queryBuilder.andWhere(
-          '(LOWER(beneficiario.nome) LIKE :searchTerm OR beneficiario.cpf LIKE :cpfTerm OR solicitacao.protocolo ILIKE :searchTerm)',
+          '(LOWER(beneficiario.nome) ILIKE :searchTerm OR beneficiario.cpf LIKE :cpfTerm OR solicitacao.protocolo ILIKE :searchTerm)',
           { searchTerm, cpfTerm },
         );
       }
