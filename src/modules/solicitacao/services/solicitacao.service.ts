@@ -781,38 +781,10 @@ export class SolicitacaoService {
 
       // VALIDACAO ESPECIAL: Verificar se o cidadao esta na unidade MIGRATION
       // Se sim, transferir automaticamente para a unidade do tecnico
-      if (beneficiario.unidade && beneficiario.unidade.codigo === 'MIGRATION') {
-        this.logger.log(
-          `Cidadao ${beneficiario.id} sem unidade definida. Transferindo para unidade do tecnico: ${unidadeTecnico}`,
-        );
+      await this.verificarETransferirCidadaoSeNecessario(beneficiario, unidadeTecnico, user.id);
 
-        try {
-          // Atualizar a unidade do beneficiario para a unidade do tecnico
-          await this.cidadaoService.transferirUnidade(
-            beneficiario.id,
-            {
-              unidade_id: unidadeTecnico,
-              motivo: 'Transferencia automatica durante criacao de solicitacao - cidadao estava sem unidade definida',
-            },
-            user.id,
-          );
-
-          // Atualizar o objeto beneficiario com a nova unidade
-          beneficiario.unidade_id = unidadeTecnico;
-
-          this.logger.log(
-            `Cidadao ${beneficiario.id} transferido com sucesso para a unidade ${unidadeTecnico}`,
-          );
-        } catch (error) {
-          this.logger.error(
-            `Erro ao transferir cidadao ${beneficiario.id} sem unidade definida: ${error.message}`,
-            error.stack,
-          );
-          throw new BadRequestException(
-            'Erro ao transferir cidadao sem unidade definida. Tente novamente.',
-          );
-        }
-      }
+      // VALIDACAO DE ESTADO CONSISTENTE: Verificar se o beneficiário tem a unidade correta após possível transferência
+      await this.validarEstadoConsistenteBeneficiario(beneficiario, unidadeTecnico, user);
 
       // Validar se a unidade do beneficiario e igual a unidade do tecnico
       if (beneficiario.unidade_id !== unidadeTecnico && user.escopo !== 'GLOBAL') {
@@ -834,7 +806,6 @@ export class SolicitacaoService {
         StatusSolicitacao.ABERTA,
         StatusSolicitacao.PENDENTE,
         StatusSolicitacao.EM_ANALISE,
-        StatusSolicitacao.APROVADA,
       ];
 
       // Verifica se existe uma solicitacao em andamento para o mesmo beneficiario e beneficio
@@ -1966,6 +1937,198 @@ export class SolicitacaoService {
         .toString()
         .padStart(4, '0');
       return `SOL-${ano}${(date.getMonth() + 1).toString().padStart(2, '0')}-${random}`;
+    }
+  }
+
+  /**
+   * Verifica se o cidadão está na unidade MIGRATION e executa a transferência se necessário
+   * @param beneficiario Dados do beneficiário
+   * @param unidadeDestino ID da unidade de destino
+   * @param userId ID do usuário que está executando a operação
+   * @returns Promise<void>
+   */
+  private async verificarETransferirCidadaoSeNecessario(
+    beneficiario: any,
+    unidadeDestino: string,
+    userId?: string,
+  ): Promise<void> {
+    // Verificar se o beneficiário está na unidade MIGRATION
+    if (beneficiario.unidade?.codigo !== 'MIGRATION') {
+      return; // Não precisa transferir
+    }
+
+    this.logger.log(
+      `Cidadão ${beneficiario.id} está na unidade MIGRATION. Iniciando processo de transferência para unidade ${unidadeDestino}.`,
+    );
+
+    try {
+      await this.executarTransferenciaCidadao(beneficiario, unidadeDestino, userId);
+    } catch (error) {
+      this.logger.error(
+        `Erro ao transferir cidadão ${beneficiario.id} da unidade MIGRATION: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Executa a transferência do cidadão com retry automático e tratamento robusto de erros
+   * @param beneficiario Dados do beneficiário
+   * @param unidadeDestino ID da unidade de destino
+   * @param userId ID do usuário que está executando a operação
+   * @returns Promise<void>
+   */
+  private async executarTransferenciaCidadao(
+    beneficiario: any,
+    unidadeDestino: string,
+    userId?: string,
+  ): Promise<void> {
+    const maxTentativas = 3;
+    let tentativas = 0;
+    let ultimoErro: any;
+
+    while (tentativas < maxTentativas) {
+      try {
+        tentativas++;
+        this.logger.log(
+          `Tentativa ${tentativas}/${maxTentativas} de transferir cidadão ${beneficiario.id}`,
+        );
+
+        // Executar transferência
+        await this.cidadaoService.transferirUnidade(
+          beneficiario.id,
+          {
+            unidade_id: unidadeDestino,
+            motivo: 'Transferência automática durante criação de solicitação - cidadão estava na unidade MIGRATION',
+          },
+          userId,
+        );
+
+        // Atualizar o objeto beneficiário com a nova unidade
+        beneficiario.unidade_id = unidadeDestino;
+
+        this.logger.log(
+          `Cidadão ${beneficiario.id} transferido com sucesso para a unidade ${unidadeDestino} na tentativa ${tentativas}`,
+        );
+        return; // Sucesso, sair do método
+      } catch (error) {
+        ultimoErro = error;
+        
+        // Verificar se o erro é porque o cidadão já está na unidade correta
+        if (error.message?.includes('O cidadão já está vinculado a esta unidade')) {
+          this.logger.log(
+            `Cidadão ${beneficiario.id} já está vinculado à unidade ${unidadeDestino}. Continuando com a operação.`,
+          );
+          // Atualizar o objeto beneficiário com a unidade correta
+          beneficiario.unidade_id = unidadeDestino;
+          return; // Não é um erro real, continuar
+        }
+        
+        this.logger.warn(
+          `Tentativa ${tentativas}/${maxTentativas} falhou ao transferir cidadão ${beneficiario.id}: ${error.message}`,
+        );
+
+        // Se não é a última tentativa, aguardar antes de tentar novamente
+        if (tentativas < maxTentativas) {
+          const delayMs = tentativas * 1000; // Delay progressivo: 1s, 2s, 3s
+          this.logger.log(`Aguardando ${delayMs}ms antes da próxima tentativa...`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+      }
+    }
+
+    // Se todas as tentativas falharam, lançar erro detalhado
+    this.logger.error(
+      `Falha ao transferir cidadão ${beneficiario.id} após ${maxTentativas} tentativas. Último erro: ${ultimoErro?.message}`,
+      ultimoErro?.stack,
+    );
+
+    // Verificar tipo de erro para fornecer mensagem mais específica
+    const isTimeoutError = ultimoErro?.message?.toLowerCase().includes('timeout') ||
+                          ultimoErro?.message?.toLowerCase().includes('connection') ||
+                          ultimoErro?.code === 'ECONNRESET' ||
+                          ultimoErro?.code === 'ETIMEDOUT';
+
+    const isAlreadyLinkedError = ultimoErro?.message?.includes('O cidadão já está vinculado a esta unidade');
+
+    if (isAlreadyLinkedError) {
+      this.logger.log(
+        `Cidadão ${beneficiario.id} já estava vinculado à unidade ${unidadeDestino}. Continuando com a operação.`,
+      );
+      // Atualizar o objeto beneficiário com a unidade correta
+      beneficiario.unidade_id = unidadeDestino;
+      return;
+    } else if (isTimeoutError) {
+      throw new BadRequestException(
+        'Erro de conexão com o banco de dados ao transferir cidadão. O sistema está temporariamente sobrecarregado. Aguarde alguns minutos e tente novamente.',
+      );
+    } else {
+      throw new BadRequestException(
+        `Erro ao transferir cidadão da unidade MIGRATION: ${ultimoErro?.message || 'Erro desconhecido'}. Tente novamente ou contate o suporte técnico.`,
+      );
+    }
+  }
+
+  /**
+   * Valida se o beneficiário está em estado consistente após possível transferência
+   * Verifica se os dados em memória estão sincronizados com o banco de dados
+   */
+  private async validarEstadoConsistenteBeneficiario(
+    beneficiario: any,
+    unidadeEsperada: string,
+    user: any,
+  ): Promise<void> {
+    try {
+      // Buscar dados atualizados do beneficiário no banco de dados
+      const beneficiarioAtualizado = await this.cidadaoService.findById(beneficiario.id);
+      
+      if (!beneficiarioAtualizado) {
+        this.logger.error(`Beneficiário ${beneficiario.id} não encontrado durante validação de estado`);
+        throw new BadRequestException('Beneficiário não encontrado no sistema');
+      }
+
+      // Verificar se a unidade no banco está sincronizada com a esperada
+      if (beneficiarioAtualizado.unidade_id !== unidadeEsperada) {
+        this.logger.warn(
+          `Inconsistência detectada: Beneficiário ${beneficiario.id} tem unidade ${beneficiarioAtualizado.unidade_id} no banco, mas esperava-se ${unidadeEsperada}`,
+        );
+        
+        // Atualizar o objeto em memória com os dados do banco
+        beneficiario.unidade_id = beneficiarioAtualizado.unidade_id;
+        beneficiario.unidade = beneficiarioAtualizado.unidade;
+        
+        // Se ainda não está na unidade esperada e não é usuário global, pode ser necessária nova transferência
+        if (beneficiarioAtualizado.unidade_id !== unidadeEsperada && user.escopo !== 'GLOBAL') {
+          this.logger.log(
+            `Beneficiário ${beneficiario.id} ainda não está na unidade esperada ${unidadeEsperada}. Estado atual: ${beneficiarioAtualizado.unidade_id}`,
+          );
+        }
+      } else {
+        // Estado consistente - atualizar objeto em memória para garantir sincronização
+        beneficiario.unidade_id = beneficiarioAtualizado.unidade_id;
+        beneficiario.unidade = beneficiarioAtualizado.unidade;
+        
+        this.logger.log(
+          `Estado consistente validado: Beneficiário ${beneficiario.id} está na unidade ${unidadeEsperada}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Erro ao validar estado consistente do beneficiário ${beneficiario.id}: ${error.message}`,
+        error.stack,
+      );
+      
+      // Se é erro de validação de estado, não bloquear o fluxo principal
+      // mas registrar para monitoramento
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      // Para outros erros, apenas logar e continuar
+      this.logger.warn(
+        `Continuando com criação da solicitação apesar do erro de validação de estado para beneficiário ${beneficiario.id}`,
+      );
     }
   }
 }

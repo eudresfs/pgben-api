@@ -959,10 +959,15 @@ export class CidadaoService {
 
     // Executar transferência em transação para garantir consistência
     const queryRunner = this.cidadaoRepository.manager.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
+    
     try {
+      await queryRunner.connect();
+      
+      // Configurar timeout personalizado para a transação
+      await queryRunner.query('SET statement_timeout = 15000'); // 15 segundos
+      
+      await queryRunner.startTransaction();
+
       // Atualizar a unidade do cidadão
       const updateResult = await queryRunner.manager.update(
         'cidadao',
@@ -1013,15 +1018,42 @@ export class CidadaoService {
     } catch (error) {
       // Reverter transação em caso de erro
       await queryRunner.rollbackTransaction();
+      
+      // Log detalhado do erro
       this.logger.error(
-        `Erro ao transferir unidade do cidadão ${cidadaoId}: ${error.message}`,
+        `Erro ao transferir unidade do cidadão ${cidadaoId}:`,
+        {
+          message: error.message,
+          code: error.code,
+          stack: error.stack,
+          unidadeDestino: unidade_id,
+          motivo: motivo
+        }
       );
+
+      // Identificar tipo específico de erro
+      if (error.code === 'ECONNRESET' || 
+          error.code === 'ECONNREFUSED' || 
+          error.code === 'ETIMEDOUT' ||
+          error.message?.includes('timeout') ||
+          error.message?.includes('connection') ||
+          error.message?.includes('statement_timeout')) {
+        throw new BadRequestException(
+          'Erro de conexão com o banco de dados durante a transferência. Tente novamente em alguns instantes.'
+        );
+      }
+
+      // Erro genérico
       throw new BadRequestException(
         `Falha na transferência de unidade: ${error.message}`,
       );
     } finally {
-      // Liberar conexão
-      await queryRunner.release();
+      // Liberar conexão de forma segura
+      try {
+        await queryRunner.release();
+      } catch (releaseError) {
+        this.logger.warn('Erro ao liberar conexão do query runner:', releaseError.message);
+      }
     }
 
     // Buscar cidadão atualizado
