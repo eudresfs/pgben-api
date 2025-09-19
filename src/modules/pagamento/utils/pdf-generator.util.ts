@@ -87,9 +87,21 @@ export class PdfGeneratorUtil implements IComprovantePdfService {
     dados: IDadosComprovante,
     template: IComprovanteTemplate,
   ): TDocumentDefinitions {
-    const templateInstance = this.obterInstanciaTemplate(template.tipo as TipoComprovante);
-    const dadosTemplate = this.converterDadosParaTemplate(dados, template.tipo as TipoComprovante);
-    return templateInstance.criarDefinicaoDocumento(dadosTemplate);
+    const tipo = template.tipo as TipoComprovante;
+    const dadosTemplate = this.converterDadosParaTemplate(dados, tipo);
+    
+    switch (tipo) {
+      case TipoComprovante.CESTA_BASICA:
+        const cestaBasicaTemplate = new CestaBasicaTemplate();
+        return cestaBasicaTemplate.criarDefinicaoDocumento(dadosTemplate as CestaBasicaTemplateDto);
+      
+      case TipoComprovante.ALUGUEL_SOCIAL:
+        const aluguelSocialTemplate = new AluguelSocialTemplate();
+        return aluguelSocialTemplate.criarDefinicaoDocumento(dadosTemplate as AluguelSocialTemplateDto);
+      
+      default:
+        throw new Error(`Tipo de comprovante não suportado: ${tipo}`);
+    }
   }
 
   /**
@@ -282,13 +294,13 @@ export class PdfGeneratorUtil implements IComprovantePdfService {
 
     const dadosBase = {
       beneficiario: {
-        nome: dados.beneficiario?.nome || 'Nome não informado',
-        cpf: dados.beneficiario?.cpf || '000.000.000-00',
-        rg: dados.beneficiario?.rg || 'RG não informado',
+        nome: dados.beneficiario?.nome || '',
+        cpf: dados.beneficiario?.cpf || '',
+        rg: dados.beneficiario?.rg || '',
         endereco: converterEndereco(dados.beneficiario?.endereco)
       },
       unidade: {
-        nome: dados.unidade?.nome || 'Unidade não informada',
+        nome: dados.unidade?.nome || '',
         endereco: converterEndereco(dados.unidade?.endereco),
         telefone: dados.unidade?.telefone || '',
         email: dados.unidade?.email || ''
@@ -299,7 +311,11 @@ export class PdfGeneratorUtil implements IComprovantePdfService {
         numeroParcela: dados.pagamento?.numeroParcela || 1,
         totalParcelas: dados.pagamento?.totalParcelas || 1,
         dataLiberacao: dados.pagamento?.dataLiberacao || new Date(),
-        metodoPagamento: dados.pagamento?.metodoPagamento || 'PIX'
+        metodoPagamento: dados.pagamento?.metodoPagamento || 'Depósito',
+        solicitacao: {
+          protocolo: dados.pagamento?.solicitacao?.protocolo,
+          dadosEspecificos: dados.pagamento?.solicitacao?.dadosEspecificos || {}
+        }
       },
       observacoes: dados.observacoes || ''
     };
@@ -309,9 +325,16 @@ export class PdfGeneratorUtil implements IComprovantePdfService {
         return {
           ...dadosBase,
           dadosEspecificos: {
-            motivoSolicitacao: 'Necessidade alimentar',
-            quantidadePessoas: 1,
-            situacaoVulnerabilidade: 'Vulnerabilidade social'
+            solicitacao_id: dados.pagamento?.solicitacao?.protocolo || undefined,
+            prioridade: dados.pagamento?.solicitacao?.dadosEspecificos?.prioridade || undefined,
+            quantidade_cestas_solicitadas: dados.pagamento?.solicitacao?.dadosEspecificos?.quantidade_cestas_solicitadas || 1,
+            quantidade_parcelas: dados.pagamento?.totalParcelas || undefined,
+            origem_atendimento: dados.pagamento?.solicitacao?.dadosEspecificos?.origem_atendimento || undefined,
+            numero_pessoas_familia: dados.pagamento?.solicitacao?.dadosEspecificos?.numero_pessoas_familia || undefined,
+            justificativa_quantidade: dados.pagamento?.solicitacao?.dadosEspecificos?.justificativa_quantidade || undefined,
+            observacoes: dados.pagamento?.solicitacao?.dadosEspecificos?.observacoes || undefined,
+            tecnico_responsavel: dados.pagamento?.solicitacao?.dadosEspecificos?.tecnico_responsavel || undefined,
+            unidade_solicitante: dados.pagamento?.solicitacao?.dadosEspecificos?.unidade_solicitante || undefined
           }
         } as CestaBasicaTemplateDto;
 

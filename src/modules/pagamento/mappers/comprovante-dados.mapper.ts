@@ -29,6 +29,7 @@ export class ComprovanteDadosMapper {
     const tecnico = pagamento.solicitacao.tecnico;
     const unidade = pagamento.solicitacao.unidade;
     const dadosAluguelSocial = pagamento.solicitacao.dados_aluguel_social;
+    const dadosCestaBasica = pagamento.solicitacao.dados_cesta_basica
 
     return {
       beneficiario: {
@@ -66,7 +67,8 @@ export class ComprovanteDadosMapper {
           descricao: pagamento.solicitacao.tipo_beneficio.descricao || undefined,
         },
         solicitacao: {
-          protocolo: pagamento.solicitacao.protocolo
+          protocolo: pagamento.solicitacao.protocolo,
+          dadosEspecificos: dadosAluguelSocial || dadosCestaBasica || undefined,
         },
       },
       unidade: {
@@ -150,6 +152,7 @@ export class ComprovanteDadosMapper {
         },
         solicitacao: {
           protocolo: dto.pagamento.solicitacao.protocolo,
+          dadosEspecificos: dto.pagamento.solicitacao.dadosEspecificos,
         },
       },
       unidade: {
@@ -311,6 +314,7 @@ export class ComprovanteDadosMapper {
         },
         solicitacao: {
           protocolo: 'SOL20240001234',
+          dadosEspecificos: {}
         },
       },
       unidade: {

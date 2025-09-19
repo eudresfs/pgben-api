@@ -149,6 +149,7 @@
     "nest-winston": "^1.10.2",
     "node-cache": "^5.1.2",
     "nodemailer": "^7.0.3",
+    "numero-por-extenso": "^1.0.8",
     "opossum": "^9.0.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",

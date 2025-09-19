@@ -335,14 +335,6 @@ export class NotificacaoService {
       );
     }
 
-    // Validar se destinatario_id é um UUID válido
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(dados.destinatario_id)) {
-      throw new BadRequestException(
-        `ID do destinatário inválido: ${dados.destinatario_id}. Deve ser um UUID válido.`,
-      );
-    }
-
     // Verificar se o usuário destinatário existe
     const destinatarioExiste = await this.usuarioRepository.findOne({
       where: { id: dados.destinatario_id },

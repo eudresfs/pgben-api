@@ -41,6 +41,7 @@ export interface IPagamentoComprovante {
   };
   solicitacao: {
     protocolo: string;
+    dadosEspecificos: any | undefined;
   };
 }
 

@@ -91,7 +91,7 @@ export class AluguelSocialTemplate extends TemplatePadronizadoBase<AluguelSocial
         margin: [0, 20, 0, 30]
       },
       {
-        text: `Eu ${nomeCompletoLocador}, CPF ${cpfFormatadoLocador}, recebi do(da) Sr.(a) ${nomeCompletoBeneficiario}, CPF ${cpfFormatadoBeneficiario}, a importância de ${valorParcela} como forma de pagamento do Aluguel, localizado no endereço ${endereco} referente ao mês de ${mesNominal} de ${ano}, dando plena, total e irrevogável quitação.`,
+        text: `Eu ${nomeCompletoLocador}, CPF ${cpfFormatadoLocador}, recebi do(da) Sr.(a) ${nomeCompletoBeneficiario}, CPF ${cpfFormatadoBeneficiario}, a importância de R$ _______ como forma de pagamento do Aluguel, localizado no endereço ${endereco} referente ao mês de ${mesNominal} de ${ano}, dando plena, total e irrevogável quitação.`,
         margin: [0, 0, 0, 50],
         alignment: 'justify',
         lineHeight: 1.5,

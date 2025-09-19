@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNotEmpty, ValidateNested } from 'class-validator';
+import { IsString, IsOptional, IsNotEmpty, ValidateNested, IsObject } from 'class-validator';
 import { Type } from 'class-transformer';
 
 /**
@@ -86,6 +86,10 @@ export class SolicitacaoDto {
   @IsString()
   @IsOptional()
   numeroMemorado?: string;
+
+  @IsObject()
+  @IsOptional()
+  dadosEspecificos?: Record<string, string | number | object>;
 }
 
 /**

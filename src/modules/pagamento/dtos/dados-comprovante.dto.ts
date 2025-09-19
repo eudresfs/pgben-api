@@ -7,6 +7,7 @@ import {
   IsOptional,
   ValidateNested,
   IsBoolean,
+  IsObject,
 } from 'class-validator';
 
 /**
@@ -112,6 +113,11 @@ export class SolicitacaoComprovanteDto {
   @ApiProperty({ description: 'Protocolo da solicitação', example: 'SOL20240001234' })
   @IsString()
   protocolo: string;
+
+  @ApiPropertyOptional({ description: 'Dados específicos da solicitação', example: {} })
+  @IsOptional()
+  @IsObject()
+  dadosEspecificos?: object;
 }
 
 /**

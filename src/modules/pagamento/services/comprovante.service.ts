@@ -608,6 +608,7 @@ export class ComprovanteService {
 
     // Verifica se é aluguel social para incluir endereços
     const isAluguelSocial = pagamentoBase.solicitacao?.tipo_beneficio?.codigo === 'aluguel-social';
+    const isCestaBasica = pagamentoBase.solicitacao?.tipo_beneficio?.codigo === 'cesta-basica';
 
     // Busca completa com joins condicionais
     const queryBuilder = this.pagamentoRepository
@@ -624,6 +625,12 @@ export class ComprovanteService {
       queryBuilder
         .leftJoinAndSelect('beneficiario.enderecos', 'enderecos')
         .leftJoinAndSelect('solicitacao.dados_aluguel_social', 'dados_aluguel_social');
+    }
+
+    // Adiciona joins específicos para cesta básica
+    if (isCestaBasica) {
+      queryBuilder
+        .leftJoinAndSelect('solicitacao.dados_cesta_basica', 'dados_cesta_basica');
     }
 
     const pagamento = await queryBuilder

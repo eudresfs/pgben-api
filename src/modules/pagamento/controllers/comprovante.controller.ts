@@ -184,7 +184,7 @@ export class ComprovanteController {
       const pdfBuffer = await this.comprovanteService.gerarPdfBuffer(pagamentoId, query);
       
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${resultado.nomeArquivo}"`);
+      res.setHeader('Content-Disposition', `inline; filename="${resultado.nomeArquivo}"`);
       res.setHeader('Content-Length', pdfBuffer.length);
       res.send(pdfBuffer);
       return;
