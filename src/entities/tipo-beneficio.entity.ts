@@ -12,7 +12,7 @@ import { IsNotEmpty, IsNumber, Min } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
 import { RequisitoDocumento } from './requisito-documento.entity';
 import { CampoDinamicoBeneficio } from './campo-dinamico-beneficio.entity';
-import { PeriodicidadeEnum, Status } from '../enums';
+import { PeriodicidadeEnum, Status, CategoriaBeneficio, getCategoriaLabel, getCategoriaDescricao } from '../enums';
 
 @Entity('tipo_beneficio')
 @Index(['nome'], { unique: true })
@@ -53,6 +53,15 @@ export class TipoBeneficio {
     default: Status.ATIVO,
   })
   status: Status;
+
+  @Column({
+    type: 'enum',
+    enum: CategoriaBeneficio,
+    enumName: 'categoria_beneficio_enum',
+    nullable: true,
+    comment: 'Categoria do benefício que define sua finalidade e contexto de aplicação',
+  })
+  categoria: CategoriaBeneficio;
 
   @Column('jsonb', { nullable: true })
   criterios_elegibilidade: {
@@ -663,5 +672,74 @@ export class TipoBeneficio {
         ? this.campos_dinamicos.length
         : 0,
     };
+  }
+
+  /**
+   * Verifica se o benefício possui categoria definida
+   */
+  temCategoria(): boolean {
+    return this.categoria !== null && this.categoria !== undefined;
+  }
+
+  /**
+   * Obtém o label da categoria do benefício
+   */
+  getCategoriaLabel(): string {
+    if (!this.temCategoria()) {
+      return 'Categoria não definida';
+    }
+    return getCategoriaLabel(this.categoria);
+  }
+
+  /**
+   * Obtém a descrição da categoria do benefício
+   */
+  getCategoriaDescricao(): string {
+    if (!this.temCategoria()) {
+      return 'Categoria não definida';
+    }
+    return getCategoriaDescricao(this.categoria);
+  }
+
+  /**
+   * Verifica se o benefício é da categoria Natalidade
+   */
+  isBeneficioNatalidade(): boolean {
+    return this.categoria === CategoriaBeneficio.NATALIDADE;
+  }
+
+  /**
+   * Verifica se o benefício é da categoria Morte
+   */
+  isBeneficioMorte(): boolean {
+    return this.categoria === CategoriaBeneficio.MORTE;
+  }
+
+  /**
+   * Verifica se o benefício é da categoria Vulnerabilidade Temporária
+   */
+  isBeneficioVulnerabilidadeTemporaria(): boolean {
+    return this.categoria === CategoriaBeneficio.VULNERABILIDADE_TEMPORARIA;
+  }
+
+  /**
+   * Verifica se o benefício é da categoria Calamidade Pública
+   */
+  isBeneficioCalamidadePublica(): boolean {
+    return this.categoria === CategoriaBeneficio.CALAMIDADE_PUBLICA;
+  }
+
+  /**
+   * Verifica se o benefício é de categoria emergencial (Morte ou Calamidade Pública)
+   */
+  isBeneficioEmergencial(): boolean {
+    return this.isBeneficioMorte() || this.isBeneficioCalamidadePublica();
+  }
+
+  /**
+   * Verifica se o benefício é de categoria assistencial (Natalidade ou Vulnerabilidade Temporária)
+   */
+  isBeneficioAssistencial(): boolean {
+    return this.isBeneficioNatalidade() || this.isBeneficioVulnerabilidadeTemporaria();
   }
 }

@@ -18,6 +18,7 @@ import {
   DadosCestaBasica,
   ConfiguracaoRenovacao,
   Solicitacao,
+  Cidadao,
 } from '../../entities';
 
 // Controladores
@@ -73,6 +74,7 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
       Solicitacao,
       Concessao,
       HistoricoConcessao,
+      Cidadao,
     ]),
     // Módulos essenciais
     CommonModule, // Para FiltrosAvancadosService usado pelo ConcessaoService

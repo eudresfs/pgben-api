@@ -60,6 +60,7 @@ A API segue versionamento semântico através da URL:
 
 ### Benefícios
 - `GET /v1/beneficio` - Lista benefícios disponíveis
+- `POST /v1/beneficio/verificar-disponibilidade` - Verifica disponibilidade de benefícios para um cidadão
 - `POST /v1/solicitacao` - Cria nova solicitação
 - `GET /v1/solicitacao/{id}` - Acompanha uma solicitação
 
@@ -89,7 +90,19 @@ Content-Type: application/json
 }
 ```
 
-### 2. Criar uma solicitação de benefício
+### 2. Verificar disponibilidade de benefícios
+
+```http
+POST /v1/beneficio/verificar-disponibilidade
+Authorization: Bearer seu-token
+Content-Type: application/json
+
+{
+  "cidadaoId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+### 3. Criar uma solicitação de benefício
 
 ```http
 POST /v1/solicitacao
@@ -144,6 +157,7 @@ Todas as respostas de erro seguem o formato:
 - [Estratégia de Versionamento](./estrategia-versionamento.md)
 - [Autenticação e Erros](./autenticacao-erros.md)
 - [Fluxos de Trabalho Comuns](./fluxos-trabalho.md)
+- [Verificação de Disponibilidade de Benefícios](../api/beneficio-verificar-disponibilidade.md)
 - [Changelog](./CHANGELOG.md)
 
 ## 🤝 Suporte

@@ -5,18 +5,25 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not } from 'typeorm';
+import { Repository, Not, In } from 'typeorm';
 import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
 import { RequisitoDocumento } from '../../../entities/requisito-documento.entity';
 import { FluxoBeneficio } from '../../../entities/fluxo-beneficio.entity';
+import { Solicitacao } from '../../../entities/solicitacao.entity';
+import { Concessao } from '../../../entities/concessao.entity';
+import { Cidadao } from '../../../entities/cidadao.entity';
 import { CreateTipoBeneficioDto } from '../dto/create-tipo-beneficio.dto';
 import { UpdateTipoBeneficioDto } from '../dto/update-tipo-beneficio.dto';
 import { CreateRequisitoDocumentoDto } from '../dto/create-requisito-documento.dto';
 import { UpdateRequisitoDocumentoDto } from '../dto/update-requisito-documento.dto';
-import { Status, TipoDocumentoEnum } from '@/enums';
+import { Status, TipoDocumentoEnum, StatusSolicitacao, StatusConcessao } from '@/enums';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 import { TipoBeneficioSchema } from '../../../entities/tipo-beneficio-schema.entity';
 import { BeneficioFiltrosAvancadosDto, BeneficioFiltrosResponseDto } from '../dto/beneficio-filtros-avancados.dto';
+import { 
+  VerificarDisponibilidadeBeneficioResponseDto,
+  DisponibilidadeBeneficioDto 
+} from '../dtos/verificar-disponibilidade-beneficio.dto';
 import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
 
 /**
@@ -39,6 +46,15 @@ export class BeneficioService {
 
     @InjectRepository(TipoBeneficioSchema)
     private tipoBeneficioSchemaRepository: Repository<TipoBeneficioSchema>,
+
+    @InjectRepository(Solicitacao)
+    private solicitacaoRepository: Repository<Solicitacao>,
+
+    @InjectRepository(Concessao)
+    private concessaoRepository: Repository<Concessao>,
+
+    @InjectRepository(Cidadao)
+    private cidadaoRepository: Repository<Cidadao>,
 
     private filtrosAvancadosService: FiltrosAvancadosService,
   ) {}
@@ -525,6 +541,151 @@ export class BeneficioService {
         hasPrev,
       },
       tempo_execucao: 0, // Será preenchido no controlador
+    };
+  }
+
+  /**
+   * Verifica a disponibilidade de todos os benefícios para um cidadão específico
+   * @param cidadaoId ID do cidadão
+   * @returns Lista de benefícios com informações de disponibilidade
+   */
+  async verificarDisponibilidade(
+    cidadaoId: string,
+  ): Promise<VerificarDisponibilidadeBeneficioResponseDto> {
+    // Verificar se o cidadão existe
+    const cidadao = await this.cidadaoRepository.findOne({
+      where: { id: cidadaoId },
+    });
+
+    if (!cidadao) {
+      throw new NotFoundException('Cidadão não encontrado');
+    }
+
+    // Buscar todos os benefícios ativos
+    const beneficios = await this.tipoBeneficioRepository.find({
+      where: { status: Status.ATIVO }
+    });
+
+    // Buscar solicitações em andamento do cidadão
+    const solicitacoesEmAndamento = await this.solicitacaoRepository.find({
+      where: {
+        beneficiario_id: cidadaoId,
+        status: In([
+          StatusSolicitacao.RASCUNHO,
+          StatusSolicitacao.ABERTA,
+          StatusSolicitacao.EM_ANALISE,
+          StatusSolicitacao.PENDENTE,
+        ]),
+      },
+      relations: ['tipo_beneficio'],
+    });
+
+    // Buscar concessões em andamento do cidadão
+    const concessoesEmAndamento = await this.concessaoRepository.find({
+      where: {
+        solicitacao: {
+          beneficiario_id: cidadaoId,
+        },
+        status: In([
+          StatusConcessao.APTO,
+          StatusConcessao.ATIVO,
+          StatusConcessao.SUSPENSO,
+          StatusConcessao.BLOQUEADO,
+        ]),
+      },
+      relations: ['solicitacao', 'solicitacao.tipo_beneficio'],
+    });
+
+    // Buscar última solicitação de cada benefício
+    const ultimasSolicitacoes = await this.solicitacaoRepository
+      .createQueryBuilder('solicitacao')
+      .select([
+        'solicitacao.tipo_beneficio_id',
+        'MAX(solicitacao.updated_at) as ultimaData',
+      ])
+      .where('solicitacao.beneficiario_id = :cidadaoId', { cidadaoId })
+      .groupBy('solicitacao.tipo_beneficio_id')
+      .getRawMany();
+
+    // Mapear benefícios com informações de disponibilidade
+    const beneficiosComDisponibilidade: DisponibilidadeBeneficioDto[] = beneficios.map(
+      (beneficio) => {
+        // Verificar se há solicitação em andamento para este benefício
+        const temSolicitacaoEmAndamento = solicitacoesEmAndamento.some(
+          (solicitacao) => solicitacao.tipo_beneficio.id === beneficio.id,
+        );
+
+        // Verificar se há concessão em andamento para este benefício
+        const temConcessaoEmAndamento = concessoesEmAndamento.some(
+          (concessao) => concessao.solicitacao.tipo_beneficio.id === beneficio.id,
+        );
+
+        // Determinar disponibilidade
+        const disponivel = !temSolicitacaoEmAndamento && !temConcessaoEmAndamento;
+
+        // Buscar data da última solicitação
+        const ultimaSolicitacao = ultimasSolicitacoes.find(
+          (us) => us.tipo_beneficio_id === beneficio.id,
+        );
+
+        // Buscar status da última solicitação
+        const ultimaSolicitacaoObj = solicitacoesEmAndamento.find(
+          (sol) => sol.tipo_beneficio.id === beneficio.id,
+        );
+
+        // Buscar status da última concessão
+        const ultimaConcessaoObj = concessoesEmAndamento.find(
+          (con) => con.solicitacao.tipo_beneficio.id === beneficio.id,
+        );
+
+        return {
+          id: beneficio.id,
+          codigo: beneficio.codigo,
+          nome: beneficio.nome,
+          descricao: beneficio.descricao,
+          valor: beneficio.valor,
+          categoria: beneficio.categoria,
+          categoriaLabel: beneficio.getCategoriaLabel(),
+          categoriaDescricao: beneficio.getCategoriaDescricao(),
+          disponivel,
+          dataUltimaSolicitacao: ultimaSolicitacao?.ultimaData || null,
+          motivoIndisponibilidade: disponivel ? null : 
+            (temSolicitacaoEmAndamento ? 'Existe uma solicitação em andamento' : 
+             temConcessaoEmAndamento ? 'Existe uma concessão em andamento' : null),
+          statusUltimaSolicitacao: ultimaSolicitacaoObj?.status || null,
+          statusUltimaConcessao: ultimaConcessaoObj?.status || null,
+        };
+      },
+    );
+
+    // Calcular estatísticas
+    const totalBeneficios = beneficiosComDisponibilidade.length;
+    const beneficiosDisponiveis = beneficiosComDisponibilidade.filter(b => b.disponivel).length;
+    const beneficiosIndisponiveis = totalBeneficios - beneficiosDisponiveis;
+
+    // Calcular resumo por categoria
+    const resumoPorCategoria = beneficiosComDisponibilidade.reduce((acc, beneficio) => {
+      const categoria = beneficio.categoria;
+      if (!acc[categoria]) {
+        acc[categoria] = { total: 0, disponiveis: 0, indisponiveis: 0 };
+      }
+      acc[categoria].total++;
+      if (beneficio.disponivel) {
+        acc[categoria].disponiveis++;
+      } else {
+        acc[categoria].indisponiveis++;
+      }
+      return acc;
+    }, {} as Record<string, { total: number; disponiveis: number; indisponiveis: number }>);
+
+    return {
+      cidadaoId,
+      dataConsulta: new Date(),
+      totalBeneficios,
+      beneficiosDisponiveis,
+      beneficiosIndisponiveis,
+      beneficios: beneficiosComDisponibilidade,
+      resumoPorCategoria,
     };
   }
 }

@@ -20,6 +20,15 @@ export { PublicoPrioritarioAluguel } from './publico-prioritario-aluguel.enum';
 export { EspecificacaoAluguel } from './especificacao-aluguel.enum';
 export { OrigemAtendimentoEnum } from './origem-atendimento.enum';
 export { PeriodicidadeEnum } from './periodicidade.enum';
+export { StatusConcessao } from './status-concessao.enum'
+export {
+  CategoriaBeneficio,
+  CATEGORIA_BENEFICIO_LABELS,
+  CATEGORIA_BENEFICIO_DESCRICOES,
+  getCategoriaLabel,
+  getCategoriaDescricao,
+  isCategoriaValida
+} from './categoria-beneficio.enum';
 
 // Enums de pagamento
 export { MetodoPagamentoEnum } from './metodo-pagamento.enum';
@@ -54,25 +63,25 @@ export { TipoDocumentoEnum } from './tipo-documento.enum';
 export { TipoContextoNatalidade } from './tipo-contexto-natalidade.enum';
 
 // Enums de filtros avançados
-export { 
-  PeriodoPredefinido, 
-  PERIODO_PREDEFINIDO_LABELS, 
-  getPeriodoLabel, 
-  isPeriodoPersonalizado, 
-  PERIODOS_RECENTES, 
-  PERIODOS_HISTORICOS 
+export {
+  PeriodoPredefinido,
+  PERIODO_PREDEFINIDO_LABELS,
+  getPeriodoLabel,
+  isPeriodoPersonalizado,
+  PERIODOS_RECENTES,
+  PERIODOS_HISTORICOS
 } from './periodo-predefinido.enum';
-export { 
-  Prioridade, 
-  PRIORIDADE_LABELS, 
-  PRIORIDADE_VALORES, 
-  PRIORIDADE_CORES, 
-  getPrioridadeLabel, 
-  getPrioridadeValor, 
-  getPrioridadeCor,  
-  PRIORIDADES_ORDENADAS, 
-  PRIORIDADES_URGENTES, 
-  PRIORIDADES_NORMAIS 
+export {
+  Prioridade,
+  PRIORIDADE_LABELS,
+  PRIORIDADE_VALORES,
+  PRIORIDADE_CORES,
+  getPrioridadeLabel,
+  getPrioridadeValor,
+  getPrioridadeCor,
+  PRIORIDADES_ORDENADAS,
+  PRIORIDADES_URGENTES,
+  PRIORIDADES_NORMAIS
 } from './prioridade.enum';
 
 // Enums de monitoramento e visitas domiciliares

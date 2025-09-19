@@ -25,6 +25,10 @@ import { UpdateTipoBeneficioDto } from '../dto/update-tipo-beneficio.dto';
 import { CreateRequisitoDocumentoDto } from '../dto/create-requisito-documento.dto';
 import { UpdateRequisitoDocumentoDto } from '../dto/update-requisito-documento.dto';
 import { BeneficioFiltrosAvancadosDto, BeneficioFiltrosResponseDto } from '../dto/beneficio-filtros-avancados.dto';
+import { 
+  VerificarDisponibilidadeBeneficioDto, 
+  VerificarDisponibilidadeBeneficioResponseDto 
+} from '../dtos/verificar-disponibilidade-beneficio.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
@@ -240,6 +244,83 @@ export class BeneficioController {
     resultado.tempo_execucao = endTime - startTime;
 
     return resultado;
+  }
+
+  /**
+   * Verifica a disponibilidade de benefícios para um cidadão
+   */
+  @Post('verificar-disponibilidade')
+  @QueryOptimization({
+    enableCaching: true,
+    cacheTTL: 300,
+  })
+  @ApiOperation({
+    summary: 'Verificar disponibilidade de benefícios',
+    description:
+      'Verifica quais benefícios estão disponíveis para solicitação por um cidadão específico, baseado nas regras de negócio de solicitações e concessões em andamento.',
+  })
+  @ApiBody({
+    type: VerificarDisponibilidadeBeneficioDto,
+    description: 'Dados para verificação de disponibilidade',
+    examples: {
+      'Verificação Básica': {
+        summary: 'Verificar disponibilidade para um cidadão',
+        value: {
+          cidadaoId: '123e4567-e89b-12d3-a456-426614174000',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Verificação realizada com sucesso',
+    type: VerificarDisponibilidadeBeneficioResponseDto,
+    content: {
+      'application/json': {
+        example: {
+          cidadaoId: '123e4567-e89b-12d3-a456-426614174000',
+          beneficios: [
+            {
+              id: '456e7890-e89b-12d3-a456-426614174001',
+              nome: 'Benefício Natalidade',
+              disponivel: true,
+              dataUltimaSolicitacao: null,
+            },
+            {
+              id: '789e0123-e89b-12d3-a456-426614174002',
+              nome: 'Benefício Natalidade',
+              disponivel: false,
+              dataUltimaSolicitacao: '2024-01-15T10:30:00.000Z',
+            },
+          ],
+          totalBeneficios: 2,
+          beneficiosDisponiveis: 1,
+          beneficiosIndisponiveis: 1,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Cidadão não encontrado',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso negado',
+  })
+  async verificarDisponibilidade(
+    @Body() verificarDisponibilidadeDto: VerificarDisponibilidadeBeneficioDto,
+    @GetUser() usuario: Usuario,
+    @ReqContext() context: any,
+  ): Promise<VerificarDisponibilidadeBeneficioResponseDto> {
+
+    return await this.beneficioService.verificarDisponibilidade(
+      verificarDisponibilidadeDto.cidadaoId,
+    );
   }
 
   /**

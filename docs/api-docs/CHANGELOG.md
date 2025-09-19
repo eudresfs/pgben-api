@@ -8,6 +8,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/spec/v2.0.
 ## [Não Publicado]
 
 ### Adicionado
+- Novo endpoint `POST /v1/beneficio/verificar-disponibilidade` para verificar disponibilidade de benefícios para um cidadão
+- Enum `CategoriaBeneficio` para categorização de benefícios
+- Coluna `categoria` na entidade `TipoBeneficio`
+- DTOs para verificação de disponibilidade (`VerificarDisponibilidadeBeneficioDto`, `VerificarDisponibilidadeBeneficioResponseDto`, `DisponibilidadeBeneficioDto`)
+- Documentação completa do novo endpoint
+- Migration para adicionar coluna categoria na tabela tipo_beneficio
 - Documentação inicial da API
 - Estratégia de versionamento
 - Guia de autenticação e erros
