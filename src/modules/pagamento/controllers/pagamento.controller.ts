@@ -27,6 +27,7 @@ import { Usuario } from '../../../entities';
 import { PagamentoService } from '../services/pagamento.service';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
+import { LiberarPagamentoDto } from '../dtos/liberar-pagamento.dto';
 import { PagamentoPendenteMonitoramentoDto } from '../dtos/pagamento-pendente-monitoramento.dto';
 import { FiltrosMonitoramentoPendenteDto } from '../dtos/filtros-monitoramento-pendente.dto';
 import { PagamentoFiltrosAvancadosDto, PagamentoFiltrosResponseDto } from '../dto/pagamento-filtros-avancados.dto';
@@ -487,6 +488,27 @@ export class PagamentoController {
         pages: Math.ceil(resultado.total / (filtros.limit || 10))
       }
     };
+  }
+
+  /**
+   * Libera um pagamento individual
+   */
+  @Patch(':id/liberar')
+  @AuditoriaPagamento.Liberacao('Liberação individual de pagamento')
+  @RequiresPermission({
+    permissionName: 'pagamento.liberar'
+  })
+  @ApiOperation({ summary: 'Libera um pagamento individual' })
+  @ApiParam({ name: 'id', type: 'string', description: 'ID do pagamento' })
+  @ApiResponse({ status: 200, description: 'Pagamento liberado com sucesso' })
+  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
+  async liberarPagamento(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dadosLiberacao: LiberarPagamentoDto,
+    @GetUser() usuario: Usuario,
+  ) {
+    return await this.pagamentoService.liberarPagamento(id, dadosLiberacao, usuario.id);
   }
 
   /**

@@ -5,6 +5,7 @@ import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { CancelarPagamentoDto } from '../dtos/cancelar-pagamento.dto';
 import { ConfirmacaoRecebimentoDto } from '../dtos/confirmacao-recebimento.dto';
 import { PagamentoService } from './pagamento.service';
+import { PagamentoWorkflowService } from './pagamento-workflow.service';
 import { ComprovanteService } from './comprovante.service';
 import { PagamentoEventosService } from './pagamento-eventos.service';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
@@ -21,6 +22,7 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
 
   constructor(
     private readonly pagamentoService: PagamentoService,
+    private readonly pagamentoWorkflowService: PagamentoWorkflowService,
     private readonly comprovanteService: ComprovanteService,
     private readonly pagamentoEventosService: PagamentoEventosService,
     private readonly auditEventEmitter: AuditEventEmitter,
@@ -116,12 +118,10 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
     }
 
     try {
-      const pagamentoAtualizado = await this.pagamentoService.updateStatus(
+      // Usar o workflow service para liberação que inclui todas as validações e lógica de negócio
+      const pagamentoAtualizado = await this.pagamentoWorkflowService.liberarPagamento(
         pagamentoId,
-        {
-          status: StatusPagamentoEnum.LIBERADO,
-          observacoes: 'Pagamento liberado via processamento em lote.',
-        },
+        data || {}, // Usar os dados fornecidos ou objeto vazio como fallback
         userId,
       );
 

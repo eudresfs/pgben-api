@@ -52,6 +52,7 @@ export class LiberarPagamentoHandler {
       // Processamento síncrono
       const pagamento = await this.pagamentoWorkflowService.liberarPagamento(
         pagamentoId,
+        dadosLiberacao,
         usuarioId,
       );
 

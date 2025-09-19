@@ -14,6 +14,7 @@ import { StatusConcessao } from '../../../enums/status-concessao.enum';
 import { TipoDocumentoEnum } from '../../../enums/tipo-documento.enum';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
+import { LiberarPagamentoDto } from '../dtos/liberar-pagamento.dto';
 import { PagamentoValidationService } from './pagamento-validation.service';
 import { PagamentoUnifiedMapper } from '../mappers';
 import { DocumentoService } from '../../documento/services/documento.service';
@@ -463,6 +464,7 @@ export class PagamentoWorkflowService {
    */
   async liberarPagamento(
     pagamentoId: string,
+    dadosLiberacao: LiberarPagamentoDto,
     usuarioId: string,
   ): Promise<Pagamento> {
     this.logger.log(`Liberando pagamento ${pagamentoId}`);
@@ -477,15 +479,23 @@ export class PagamentoWorkflowService {
       );
     }
 
+    // Preparar dados de atualização
+    const dadosAtualizacao: any = {
+      status: StatusPagamentoEnum.LIBERADO,
+      data_liberacao: dadosLiberacao?.data_liberacao || new Date(),
+      liberado_por: usuarioId,
+      observacoes: dadosLiberacao?.observacoes || 'Liberado pelo sistema',
+    };
+
+    // Adicionar motivo se fornecido
+    if (dadosLiberacao?.motivo) {
+      dadosAtualizacao.motivo_liberacao = dadosLiberacao.motivo;
+    }
+
     // Liberar o pagamento
     const pagamentoLiberado = await this.pagamentoRepository.update(
       pagamentoId,
-      {
-        status: StatusPagamentoEnum.LIBERADO,
-        data_liberacao: new Date(),
-        liberado_por: usuarioId,
-        observacoes: 'Liberado pelo sistema',
-      },
+      dadosAtualizacao,
     );
 
     this.logger.log(`Pagamento ${pagamentoId} liberado com sucesso`);
@@ -509,18 +519,18 @@ export class PagamentoWorkflowService {
    * Libera pagamentos em lote
    */
   async liberarPagamentosLote(
-    pagamentoIds: string[],
+    liberacoes: { pagamentoId: string; dados: LiberarPagamentoDto }[],
     usuarioId: string,
   ): Promise<LiberacaoLoteResult> {
     const resultado: LiberacaoLoteResult = {
       liberados: [],
       falhas: [],
-      total: pagamentoIds.length,
+      total: liberacoes.length,
     };
 
-    for (const pagamentoId of pagamentoIds) {
+    for (const { pagamentoId, dados } of liberacoes) {
       try {
-        await this.liberarPagamento(pagamentoId, usuarioId);
+        await this.liberarPagamento(pagamentoId, dados, usuarioId);
         resultado.liberados.push(pagamentoId);
       } catch (error) {
         resultado.falhas.push({
@@ -564,7 +574,12 @@ export class PagamentoWorkflowService {
         );
 
         if (elegibilidade.pode_liberar) {
-          await this.liberarPagamento(pagamento.id, usuarioSistema);
+          // Para liberação automática, usar a data atual como data de liberação
+          const dadosLiberacaoAutomatica: LiberarPagamentoDto = {
+            data_liberacao: new Date(),
+            observacoes: 'Liberação automática do sistema',
+          };
+          await this.liberarPagamento(pagamento.id, dadosLiberacaoAutomatica, usuarioSistema);
           resultado.liberados.push(pagamento.id);
         } else {
           resultado.falhas.push({

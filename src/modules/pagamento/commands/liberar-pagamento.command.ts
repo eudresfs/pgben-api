@@ -1,4 +1,4 @@
-import { CancelarPagamentoDto } from '../dtos/cancelar-pagamento.dto';
+import { LiberarPagamentoDto } from '../dtos/liberar-pagamento.dto';
 
 /**
  * Command para liberação de pagamento
@@ -6,7 +6,7 @@ import { CancelarPagamentoDto } from '../dtos/cancelar-pagamento.dto';
 export class LiberarPagamentoCommand {
   constructor(
     public readonly pagamentoId: string,
-    public readonly dadosLiberacao: CancelarPagamentoDto,
+    public readonly dadosLiberacao: LiberarPagamentoDto,
     public readonly usuarioId: string,
     public readonly async: boolean = false,
   ) {}

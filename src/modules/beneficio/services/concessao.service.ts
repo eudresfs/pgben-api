@@ -30,6 +30,7 @@ import { BeneficioEventosService } from './beneficio-eventos.service';
 import { ScopedRepository } from '../../../common/repositories/scoped-repository';
 import { RequestContextHolder } from '../../../common/services/request-context-holder.service';
 import { DadosBeneficioFactoryService } from './dados-beneficio-factory.service';
+import { processAdvancedSearchParam } from '../../../shared/utils/cpf-search.util';
 
 @Injectable()
 export class ConcessaoService {
@@ -1502,23 +1503,24 @@ export class ConcessaoService {
 
         // Aplicar filtros de busca textual
         if (filtros.search) {
-          const cpfTerm = `%${filtros.search.replace(/\D/g, '')}%`;
+          const searchParams = processAdvancedSearchParam(filtros.search);
+          
           queryBuilder.andWhere(
             new Brackets((qb) => {
               qb.where('LOWER(beneficiario.nome) LIKE LOWER(:search)', {
-                search: `%${filtros.search}%`,
+                search: `%${searchParams.processedSearch}%`,
               })
-                .orWhere('beneficiario.cpf = :searchExact', {
-                  searchExact: `%${cpfTerm}%`,
+                .orWhere('beneficiario.cpf ILIKE ANY(:cpfVariations)', {
+                  cpfVariations: searchParams.variations.map(cpf => `%${cpf}%`),
                 })
                 .orWhere('LOWER(solicitacao.protocolo) LIKE LOWER(:search)', {
-                  search: `%${filtros.search}%`,
+                  search: `%${searchParams.processedSearch}%`,
                 })
                 .orWhere('LOWER(tipo_beneficio.nome) LIKE LOWER(:search)', {
-                  search: `%${filtros.search}%`,
+                  search: `%${searchParams.processedSearch}%`,
                 })
                 .orWhere('LOWER(tipo_beneficio.codigo) LIKE LOWER(:search)', {
-                  search: `%${filtros.search}%`,
+                  search: `%${searchParams.processedSearch}%`,
                 });
             }),
           );

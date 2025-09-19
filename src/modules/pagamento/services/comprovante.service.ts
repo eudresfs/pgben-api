@@ -22,6 +22,7 @@ import { ComprovantePdfAdapter } from '../adapters/comprovante-pdf.adapter';
 import { ComprovanteDadosMapper } from '../mappers/comprovante-dados.mapper';
 import { PDFDocument } from 'pdf-lib';
 import { TipoComprovante } from '../dtos/gerar-comprovante.dto';
+import { sanitizeFilename, generateUniqueFilename } from '../../../shared/utils/filename-sanitizer.util';
 
 /**
  * Service simplificado para gerenciamento de comprovantes
@@ -79,7 +80,8 @@ export class ComprovanteService {
 
     // Fazer upload do arquivo
     const storageProvider = this.storageProviderFactory.getProvider();
-    const caminhoArquivo = `comprovantes/${pagamentoId}/${Date.now()}-${arquivo.originalname}`;
+    const nomeArquivoSanitizado = generateUniqueFilename(arquivo.originalname);
+    const caminhoArquivo = `comprovantes/${pagamentoId}/${nomeArquivoSanitizado}`;
 
     await storageProvider.salvarArquivo(
       arquivo.buffer,
@@ -99,7 +101,7 @@ export class ComprovanteService {
     documento.cidadao_id = cidadaoId;
     documento.tipo = TipoDocumentoEnum.COMPROVANTE_PAGAMENTO;
     documento.nome_original = arquivo.originalname;
-    documento.nome_arquivo = arquivo.originalname;
+    documento.nome_arquivo = nomeArquivoSanitizado;
     documento.caminho = caminhoArquivo;
     documento.tamanho = arquivo.size;
     documento.mimetype = arquivo.mimetype;
@@ -581,7 +583,8 @@ export class ComprovanteService {
    */
   private gerarNomeArquivo(dadosComprovante: any): string {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const nomeBeneficiario = dadosComprovante.beneficiario?.nome?.replace(/\s+/g, '_') || 'beneficiario';
+    const nomeBeneficiarioOriginal = dadosComprovante.beneficiario?.nome || 'beneficiario';
+    const nomeBeneficiario = sanitizeFilename(nomeBeneficiarioOriginal).replace(/\./g, '');
     const tipo = dadosComprovante.locador ? 'aluguel_social' : 'cesta_basica';
     
     return `comprovante_${tipo}_${nomeBeneficiario}_${timestamp}.pdf`;

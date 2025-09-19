@@ -26,6 +26,7 @@ import { PagamentoPerformanceInterceptor } from '../interceptors/pagamento-perfo
 import { PagamentoBatchService } from '../services/pagamento-batch.service';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { CancelarPagamentoDto } from '../dtos/cancelar-pagamento.dto';
+import { LiberarPagamentoDto } from '../dtos/liberar-pagamento.dto';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { UserRole } from '../../../enums';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
@@ -159,7 +160,7 @@ export class PagamentoBatchController {
             description: 'ID do pagamento a ser liberado',
           },
           dados: {
-            $ref: '#/components/schemas/CancelarPagamentoDto',
+            $ref: '#/components/schemas/LiberarPagamentoDto',
           },
         },
         required: ['pagamentoId', 'dados'],
@@ -183,7 +184,7 @@ export class PagamentoBatchController {
     description: 'Liberações processadas com sucesso',
   })
   async liberarPagamentosInBatch(
-    @Body() liberacoes: { pagamentoId: string; dados: CancelarPagamentoDto }[],
+    @Body() liberacoes: { pagamentoId: string; dados: LiberarPagamentoDto }[],
     @GetUser('id') userId: string,
     @Query('batchSize') batchSize?: number,
     @Query('maxConcurrency') maxConcurrency?: number,

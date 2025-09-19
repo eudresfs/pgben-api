@@ -34,6 +34,8 @@ import { FiltrosAvancadosService } from '../../../common/services/filtros-avanca
 import { PeriodoPredefinido } from '../../../enums/periodo-predefinido.enum';
 import { SelectQueryBuilder } from 'typeorm';
 import { PagamentoEventosService } from './pagamento-eventos.service';
+import { PagamentoWorkflowService } from './pagamento-workflow.service';
+import { processAdvancedSearchParam } from '../../../shared/utils/cpf-search.util';
 
 /**
  * Service simplificado para gerenciamento de pagamentos
@@ -56,6 +58,7 @@ export class PagamentoService {
     private readonly pagamentoCalculatorService: PagamentoCalculatorService,
     private readonly filtrosAvancadosService: FiltrosAvancadosService,
     private readonly pagamentoEventosService: PagamentoEventosService,
+    private readonly pagamentoWorkflowService: PagamentoWorkflowService,
   ) { }
 
   /**
@@ -442,9 +445,14 @@ export class PagamentoService {
 
       // Filtro de busca textual
       if (filtros.search) {
+        const searchParams = processAdvancedSearchParam(filtros.search);
+        
         queryBuilder.andWhere(
-          '(cidadao.nome ILIKE :search OR cidadao.cpf ILIKE :search OR pagamento.observacoes ILIKE :search)',
-          { search: `%${filtros.search}%` },
+          '(cidadao.nome ILIKE :search OR cidadao.cpf ILIKE ANY(:cpfVariations) OR pagamento.observacoes ILIKE :search)',
+          { 
+            search: `%${searchParams.processedSearch}%`,
+            cpfVariations: searchParams.variations.map(cpf => `%${cpf}%`)
+          },
         );
       }
 
@@ -509,6 +517,24 @@ export class PagamentoService {
         } else {
           queryBuilder.andWhere('pagamento.comprovante_id IS NULL');
         }
+      }
+
+      // Filtro para retornar apenas uma parcela pendente por concessão
+      if (filtros.apenas_uma_parcela_pendente) {
+        // Subquery para encontrar a menor parcela pendente por concessão
+        const subQuery = this.pagamentoRepository
+          .createScopedQueryBuilder('p_sub')
+          .select('MIN(p_sub.numero_parcela)', 'min_parcela')
+          .addSelect('p_sub.concessao_id', 'concessao_id')
+          .where('p_sub.status = :statusPendente', { statusPendente: StatusPagamentoEnum.PENDENTE })
+          .groupBy('p_sub.concessao_id');
+
+        // Aplicar o filtro principal usando a subquery
+        queryBuilder.andWhere(`(pagamento.concessao_id, pagamento.numero_parcela) IN (${subQuery.getQuery()})`)
+             .andWhere('pagamento.status = :statusPendentePrincipal', { statusPendentePrincipal: StatusPagamentoEnum.PENDENTE });
+        
+        // Adicionar os parâmetros da subquery
+        queryBuilder.setParameters(subQuery.getParameters());
       }
 
       // Incluir relacionamentos opcionais
@@ -911,5 +937,29 @@ export class PagamentoService {
     }
     // Se é período personalizado, as datas específicas serão aplicadas posteriormente
     // no método principal (data_liberacao_inicio, data_liberacao_fim, etc.)
+  }
+
+  /**
+   * Libera um pagamento individual
+   * Delega para o PagamentoWorkflowService que contém toda a lógica de liberação
+   * 
+   * @param id ID do pagamento
+   * @param dadosLiberacao Dados de liberação incluindo data_liberacao obrigatória
+   * @param usuarioId ID do usuário que está liberando
+   * @returns Pagamento liberado
+   */
+  async liberarPagamento(
+    id: string,
+    dadosLiberacao: any,
+    usuarioId: string,
+  ): Promise<any> {
+    this.logger.log(`Liberando pagamento ${id} por usuário ${usuarioId}`);
+    
+    // Delega para o PagamentoWorkflowService que contém toda a lógica de liberação
+    return this.pagamentoWorkflowService.liberarPagamento(
+      id,
+      dadosLiberacao,
+      usuarioId,
+    );
   }
 }

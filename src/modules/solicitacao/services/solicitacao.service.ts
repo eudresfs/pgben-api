@@ -66,6 +66,7 @@ import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.e
 import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
 import { EventosService } from './eventos.service';
 import { v4 as uuidv4 } from 'uuid';
+import { processAdvancedSearchParam } from '../../../shared/utils/cpf-search.util';
 
 export interface FindAllOptions {
   search?: string;
@@ -401,22 +402,24 @@ export class SolicitacaoService {
 
     // Aplicar filtros de busca textual
     if (filtros.search) {
+      const searchParams = processAdvancedSearchParam(filtros.search);
+      
       queryBuilder.andWhere(
         new Brackets((qb) => {
           qb.where('LOWER(beneficiario.nome) LIKE LOWER(:search)', {
-            search: `%${filtros.search}%`,
+            search: `%${searchParams.processedSearch}%`,
           })
-            .orWhere('beneficiario.cpf LIKE :searchExact', {
-              searchExact: `%${filtros.search}%`,
+            .orWhere('beneficiario.cpf ILIKE ANY(:cpfVariations)', {
+              cpfVariations: searchParams.variations.map(cpf => `%${cpf}%`),
             })
             .orWhere('LOWER(solicitacao.protocolo) LIKE LOWER(:search)', {
-              search: `%${filtros.search}%`,
+              search: `%${searchParams.processedSearch}%`,
             })
             .orWhere('LOWER(tipo_beneficio.nome) LIKE LOWER(:search)', {
-              search: `%${filtros.search}%`,
+              search: `%${searchParams.processedSearch}%`,
             })
             .orWhere('LOWER(tipo_beneficio.codigo) LIKE LOWER(:search)', {
-              search: `%${filtros.search}%`,
+              search: `%${searchParams.processedSearch}%`,
             });
         }),
       );

@@ -7,6 +7,7 @@ import { PagamentoQueueService } from './pagamento-queue.service';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { CancelarPagamentoDto } from '../dtos/cancelar-pagamento.dto';
+import { LiberarPagamentoDto } from '../dtos/liberar-pagamento.dto';
 
 interface BatchResult<T> {
   success: T[];
@@ -131,7 +132,7 @@ export class PagamentoBatchService {
    * Libera múltiplos pagamentos em lote
    */
   async liberarPagamentosInBatch(
-    liberacoes: { pagamentoId: string; dados: CancelarPagamentoDto }[],
+    liberacoes: { pagamentoId: string; dados: LiberarPagamentoDto }[],
     userId: string,
     options: BatchProcessOptions = {},
   ): Promise<BatchResult<Pagamento>> {
@@ -371,7 +372,7 @@ export class PagamentoBatchService {
    * Processa um lote de liberação de pagamentos
    */
   private async processLiberacaoBatch(
-    batch: { pagamentoId: string; dados: CancelarPagamentoDto }[],
+    batch: { pagamentoId: string; dados: LiberarPagamentoDto }[],
     userId: string,
   ): Promise<BatchResult<Pagamento>> {
     const result: BatchResult<Pagamento> = {
