@@ -5,12 +5,14 @@ import {
   CallHandler,
   BadRequestException,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { Request } from 'express';
 import { LoggingService } from '../../../shared/logging/logging.service';
 import { validate as isUUID } from 'uuid';
 import { plainToClass } from 'class-transformer';
 import { validate } from 'class-validator';
+import { SKIP_INPUT_VALIDATION_KEY } from '../../../shared/decorators/skip-input-validation.decorator';
 
 /**
  * Interceptor para validação e sanitização de entrada em endpoints de documentos
@@ -50,9 +52,22 @@ export class InputValidationInterceptor implements NestInterceptor {
     general: 500,
   };
 
-  constructor(private readonly logger: LoggingService) {}
+  constructor(
+    private readonly logger: LoggingService,
+    private readonly reflector: Reflector,
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    // Verificar se o endpoint deve pular a validação de entrada
+    const skipValidation = this.reflector.getAllAndOverride<boolean>(
+      SKIP_INPUT_VALIDATION_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+
+    if (skipValidation) {
+      return next.handle();
+    }
+
     const request = context.switchToHttp().getRequest<Request>();
     const user = (request as any).user;
 

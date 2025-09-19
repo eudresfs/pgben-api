@@ -528,10 +528,15 @@ export class PagamentoService {
 
       // Aplicar paginação
       const page = filtros.page || 1;
-      const limit = Math.min(filtros.limit || 20, 100);
-      const offset = (page - 1) * limit;
+      const limit = Math.min(filtros.limit || 0, 100); // se não vier nada ou vier 0 → não limita
+      const offset = (page - 1) * (limit || 1); // evita offset negativo ou NaN
 
-      queryBuilder.skip(offset).take(limit);
+      queryBuilder.skip(offset);
+
+      if (limit > 0) {
+        queryBuilder.take(limit);
+      }
+
 
       // Executar query
       const [items, total] = await queryBuilder.getManyAndCount();
@@ -688,14 +693,14 @@ export class PagamentoService {
     // Validar valor do benefício
     // Para alguns benefícios (como cesta básica), o valor pode vir da estratégia, não da solicitação
     const valorSolicitacao = solicitacao.valor ? Number(solicitacao.valor) : null;
-    
+
     // Se há valor na solicitação, validar se é positivo
     if (valorSolicitacao !== null && (isNaN(valorSolicitacao) || valorSolicitacao < 0)) {
       throw new Error(
         `Valor do benefício inválido: ${solicitacao.valor}`,
       );
     }
-    
+
     // O valor final será determinado pela estratégia de cálculo
     const valor = valorSolicitacao;
 
@@ -882,16 +887,16 @@ export class PagamentoService {
     if (filtros.periodo && filtros.periodo !== PeriodoPredefinido.PERSONALIZADO) {
       try {
         const periodoCalculado = this.filtrosAvancadosService.calcularPeriodoPredefinido(filtros.periodo);
-        
+
         // Aplicar filtro de data de liberação baseado no período
         queryBuilder.andWhere('pagamento.data_liberacao >= :periodoInicio', {
           periodoInicio: periodoCalculado.dataInicio,
         });
-        
+
         queryBuilder.andWhere('pagamento.data_liberacao <= :periodoFim', {
           periodoFim: periodoCalculado.dataFim,
         });
-        
+
         this.logger.debug(
           `Aplicado filtro de período ${filtros.periodo}: ${periodoCalculado.dataInicio} a ${periodoCalculado.dataFim}`,
         );

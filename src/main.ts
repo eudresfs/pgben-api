@@ -132,7 +132,7 @@ async function bootstrap(): Promise<INestApplication> {
     app.useGlobalInterceptors(new ScopedQueryInterceptor(reflector));
 
     // Interceptor de resposta padronizada
-    app.useGlobalInterceptors(new ResponseInterceptor());
+    app.useGlobalInterceptors(new ResponseInterceptor(reflector));
 
     // Filtro de erros com logging estruturado
     app.useGlobalFilters(new ErrorLoggerFilter(loggingService));

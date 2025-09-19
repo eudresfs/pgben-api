@@ -4,8 +4,12 @@ import {
   ExecutionContext,
   CallHandler,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { PaginatedResponse } from '../configs/swagger/schemas/common';
+import { IApiResponse as ApiResponse } from '../../modules/easy-upload/interfaces/easy-upload.interface';
+import { SKIP_RESPONSE_INTERCEPTOR_KEY } from '../decorators/skip-response-interceptor.decorator';
 
 /**
  * Interceptor para padronizar as respostas da API
@@ -22,8 +26,25 @@ import { map } from 'rxjs/operators';
  * }
  */
 @Injectable()
-export class ResponseInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+export class ResponseInterceptor<T>
+  implements NestInterceptor<T, ApiResponse<T>>
+{
+  constructor(private reflector: Reflector) {}
+
+  intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Observable<ApiResponse<T>> {
+    // Verifica se a rota deve pular o interceptor de resposta
+    const skipInterceptor = this.reflector.getAllAndOverride<boolean>(
+      SKIP_RESPONSE_INTERCEPTOR_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+
+    // Se deve pular, retorna a resposta original sem transformação
+    if (skipInterceptor) {
+      return next.handle();
+    }
     return next.handle().pipe(
       map((data) => {
         // Se for uma resposta paginada

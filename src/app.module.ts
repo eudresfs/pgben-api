@@ -34,6 +34,7 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { CatalogAwareExceptionFilter } from './shared/exceptions/error-catalog';
 import { LoggingModule } from './shared/logging/logging.module';
 import { ResilienceModule } from './shared/modules/resilience.module';
+import { WhatsAppFlowsModule } from './modules/whatsapp-flows/whatsapp-flows.module';
 import { EmailModule } from './shared/modules/email.module';
 import { ConfiguracaoModule } from './modules/configuracao/configuracao.module';
 import { NotificacaoModule } from './modules/notificacao/notificacao.module';
@@ -187,6 +188,9 @@ import { CommonModule } from './common/common.module';
     EasyUploadModule,
     // Módulo de feedback
     // FeedbackModule,
+
+    // Módulo de WhatsApp Flows
+    WhatsAppFlowsModule,
 
     // Módulo de relatórios
     RelatoriosModule,
