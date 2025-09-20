@@ -14,6 +14,7 @@ import { PagamentoUnifiedMapper } from '../mappers';
 import { ConfirmacaoMapper } from '../utils/confirmacao-mapper.util';
 import { PagamentoValidationUtil } from '../utils/pagamento-validation.util';
 import { DocumentoService } from '../../documento/services/documento.service';
+import { ConcessaoAutoUpdateService } from './concessao-auto-update.service';
 
 /**
  * Service simplificado para gerenciamento de confirmações de recebimento
@@ -27,6 +28,7 @@ export class ConfirmacaoService {
     private readonly confirmacaoRepository: ConfirmacaoRepository,
     private readonly pagamentoRepository: PagamentoRepository,
     private readonly documentoService: DocumentoService,
+    private readonly concessaoAutoUpdateService: ConcessaoAutoUpdateService,
   ) {}
 
   /**
@@ -97,6 +99,11 @@ export class ConfirmacaoService {
       this.logger.warn(
         `Erro ao verificar documento ${pagamento.comprovante_id} automaticamente: ${error.message}`,
       );
+    }
+
+    // Verificar se o pagamento é da última parcela e atualizar concessão se necessário
+    if (pagamento.concessao_id) {
+      await this.concessaoAutoUpdateService.verificarEAtualizarConcessao(pagamento);
     }
 
     this.logger.log(`Confirmação ${confirmacao.id} criada com sucesso`);

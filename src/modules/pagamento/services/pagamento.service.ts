@@ -35,6 +35,7 @@ import { PeriodoPredefinido } from '../../../enums/periodo-predefinido.enum';
 import { SelectQueryBuilder } from 'typeorm';
 import { PagamentoEventosService } from './pagamento-eventos.service';
 import { PagamentoWorkflowService } from './pagamento-workflow.service';
+import { ConcessaoAutoUpdateService } from './concessao-auto-update.service';
 import { processAdvancedSearchParam } from '../../../shared/utils/cpf-search.util';
 
 /**
@@ -59,6 +60,7 @@ export class PagamentoService {
     private readonly filtrosAvancadosService: FiltrosAvancadosService,
     private readonly pagamentoEventosService: PagamentoEventosService,
     private readonly pagamentoWorkflowService: PagamentoWorkflowService,
+    private readonly concessaoAutoUpdateService: ConcessaoAutoUpdateService,
   ) { }
 
   /**
@@ -236,26 +238,13 @@ export class PagamentoService {
       dadosAtualizacao,
     );
 
-    // Se o número da parcela for 1, atualizar status da concessão para ATIVO
-    if (pagamento.numero_parcela === 1 && pagamento.concessao_id) {
-      try {
-        await this.concessaoService.atualizarStatus(
-          pagamento.concessao_id,
-          StatusConcessao.ATIVO,
-          usuarioId,
-          `Ativação automática - Primeira parcela do pagamento ${id} atualizada para ${updateDto.status}`,
-        );
-
-        this.logger.log(
-          `Status da concessão ${pagamento.concessao_id} atualizado para ATIVO devido à atualização da primeira parcela`,
-        );
-      } catch (error) {
-        this.logger.warn(
-          `Erro ao atualizar status da concessão ${pagamento.concessao_id}: ${error.message}`,
-        );
-        // Não falha a operação principal se houver erro na atualização da concessão
-      }
-    }
+    // Atualizar status da concessão automaticamente se necessário
+    await this.concessaoAutoUpdateService.processarAtualizacaoConcessao(
+      pagamento,
+      updateDto.status,
+      usuarioId,
+      id,
+    );
 
     // Emitir evento de invalidação de cache para mudança de status
     this.cacheInvalidationService.emitCacheInvalidationEvent({
@@ -272,6 +261,15 @@ export class PagamentoService {
         isFirstInstallment: pagamento.numero_parcela === 1,
       },
     });
+
+    // Verificar se é a última parcela sendo confirmada para finalizar a concessão
+    if (updateDto.status === StatusPagamentoEnum.CONFIRMADO && pagamento.concessao_id) {
+      await this.concessaoAutoUpdateService.verificarFinalizacaoConcessao(
+        pagamento,
+        usuarioId,
+        id,
+      );
+    }
 
     // Emitir evento de status atualizado
     await this.pagamentoEventosService.emitirEventoStatusAtualizado({

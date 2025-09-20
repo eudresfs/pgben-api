@@ -14,6 +14,7 @@ import {
   LogAuditoria,
   TipoBeneficio,
   Solicitacao,
+  Concessao,
 } from '../../entities';
 
 // Controllers
@@ -36,6 +37,7 @@ import { PagamentoCacheInvalidationService } from './services/pagamento-cache-in
 import { PagamentoBatchService } from './services/pagamento-batch.service';
 import { PagamentoQueueService } from './services/pagamento-queue.service';
 import { PagamentoQueueProcessor } from './services/pagamento-queue.processor';
+import { ConcessaoAutoUpdateService } from './services/concessao-auto-update.service';
 
 // Serviços de cálculo e estratégias
 import { PagamentoCalculatorService } from './services/pagamento-calculator.service';
@@ -114,6 +116,7 @@ import { PdfGeneratorUtil } from './utils/pdf-generator.util';
       LogAuditoria,
       TipoBeneficio,
       Solicitacao,
+      Concessao,
     ]),
     // Configuração da fila BullMQ para pagamentos
     BullModule.registerQueue({
@@ -178,6 +181,7 @@ import { PdfGeneratorUtil } from './utils/pdf-generator.util';
     PagamentoValidationService,
     ComprovanteService,
     ConfirmacaoService,
+    ConcessaoAutoUpdateService,
 
     // Serviços de otimização
     PagamentoCacheService,
@@ -185,6 +189,7 @@ import { PdfGeneratorUtil } from './utils/pdf-generator.util';
     PagamentoBatchService,
     PagamentoQueueService,
     PagamentoQueueProcessor,
+    ConcessaoAutoUpdateService,
 
     // Serviços de cálculo e estratégias
     PagamentoCalculatorService,

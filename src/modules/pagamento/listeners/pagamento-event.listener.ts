@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -25,7 +25,11 @@ import {
   LoteFailedEventData,
 } from '../events/pagamento-events';
 import { Pagamento } from '../../../entities/pagamento.entity';
+import { Concessao } from '../../../entities/concessao.entity';
 import { NotificacaoService } from '../../notificacao/services/notificacao.service';
+import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
+import { StatusConcessao } from '../../../enums/status-concessao.enum';
+import { ConcessaoAutoUpdateService } from '../services/concessao-auto-update.service';
 // import { HistoricoPagamentoService } from '../services/historico-pagamento.service'; // Removido temporariamente
 
 /**
@@ -39,7 +43,11 @@ export class PagamentoEventListener {
   constructor(
     @InjectRepository(Pagamento)
     private readonly pagamentoRepository: Repository<Pagamento>,
+    @InjectRepository(Concessao)
+    private readonly concessaoRepository: Repository<Concessao>,
     private readonly notificacaoService: NotificacaoService,
+    @Inject(forwardRef(() => ConcessaoAutoUpdateService))
+    private readonly concessaoAutoUpdateService: ConcessaoAutoUpdateService,
     // private readonly historicoPagamentoService: HistoricoPagamentoService, // Removido temporariamente
   ) {}
 
@@ -267,6 +275,11 @@ export class PagamentoEventListener {
         this.logger.warn(`Pagamento não encontrado: ${evento.pagamentoId}`);
         return;
       }
+
+      // Verificar se o pagamento foi confirmado e se é a última parcela
+        if (evento.data.statusAtual === StatusPagamentoEnum.CONFIRMADO) {
+          await this.concessaoAutoUpdateService.verificarEAtualizarConcessao(pagamento);
+        }
 
       // Registrar no histórico
       // await this.historicoPagamentoService.registrarHistorico(
@@ -762,4 +775,6 @@ export class PagamentoEventListener {
       );
     }
   }
+
+
 }
