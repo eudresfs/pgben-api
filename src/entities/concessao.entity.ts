@@ -21,6 +21,7 @@ import { Solicitacao } from './solicitacao.entity';
 import { Pagamento } from './pagamento.entity';
 import { StatusConcessao } from '../enums/status-concessao.enum';
 import { HistoricoConcessao } from './historico-concessao.entity';
+import { ResultadoBeneficioCessado } from './resultado-beneficio-cessado.entity';
 
 /**
  * Entidade que representa a concessão de um benefício ativo.
@@ -131,4 +132,8 @@ export class Concessao {
   /** Histórico de alterações de status */
   @OneToMany(() => HistoricoConcessao, (hist) => hist.concessao)
   historicos: HistoricoConcessao[];
+
+  /** Resultado da cessação do benefício */
+  @OneToOne(() => ResultadoBeneficioCessado, (resultado) => resultado.concessao)
+  resultadoBeneficioCessado: ResultadoBeneficioCessado;
 }

@@ -96,6 +96,10 @@ export { HistoricoConcessao } from './historico-concessao.entity';
 export { ConfirmacaoRecebimento } from './confirmacao-recebimento.entity';
 export { Pagamento } from './pagamento.entity';
 
+// Entidades de Resultado de Benefício Cessado
+export { ResultadoBeneficioCessado } from './resultado-beneficio-cessado.entity';
+export { DocumentoComprobatorio } from './documento-comprobatorio.entity';
+
 // Entidades de Pendências e Recursos
 export { Pendencia, StatusPendencia } from './pendencia.entity';
 export { Recurso } from './recurso.entity';

@@ -30,6 +30,11 @@ export {
   isCategoriaValida
 } from './categoria-beneficio.enum';
 
+// Enums de resultado de benefício cessado
+export { MotivoEncerramentoBeneficio } from './motivo-encerramento-beneficio.enum';
+export { StatusVulnerabilidade } from './status-vulnerabilidade.enum';
+export { TipoDocumentoComprobatorio } from './tipo-documento-comprobatorio.enum';
+
 // Enums de pagamento
 export { MetodoPagamentoEnum } from './metodo-pagamento.enum';
 export { StatusPagamentoEnum } from './status-pagamento.enum';

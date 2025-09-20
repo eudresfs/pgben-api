@@ -19,11 +19,15 @@ import {
   ConfiguracaoRenovacao,
   Solicitacao,
   Cidadao,
+  Usuario,
 } from '../../entities';
+import { ResultadoBeneficioCessado } from '../../entities/resultado-beneficio-cessado.entity';
+import { DocumentoComprobatorio } from '../../entities/documento-comprobatorio.entity';
 
 // Controladores
 import { BeneficioController } from './controllers/beneficio.controller';
 import { DadosBeneficioController } from './controllers/dados-beneficio.controller';
+import { ResultadoBeneficioCessadoController } from './controllers/resultado-beneficio-cessado.controller';
 
 // Services
 import { BeneficioService } from './services/beneficio.service';
@@ -36,6 +40,8 @@ import { DadosBeneficioFactoryService } from './services/dados-beneficio-factory
 import { Concessao, HistoricoConcessao } from '../../entities';
 import { ConcessaoService } from './services/concessao.service';
 import { ValidacaoBeneficioService } from './services/validacao-beneficio.service';
+import { ResultadoBeneficioCessadoService } from './services/resultado-beneficio-cessado.service';
+import { ValidacaoResultadoBeneficioService } from './services/validacao-resultado-beneficio.service';
 import { ConcessaoController } from './controllers/concessao.controller';
 
 // Listeners
@@ -43,6 +49,8 @@ import { BeneficioEventListener } from './listeners/beneficio-event.listener';
 
 // Interceptors
 import { WorkflowInterceptor } from '../../interceptors/workflow.interceptor';
+import { ResultadoBeneficioValidationInterceptor } from './interceptors/resultado-beneficio-validation.interceptor';
+import { ResultadoBeneficioValidationPipe } from './pipes/resultado-beneficio-validation.pipe';
 
 // Repositórios
 import { TipoBeneficioRepository } from './repositories/tipo-beneficio.repository';
@@ -75,6 +83,9 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
       Concessao,
       HistoricoConcessao,
       Cidadao,
+      Usuario,
+      ResultadoBeneficioCessado,
+      DocumentoComprobatorio,
     ]),
     // Módulos essenciais
     CommonModule, // Para FiltrosAvancadosService usado pelo ConcessaoService
@@ -100,12 +111,15 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
     ConcessaoController,
     BeneficioController,
     DadosBeneficioController,
+    ResultadoBeneficioCessadoController,
   ],
   providers: [
     ConcessaoService,
     BeneficioService,
     BeneficioEventosService,
     ValidacaoBeneficioService,
+    ResultadoBeneficioCessadoService,
+    ValidacaoResultadoBeneficioService,
     DadosNatalidadeService,
     DadosAluguelSocialService,
     DadosAtaudeService,
@@ -113,6 +127,8 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
     DadosBeneficioFactoryService,
     BeneficioEventListener,
     WorkflowInterceptor,
+    ResultadoBeneficioValidationInterceptor,
+    ResultadoBeneficioValidationPipe,
     TipoBeneficioRepository,
     TipoBeneficioSchemaRepository,
     DadosNatalidadeRepository,
@@ -125,6 +141,8 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
     BeneficioService,
     BeneficioEventosService,
     ValidacaoBeneficioService,
+    ResultadoBeneficioCessadoService,
+    ValidacaoResultadoBeneficioService,
     DadosNatalidadeService,
     DadosAluguelSocialService,
     DadosAtaudeService,
