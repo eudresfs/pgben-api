@@ -21,6 +21,7 @@ import { EventosService } from './eventos.service';
 import { ProcessoJudicialRepository } from '../../judicial/repositories/processo-judicial.repository';
 import { HistoricoSolicitacaoRepository } from '../repositories/historico-solicitacao.repository';
 import { PendenciaRepository } from '../repositories/pendencia.repository';
+import { RenovacaoService } from '../../beneficio/services/renovacao.service';
 
 /**
  * Testes unitários para o SolicitacaoService
@@ -259,7 +260,7 @@ describe('SolicitacaoService', () => {
           },
         },
         {
-          provide: 'RenovacaoService',
+          provide: RenovacaoService,
           useValue: {
             listarSolicitacoesComElegibilidade: jest.fn(),
             validarElegibilidadeRenovacao: jest.fn(),

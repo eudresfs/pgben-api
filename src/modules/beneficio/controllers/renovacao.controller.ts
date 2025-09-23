@@ -27,7 +27,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
  * Controller responsável pelos endpoints de renovação de benefício.
  * Gerencia a validação de elegibilidade e criação de solicitações de renovação.
  */
-@Controller('beneficio/renovacao')
+@Controller('concessoes')
 @ApiTags('Renovação de Benefício')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
@@ -38,7 +38,7 @@ export class RenovacaoController {
    * Verifica se uma concessão pode ser renovada.
    * Valida todos os critérios necessários para renovação.
    */
-  @Get('concessao/:id/pode-renovar')
+  @Get(':id/pode-renovar')
   @ApiOperation({
     summary: 'Verificar se concessão pode ser renovada',
     description: `
@@ -99,7 +99,7 @@ export class RenovacaoController {
    * Inicia o processo de renovação de uma concessão.
    * Cria nova solicitação baseada na concessão cessada.
    */
-  @Post('concessao/:id/renovar')
+  @Post(':id/renovar')
   @ApiOperation({
     summary: 'Iniciar renovação de concessão',
     description: `
@@ -107,7 +107,7 @@ export class RenovacaoController {
       - Valida elegibilidade para renovação
       - Duplica dados da solicitação original
       - Reutiliza documentos requisitais (exceto parecer técnico)
-      - Define status inicial como RASCUNHO
+      - Define status inicial como EM_ANALISE
       - Gera novo protocolo
       - Mantém rastreabilidade com solicitação original
     `,
@@ -144,7 +144,7 @@ export class RenovacaoController {
       solicitacao: {
         id: '123e4567-e89b-12d3-a456-426614174001',
         protocolo: 'SOL-2024-000123',
-        status: 'RASCUNHO',
+        status: 'EM_ANALISE',
         tipo: 'renovacao',
       },
       message: 'Solicitação de renovação criada com sucesso',
@@ -178,7 +178,7 @@ export class RenovacaoController {
   })
   async renovar(
     @Param('id', ParseUUIDPipe) concessaoId: string,
-    @Body() dadosRenovacao: IniciarRenovacaoDto,
+    @Body() dadosRenovacao: any,
     @GetUser() usuario: Usuario,
   ): Promise<{ solicitacao: any; message: string }> {
     const solicitacao = await this.renovacaoService.iniciarRenovacao(
@@ -195,61 +195,5 @@ export class RenovacaoController {
       },
       message: 'Solicitação de renovação criada com sucesso',
     };
-  }
-
-  /**
-   * Verifica elegibilidade de renovação para uma solicitação específica.
-   * Útil para consultas do frontend sobre possibilidade de renovação.
-   */
-  @Get('elegibilidade/:solicitacaoId')
-  @ApiOperation({
-    summary: 'Verificar elegibilidade de renovação para uma solicitação',
-    description: `
-      Verifica se uma solicitação específica pode gerar uma renovação:
-      - Analisa a concessão associada à solicitação
-      - Valida todos os critérios de elegibilidade
-      - Retorna motivos detalhados caso não seja elegível
-      - Usado principalmente para consultas do frontend
-    `,
-  })
-  @ApiParam({
-    name: 'solicitacaoId',
-    description: 'ID da solicitação a ser verificada',
-    type: 'string',
-    format: 'uuid',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Elegibilidade verificada com sucesso',
-    example: {
-      podeRenovar: false,
-      motivos: [
-        'Concessão deve estar com status CESSADO',
-        'Usuário já possui uma renovação em andamento ou aprovada',
-      ],
-    },
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Solicitação não encontrada ou sem concessão associada',
-    example: {
-      statusCode: 404,
-      message: 'Solicitação não encontrada',
-      error: 'Not Found',
-    },
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'ID da solicitação inválido',
-    example: {
-      statusCode: 400,
-      message: 'Validation failed (uuid is expected)',
-      error: 'Bad Request',
-    },
-  })
-  async verificarElegibilidade(
-    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
-  ): Promise<{ podeRenovar: boolean; motivos?: string[] }> {
-    return await this.renovacaoService.validarElegibilidadePorSolicitacao(solicitacaoId);
   }
 }

@@ -8,6 +8,7 @@ import { TipoSolicitacaoEnum, StatusSolicitacao } from '@/enums';
 import { RenovacaoValidationService } from './renovacao-validation.service';
 import { DocumentoReutilizacaoService } from './documento-reutilizacao.service';
 import { CacheService } from '@/shared/services/cache.service';
+import { DadosBeneficioFactoryService } from './dados-beneficio-factory.service';
 
 /**
  * Serviço principal para gerenciamento de renovações de benefícios
@@ -17,7 +18,7 @@ import { CacheService } from '@/shared/services/cache.service';
 @Injectable()
 export class RenovacaoService implements IRenovacaoService {
   private readonly logger = new Logger(RenovacaoService.name);
-  
+
   // Constantes para TTL do cache (em milissegundos)
   private readonly CACHE_TTL_ELEGIBILIDADE = 5 * 60 * 1000; // 5 minutos
   private readonly CACHE_TTL_SOLICITACOES = 10 * 60 * 1000; // 10 minutos
@@ -33,7 +34,8 @@ export class RenovacaoService implements IRenovacaoService {
     private readonly documentoReutilizacaoService: DocumentoReutilizacaoService,
     private readonly dataSource: DataSource,
     private readonly cacheService: CacheService,
-  ) {}
+    private readonly dadosBeneficioFactory: DadosBeneficioFactoryService,
+  ) { }
 
   /**
    * Inicia o processo de renovação de uma concessão
@@ -49,7 +51,7 @@ export class RenovacaoService implements IRenovacaoService {
     try {
       // 1. Validar elegibilidade para renovação
       const validacao = await this.validarElegibilidadeRenovacao(dto.concessaoId, usuarioId);
-      
+
       if (!validacao.podeRenovar) {
         throw new BadRequestException({
           message: 'Concessão não elegível para renovação',
@@ -59,7 +61,7 @@ export class RenovacaoService implements IRenovacaoService {
 
       // 2. Buscar dados da solicitação original
       const solicitacaoOriginal = await this.buscarSolicitacaoOriginal(dto.concessaoId);
-      
+
       if (!solicitacaoOriginal) {
         throw new NotFoundException('Solicitação original não encontrada');
       }
@@ -80,12 +82,12 @@ export class RenovacaoService implements IRenovacaoService {
       );
 
       await queryRunner.commitTransaction();
-      
+
       // Invalidar cache de elegibilidade e solicitações após criar renovação
       await this.invalidarCacheUsuario(usuarioId, dto.concessaoId);
-      
+
       this.logger.log(`Renovação iniciada com sucesso - Nova solicitação: ${novaSolicitacao.id}`);
-      
+
       return novaSolicitacao;
 
     } catch (error) {
@@ -103,10 +105,10 @@ export class RenovacaoService implements IRenovacaoService {
    */
   async validarElegibilidadeRenovacao(concessaoId: string, usuarioId: string): Promise<{ podeRenovar: boolean; motivos?: string[] }> {
     this.logger.log(`Validando elegibilidade para renovação - Concessão: ${concessaoId}`);
-    
+
     // Gerar chave única para cache baseada na concessão e usuário
     const cacheKey = `renovacao:elegibilidade:${concessaoId}:${usuarioId}`;
-    
+
     try {
       // Tentar obter resultado do cache primeiro
       return await this.cacheService.getOrSet(
@@ -136,43 +138,78 @@ export class RenovacaoService implements IRenovacaoService {
     this.logger.log(`Criando solicitação de renovação baseada na solicitação: ${solicitacaoOriginal.id}`);
 
     try {
-      // Gerar novo protocolo
-      const novoProtocolo = await this.gerarProtocoloRenovacao();
-
       // Criar nova solicitação com dados da original
       const novaSolicitacao = this.solicitacaoRepository.create({
-        protocolo: `REN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         beneficiario_id: solicitacaoOriginal.beneficiario_id,
         tipo_beneficio_id: solicitacaoOriginal.tipo_beneficio_id,
         unidade_id: solicitacaoOriginal.unidade_id,
         tecnico_id: usuarioId,
         data_abertura: new Date(),
-        status: StatusSolicitacao.RASCUNHO,
+        status: StatusSolicitacao.EM_ANALISE,
         tipo: TipoSolicitacaoEnum.RENOVACAO,
         solicitacao_original_id: solicitacaoOriginal.id,
-        
-        // Copiar dados relevantes da solicitação original
+
+        // Copiar dados específicos do benefício da solicitação original
+        solicitante_id: solicitacaoOriginal.solicitante_id,
+        valor: solicitacaoOriginal.valor,
+        quantidade_parcelas: solicitacaoOriginal.quantidade_parcelas,
+        prioridade: solicitacaoOriginal.prioridade,
         dados_dinamicos: solicitacaoOriginal.dados_dinamicos,
-        
+
         // Dados complementares específicos da renovação
         dados_complementares: {
           ...solicitacaoOriginal.dados_complementares,
           renovacao: {
             motivo: observacao,
             data_solicitacao: new Date(),
-            usuario_solicitante: usuarioId
+            usuario_solicitante: usuarioId,
+            solicitacao_original_protocolo: solicitacaoOriginal.protocolo
           }
         },
         observacoes: observacao
       });
 
       // Salvar usando queryRunner se fornecido, senão usar repository normal
-      const solicitacaoSalva = queryRunner 
+      const solicitacaoSalva = queryRunner
         ? await queryRunner.manager.save(Solicitacao, novaSolicitacao)
         : await this.solicitacaoRepository.save(novaSolicitacao);
 
-      this.logger.log(`Solicitação de renovação criada: ${solicitacaoSalva.id} - Protocolo: ${novoProtocolo}`);
-      
+         // Gerar novo protocolo
+      const novoProtocolo = await this.generateProtocol(
+        solicitacaoOriginal.tipo_beneficio?.codigo,
+        solicitacaoSalva.id
+      );
+
+      // Atualizar protocolo na solicitação salva
+      solicitacaoSalva.protocolo = novoProtocolo;
+      if (queryRunner) {
+        await queryRunner.manager.save(Solicitacao, solicitacaoSalva);
+      } else {
+        await this.solicitacaoRepository.save(solicitacaoSalva);
+      }
+
+      // Copiar dados específicos do benefício da solicitação original
+      await this.copiarDadosEspecificosBeneficio(
+        solicitacaoOriginal,
+        solicitacaoSalva,
+        queryRunner
+      );
+
+      // Copiar documentos requisitais da solicitação original
+      await this.copiarDocumentosRequisitais(
+        solicitacaoOriginal.id,
+        solicitacaoSalva.id,
+        queryRunner
+      );
+
+      // Atualizar solicitação original para referenciar a nova renovação
+      await this.atualizarSolicitacaoOriginal(
+        solicitacaoOriginal.id,
+        solicitacaoSalva.id,
+        queryRunner
+      );
+
+      this.logger.log(`Solicitação de renovação criada com sucesso: ${solicitacaoSalva.id}`);
       return solicitacaoSalva;
 
     } catch (error) {
@@ -182,7 +219,116 @@ export class RenovacaoService implements IRenovacaoService {
   }
 
   /**
-   * Busca a solicitação original associada à concessão
+   * Atualiza a solicitação original para referenciar a nova solicitação de renovação
+   * Isso é essencial para a lógica de elegibilidade funcionar corretamente
+   */
+  private async atualizarSolicitacaoOriginal(
+    solicitacaoOriginalId: string,
+    novaSolicitacaoId: string,
+    queryRunner?: any
+  ): Promise<void> {
+    this.logger.log(`Atualizando solicitação original ${solicitacaoOriginalId} para referenciar renovação ${novaSolicitacaoId}`);
+
+    try {
+      const repository = queryRunner 
+        ? queryRunner.manager.getRepository(Solicitacao)
+        : this.solicitacaoRepository;
+
+      // Atualizar a solicitação original para referenciar a nova renovação
+      await repository.update(solicitacaoOriginalId, {
+        solicitacao_renovada_id: novaSolicitacaoId
+      });
+
+      this.logger.log(`Solicitação original atualizada com sucesso: ${solicitacaoOriginalId}`);
+
+    } catch (error) {
+      this.logger.error(`Erro ao atualizar solicitação original: ${error.message}`, error.stack);
+      throw error; // Propagar o erro para interromper a transação
+    }
+  }
+
+  /**
+   * Copia documentos requisitais da solicitação original para a renovação
+   * Utiliza o DocumentoReutilizacaoService para reutilizar documentos válidos
+   */
+  private async copiarDocumentosRequisitais(
+    solicitacaoOriginalId: string,
+    novaSolicitacaoId: string,
+    queryRunner?: any
+  ): Promise<void> {
+    this.logger.log(`Iniciando cópia de documentos - Original: ${solicitacaoOriginalId}, Nova: ${novaSolicitacaoId}`);
+
+    try {
+      // Utilizar o serviço especializado para reutilização de documentos
+      await this.documentoReutilizacaoService.reutilizarDocumentos(
+        solicitacaoOriginalId,
+        novaSolicitacaoId,
+        queryRunner
+      );
+
+      this.logger.log(`Documentos copiados com sucesso para a renovação: ${novaSolicitacaoId}`);
+
+    } catch (error) {
+      this.logger.error(`Erro ao copiar documentos para renovação: ${error.message}`, error.stack);
+      // Não interromper o processo de renovação por falha na cópia de documentos
+      // Os documentos podem ser enviados posteriormente pelo usuário
+      this.logger.warn(`Continuando processo de renovação sem documentos copiados`);
+    }
+  }
+
+  /**
+   * Copia dados específicos do benefício da solicitação original para a renovação
+   * Utiliza o DadosBeneficioFactoryService para uma abordagem mais elegante e consistente
+   */
+  private async copiarDadosEspecificosBeneficio(
+    solicitacaoOriginal: Solicitacao,
+    novaSolicitacao: Solicitacao,
+    queryRunner?: any
+  ): Promise<void> {
+    this.logger.log(`Copiando dados específicos do benefício para renovação: ${novaSolicitacao.id}`);
+
+    try {
+      // Verificar se a solicitação original tem tipo de benefício
+      if (!solicitacaoOriginal.tipo_beneficio?.codigo) {
+        this.logger.warn(`Tipo de benefício não encontrado na solicitação original: ${solicitacaoOriginal.id}`);
+        return;
+      }
+
+      const codigoBeneficio = solicitacaoOriginal.tipo_beneficio.codigo;
+
+      // Buscar dados específicos da solicitação original usando o factory
+      const dadosOriginais = await this.dadosBeneficioFactory.findBySolicitacao(
+        codigoBeneficio,
+        solicitacaoOriginal.id
+      );
+
+      // Se não existem dados específicos, não há nada para copiar
+      if (!dadosOriginais) {
+        this.logger.log(`Nenhum dado específico encontrado para copiar da solicitação: ${solicitacaoOriginal.id}`);
+        return;
+      }
+
+      // Preparar dados para a nova solicitação
+      const dadosParaCopia = {
+        ...dadosOriginais,
+        id: undefined, // Remove o ID para criar novo registro
+        solicitacao_id: novaSolicitacao.id,
+        created_at: undefined,
+        updated_at: undefined
+      };
+
+      // Criar dados específicos para a nova solicitação usando o factory
+      await this.dadosBeneficioFactory.create(codigoBeneficio, dadosParaCopia);
+
+      this.logger.log(`Dados específicos do benefício copiados com sucesso para renovação: ${novaSolicitacao.id}`);
+    } catch (error) {
+      this.logger.error(`Erro ao copiar dados específicos do benefício: ${error.message}`, error.stack);
+      throw new BadRequestException('Erro ao copiar dados específicos do benefício');
+    }
+  }
+
+  /**
+   * Busca a solicitação original através da concessão
    */
   async buscarSolicitacaoOriginal(concessaoId: string): Promise<Solicitacao | null> {
     try {
@@ -266,12 +412,30 @@ export class RenovacaoService implements IRenovacaoService {
   }
 
   /**
-   * Gera um novo protocolo para solicitação de renovação
-   */
-  private async gerarProtocoloRenovacao(): Promise<string> {
-    const ano = new Date().getFullYear();
-    const timestamp = Date.now().toString().slice(-6);
-    return `REN${ano}${timestamp}`;
+  * Gera o protocolo da solicitação no novo formato: Benefício-Ano-Código
+  * Este método deve ser chamado pelo serviço antes da criação da solicitação
+  * @param codigoBeneficio Código do tipo de benefício (3 caracteres)
+  * @param uniqueId ID único gerado previamente para usar como código
+  */
+  private generateProtocol(codigoBeneficio?: string, uniqueId?: string) {
+    const date = new Date();
+    const ano = date.getFullYear();
+
+    if (codigoBeneficio && codigoBeneficio.length >= 3 && uniqueId) {
+      // Usar os 3 primeiros caracteres do código do benefício
+      const prefixoBeneficio = codigoBeneficio.substring(0, 3).toUpperCase();
+
+      // Usar os primeiros 8 caracteres do ID único como código
+      const codigo = uniqueId.substring(0, 8).toUpperCase();
+
+      return `${prefixoBeneficio}-${ano}-${codigo}`;
+    } else {
+      // Fallback para formato padrão se não houver código do benefício ou ID
+      const random = Math.floor(Math.random() * 10000)
+        .toString()
+        .padStart(4, '0');
+      return `SOL-${ano}${(date.getMonth() + 1).toString().padStart(2, '0')}-${random}`;
+    }
   }
 
   /**
@@ -282,7 +446,7 @@ export class RenovacaoService implements IRenovacaoService {
       [TipoSolicitacaoEnum.ORIGINAL]: 'Original',
       [TipoSolicitacaoEnum.RENOVACAO]: 'Renovação'
     };
-    
+
     return labels[tipo] || 'Desconhecido';
   }
 
@@ -291,7 +455,7 @@ export class RenovacaoService implements IRenovacaoService {
    */
   async validarRenovacao(dto: ValidarRenovacaoDto, usuarioId: string): Promise<{ podeRenovar: boolean; motivos?: string[] }> {
     this.logger.log(`Validando renovação para concessão ${dto.concessaoId}`);
-    
+
     return await this.validarElegibilidadeRenovacao(dto.concessaoId, usuarioId);
   }
 
@@ -302,7 +466,7 @@ export class RenovacaoService implements IRenovacaoService {
     try {
       // Invalidar cache de listagem de solicitações do usuário
       await this.cacheService.delete(`renovacao:solicitacoes:${usuarioId}`);
-      
+
       // Se concessaoId fornecida, invalidar cache específico de elegibilidade
       if (concessaoId) {
         await this.cacheService.delete(`renovacao:elegibilidade:${concessaoId}:${usuarioId}`);
@@ -310,7 +474,7 @@ export class RenovacaoService implements IRenovacaoService {
         // Invalidar todos os caches de elegibilidade do usuário
         await this.cacheService.deletePattern(`renovacao:elegibilidade:*:${usuarioId}`);
       }
-      
+
       this.logger.debug(`Cache invalidado para usuário: ${usuarioId}`);
     } catch (error) {
       this.logger.error(`Erro ao invalidar cache: ${error.message}`, error.stack);

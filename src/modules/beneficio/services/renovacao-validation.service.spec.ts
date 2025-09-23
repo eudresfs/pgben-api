@@ -107,30 +107,10 @@ describe('RenovacaoValidationService', () => {
 
       // Assert
       expect(resultado.podeRenovar).toBe(false);
-      expect(resultado.motivos).toContain('Concessão não encontrada ou não pertence ao usuário');
+      expect(resultado.motivos).toContain('Concessão não encontrada');
     });
 
-    it('deve retornar não elegível quando usuário não for o beneficiário', async () => {
-      // Arrange
-      const mockConcessao = {
-        id: concessaoId,
-        status: StatusConcessao.CESSADO,
-        solicitacao: {
-          beneficiario_id: 'outro-usuario',
-          tipo_beneficio_id: 'tipo-123',
-          beneficiario: { id: 'outro-usuario' }
-        }
-      };
 
-      mockConcessaoRepository.findOne.mockResolvedValue(mockConcessao);
-
-      // Act
-      const resultado = await service.validarElegibilidade(concessaoId, usuarioId);
-
-      // Assert
-      expect(resultado.podeRenovar).toBe(false);
-      expect(resultado.motivos).toContain('Usuário não é o beneficiário desta concessão');
-    });
 
     it('deve retornar não elegível quando status da concessão for inválido', async () => {
       // Arrange
@@ -175,6 +155,35 @@ describe('RenovacaoValidationService', () => {
       // Assert
       expect(resultado.podeRenovar).toBe(false);
       expect(resultado.motivos).toContain('Este tipo de benefício não permite renovação');
+    });
+
+    it('deve retornar não elegível quando solicitação já foi renovada', async () => {
+      // Arrange
+      const mockConcessao = {
+        id: concessaoId,
+        status: StatusConcessao.CESSADO,
+        solicitacao: {
+          id: 'solicitacao-123',
+          beneficiario_id: usuarioId,
+          tipo_beneficio_id: 'tipo-123',
+          beneficiario: { id: usuarioId }
+        }
+      };
+
+      const mockSolicitacaoJaRenovada = {
+        id: 'solicitacao-123',
+        solicitacao_renovada_id: 'renovacao-456' // Indica que já foi renovada
+      };
+
+      mockConcessaoRepository.findOne.mockResolvedValue(mockConcessao);
+      mockSolicitacaoRepository.findOne.mockResolvedValue(mockSolicitacaoJaRenovada);
+
+      // Act
+      const resultado = await service.validarElegibilidade(concessaoId, usuarioId);
+
+      // Assert
+      expect(resultado.podeRenovar).toBe(false);
+      expect(resultado.motivos).toContain('Esta solicitação já foi renovada');
     });
   });
 

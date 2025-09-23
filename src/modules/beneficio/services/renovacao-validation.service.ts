@@ -66,14 +66,21 @@ export class RenovacaoValidationService implements IRenovacaoValidationService {
         podeRenovar = false;
       }
 
-      // 4. Verificar se já existe renovação em andamento
+      // 4. Verificar se a solicitação original já foi renovada
+      const jaFoiRenovada = await this.verificarSolicitacaoJaRenovada(concessao.solicitacao.id);
+      if (jaFoiRenovada) {
+        motivos.push('Esta solicitação já foi renovada');
+        podeRenovar = false;
+      }
+
+      // 5. Verificar se já existe renovação em andamento
       const renovacaoEmAndamento = await this.verificarRenovacaoEmAndamento(concessaoId, usuarioId);
       if (renovacaoEmAndamento) {
         motivos.push('Já existe uma solicitação de renovação em andamento para esta concessão');
         podeRenovar = false;
       }
 
-      // 5. Verificar período mínimo entre renovações (se aplicável)
+      // 6. Verificar período mínimo entre renovações (se aplicável)
       const periodoMinimoRespeitado = await this.verificarPeriodoMinimoRenovacao(
         concessao.solicitacao.tipo_beneficio_id,
         concessaoId
@@ -192,6 +199,26 @@ export class RenovacaoValidationService implements IRenovacaoValidationService {
     } catch (error) {
       this.logger.error(`Erro ao verificar período mínimo de renovação: ${error.message}`);
       return true; // Em caso de erro, permite renovação
+    }
+  }
+
+  /**
+   * Verifica se a solicitação original já foi renovada
+   * @param solicitacaoId ID da solicitação original
+   * @returns Promise<boolean> - true se já foi renovada
+   */
+  private async verificarSolicitacaoJaRenovada(solicitacaoId: string): Promise<boolean> {
+    try {
+      const solicitacao = await this.solicitacaoRepository.findOne({
+        where: { id: solicitacaoId },
+        select: ['solicitacao_renovada_id']
+      });
+
+      // Se solicitacao_renovada_id não é null, significa que já foi renovada
+      return !!solicitacao?.solicitacao_renovada_id;
+    } catch (error) {
+      this.logger.error(`Erro ao verificar se solicitação já foi renovada: ${error.message}`);
+      return false; // Em caso de erro, permite renovação
     }
   }
 

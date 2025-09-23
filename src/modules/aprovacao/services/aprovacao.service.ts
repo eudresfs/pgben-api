@@ -1177,7 +1177,7 @@ export class AprovacaoService {
       },
       {
         codigo: solicitacao.codigo,
-        status_novo: StatusSolicitacao.CANCELADA,
+        status_atual: StatusSolicitacao.CANCELADA,
         status_anterior: statusAnterior,
         cancelado_por: usuarioId,
         tipo_acao: solicitacao.acao_aprovacao.nome

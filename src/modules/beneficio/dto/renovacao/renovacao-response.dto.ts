@@ -37,7 +37,7 @@ export class RenovacaoResponseDto {
       status: {
         enum: Object.values(StatusSolicitacao),
         description: 'Status atual da solicitação',
-        example: StatusSolicitacao.RASCUNHO
+        example: StatusSolicitacao.EM_ANALISE
       },
       tipo: {
         enum: Object.values(TipoSolicitacaoEnum),

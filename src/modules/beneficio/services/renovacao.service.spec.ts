@@ -6,6 +6,7 @@ import { RenovacaoService } from './renovacao.service';
 import { RenovacaoValidationService } from './renovacao-validation.service';
 import { DocumentoReutilizacaoService } from './documento-reutilizacao.service';
 import { CacheService } from '../../../shared/services/cache.service';
+import { DadosBeneficioFactoryService } from './dados-beneficio-factory.service';
 import { Solicitacao, Concessao, TipoBeneficio } from '../../../entities';
 import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
 import { TipoSolicitacaoEnum } from '../../../enums/tipo-solicitacao.enum';
@@ -55,6 +56,11 @@ describe('RenovacaoService', () => {
     getStats: jest.fn(),
   };
 
+  const mockDadosBeneficioFactoryService = {
+    findBySolicitacao: jest.fn(),
+    create: jest.fn(),
+  };
+
   const mockQueryRunner = {
     connect: jest.fn(),
     startTransaction: jest.fn(),
@@ -102,6 +108,10 @@ describe('RenovacaoService', () => {
           provide: CacheService,
           useValue: mockCacheService,
         },
+        {
+          provide: DadosBeneficioFactoryService,
+          useValue: mockDadosBeneficioFactoryService,
+        },
       ],
     }).compile();
 
@@ -146,7 +156,7 @@ describe('RenovacaoService', () => {
         id: 'nova-solicitacao-123',
         protocolo: 'REN2024789012',
         tipo: TipoSolicitacaoEnum.RENOVACAO,
-        status: StatusSolicitacao.RASCUNHO
+        status: StatusSolicitacao.EM_ANALISE
       };
 
       // Mock do cache para retornar o resultado da validação
@@ -303,7 +313,7 @@ describe('RenovacaoService', () => {
       expect(mockSolicitacaoRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           tipo: TipoSolicitacaoEnum.RENOVACAO,
-          status: StatusSolicitacao.RASCUNHO,
+          status: StatusSolicitacao.EM_ANALISE,
           beneficiario_id: mockSolicitacaoOriginal.beneficiario_id,
           tipo_beneficio_id: mockSolicitacaoOriginal.tipo_beneficio_id,
           unidade_id: mockSolicitacaoOriginal.unidade_id,
