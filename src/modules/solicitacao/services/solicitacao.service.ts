@@ -67,6 +67,8 @@ import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
 import { EventosService } from './eventos.service';
 import { v4 as uuidv4 } from 'uuid';
 import { processAdvancedSearchParam } from '../../../shared/utils/cpf-search.util';
+import { RenovacaoService } from '../../beneficio/services/renovacao.service';
+import { SolicitacaoComElegibilidadeDto } from '../../beneficio/dto/renovacao';
 
 export interface FindAllOptions {
   search?: string;
@@ -134,6 +136,9 @@ export class SolicitacaoService {
     private readonly auditEventEmitter: AuditEventEmitter,
     private readonly filtrosAvancadosService: FiltrosAvancadosService,
     private readonly eventosService: EventosService,
+    
+    @Inject(forwardRef(() => RenovacaoService))
+    private readonly renovacaoService: RenovacaoService,
   ) {
     this.logger = new Logger('SolicitacaoService');
   }
@@ -761,14 +766,14 @@ export class SolicitacaoService {
         throw new BadRequestException('Tipo de beneficio nao encontrado');
       }
 
-      // REGRA DE NEGOCIO 2: Validar se o beneficio esta ativo
+      // Validar se o beneficio esta ativo
       if (tipoBeneficio.status !== 'ativo') {
         throw new BadRequestException(
           `Uma solicitacao so pode ser criada para beneficios ativos. O beneficio "${tipoBeneficio.nome}" esta inativo.`,
         );
       }
 
-      // REGRA DE NEGOCIO 1: Validar se a unidade do beneficiario e igual a unidade do tecnico
+      // Validar se a unidade do beneficiario e igual a unidade do tecnico
       // Determinar a unidade do tecnico
       let unidadeTecnico: string;
       if (!user.unidade_id) {
@@ -782,18 +787,18 @@ export class SolicitacaoService {
         unidadeTecnico = user.unidade_id;
       }
 
-      // VALIDACAO ESPECIAL: Verificar se o cidadao esta na unidade MIGRATION
+      // Verificar se o cidadao esta na unidade MIGRATION
       // Se sim, transferir automaticamente para a unidade do tecnico
       await this.verificarETransferirCidadaoSeNecessario(beneficiario, unidadeTecnico, user.id);
 
-      // VALIDACAO DE ESTADO CONSISTENTE: Verificar se o beneficiário tem a unidade correta após possível transferência
+      // Verificar se o beneficiário tem a unidade correta após possível transferência
       await this.validarEstadoConsistenteBeneficiario(beneficiario, unidadeTecnico, user);
 
       // Validar se a unidade do beneficiario e igual a unidade do tecnico
       if (beneficiario.unidade_id !== unidadeTecnico && user.escopo !== 'GLOBAL') {
         throw new BadRequestException(
           `Solicitações só podem ser feitas pela unidade: ${beneficiario.unidade.nome}. ` +
-          `Solicite a transferência à Coordenação de Benefícios.`
+          `Solicite a transferência à coordenação da unidade. Contato: ${beneficiario.unidade.telefone}.`
         );
       }
 
@@ -2070,6 +2075,50 @@ export class SolicitacaoService {
       throw new BadRequestException(
         `Erro ao transferir cidadão da unidade MIGRATION: ${ultimoErro?.message || 'Erro desconhecido'}. Tente novamente ou contate o suporte técnico.`,
       );
+    }
+  }
+
+  /**
+   * Lista solicitações do usuário com informações de elegibilidade para renovação
+   * @param usuarioId ID do usuário
+   * @returns Promise com lista de solicitações com elegibilidade
+   */
+  async listarComElegibilidadeRenovacao(usuarioId: string): Promise<SolicitacaoComElegibilidadeDto[]> {
+    this.logger.log(`Listando solicitações com elegibilidade de renovação para usuário: ${usuarioId}`);
+    
+    try {
+      // Delegar para o RenovacaoService que já possui a lógica implementada
+      return await this.renovacaoService.listarSolicitacoesComElegibilidade(usuarioId);
+    } catch (error) {
+      this.logger.error(
+        `Erro ao listar solicitações com elegibilidade de renovação para usuário ${usuarioId}: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Verifica elegibilidade de renovação para uma concessão específica
+   * @param concessaoId ID da concessão
+   * @param usuarioId ID do usuário
+   * @returns Promise com informações sobre elegibilidade para renovação
+   */
+  async verificarElegibilidadeRenovacao(concessaoId: string, usuarioId: string) {
+    this.logger.log(`Verificando elegibilidade de renovação - concessão: ${concessaoId}, usuário: ${usuarioId}`);
+    
+    try {
+      // Delegar para o RenovacaoService que possui a lógica específica de validação
+      const resultado = await this.renovacaoService.validarElegibilidadeRenovacao(concessaoId, usuarioId);
+      
+      this.logger.log(`Elegibilidade verificada - pode renovar: ${resultado.podeRenovar}`);
+      return resultado;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao verificar elegibilidade de renovação para concessão ${concessaoId}: ${error.message}`,
+        error.stack,
+      );
+      throw error;
     }
   }
 

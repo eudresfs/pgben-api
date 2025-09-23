@@ -3,7 +3,6 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, Connection, DataSource } from 'typeorm';
 import { SolicitacaoService } from './solicitacao.service';
 import { SolicitacaoRepository } from '../repositories/solicitacao.repository';
-import { HistoricoSolicitacaoRepository } from '../repositories/historico-solicitacao.repository';
 import {
   Solicitacao,
   HistoricoSolicitacao,
@@ -20,6 +19,8 @@ import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.e
 import { FiltrosAvancadosService } from '../../../common/services';
 import { EventosService } from './eventos.service';
 import { ProcessoJudicialRepository } from '../../judicial/repositories/processo-judicial.repository';
+import { HistoricoSolicitacaoRepository } from '../repositories/historico-solicitacao.repository';
+import { PendenciaRepository } from '../repositories/pendencia.repository';
 
 /**
  * Testes unitários para o SolicitacaoService
@@ -146,6 +147,27 @@ describe('SolicitacaoService', () => {
           },
         },
         {
+          provide: HistoricoSolicitacaoRepository,
+          useValue: {
+            save: jest.fn(),
+            create: jest.fn(),
+            find: jest.fn(),
+            findOne: jest.fn(),
+            criar: jest.fn(),
+            buscarPorSolicitacao: jest.fn(),
+            buscarPorId: jest.fn(),
+          },
+        },
+        {
+          provide: PendenciaRepository,
+          useValue: {
+            save: jest.fn(),
+            create: jest.fn(),
+            find: jest.fn(),
+            findOne: jest.fn(),
+          },
+        },
+        {
           provide: getRepositoryToken(HistoricoSolicitacao),
           useValue: {
             save: jest.fn(),
@@ -234,6 +256,13 @@ describe('SolicitacaoService', () => {
           provide: EventosService,
           useValue: {
             emitirEventoCriacao: jest.fn(),
+          },
+        },
+        {
+          provide: 'RenovacaoService',
+          useValue: {
+            listarSolicitacoesComElegibilidade: jest.fn(),
+            validarElegibilidadeRenovacao: jest.fn(),
           },
         },
       ],

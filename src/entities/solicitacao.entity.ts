@@ -15,8 +15,10 @@ import {
   VersionColumn,
 } from 'typeorm';
 import { IsNotEmpty, IsOptional } from 'class-validator';
-import { StatusSolicitacao } from '../enums/status-solicitacao.enum';
-import { SubStatusSolicitacao } from '../enums/sub-status-solicitacao.enum';
+import { 
+  StatusSolicitacao,
+  TipoSolicitacaoEnum 
+} from '@/enums';
 import { 
   DadosCestaBasica, 
   DadosNatalidade, 
@@ -35,6 +37,7 @@ import {
   Pagamento,
   Concessao
 } from '.';
+import { SubStatusSolicitacao } from '@/enums/sub-status-solicitacao.enum';
 
 @Entity('solicitacao')
 @Index(['protocolo'], { unique: true })
@@ -236,10 +239,9 @@ export class Solicitacao {
   info_bancaria: InfoBancaria[];
 
   /**
-   * Relação com histórico de status da solicitação
+   * Relação com concessão da solicitação
    */
-  @OneToMany(() => Concessao, (concessao) => concessao.solicitacao)
-  @JoinColumn({ name: 'id', referencedColumnName: 'solicitacao_id' })
+  @OneToOne(() => Concessao, (concessao) => concessao.solicitacao)
   concessao: Concessao;
 
   /**
@@ -294,6 +296,18 @@ export class Solicitacao {
   prioridade: number;
 
   /**
+   * Tipo da solicitação (original ou renovação)
+   * Define se é uma solicitação inicial ou uma renovação de benefício
+   */
+  @Column({
+    type: 'enum',
+    enum: TipoSolicitacaoEnum,
+    enumName: 'tipo_solicitacao_enum',
+    default: TipoSolicitacaoEnum.ORIGINAL,
+  })
+  tipo: TipoSolicitacaoEnum;
+
+  /**
    * Relação com solicitação original (auto-relacionamento)
    * Usado para renovações, revisões ou outras solicitações derivadas
    */
@@ -303,6 +317,23 @@ export class Solicitacao {
   @ManyToOne(() => Solicitacao, { nullable: true })
   @JoinColumn({ name: 'solicitacao_original_id' })
   solicitacao_original: Solicitacao;
+
+  /**
+   * Relação com solicitação que está sendo renovada
+   * Usado especificamente para renovações de benefício
+   */
+  @Column({ nullable: true })
+  solicitacao_renovada_id: string;
+
+  @ManyToOne(() => Solicitacao, { nullable: true })
+  @JoinColumn({ name: 'solicitacao_renovada_id' })
+  solicitacao_renovada: Solicitacao;
+
+  /**
+   * Relação inversa - solicitações que renovam esta solicitação
+   */
+  @OneToMany(() => Solicitacao, (solicitacao) => solicitacao.solicitacao_renovada)
+  renovacoes: Solicitacao[];
 
   /**
    * Dados dinâmicos específicos para cada tipo de benefício

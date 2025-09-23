@@ -1,13 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, QueryRunner } from 'typeorm';
-import { Pagamento } from '../../../entities/pagamento.entity';
-import { Documento } from '../../../entities/documento.entity';
+import { Repository, DataSource } from 'typeorm';
+import { Pagamento, Documento } from '@/entities';
 import { PagamentoQueueService } from './pagamento-queue.service';
-import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
-import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
-import { CancelarPagamentoDto } from '../dtos/cancelar-pagamento.dto';
 import { LiberarPagamentoDto } from '../dtos/liberar-pagamento.dto';
+import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
+import { ComprovanteUploadDto } from '../dtos/comprovante-upload.dto';
+import { PagamentoWorkflowService } from './pagamento-workflow.service';
+import { RequestContextHolder } from '../../../common/services/request-context-holder.service';
+import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
+import { StatusPagamentoEnum } from '@/enums';
 
 interface BatchResult<T> {
   success: T[];
@@ -41,6 +43,7 @@ export class PagamentoBatchService {
     private readonly documentoRepository: Repository<Documento>,
     private readonly dataSource: DataSource,
     private readonly queueService: PagamentoQueueService,
+    private readonly pagamentoWorkflowService: PagamentoWorkflowService,
   ) {}
 
   /**
@@ -370,6 +373,9 @@ export class PagamentoBatchService {
 
   /**
    * Processa um lote de liberação de pagamentos
+   * CORREÇÃO: Realiza liberação síncrona real ao invés de apenas enfileirar
+   * para garantir resultado preciso e preservar contexto de escopo
+   * Ordena pagamentos por numero_parcela para garantir sequência correta
    */
   private async processLiberacaoBatch(
     batch: { pagamentoId: string; dados: LiberarPagamentoDto }[],
@@ -383,24 +389,182 @@ export class PagamentoBatchService {
       errorCount: 0,
     };
 
-    for (const { pagamentoId, dados } of batch) {
-      try {
-        // Adicionar job de liberação à fila
-        await this.queueService.adicionarJobLiberarPagamento(
-          pagamentoId,
-          dados,
+    // Obter contexto atual para preservar durante operações assíncronas
+    const context = RequestContextHolder.get();
+    
+    // Validação crítica: falhar rapidamente se não há contexto de escopo
+    if (!context) {
+      this.logger.error(
+        'SECURITY ALERT: Tentativa de liberação em lote sem contexto de escopo',
+        {
+          batchSize: batch.length,
           userId,
+          timestamp: new Date().toISOString(),
+        },
+      );
+      throw new Error('Contexto de escopo obrigatório para liberação em lote');
+    }
+
+    this.logger.log(
+      `Iniciando liberação síncrona de lote: ${batch.length} pagamentos`,
+      {
+        userId,
+        scopeType: context.tipo,
+        unidadeId: context.unidade_id,
+      },
+    );
+
+    // Buscar dados dos pagamentos para ordenar por numero_parcela
+    const pagamentoIds = batch.map(item => item.pagamentoId);
+    const pagamentosData = await this.pagamentoRepository
+      .createQueryBuilder('pagamento')
+      .select(['pagamento.id', 'pagamento.numero_parcela', 'pagamento.concessao_id'])
+      .where('pagamento.id IN (:...ids)', { ids: pagamentoIds })
+      .getMany();
+
+    // Criar mapa para facilitar busca
+    const pagamentoDataMap = new Map(
+      pagamentosData.map(p => [p.id, p])
+    );
+
+    // Ordenar batch por numero_parcela (crescente)
+    const batchOrdenado = batch.sort((a, b) => {
+      const pagamentoA = pagamentoDataMap.get(a.pagamentoId);
+      const pagamentoB = pagamentoDataMap.get(b.pagamentoId);
+      
+      if (!pagamentoA || !pagamentoB) {
+        this.logger.warn('Pagamento não encontrado para ordenação', {
+          pagamentoA: pagamentoA?.id,
+          pagamentoB: pagamentoB?.id,
+        });
+        return 0;
+      }
+      
+      return pagamentoA.numero_parcela - pagamentoB.numero_parcela;
+    });
+
+    this.logger.log(
+      `Lote ordenado por numero_parcela: ${batchOrdenado.map(item => {
+        const pagamento = pagamentoDataMap.get(item.pagamentoId);
+        return `${item.pagamentoId.substring(0, 8)}...(parcela ${pagamento?.numero_parcela || '?'})`;
+      }).join(', ')}`,
+    );
+
+    // Validação adicional: verificar se há parcelas fora de sequência por concessão
+    const parcelasPorConcessao = new Map<string, number[]>();
+    
+    for (const item of batchOrdenado) {
+      const pagamento = pagamentoDataMap.get(item.pagamentoId);
+      if (pagamento && pagamento.concessao_id) {
+        if (!parcelasPorConcessao.has(pagamento.concessao_id)) {
+          parcelasPorConcessao.set(pagamento.concessao_id, []);
+        }
+        parcelasPorConcessao.get(pagamento.concessao_id)!.push(pagamento.numero_parcela);
+      }
+    }
+
+    // Verificar sequência por concessão
+    for (const [concessaoId, parcelas] of parcelasPorConcessao) {
+      const parcelasOrdenadas = [...parcelas].sort((a, b) => a - b);
+      
+      // Verificar se há gaps na sequência (ex: tentativa de liberar parcela 3 sem ter parcela 1 ou 2)
+      for (let i = 0; i < parcelasOrdenadas.length; i++) {
+        const parcelaAtual = parcelasOrdenadas[i];
+        
+        // Se não é a primeira parcela, verificar se existe a anterior
+        if (parcelaAtual > 1) {
+          const parcelaAnterior = parcelaAtual - 1;
+          
+          // Verificar se a parcela anterior está no lote ou já foi confirmada
+          const temParcelaAnteriorNoLote = parcelas.includes(parcelaAnterior);
+          
+          if (!temParcelaAnteriorNoLote) {
+            // Verificar se a parcela anterior já foi confirmada no banco
+            const parcelaAnteriorConfirmada = await this.pagamentoRepository
+              .createQueryBuilder('pagamento')
+              .where('pagamento.concessao_id = :concessaoId', { concessaoId })
+              .andWhere('pagamento.numero_parcela = :numeroParcela', { numeroParcela: parcelaAnterior })
+              .andWhere('pagamento.status = :status', { status: StatusPagamentoEnum.CONFIRMADO })
+              .getOne();
+            
+            if (!parcelaAnteriorConfirmada) {
+              this.logger.warn(
+                `VALIDAÇÃO SEQUÊNCIA: Tentativa de liberar parcela ${parcelaAtual} sem parcela anterior ${parcelaAnterior} confirmada`,
+                {
+                  concessaoId,
+                  parcelaAtual,
+                  parcelaAnterior,
+                  parcelasNoLote: parcelas,
+                },
+              );
+            }
+          }
+        }
+      }
+      
+      this.logger.debug(
+        `Validação de sequência para concessão ${concessaoId}: parcelas ${parcelas.join(', ')}`,
+        { concessaoId, parcelas: parcelasOrdenadas },
+      );
+    }
+
+    for (let index = 0; index < batchOrdenado.length; index++) {
+      const { pagamentoId, dados } = batchOrdenado[index];
+      const pagamentoData = pagamentoDataMap.get(pagamentoId);
+      
+      try {
+        this.logger.log(
+          `[${index + 1}/${batchOrdenado.length}] Iniciando liberação: Pagamento ${pagamentoId.substring(0, 8)}... (Parcela ${pagamentoData?.numero_parcela || '?'}, Concessão ${pagamentoData?.concessao_id?.substring(0, 8) || '?'}...)`,
+          {
+            ordem: index + 1,
+            total: batchOrdenado.length,
+            pagamentoId,
+            numeroParcela: pagamentoData?.numero_parcela,
+            concessaoId: pagamentoData?.concessao_id,
+            userId,
+            dadosLiberacao: dados,
+          },
         );
 
-        // Para o resultado, buscar o pagamento atualizado
-        const pagamento = await this.pagamentoRepository.findOne({
-          where: { id: pagamentoId },
-        });
+        // CORREÇÃO CRÍTICA: Liberação síncrona real com preservação de contexto
+        const pagamentoLiberado = await RequestContextHolder.runAsync(
+          context,
+          async () => {
+            return this.pagamentoWorkflowService.liberarPagamento(
+              pagamentoId,
+              dados,
+              userId,
+            );
+          },
+        );
 
-        if (pagamento) {
-          result.success.push(pagamento);
-        }
+        result.success.push(pagamentoLiberado);
+        
+        this.logger.log(
+          `[${index + 1}/${batchOrdenado.length}] ✅ SUCESSO: Pagamento ${pagamentoId.substring(0, 8)}... (Parcela ${pagamentoData?.numero_parcela}) liberado`,
+          {
+            ordem: index + 1,
+            pagamentoId,
+            numeroParcela: pagamentoData?.numero_parcela,
+            novoStatus: pagamentoLiberado.status,
+            dataLiberacao: pagamentoLiberado.data_liberacao,
+            concessaoId: pagamentoData?.concessao_id,
+          },
+        );
       } catch (error) {
+        this.logger.error(
+          `[${index + 1}/${batchOrdenado.length}] ❌ ERRO: Falha ao liberar Pagamento ${pagamentoId.substring(0, 8)}... (Parcela ${pagamentoData?.numero_parcela})`,
+          {
+            ordem: index + 1,
+            pagamentoId,
+            numeroParcela: pagamentoData?.numero_parcela,
+            concessaoId: pagamentoData?.concessao_id,
+            error: error.message,
+            userId,
+            dados,
+          },
+        );
+
         result.errors.push({
           item: { pagamentoId, dados },
           error: error.message,
@@ -410,6 +574,15 @@ export class PagamentoBatchService {
 
     result.successCount = result.success.length;
     result.errorCount = result.errors.length;
+
+    this.logger.log(
+      `Liberação em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`,
+      {
+        total: result.total,
+        successRate: ((result.successCount / result.total) * 100).toFixed(2) + '%',
+        userId,
+      },
+    );
 
     return result;
   }

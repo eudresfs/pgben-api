@@ -100,6 +100,7 @@ async function bootstrap(): Promise<INestApplication> {
         transformOptions: {
           enableImplicitConversion: true,
         },
+  
         errorHttpStatusCode: 400,
         disableErrorMessages: environment === 'production', // Ocultar detalhes em produção
         exceptionFactory: (errors) => {
@@ -107,7 +108,7 @@ async function bootstrap(): Promise<INestApplication> {
         },
       }),
     );
-    logger.log('✅ ValidationPipe configurado');
+    logger.log('✅ ValidationPipe configurado com suporte a interceptors');
 
     // === INTERCEPTORS E FILTROS GLOBAIS ===
     logger.log('🛡️ Configurando interceptors e filtros...');

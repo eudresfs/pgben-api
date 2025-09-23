@@ -28,7 +28,7 @@ import { BeneficioFiltrosAvancadosDto, BeneficioFiltrosResponseDto } from '../dt
 import { 
   VerificarDisponibilidadeBeneficioDto, 
   VerificarDisponibilidadeBeneficioResponseDto 
-} from '../dtos/verificar-disponibilidade-beneficio.dto';
+} from '../dto/verificar-disponibilidade-beneficio.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';

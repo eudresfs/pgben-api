@@ -58,25 +58,52 @@ export class ResultadoBeneficioValidationInterceptor implements NestInterceptor 
   }
 
   /**
-   * Valida dados para registro de resultado
+   * Valida dados para registro de resultado com estratégia otimizada para documentos críticos.
+   * 
+   * Implementa validação em duas fases:
+   * - Fase 1: Validação rápida dos dados essenciais do formulário
+   * - Fase 2: Validação completa incluindo arquivos e integridade
    */
   private async validarRegistroResultado(request: any): Promise<void> {
-    const dto: CreateResultadoBeneficioCessadoDto = request.body;
     const usuarioId = request.user?.id;
-
-    if (!dto) {
-      throw new BadRequestException('Dados do resultado são obrigatórios');
-    }
 
     if (!usuarioId) {
       throw new BadRequestException('Usuário não identificado');
     }
 
+    // FASE 1: Validação rápida dos dados essenciais
+    // Após FileFieldsInterceptor, os dados estão disponíveis em request.body
+    const body = request.body;
+    
+    if (!body) {
+      throw new BadRequestException('Dados do formulário são obrigatórios');
+    }
+
+    // Validação básica dos campos obrigatórios
+    if (!body.concessaoId) {
+      throw new BadRequestException('ID da concessão é obrigatório');
+    }
+
+    if (!body.motivoEncerramento) {
+      throw new BadRequestException('Motivo do encerramento é obrigatório');
+    }
+
+    if (!body.statusVulnerabilidade) {
+      throw new BadRequestException('Status da vulnerabilidade é obrigatório');
+    }
+
+    // Transformar dados para DTO com validação aprimorada
+    let dto: CreateResultadoBeneficioCessadoDto;
+    
+    try {
+      dto = this.transformMultipartToDto(body, request.files);
+    } catch (error) {
+      throw new BadRequestException(`Erro na validação dos dados: ${error.message}`);
+    }
+
+    // FASE 2: Validação completa com regras de negócio
     // Validar concessão
     const concessao = await this.validacaoService.validarConcessaoParaCessacao(dto.concessaoId);
-
-    // Validar competência do técnico
-    await this.validacaoService.validarCompetenciaTecnico(usuarioId, concessao);
 
     // Validar consistência dos dados
     this.validacaoService.validarConsistenciaDados(dto);
@@ -86,8 +113,118 @@ export class ResultadoBeneficioValidationInterceptor implements NestInterceptor 
       this.validacaoService.validarPrazoRegistro(concessao.dataEncerramento);
     }
 
+    // Validar arquivos críticos se presentes
+    this.validarArquivosCriticos(request.files);
+
     // Adicionar dados validados ao request para uso posterior
     request.concessaoValidada = concessao;
+    request.dadosValidados = dto;
+  }
+
+  /**
+   * Valida arquivos críticos do processo de cessação de benefícios.
+   * 
+   * Verifica se os arquivos enviados atendem aos critérios de qualidade
+   * e conformidade exigidos pela LOAS/SUAS para documentação de cessação.
+   */
+  private validarArquivosCriticos(files: any): void {
+    if (!files) {
+      return; // Arquivos são opcionais, mas se enviados devem ser válidos
+    }
+
+    const { provaSocial, documentacaoTecnica } = files;
+
+    // Validar arquivos de prova social
+    if (provaSocial && provaSocial.length > 0) {
+      if (provaSocial.length > 5) {
+        throw new BadRequestException('Máximo de 5 arquivos de prova social permitidos');
+      }
+
+      provaSocial.forEach((arquivo: Express.Multer.File, index: number) => {
+        if (!arquivo.originalname || arquivo.size === 0) {
+          throw new BadRequestException(`Arquivo de prova social ${index + 1} é inválido`);
+        }
+      });
+    }
+
+    // Validar arquivos de documentação técnica
+    if (documentacaoTecnica && documentacaoTecnica.length > 0) {
+      if (documentacaoTecnica.length > 10) {
+        throw new BadRequestException('Máximo de 10 arquivos de documentação técnica permitidos');
+      }
+
+      documentacaoTecnica.forEach((arquivo: Express.Multer.File, index: number) => {
+        if (!arquivo.originalname || arquivo.size === 0) {
+          throw new BadRequestException(`Arquivo de documentação técnica ${index + 1} é inválido`);
+        }
+      });
+    }
+  }
+
+  /**
+   * Transforma dados multipart em DTO válido com validação aprimorada.
+   * 
+   * Converte strings do formulário multipart para tipos apropriados
+   * e valida a integridade dos dados críticos.
+   * Cria array de documentos comprobatórios a partir dos arquivos enviados.
+   */
+  private transformMultipartToDto(body: any, files?: any): CreateResultadoBeneficioCessadoDto {
+    try {
+      // Validar campos obrigatórios com mensagens específicas
+      if (!body.concessaoId?.trim()) {
+        throw new Error('ID da concessão é obrigatório');
+      }
+
+      if (!body.motivoEncerramento?.trim()) {
+        throw new Error('Motivo do encerramento é obrigatório');
+      }
+
+      if (!body.statusVulnerabilidade?.trim()) {
+        throw new Error('Status da vulnerabilidade é obrigatório');
+      }
+
+      // Validar formato do UUID da concessão
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(body.concessaoId)) {
+        throw new Error('ID da concessão deve ser um UUID válido');
+      }
+
+      // Converter e validar acompanhamento posterior
+      let acompanhamentoPosterior = false;
+      if (body.acompanhamentoPosterior) {
+        const valor = body.acompanhamentoPosterior.toLowerCase();
+        if (valor === 'true' || valor === '1') {
+          acompanhamentoPosterior = true;
+        } else if (valor === 'false' || valor === '0') {
+          acompanhamentoPosterior = false;
+        } else {
+          throw new Error('Campo acompanhamentoPosterior deve ser true ou false');
+        }
+      }
+
+      // Validar se acompanhamento posterior requer detalhes
+      if (acompanhamentoPosterior && !body.detalhesAcompanhamento?.trim()) {
+        throw new Error('Detalhes do acompanhamento são obrigatórios quando acompanhamento posterior é verdadeiro');
+      }
+
+      // Criar array de documentos comprobatórios a partir dos arquivos
+      const documentosComprobatorios = this.criarDocumentosComprobatorios(files);
+
+      return {
+        concessaoId: body.concessaoId.trim(),
+        motivoEncerramento: body.motivoEncerramento.trim(),
+        descricaoMotivo: body.descricaoMotivo?.trim() || null,
+        statusVulnerabilidade: body.statusVulnerabilidade.trim(),
+        avaliacaoVulnerabilidade: body.avaliacaoVulnerabilidade?.trim() || null,
+        observacoes: body.observacoes?.trim() || null,
+        acompanhamentoPosterior,
+        detalhesAcompanhamento: body.detalhesAcompanhamento?.trim() || null,
+        recomendacoes: body.recomendacoes?.trim() || null,
+        documentosComprobatorios,
+      };
+    } catch (error) {
+      throw new Error(`Erro na validação dos dados: ${error.message}`);
+    }
   }
 
   /**
@@ -172,6 +309,52 @@ export class ResultadoBeneficioValidationInterceptor implements NestInterceptor 
     if (!uuidRegex.test(concessaoId)) {
       throw new BadRequestException('ID da concessão deve estar no formato UUID válido');
     }
+  }
+
+  /**
+   * Cria array de documentos comprobatórios a partir dos arquivos enviados.
+   * 
+   * Combina arquivos de prova social e documentação técnica em um único array
+   * com metadados apropriados para cada tipo de documento.
+   */
+  private criarDocumentosComprobatorios(files?: any): any[] {
+    const documentos: any[] = [];
+
+    if (!files) {
+      return documentos;
+    }
+
+    const { provaSocial, documentacaoTecnica } = files;
+
+    // Processar arquivos de prova social
+    if (provaSocial && provaSocial.length > 0) {
+      provaSocial.forEach((arquivo: Express.Multer.File) => {
+        documentos.push({
+          nomeArquivo: arquivo.originalname,
+          tipo: 'prova_social', // Valor correto do enum TipoDocumentoComprobatorio
+          tamanhoArquivo: arquivo.size,
+          tipoMime: arquivo.mimetype,
+          caminhoArquivo: `/uploads/temp/${arquivo.originalname}`, // Caminho temporário
+          buffer: arquivo.buffer,
+        });
+      });
+    }
+
+    // Processar arquivos de documentação técnica
+    if (documentacaoTecnica && documentacaoTecnica.length > 0) {
+      documentacaoTecnica.forEach((arquivo: Express.Multer.File) => {
+        documentos.push({
+          nomeArquivo: arquivo.originalname,
+          tipo: 'documentacao_tecnica', // Valor correto do enum TipoDocumentoComprobatorio
+          tamanhoArquivo: arquivo.size,
+          tipoMime: arquivo.mimetype,
+          caminhoArquivo: `/uploads/temp/${arquivo.originalname}`, // Caminho temporário
+          buffer: arquivo.buffer,
+        });
+      });
+    }
+
+    return documentos;
   }
 
   /**

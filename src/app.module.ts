@@ -24,7 +24,7 @@ import { CidadaoModule } from './modules/cidadao/cidadao.module';
 import { BeneficioModule } from './modules/beneficio/beneficio.module';
 import { DocumentoModule } from './modules/documento/documento.module';
 import { MetricasModule } from './modules/metricas/metricas.module';
-import { RelatoriosModule } from './modules/relatorios/relatorios.module'
+import { RelatoriosModule } from './modules/relatorios/relatorios.module';
 import { RecursoModule } from './modules/recurso/recurso.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { PagamentoModule } from './modules/pagamento/pagamento.module';
@@ -48,6 +48,7 @@ import { AuditContextInterceptor } from './common/interceptors/audit-context.int
 import { GlobalAuditInterceptor } from './modules/auditoria/interceptors/global-audit.interceptor';
 import { RequestContextHolder } from './common/services/request-context-holder.service';
 import { CommonModule } from './common/common.module';
+
 
 
 @Module({
@@ -219,7 +220,6 @@ import { CommonModule } from './common/common.module';
       provide: APP_INTERCEPTOR,
       useClass: GlobalAuditInterceptor,
     },
-
   ],
 })
 export class AppModule implements NestModule {

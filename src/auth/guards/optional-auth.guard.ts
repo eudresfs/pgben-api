@@ -18,7 +18,10 @@ export class OptionalAuthGuard extends AuthGuard('jwt') implements CanActivate {
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
     // Chama o guard pai, mas captura exceções
-    return super.canActivate(context) as boolean | Promise<boolean> | Observable<boolean>;
+    return super.canActivate(context) as
+      | boolean
+      | Promise<boolean>
+      | Observable<boolean>;
   }
 
   /**
@@ -31,7 +34,7 @@ export class OptionalAuthGuard extends AuthGuard('jwt') implements CanActivate {
     if (err || !user) {
       return null;
     }
-    
+
     // Se tudo estiver ok, retorna o usuário
     return user;
   }

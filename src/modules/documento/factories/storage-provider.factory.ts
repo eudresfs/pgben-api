@@ -137,7 +137,8 @@ export class StorageProviderFactory {
         metadados?: Record<string, any>,
       ): Promise<string> => {
         // Usar o novo método uploadArquivoHierarquico do MinioService
-        const nomeOriginal = nomeArquivo.split('/').pop() || nomeArquivo;
+        // CORREÇÃO: Usar nomeOriginal dos metadados em vez de extrair do caminho
+        const nomeOriginal = metadados?.nomeOriginal || nomeArquivo.split('/').pop() || nomeArquivo;
         const tipoDocumento = metadados?.tipoDocumento || 'OUTRO';
 
         return await this.minioService.uploadArquivoHierarquico(

@@ -23,7 +23,7 @@ import { BeneficioFiltrosAvancadosDto, BeneficioFiltrosResponseDto } from '../dt
 import { 
   VerificarDisponibilidadeBeneficioResponseDto,
   DisponibilidadeBeneficioDto 
-} from '../dtos/verificar-disponibilidade-beneficio.dto';
+} from '../dto/verificar-disponibilidade-beneficio.dto';
 import { FiltrosAvancadosService } from '../../../common/services/filtros-avancados.service';
 
 /**

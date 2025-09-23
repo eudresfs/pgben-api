@@ -20,6 +20,7 @@ import {
 import { Solicitacao } from './solicitacao.entity';
 import { Pagamento } from './pagamento.entity';
 import { StatusConcessao } from '../enums/status-concessao.enum';
+import { TipoConcessaoEnum } from '../enums';
 import { HistoricoConcessao } from './historico-concessao.entity';
 import { ResultadoBeneficioCessado } from './resultado-beneficio-cessado.entity';
 
@@ -48,6 +49,32 @@ export class Concessao {
   @OneToOne(() => Solicitacao, (solicitacao) => solicitacao.concessao)
   @JoinColumn({ name: 'solicitacao_id' })
   solicitacao: Solicitacao;
+
+  /** Tipo da concessão (original ou renovação) */
+  @Column({
+    type: 'enum',
+    enum: TipoConcessaoEnum,
+    enumName: 'tipo_concessao_enum',
+    default: TipoConcessaoEnum.ORIGINAL,
+    comment: 'Tipo da concessão: original ou renovação'
+  })
+  @IsEnum(TipoConcessaoEnum)
+  tipo: TipoConcessaoEnum;
+
+  /** ID da concessão original (para renovações) */
+  @Column({ name: 'concessao_renovada_id', type: 'uuid', nullable: true })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID da concessão renovada inválido' })
+  concessaoRenovadaId: string | null;
+
+  /** Relacionamento com a concessão original (para renovações) */
+  @OneToOne(() => Concessao, (concessao) => concessao.renovacao, { nullable: true })
+  @JoinColumn({ name: 'concessao_renovada_id' })
+  concessaoRenovada: Concessao | null;
+
+  /** Relacionamento com a renovação desta concessão */
+  @OneToOne(() => Concessao, (concessao) => concessao.concessaoRenovada, { nullable: true })
+  renovacao: Concessao | null;
 
   /** Status atual da concessão */
   @Column({
@@ -133,7 +160,11 @@ export class Concessao {
   @OneToMany(() => HistoricoConcessao, (hist) => hist.concessao)
   historicos: HistoricoConcessao[];
 
-  /** Resultado da cessação do benefício */
-  @OneToOne(() => ResultadoBeneficioCessado, (resultado) => resultado.concessao)
-  resultadoBeneficioCessado: ResultadoBeneficioCessado;
+  /**
+   * Resultado do benefício cessado (se aplicável)
+   * Relacionamento com informações sobre o encerramento do benefício
+   * Temporariamente comentado para resolver problemas de metadata
+   */
+  @OneToOne(() => ResultadoBeneficioCessado, (resultado) => resultado.concessao, { nullable: true })
+  resultadoBeneficioCessado: ResultadoBeneficioCessado | null;
 }

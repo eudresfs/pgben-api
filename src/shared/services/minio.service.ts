@@ -36,7 +36,7 @@ export class MinioService implements OnModuleInit {
   ) {
     // Configuração do cliente MinIO
     const useSSL = this.configService.get('MINIO_USE_SSL') === 'true';
-    const region = this.configService.get<string>('MINIO_REGION', 'us-east-1');
+    const region = this.configService.get<string>('MINIO_REGION');
     const endpoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost');
     const port = this.configService.get<number>('MINIO_PORT', 9000);
     const accessKey = this.configService.get<string>('MINIO_ACCESS_KEY', 'minioadmin');
@@ -46,18 +46,25 @@ export class MinioService implements OnModuleInit {
     this.logger.log(`Configurando MinIO:`);
     this.logger.log(`  - Endpoint: ${endpoint}:${port}`);
     this.logger.log(`  - SSL: ${useSSL}`);
-    this.logger.log(`  - Região: ${region}`);
+    this.logger.log(`  - Região: ${region || 'não definida (padrão para MinIO local)'}`);
     this.logger.log(`  - Access Key: ${accessKey ? accessKey.substring(0, 4) + '***' : 'não definida'}`);
     this.logger.log(`  - Secret Key: ${secretKey ? '***' + secretKey.substring(secretKey.length - 4) : 'não definida'}`);
 
-    this.minioClient = new Minio.Client({
+    // Configuração do cliente MinIO - só incluir região se estiver definida
+    const clientConfig: any = {
       endPoint: endpoint,
       port: port,
       useSSL: useSSL,
       accessKey: accessKey,
       secretKey: secretKey,
-      region: region,
-    });
+    };
+
+    // Só adicionar região se estiver configurada (evita problemas com MinIO local)
+    if (region) {
+      clientConfig.region = region;
+    }
+
+    this.minioClient = new Minio.Client(clientConfig);
 
     // Nome do bucket para armazenamento de documentos
     this.bucketName = this.configService.get<string>(
@@ -273,10 +280,21 @@ export class MinioService implements OnModuleInit {
     // Verificar se o documento deve ser criptografado
     const criptografar = this.documentoRequerCriptografia(tipoDocumento);
 
+    // Sanitizar nome original para evitar problemas de assinatura HTTP
+    const nomeSanitizado = nomeOriginal
+      .normalize('NFD')                    // Decompor acentos
+      .replace(/[\u0300-\u036f]/g, '')     // Remover acentos
+      .replace(/[^a-zA-Z0-9.\-_]/g, '_')   // Substituir caracteres especiais por underscore
+      .replace(/\s+/g, '_')                // Substituir espaços por underscore
+      .replace(/_+/g, '_')                 // Remover underscores duplicados
+      .replace(/^_|_$/g, '');              // Remover underscores do início e fim
+
+    this.logger.debug(`Nome original: "${nomeOriginal}" -> Nome sanitizado: "${nomeSanitizado}"`);
+
     let arquivoFinal = arquivo;
     const metadados: any = {
-      'Content-Type': mimetype,
-      'X-Amz-Meta-Original-Name': nomeOriginal,
+      'Content-Type': this.detectarMimeType(nomeOriginal),
+      'X-Amz-Meta-Original-Name': nomeSanitizado, // Usar nome sanitizado
       'X-Amz-Meta-Hash': hash,
       'X-Amz-Meta-Encrypted': criptografar ? 'true' : 'false',
     };
@@ -303,9 +321,52 @@ export class MinioService implements OnModuleInit {
     }
 
     try {
+      // Log detalhado para debug de assinatura
+      this.logger.debug('=== DEBUG UPLOAD HIERARQUICO ===');
+      this.logger.debug(`Bucket: ${this.bucketName}`);
+      this.logger.debug(`Caminho completo: ${caminhoCompleto}`);
+      this.logger.debug(`Nome original: ${nomeOriginal}`);
+      this.logger.debug(`Mimetype recebido: ${mimetype}`);
+      this.logger.debug(`Tipo documento: ${tipoDocumento}`);
+      this.logger.debug(`Tamanho arquivo original: ${arquivo.length} bytes`);
+      this.logger.debug(`Tamanho arquivo final: ${arquivoFinal.length} bytes`);
+      this.logger.debug(`Hash calculado: ${hash}`);
+      this.logger.debug(`Criptografar: ${criptografar}`);
+      
+      // Log detalhado dos metadados
+      this.logger.debug('=== METADADOS DETALHADOS ===');
+      Object.entries(metadados).forEach(([key, value]) => {
+        this.logger.debug(`${key}: ${value} (tipo: ${typeof value}, tamanho: ${String(value).length})`);
+      });
+      
+      // Verificar se há caracteres especiais nos metadados
+      const metadadosString = JSON.stringify(metadados);
+      this.logger.debug(`Tamanho total metadados JSON: ${metadadosString.length} bytes`);
+      this.logger.debug(`Metadados contém caracteres especiais: ${/[^\x20-\x7E]/.test(metadadosString)}`);
+      
+      // Log da configuração MinIO
+      this.logger.debug('=== CONFIGURAÇÃO MINIO ===');
+      this.logger.debug(`Endpoint: ${this.configService.get('MINIO_ENDPOINT')}`);
+      this.logger.debug(`Port: ${this.configService.get('MINIO_PORT')}`);
+      this.logger.debug(`Region: ${this.configService.get('MINIO_REGION')}`);
+      this.logger.debug(`SSL: ${this.configService.get('MINIO_USE_SSL')}`);
+      
       this.logger.debug(
         `Metadados que serão salvos: ${JSON.stringify(metadados)}`,
       );
+
+      // Log detalhado para debug de assinatura
+      this.logger.debug('=== DEBUG UPLOAD HIERARQUICO ===');
+      this.logger.debug(`Bucket: ${this.bucketName}`);
+      this.logger.debug(`Caminho completo: ${caminhoCompleto}`);
+      this.logger.debug(`Nome original: ${nomeOriginal}`);
+      this.logger.debug(`Mimetype recebido: ${mimetype}`);
+      this.logger.debug(`Tipo documento: ${tipoDocumento}`);
+      this.logger.debug(`Tamanho arquivo: ${arquivoFinal.length}`);
+      this.logger.debug(`Hash: ${hash}`);
+      this.logger.debug(`Criptografado: ${criptografar}`);
+      this.logger.debug(`Content-Type detectado: ${metadados['Content-Type']}`);
+      this.logger.debug('=== FIM DEBUG ===');
 
       // Fazer upload do arquivo para o MinIO
       await this.minioClient.putObject(

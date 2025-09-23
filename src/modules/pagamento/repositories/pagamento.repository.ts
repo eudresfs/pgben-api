@@ -104,9 +104,35 @@ export class PagamentoRepository {
       .createScopedQueryBuilder('pagamento')
       .where('pagamento.id = :id', { id });
 
-    // Adicionar relações dinamicamente
+    // Processar relações, separando simples das aninhadas
+    const processedRelations = new Set<string>();
+    
     relations.forEach((relation) => {
-      queryBuilder.leftJoinAndSelect(`pagamento.${relation}`, relation);
+      const parts = relation.split('.');
+      
+      if (parts.length === 1) {
+        // Relação simples (ex: 'solicitacao', 'concessao')
+        if (!processedRelations.has(parts[0])) {
+          queryBuilder.leftJoinAndSelect(`pagamento.${parts[0]}`, parts[0]);
+          processedRelations.add(parts[0]);
+        }
+      } else if (parts.length === 2) {
+        // Relação aninhada (ex: 'solicitacao.tipo_beneficio')
+        const [parentRelation, childRelation] = parts;
+        
+        // Primeiro, garantir que a relação pai existe
+        if (!processedRelations.has(parentRelation)) {
+          queryBuilder.leftJoinAndSelect(`pagamento.${parentRelation}`, parentRelation);
+          processedRelations.add(parentRelation);
+        }
+        
+        // Depois, adicionar a relação filha usando o mesmo nome da propriedade
+        // para manter a estrutura esperada (ex: solicitacao.tipo_beneficio)
+        if (!processedRelations.has(relation)) {
+          queryBuilder.leftJoinAndSelect(`${parentRelation}.${childRelation}`, childRelation);
+          processedRelations.add(relation);
+        }
+      }
     });
 
     return await queryBuilder.getOne();

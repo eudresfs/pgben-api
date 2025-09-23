@@ -60,10 +60,10 @@ describe('PermissionGuard', () => {
       // Arrange
       const context = {
         switchToHttp: jest.fn().mockReturnValue({
-          getRequest: jest.fn().mockReturnValue({ user: { id: 1 } })
+          getRequest: jest.fn().mockReturnValue({ user: { id: 1 } }),
         }),
         getHandler: jest.fn(),
-        getClass: jest.fn()
+        getClass: jest.fn(),
       } as any;
       jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
 
@@ -98,29 +98,29 @@ describe('PermissionGuard', () => {
           }),
         }),
         getHandler: jest.fn(),
-        getClass: jest.fn()
-       } as any;
+        getClass: jest.fn(),
+      } as any;
 
       jest
-           .spyOn(reflector, 'get')
-           .mockReturnValueOnce([permissionOptions]) // Para o método
-           .mockReturnValueOnce([]); // Para a classe
-        mockPermissionService.hasPermission
-          .mockResolvedValueOnce(false) // Para verificação de super admin
-          .mockResolvedValueOnce(true); // Para a permissão específica
+        .spyOn(reflector, 'get')
+        .mockReturnValueOnce([permissionOptions]) // Para o método
+        .mockReturnValueOnce([]); // Para a classe
+      mockPermissionService.hasPermission
+        .mockResolvedValueOnce(false) // Para verificação de super admin
+        .mockResolvedValueOnce(true); // Para a permissão específica
 
       // Act
       const result = await guard.canActivate(context);
 
       // Assert
       expect(reflector.get).toHaveBeenCalledWith(
-          PERMISSION_REQUIREMENTS_KEY,
-          context.getHandler(),
-        );
-        expect(reflector.get).toHaveBeenCalledWith(
-          PERMISSION_REQUIREMENTS_KEY,
-          context.getClass(),
-        );
+        PERMISSION_REQUIREMENTS_KEY,
+        context.getHandler(),
+      );
+      expect(reflector.get).toHaveBeenCalledWith(
+        PERMISSION_REQUIREMENTS_KEY,
+        context.getClass(),
+      );
       expect(mockPermissionService.hasPermission).toHaveBeenCalledWith({
         userId: 'user-123',
         permissionName: 'usuario.visualizar',
@@ -138,37 +138,37 @@ describe('PermissionGuard', () => {
       };
 
       const context = {
-          switchToHttp: jest.fn().mockReturnValue({
-            getRequest: jest.fn().mockReturnValue({
-              user: { id: 'user-123', permissions: [], unidade_id: undefined },
-              params: {},
-              query: {},
-            }),
+        switchToHttp: jest.fn().mockReturnValue({
+          getRequest: jest.fn().mockReturnValue({
+            user: { id: 'user-123', permissions: [], unidade_id: undefined },
+            params: {},
+            query: {},
           }),
-          getHandler: jest.fn(),
-          getClass: jest.fn()
+        }),
+        getHandler: jest.fn(),
+        getClass: jest.fn(),
       } as any;
 
       jest
-           .spyOn(reflector, 'get')
-           .mockReturnValueOnce([permissionOptions]) // Para o método
-           .mockReturnValueOnce([]); // Para a classe
-        mockPermissionService.hasPermission
-          .mockResolvedValueOnce(false) // Para verificação de super admin
-          .mockResolvedValueOnce(false); // Para a permissão específica
+        .spyOn(reflector, 'get')
+        .mockReturnValueOnce([permissionOptions]) // Para o método
+        .mockReturnValueOnce([]); // Para a classe
+      mockPermissionService.hasPermission
+        .mockResolvedValueOnce(false) // Para verificação de super admin
+        .mockResolvedValueOnce(false); // Para a permissão específica
 
       // Act & Assert
-         await expect(guard.canActivate(context)).rejects.toThrow(
-           PermissionDeniedException,
-         );
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        PermissionDeniedException,
+      );
       expect(reflector.get).toHaveBeenCalledWith(
-          PERMISSION_REQUIREMENTS_KEY,
-          context.getHandler(),
-        );
-        expect(reflector.get).toHaveBeenCalledWith(
-          PERMISSION_REQUIREMENTS_KEY,
-          context.getClass(),
-        );
+        PERMISSION_REQUIREMENTS_KEY,
+        context.getHandler(),
+      );
+      expect(reflector.get).toHaveBeenCalledWith(
+        PERMISSION_REQUIREMENTS_KEY,
+        context.getClass(),
+      );
       expect(mockPermissionService.hasPermission).toHaveBeenCalledWith({
         userId: 'user-123',
         permissionName: 'usuario.visualizar',
@@ -186,37 +186,37 @@ describe('PermissionGuard', () => {
       };
 
       const context = {
-          switchToHttp: jest.fn().mockReturnValue({
-            getRequest: jest.fn().mockReturnValue({
-              user: { id: 'user-123', permissions: [] },
-              params: { targetUserId: 'target-user-456' },
-              query: {},
-            }),
+        switchToHttp: jest.fn().mockReturnValue({
+          getRequest: jest.fn().mockReturnValue({
+            user: { id: 'user-123', permissions: [] },
+            params: { targetUserId: 'target-user-456' },
+            query: {},
           }),
-          getHandler: jest.fn(),
-          getClass: jest.fn()
+        }),
+        getHandler: jest.fn(),
+        getClass: jest.fn(),
       } as any;
 
       jest
-            .spyOn(reflector, 'get')
-            .mockReturnValueOnce([permissionOptions]) // Para o método
-            .mockReturnValueOnce([]); // Para a classe
-        mockPermissionService.hasPermission
-          .mockResolvedValueOnce(false) // Para verificação de super admin
-          .mockResolvedValueOnce(true); // Para a permissão específica
+        .spyOn(reflector, 'get')
+        .mockReturnValueOnce([permissionOptions]) // Para o método
+        .mockReturnValueOnce([]); // Para a classe
+      mockPermissionService.hasPermission
+        .mockResolvedValueOnce(false) // Para verificação de super admin
+        .mockResolvedValueOnce(true); // Para a permissão específica
 
       // Act
       const result = await guard.canActivate(context);
 
       // Assert
       expect(reflector.get).toHaveBeenCalledWith(
-          PERMISSION_REQUIREMENTS_KEY,
-          context.getHandler(),
-        );
-        expect(reflector.get).toHaveBeenCalledWith(
-          PERMISSION_REQUIREMENTS_KEY,
-          context.getClass(),
-        );
+        PERMISSION_REQUIREMENTS_KEY,
+        context.getHandler(),
+      );
+      expect(reflector.get).toHaveBeenCalledWith(
+        PERMISSION_REQUIREMENTS_KEY,
+        context.getClass(),
+      );
       expect(mockPermissionService.hasPermission).toHaveBeenCalledWith({
         userId: 'user-123',
         permissionName: 'usuario.visualizar',
@@ -235,37 +235,37 @@ describe('PermissionGuard', () => {
       };
 
       const context = {
-          switchToHttp: jest.fn().mockReturnValue({
-            getRequest: jest.fn().mockReturnValue({
-              user: { id: 'user-123', permissions: [] },
-              params: {},
-              query: { targetUserId: 'target-user-456' },
-            }),
+        switchToHttp: jest.fn().mockReturnValue({
+          getRequest: jest.fn().mockReturnValue({
+            user: { id: 'user-123', permissions: [] },
+            params: {},
+            query: { targetUserId: 'target-user-456' },
           }),
-          getHandler: jest.fn(),
-          getClass: jest.fn()
+        }),
+        getHandler: jest.fn(),
+        getClass: jest.fn(),
       } as any;
 
       jest
-            .spyOn(reflector, 'get')
-            .mockReturnValueOnce([permissionOptions]) // Para o método
-            .mockReturnValueOnce([]); // Para a classe
-        mockPermissionService.hasPermission
-          .mockResolvedValueOnce(false) // Para verificação de super admin
-          .mockResolvedValueOnce(true); // Para a permissão específica
+        .spyOn(reflector, 'get')
+        .mockReturnValueOnce([permissionOptions]) // Para o método
+        .mockReturnValueOnce([]); // Para a classe
+      mockPermissionService.hasPermission
+        .mockResolvedValueOnce(false) // Para verificação de super admin
+        .mockResolvedValueOnce(true); // Para a permissão específica
 
       // Act
       const result = await guard.canActivate(context);
 
       // Assert
       expect(reflector.get).toHaveBeenCalledWith(
-          PERMISSION_REQUIREMENTS_KEY,
-          context.getHandler(),
-        );
-        expect(reflector.get).toHaveBeenCalledWith(
-          PERMISSION_REQUIREMENTS_KEY,
-          context.getClass(),
-        );
+        PERMISSION_REQUIREMENTS_KEY,
+        context.getHandler(),
+      );
+      expect(reflector.get).toHaveBeenCalledWith(
+        PERMISSION_REQUIREMENTS_KEY,
+        context.getClass(),
+      );
       expect(mockPermissionService.hasPermission).toHaveBeenCalledWith({
         userId: 'user-123',
         permissionName: 'usuario.visualizar',
@@ -283,32 +283,32 @@ describe('PermissionGuard', () => {
       };
 
       const context = {
-         switchToHttp: jest.fn().mockReturnValue({
-           getRequest: jest.fn().mockReturnValue({
-             user: {
-               id: 'user-123',
-               permissions: []
-             },
-             params: {},
-             query: {},
-           }),
-         }),
-         getHandler: jest.fn(),
-         getClass: jest.fn()
-       } as any;
+        switchToHttp: jest.fn().mockReturnValue({
+          getRequest: jest.fn().mockReturnValue({
+            user: {
+              id: 'user-123',
+              permissions: [],
+            },
+            params: {},
+            query: {},
+          }),
+        }),
+        getHandler: jest.fn(),
+        getClass: jest.fn(),
+      } as any;
 
       jest
-            .spyOn(reflector, 'get')
-            .mockReturnValueOnce([permissionOptions]) // Para o método
-            .mockReturnValueOnce([]); // Para a classe
-        mockPermissionService.hasPermission
-          .mockResolvedValueOnce(false) // Para verificação de super admin
-          .mockResolvedValueOnce(false); // Para a permissão específica
+        .spyOn(reflector, 'get')
+        .mockReturnValueOnce([permissionOptions]) // Para o método
+        .mockReturnValueOnce([]); // Para a classe
+      mockPermissionService.hasPermission
+        .mockResolvedValueOnce(false) // Para verificação de super admin
+        .mockResolvedValueOnce(false); // Para a permissão específica
 
-        // Act & Assert
-        await expect(guard.canActivate(context)).rejects.toThrow(
-          PermissionDeniedException,
-        );
+      // Act & Assert
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        PermissionDeniedException,
+      );
       expect(reflector.get).toHaveBeenCalledWith(
         PERMISSION_REQUIREMENTS_KEY,
         context.getHandler(),
@@ -328,26 +328,26 @@ describe('PermissionGuard', () => {
       };
 
       const context = {
-          switchToHttp: jest.fn().mockReturnValue({
-            getRequest: jest.fn().mockReturnValue({
-              user: { id: 'user-123', permissions: [] },
-              params: {},
-              query: {},
-            }),
+        switchToHttp: jest.fn().mockReturnValue({
+          getRequest: jest.fn().mockReturnValue({
+            user: { id: 'user-123', permissions: [] },
+            params: {},
+            query: {},
           }),
-          getHandler: jest.fn(),
-          getClass: jest.fn()
+        }),
+        getHandler: jest.fn(),
+        getClass: jest.fn(),
       } as any;
 
       jest
-           .spyOn(reflector, 'get')
-           .mockReturnValueOnce([permissionOptions]) // Para o método
-           .mockReturnValueOnce([]); // Para a classe
+        .spyOn(reflector, 'get')
+        .mockReturnValueOnce([permissionOptions]) // Para o método
+        .mockReturnValueOnce([]); // Para a classe
 
-        // Act & Assert
-        await expect(guard.canActivate(context)).rejects.toThrow(
-          PermissionDeniedException,
-        );
+      // Act & Assert
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        PermissionDeniedException,
+      );
       expect(reflector.get).toHaveBeenCalledWith(
         PERMISSION_REQUIREMENTS_KEY,
         context.getHandler(),

@@ -4,6 +4,9 @@ import { SharedModule } from '../../shared/shared.module';
 import { CacheModule } from '../../shared/cache/cache.module';
 import { AuthModule } from '../../auth/auth.module';
 import { CommonModule } from '../../common/common.module';
+import { DocumentoModule } from '../documento/documento.module';
+import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
+
 
 // Entidades
 import {
@@ -28,6 +31,7 @@ import { DocumentoComprobatorio } from '../../entities/documento-comprobatorio.e
 import { BeneficioController } from './controllers/beneficio.controller';
 import { DadosBeneficioController } from './controllers/dados-beneficio.controller';
 import { ResultadoBeneficioCessadoController } from './controllers/resultado-beneficio-cessado.controller';
+import { RenovacaoController } from './controllers/renovacao.controller';
 
 // Services
 import { BeneficioService } from './services/beneficio.service';
@@ -37,6 +41,9 @@ import { DadosAluguelSocialService } from './services/dados-aluguel-social.servi
 import { DadosAtaudeService } from './services/dados-ataude.service';
 import { DadosCestaBasicaService } from './services/dados-cesta-basica.service';
 import { DadosBeneficioFactoryService } from './services/dados-beneficio-factory.service';
+import { RenovacaoService } from './services/renovacao.service';
+import { RenovacaoValidationService } from './services/renovacao-validation.service';
+import { DocumentoReutilizacaoService } from './services/documento-reutilizacao.service';
 import { Concessao, HistoricoConcessao } from '../../entities';
 import { ConcessaoService } from './services/concessao.service';
 import { ValidacaoBeneficioService } from './services/validacao-beneficio.service';
@@ -47,14 +54,12 @@ import { ConcessaoController } from './controllers/concessao.controller';
 // Listeners
 import { BeneficioEventListener } from './listeners/beneficio-event.listener';
 
-// Interceptors
-import { WorkflowInterceptor } from '../../interceptors/workflow.interceptor';
+// Interceptors e Pipes
 import { ResultadoBeneficioValidationInterceptor } from './interceptors/resultado-beneficio-validation.interceptor';
 import { ResultadoBeneficioValidationPipe } from './pipes/resultado-beneficio-validation.pipe';
 
 // Repositórios
 import { TipoBeneficioRepository } from './repositories/tipo-beneficio.repository';
-import { TipoBeneficioSchemaRepository } from './repositories/tipo-beneficio-schema.repository';
 import { DadosNatalidadeRepository } from './repositories/dados-natalidade.repository';
 import { DadosAluguelSocialRepository } from './repositories/dados-aluguel-social.repository';
 import { DadosAtaudeRepository } from './repositories/dados-ataude.repository';
@@ -91,12 +96,9 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
     CommonModule, // Para FiltrosAvancadosService usado pelo ConcessaoService
     SharedModule, // Serviços compartilhados
     CacheModule, // Para CacheService usado pelo CacheInterceptor
+    DocumentoModule, // Para StorageProviderFactory usado pelo ResultadoBeneficioCessadoService
     forwardRef(() => AuthModule), // Para autenticação e autorização
-    forwardRef(() =>
-      import('../solicitacao/solicitacao.module').then(
-        (m) => m.SolicitacaoModule,
-      ),
-    ), // Para WorkflowSolicitacaoService
+    forwardRef(() => SolicitacaoModule), // Para WorkflowSolicitacaoService
     forwardRef(() =>
       import('../pagamento/pagamento.module').then((m) => m.PagamentoModule),
     ), // Para PagamentoService usado pelo ConcessaoService
@@ -112,6 +114,7 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
     BeneficioController,
     DadosBeneficioController,
     ResultadoBeneficioCessadoController,
+    RenovacaoController,
   ],
   providers: [
     ConcessaoService,
@@ -125,12 +128,14 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
     DadosAtaudeService,
     DadosCestaBasicaService,
     DadosBeneficioFactoryService,
+    RenovacaoService,
+    RenovacaoValidationService,
+    DocumentoReutilizacaoService,
     BeneficioEventListener,
-    WorkflowInterceptor,
+    // Interceptors
     ResultadoBeneficioValidationInterceptor,
     ResultadoBeneficioValidationPipe,
     TipoBeneficioRepository,
-    TipoBeneficioSchemaRepository,
     DadosNatalidadeRepository,
     DadosAluguelSocialRepository,
     DadosAtaudeRepository,
@@ -148,6 +153,9 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
     DadosAtaudeService,
     DadosCestaBasicaService,
     DadosBeneficioFactoryService,
+    RenovacaoService,
+    RenovacaoValidationService,
+    DocumentoReutilizacaoService,
     // Repositórios exportados
     DadosNatalidadeRepository,
     DadosAluguelSocialRepository,

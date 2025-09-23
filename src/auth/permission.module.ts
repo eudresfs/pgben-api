@@ -97,9 +97,7 @@ const PERMISSION_CACHE_CONFIG = {
     AuthGuardsModule,
   ],
 
-  controllers: [
-    PermissionController,
-  ],
+  controllers: [PermissionController],
 
   providers: [
     // Repositórios customizados

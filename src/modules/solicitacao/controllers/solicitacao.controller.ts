@@ -36,6 +36,7 @@ import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
 import { AvaliarSolicitacaoDto } from '../dto/avaliar-solicitacao.dto';
 import { VincularProcessoJudicialDto } from '../dto/vincular-processo-judicial.dto';
 import { VincularDeterminacaoJudicialDto } from '../dto/vincular-determinacao-judicial.dto';
+import { SolicitacaoComElegibilidadeDto } from '../../beneficio/dto/renovacao';
 
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
@@ -812,6 +813,110 @@ export class SolicitacaoController {
   ) {
     const user = req.user;
     return this.solicitacaoService.desvincularDeterminacaoJudicial(id, user);
+  }
+
+  /**
+   * Lista solicitações do usuário com informações de elegibilidade para renovação
+   */
+  @Get('com-elegibilidade')
+  @RequiresPermission({
+    permissionName: 'solicitacao.visualizar',
+  })
+  @ApiOperation({
+    summary: 'Listar solicitações com elegibilidade para renovação',
+    description: 'Retorna lista de solicitações do usuário com informações sobre elegibilidade para renovação de benefício',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de solicitações com elegibilidade retornada com sucesso',
+    type: [SolicitacaoComElegibilidadeDto],
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Usuário não autenticado',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Usuário não tem permissão para visualizar solicitações',
+  })
+  async listarComElegibilidadeRenovacao(
+    @Req() req: Request,
+  ) {
+    const user = req.user;
+    return this.solicitacaoService.listarComElegibilidadeRenovacao(user.id);
+  }
+
+  /**
+   * Verifica elegibilidade de renovação para uma solicitação específica
+   */
+  @Get(':id/elegibilidade-renovacao')
+  @RequiresPermission({
+    permissionName: 'solicitacao.visualizar',
+  })
+  @ApiOperation({
+    summary: 'Verificar elegibilidade de renovação',
+    description: 'Verifica se uma solicitação específica é elegível para renovação de benefício. A renovação pode ser solicitada por qualquer usuário autorizado, independente do proprietário da concessão.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Informações de elegibilidade retornadas com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        podeRenovar: {
+          type: 'boolean',
+          description: 'Indica se a solicitação pode ser renovada',
+          example: true,
+        },
+        motivos: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Lista de motivos caso não possa renovar',
+          example: ['Benefício ainda não cessou', 'Prazo para renovação não atingido'],
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Solicitação não encontrada',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Usuário não autenticado',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Usuário não tem permissão para visualizar esta solicitação',
+  })
+  async verificarElegibilidadeRenovacao(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: Request,
+  ) {
+    const user = req.user;
+    
+    try {
+      // Buscar a solicitação com concessão completa
+      const solicitacao = await this.solicitacaoService.findById(id);
+      
+      // Log para debug
+      this.logger.info(`Verificando elegibilidade para solicitação ${id}`);
+      this.logger.info(`Solicitação encontrada: ${!!solicitacao}`);
+      this.logger.info(`Concessão presente: ${!!solicitacao?.concessao}`);
+      this.logger.info(`ID da concessão: ${solicitacao?.concessao?.id}`);
+      
+      // Verificar se a solicitação possui concessão válida
+      if (!solicitacao?.concessao?.id) {
+        this.logger.warn(`Solicitação ${id} não possui concessão associada`);
+        throw new BadRequestException('Solicitação não possui concessão associada');
+      }
+      
+      // Usar o RenovacaoService através do SolicitacaoService
+      return this.solicitacaoService.verificarElegibilidadeRenovacao(solicitacao.concessao.id, user.id);
+    } catch (error) {
+      this.logger.error(`Erro ao verificar elegibilidade para solicitação ${id}: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   /**

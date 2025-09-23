@@ -139,13 +139,13 @@ export class PermissionGuard implements CanActivate {
 
       // Se o usuário tem bypass de escopo via roles, tratar como escopo global
       const effectiveScopeType = bypassScope ? TipoEscopo.GLOBAL : scopeType;
-      
+
       // DEBUG: Log para diagnóstico de escopo
       this.logger.debug(
         `[ESCOPO DEBUG] Usuário: ${request.user.username}, Roles: [${request.user.roles?.join(', ') || 'nenhuma'}], ` +
-        `Escopo Token: ${request.user.escopo}, ScopeType Decorador: ${scopeType}, ` +
-        `BypassScope: ${bypassScope}, EffectiveScopeType: ${effectiveScopeType}, ` +
-        `UnidadeId: ${request.user.unidade_id}, Endpoint: ${request.method} ${request.url}`
+          `Escopo Token: ${request.user.escopo}, ScopeType Decorador: ${scopeType}, ` +
+          `BypassScope: ${bypassScope}, EffectiveScopeType: ${effectiveScopeType}, ` +
+          `UnidadeId: ${request.user.unidade_id}, Endpoint: ${request.method} ${request.url}`,
       );
 
       // Preparar injeção de metadados de escopo no request

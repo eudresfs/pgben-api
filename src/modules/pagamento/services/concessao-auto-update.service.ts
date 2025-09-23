@@ -267,8 +267,9 @@ export class ConcessaoAutoUpdateService {
     pagamentoId: string,
   ): Promise<void> {
     try {
-      // Se o número da parcela for 1 e status for CONFIRMADO, atualizar status da concessão para ATIVO
-      if (pagamento.numero_parcela === 1 && pagamento.concessao_id && novoStatus === StatusPagamentoEnum.CONFIRMADO) {
+      // Se o número da parcela for 1 e status for CONFIRMADO ou LIBERADO, atualizar status da concessão para ATIVO
+      if (pagamento.numero_parcela === 1 && pagamento.concessao_id && 
+          (novoStatus === StatusPagamentoEnum.CONFIRMADO || novoStatus === StatusPagamentoEnum.LIBERADO)) {
         await this.concessaoService.atualizarStatus(
           pagamento.concessao_id,
           StatusConcessao.ATIVO,

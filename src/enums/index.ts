@@ -14,6 +14,18 @@ export { SituacaoTrabalhoEnum } from './situacao-trabalho.enum';
 // Enums de benefícios
 export { TipoBeneficio } from './tipo-beneficio.enum';
 export { StatusSolicitacao } from './status-solicitacao.enum';
+export {
+  TipoSolicitacaoEnum,
+  TipoSolicitacaoLabels,
+  getTipoSolicitacaoLabel,
+  isValidTipoSolicitacao
+} from './tipo-solicitacao.enum';
+export {
+  TipoConcessaoEnum,
+  TipoConcessaoLabels,
+  getTipoConcessaoLabel,
+  isValidTipoConcessao
+} from './tipo-concessao.enum';
 export { TipoUrnaEnum } from './tipo-urna.enum';
 export { TransladoEnum } from './translado.enum';
 export { PublicoPrioritarioAluguel } from './publico-prioritario-aluguel.enum';

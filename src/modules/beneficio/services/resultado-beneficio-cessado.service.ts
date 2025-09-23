@@ -17,6 +17,9 @@ import { ResultadoBeneficioCessadoResponseDto } from '../dto/resultado-beneficio
 import { StatusConcessao } from '../../../enums/status-concessao.enum';
 import { MotivoEncerramentoBeneficio } from '../../../enums/motivo-encerramento-beneficio.enum';
 import { StatusVulnerabilidade } from '../../../enums/status-vulnerabilidade.enum';
+import { TipoDocumentoComprobatorio } from '@/enums';
+import { StorageProviderFactory } from '../../documento/factories/storage-provider.factory';
+import * as crypto from 'crypto';
 
 /**
  * Service responsável pela lógica de negócio do registro de resultado
@@ -47,6 +50,7 @@ export class ResultadoBeneficioCessadoService {
     private readonly usuarioRepository: Repository<Usuario>,
     
     private readonly dataSource: DataSource,
+    private readonly storageProviderFactory: StorageProviderFactory,
   ) {}
 
   /**
@@ -57,11 +61,15 @@ export class ResultadoBeneficioCessadoService {
    * 
    * @param createDto - Dados para criação do registro
    * @param tecnicoId - ID do técnico responsável pelo registro
+   * @param provaSocialFiles - Arquivos de prova social (fotos e testemunhos)
+   * @param documentacaoTecnicaFiles - Arquivos de documentação técnica (laudos, relatórios)
    * @returns Resultado registrado com documentos comprobatórios
    */
   async registrarResultado(
     createDto: CreateResultadoBeneficioCessadoDto,
     tecnicoId: string,
+    provaSocialFiles?: Express.Multer.File[],
+    documentacaoTecnicaFiles?: Express.Multer.File[],
   ): Promise<ResultadoBeneficioCessadoResponseDto> {
     this.logger.log(`Iniciando registro de resultado para concessão ${createDto.concessaoId}`);
 
@@ -82,9 +90,11 @@ export class ResultadoBeneficioCessadoService {
       // Criar registro do resultado
       const resultado = await this.criarResultado(createDto, concessao, tecnico, queryRunner);
       
-      // Criar documentos comprobatórios
-      await this.criarDocumentosComprobatorios(
+      // Processar arquivos de prova social e documentação técnica
+      await this.processarArquivos(
         resultado.id,
+        provaSocialFiles,
+        documentacaoTecnicaFiles,
         createDto.documentosComprobatorios,
         tecnicoId,
         queryRunner,
@@ -289,34 +299,6 @@ export class ResultadoBeneficioCessadoService {
         'Detalhes do acompanhamento são obrigatórios quando acompanhamento posterior é necessário'
       );
     }
-
-    // Validar documentos mínimos conforme tipo de encerramento
-    await this.validarDocumentosMinimos(createDto);
-  }
-
-  /**
-   * Valida se os documentos comprobatórios atendem aos requisitos mínimos.
-   */
-  private async validarDocumentosMinimos(
-    createDto: CreateResultadoBeneficioCessadoDto,
-  ): Promise<void> {
-    const documentos = createDto.documentosComprobatorios;
-    
-    // Para superação de vulnerabilidade, exigir pelo menos um comprovante de renda
-    if (
-      createDto.motivoEncerramento === MotivoEncerramentoBeneficio.SUPERACAO_VULNERABILIDADE ||
-      createDto.motivoEncerramento === MotivoEncerramentoBeneficio.MELHORIA_SOCIOECONOMICA
-    ) {
-      const temComprovanteRenda = documentos.some(
-        doc => doc.tipo === 'COMPROVANTE_RENDA'
-      );
-      
-      if (!temComprovanteRenda) {
-        throw new BadRequestException(
-          'Para motivos de superação/melhoria socioeconômica é obrigatório anexar comprovante de renda'
-        );
-      }
-    }
   }
 
   /**
@@ -330,19 +312,126 @@ export class ResultadoBeneficioCessadoService {
   ): Promise<ResultadoBeneficioCessado> {
     const resultado = queryRunner.manager.create(ResultadoBeneficioCessado, {
       concessaoId: createDto.concessaoId,
-      motivoEncerramento: createDto.motivoEncerramento,
-      descricaoMotivo: createDto.descricaoMotivo,
+      tipoMotivoEncerramento: createDto.motivoEncerramento,
+      motivoDetalhado: createDto.descricaoMotivo,
       statusVulnerabilidade: createDto.statusVulnerabilidade,
-      avaliacaoVulnerabilidade: createDto.avaliacaoVulnerabilidade,
-      observacoes: createDto.observacoes,
-      acompanhamentoPosterior: createDto.acompanhamentoPosterior,
-      detalhesAcompanhamento: createDto.detalhesAcompanhamento,
-      recomendacoes: createDto.recomendacoes,
+      descricaoVulnerabilidade: createDto.avaliacaoVulnerabilidade,
+      vulnerabilidadeSuperada: createDto.statusVulnerabilidade === 'superada',
+      observacoesTecnicas: createDto.observacoes,
+      recomendacoesAcompanhamento: createDto.detalhesAcompanhamento,
+      encaminhadoOutrosServicos: false, // valor padrão
       tecnicoResponsavelId: tecnico.id,
       dataRegistro: new Date(),
     });
 
     return await queryRunner.manager.save(resultado);
+  }
+
+  /**
+   * Processa arquivos de prova social e documentação técnica.
+   */
+  private async processarArquivos(
+    resultadoId: string,
+    provaSocialFiles?: Express.Multer.File[],
+    documentacaoTecnicaFiles?: Express.Multer.File[],
+    documentosDto?: any[],
+    tecnicoId?: string,
+    queryRunner?: QueryRunner,
+  ): Promise<void> {
+    this.logger.log(`Processando arquivos para resultado ${resultadoId}`, {
+      provaSocialFiles: provaSocialFiles?.length || 0,
+      documentacaoTecnicaFiles: documentacaoTecnicaFiles?.length || 0,
+      documentosDto: documentosDto?.length || 0
+    });
+
+    const documentos: any[] = [];
+    const storageProvider = this.storageProviderFactory.getProvider();
+
+    // Processar arquivos de prova social
+    if (provaSocialFiles && provaSocialFiles.length > 0) {
+      this.logger.log(`Processando ${provaSocialFiles.length} arquivos de prova social`);
+      for (const file of provaSocialFiles) {
+        // Gerar caminho de armazenamento seguindo padrão do módulo de documentos
+        const caminhoArquivo = await this.gerarCaminhoArmazenamento(
+          resultadoId,
+          'prova_social',
+          file.originalname
+        );
+
+        // Salvar arquivo no MinIO
+        const caminhoSalvo = await storageProvider.salvarArquivo(
+          file.buffer,
+          caminhoArquivo,
+          file.mimetype,
+          {
+            tipoDocumento: 'prova_social',
+            resultadoId: resultadoId,
+            nomeOriginal: file.originalname,
+          }
+        );
+
+        documentos.push({
+          tipo: 'prova_social',
+          nomeArquivo: file.originalname,
+          caminhoArquivo: caminhoSalvo,
+          tipoMime: file.mimetype,
+          tamanhoArquivo: file.size,
+          descricao: 'Prova social - ' + file.originalname,
+          observacoes: 'Arquivo de prova social (fotos e testemunhos)',
+          hashArquivo: await this.calcularHashArquivo(file.buffer),
+        });
+      }
+    }
+
+    // Processar arquivos de documentação técnica
+    if (documentacaoTecnicaFiles && documentacaoTecnicaFiles.length > 0) {
+      this.logger.log(`Processando ${documentacaoTecnicaFiles.length} arquivos de documentação técnica`);
+      for (const file of documentacaoTecnicaFiles) {
+        // Gerar caminho de armazenamento seguindo padrão do módulo de documentos
+        const caminhoArquivo = await this.gerarCaminhoArmazenamento(
+          resultadoId,
+          'documentacao_tecnica',
+          file.originalname
+        );
+
+        // Salvar arquivo no MinIO
+        const caminhoSalvo = await storageProvider.salvarArquivo(
+          file.buffer,
+          caminhoArquivo,
+          file.mimetype,
+          {
+            tipoDocumento: 'documentacao_tecnica',
+            resultadoId: resultadoId,
+            nomeOriginal: file.originalname,
+          }
+        );
+
+        documentos.push({
+          tipo: 'documentacao_tecnica',
+          nomeArquivo: file.originalname,
+          caminhoArquivo: caminhoSalvo,
+          tipoMime: file.mimetype,
+          tamanhoArquivo: file.size,
+          descricao: 'Documentação técnica - ' + file.originalname,
+          observacoes: 'Arquivo de documentação técnica (laudos, relatórios)',
+          hashArquivo: await this.calcularHashArquivo(file.buffer),
+        });
+      }
+    }
+
+    // Processar documentos do DTO (se houver)
+    if (documentosDto && documentosDto.length > 0) {
+      this.logger.log(`Processando ${documentosDto.length} documentos do DTO`);
+      documentos.push(...documentosDto);
+    }
+
+    // Criar documentos comprobatórios
+    if (documentos.length > 0) {
+      this.logger.log(`Criando documentos comprobatórios: ${documentos.length} documentos`);
+      await this.criarDocumentosComprobatorios(resultadoId, documentos, tecnicoId, queryRunner);
+    } else {
+      this.logger.log('Nenhum documento para processar - pulando criação de documentos comprobatórios');
+    }
   }
 
   /**
@@ -354,7 +443,39 @@ export class ResultadoBeneficioCessadoService {
     tecnicoId: string,
     queryRunner: QueryRunner,
   ): Promise<void> {
-    const documentos = documentosDto.map(docDto =>
+    // Validar se há documentos válidos para processar
+    if (!documentosDto || documentosDto.length === 0) {
+      this.logger.warn('Nenhum documento válido para processar');
+      return;
+    }
+
+    // Filtrar apenas documentos com campos obrigatórios preenchidos
+    const documentosValidos = documentosDto.filter(docDto => {
+      const isValid = docDto && 
+                     docDto.tipo && 
+                     docDto.nomeArquivo && 
+                     docDto.caminhoArquivo;
+      
+      if (!isValid) {
+        this.logger.warn('Documento inválido ignorado:', {
+          tipo: docDto?.tipo,
+          nomeArquivo: docDto?.nomeArquivo,
+          caminhoArquivo: docDto?.caminhoArquivo
+        });
+      }
+      
+      return isValid;
+    });
+
+    // Se não há documentos válidos após filtro, não criar nada
+    if (documentosValidos.length === 0) {
+      this.logger.warn('Nenhum documento válido após filtro de validação');
+      return;
+    }
+
+    this.logger.log(`Criando ${documentosValidos.length} documentos comprobatórios`);
+
+    const documentos = documentosValidos.map(docDto =>
       queryRunner.manager.create(DocumentoComprobatorio, {
         resultadoBeneficioCessadoId: resultadoId,
         tipo: docDto.tipo,
@@ -372,6 +493,88 @@ export class ResultadoBeneficioCessadoService {
     );
 
     await queryRunner.manager.save(documentos);
+  }
+
+  /**
+   * Calcula hash do arquivo para verificação de integridade.
+   */
+  private async calcularHashArquivo(buffer: Buffer): Promise<string> {
+    return crypto.createHash('sha256').update(buffer).digest('hex');
+  }
+
+  /**
+   * Gera o caminho de armazenamento seguindo o padrão do módulo de documentos
+   * Formato: resultado_beneficio_cessado/YYYY/MM/DD/resultado_id/tipo/filename
+   */
+  private gerarCaminhoArmazenamento(
+    resultadoId: string,
+    tipo: string,
+    nomeArquivo: string,
+  ): string {
+    const agora = new Date();
+    const ano = agora.getFullYear();
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const dia = String(agora.getDate()).padStart(2, '0');
+
+    // Sanitizar componentes do caminho para evitar problemas de assinatura no MinIO
+    const diretorioBase = this.sanitizePath('resultado_beneficio_cessado'); // Trocar hífen por underscore
+    const resultadoIdSanitizado = this.sanitizePath(resultadoId);
+    const tipoSanitizado = this.sanitizePath(tipo);
+    const nomeArquivoSanitizado = this.sanitizeFileName(nomeArquivo);
+
+    return `${diretorioBase}/${ano}/${mes}/${dia}/${resultadoIdSanitizado}/${tipoSanitizado}/${nomeArquivoSanitizado}`;
+  }
+
+  /**
+   * Sanitiza componentes do caminho removendo caracteres problemáticos
+   * IMPORTANTE: Não remove hífens para preservar UUIDs e evitar erros de assinatura no MinIO
+   */
+  private sanitizePath(input: string): string {
+    if (!input || typeof input !== 'string') {
+      throw new Error('Input para sanitização deve ser uma string não vazia');
+    }
+
+    // Remove caracteres perigosos mas preserva hífens (seguindo padrão do DocumentoPathService)
+    return input
+      .replace(/[<>:"|?*\x00-\x1f]/g, '_') // Caracteres perigosos SEM hífen
+      .replace(/\.\./g, '_') // Path traversal
+      .replace(/^\.|\.$/, '_') // Pontos no início/fim
+      .substring(0, 50) // Limita tamanho
+      .trim();
+  }
+
+  /**
+   * Sanitiza nome de arquivo preservando extensão
+   * IMPORTANTE: Não remove hífens para preservar nomes originais e evitar erros de assinatura
+   */
+  private sanitizeFileName(fileName: string): string {
+    if (!fileName || typeof fileName !== 'string') {
+      throw new Error('Nome do arquivo deve ser uma string não vazia');
+    }
+
+    // Separa nome e extensão
+    const lastDotIndex = fileName.lastIndexOf('.');
+    let name = fileName;
+    let extension = '';
+
+    if (lastDotIndex > 0) {
+      name = fileName.substring(0, lastDotIndex);
+      extension = fileName.substring(lastDotIndex);
+    }
+
+    // Sanitiza o nome preservando a extensão e hífens (seguindo padrão do DocumentoPathService)
+    const sanitizedName = name
+      .replace(/[<>:"|?*\x00-\x1f]/g, '_') // Remove caracteres perigosos SEM hífen
+      .replace(/\.\./g, '_')
+      .substring(0, 100)
+      .trim();
+
+    // Sanitiza a extensão
+    const sanitizedExtension = extension
+      .replace(/[<>:"|?*\x00-\x1f]/g, '')
+      .substring(0, 10);
+
+    return sanitizedName + sanitizedExtension;
   }
 
   /**
@@ -397,5 +600,156 @@ export class ResultadoBeneficioCessadoService {
     return plainToClass(ResultadoBeneficioCessadoResponseDto, resultado, {
       excludeExtraneousValues: true,
     });
+  }
+
+  /**
+   * Faz download de um arquivo específico
+   */
+  async downloadArquivo(
+    resultadoId: string,
+    arquivoId: string,
+    usuarioId: string,
+  ): Promise<{ stream: any; filename: string; mimeType: string }> {
+    this.logger.log(`Download de arquivo ${arquivoId} do resultado ${resultadoId}`);
+
+    // Buscar o resultado com documentos comprobatórios
+    const resultado = await this.resultadoRepository.findOne({
+      where: { id: resultadoId },
+      relations: ['documentosComprobatorios'],
+    });
+
+    if (!resultado) {
+      throw new NotFoundException('Resultado não encontrado');
+    }
+
+    // Buscar o documento específico
+    const documento = resultado.documentosComprobatorios?.find(d => d.id === arquivoId);
+    if (!documento) {
+      throw new NotFoundException('Arquivo não encontrado');
+    }
+
+    try {
+      // Usar o storage provider para obter stream do arquivo
+      const storageProvider = this.storageProviderFactory.getProvider();
+      const stream = await storageProvider.obterArquivoStream(documento.caminhoArquivo);
+
+      return {
+        stream,
+        filename: documento.nomeArquivo,
+        mimeType: documento.tipoMime,
+      };
+    } catch (error) {
+      this.logger.error(`Erro ao fazer download do arquivo ${arquivoId}:`, error);
+      throw new Error('Erro ao fazer download do arquivo');
+    }
+  }
+
+  /**
+   * Exclui um arquivo específico
+   */
+  async excluirArquivo(resultadoId: string, arquivoId: string, usuarioId?: string): Promise<void> {
+    this.logger.debug(`Iniciando exclusão do arquivo - Resultado: ${resultadoId}, Arquivo: ${arquivoId}`);
+
+    try {
+      // Busca o resultado com documentos
+      const resultado = await this.resultadoRepository.findOne({
+        where: { id: resultadoId },
+        relations: ['documentosComprobatorios'],
+      });
+
+      if (!resultado) {
+        throw new NotFoundException('Resultado não encontrado');
+      }
+
+      // Busca o documento específico por ID
+      const documento = resultado.documentosComprobatorios.find(
+        doc => doc.id === arquivoId
+      );
+
+      if (!documento) {
+        throw new NotFoundException('Arquivo não encontrado neste resultado');
+      }
+
+      // Remove o arquivo do storage
+      try {
+        const storageProvider = this.storageProviderFactory.getProvider();
+        await storageProvider.removerArquivo(documento.caminhoArquivo);
+        this.logger.debug(`Arquivo removido do storage: ${documento.caminhoArquivo}`);
+      } catch (error) {
+        this.logger.warn(`Erro ao remover arquivo do storage: ${error.message}`);
+        // Continua com a exclusão do registro mesmo se falhar no storage
+      }
+
+      // Remove o registro do banco de dados
+      await this.documentoRepository.remove(documento);
+
+      this.logger.debug(`Arquivo excluído com sucesso - ID: ${arquivoId}`);
+
+    } catch (error) {
+      this.logger.error(`Erro ao excluir arquivo: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  /**
+   * Adiciona novos arquivos a um resultado existente.
+   */
+  async adicionarArquivos(
+    resultadoId: string,
+    tecnicoId: string,
+    provaSocialFiles?: Express.Multer.File[],
+    documentacaoTecnicaFiles?: Express.Multer.File[],
+  ): Promise<ResultadoBeneficioCessadoResponseDto> {
+    this.logger.debug(`Adicionando arquivos ao resultado - ID: ${resultadoId}`);
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Verifica se o resultado existe
+      const resultado = await queryRunner.manager.findOne(ResultadoBeneficioCessado, {
+        where: { id: resultadoId },
+        relations: ['concessao', 'tecnicoResponsavel'],
+      });
+
+      if (!resultado) {
+        throw new NotFoundException('Resultado não encontrado');
+      }
+
+      // Verifica se o técnico tem permissão
+      const tecnico = await queryRunner.manager.findOne(Usuario, {
+        where: { id: tecnicoId },
+      });
+
+      if (!tecnico) {
+        throw new NotFoundException('Técnico não encontrado');
+      }
+
+      // Processa os arquivos
+      await this.processarArquivos(
+        resultadoId,
+        provaSocialFiles,
+        documentacaoTecnicaFiles,
+        undefined,
+        tecnicoId,
+        queryRunner,
+      );
+
+      await queryRunner.commitTransaction();
+
+      // Retorna o resultado atualizado
+      return await this.buscarPorId(resultadoId);
+
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error(
+        `Erro ao adicionar arquivos ao resultado ${resultadoId}: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 }

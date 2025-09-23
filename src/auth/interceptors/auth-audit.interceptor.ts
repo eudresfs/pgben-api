@@ -137,7 +137,7 @@ export class AuthAuditInterceptor implements NestInterceptor {
    */
   private prepareAuthContext(request: Request): AuthContextData {
     const user = (request as any).user;
-    
+
     return {
       clientIp: this.extractClientIP(request),
       userAgent: this.extractUserAgent(request),
@@ -159,13 +159,23 @@ export class AuthAuditInterceptor implements NestInterceptor {
     securityConfig?: SecurityAuditConfig,
     authContext?: AuthContextData,
   ): AuthAuditMetadata {
-    const operation = auditConfig?.operation || authContext?.method || 'unknown';
-    const riskLevel = auditConfig?.riskLevel || securityConfig?.riskLevel || RiskLevel.MEDIUM;
+    const operation =
+      auditConfig?.operation || authContext?.method || 'unknown';
+    const riskLevel =
+      auditConfig?.riskLevel || securityConfig?.riskLevel || RiskLevel.MEDIUM;
 
     return {
       operation,
       riskLevel,
-      sensitiveFields: auditConfig?.sensitiveFields || ['password', 'token', 'refreshToken', 'senha', 'senha_hash', 'token_acesso', 'token_refresh'],
+      sensitiveFields: auditConfig?.sensitiveFields || [
+        'password',
+        'token',
+        'refreshToken',
+        'senha',
+        'senha_hash',
+        'token_acesso',
+        'token_refresh',
+      ],
       captureRequest: auditConfig?.async !== false,
       captureResponse: auditConfig?.async !== false,
     };
@@ -214,7 +224,10 @@ export class AuthAuditInterceptor implements NestInterceptor {
   ): void {
     try {
       const executionTime = Date.now() - startTime;
-      const maskedResult = this.maskSensitiveData(result, metadata.sensitiveFields);
+      const maskedResult = this.maskSensitiveData(
+        result,
+        metadata.sensitiveFields,
+      );
 
       this.auditEventEmitter.emitSecurityEvent(
         AuditEventType.SUCCESSFUL_LOGIN,
@@ -339,19 +352,22 @@ export class AuthAuditInterceptor implements NestInterceptor {
    */
   private normalizeEndpoint(request: Request): string {
     let endpoint = request.url || request.path || '/';
-    
+
     // Remove query parameters
     const queryIndex = endpoint.indexOf('?');
     if (queryIndex !== -1) {
       endpoint = endpoint.substring(0, queryIndex);
     }
-    
+
     // Normaliza IDs numéricos para :id
     endpoint = endpoint.replace(/\/\d+/g, '/:id');
-    
+
     // Normaliza UUIDs para :uuid
-    endpoint = endpoint.replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '/:uuid');
-    
+    endpoint = endpoint.replace(
+      /\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+      '/:uuid',
+    );
+
     return endpoint;
   }
 
@@ -364,8 +380,8 @@ export class AuthAuditInterceptor implements NestInterceptor {
     }
 
     const masked = { ...data };
-    
-    sensitiveFields.forEach(field => {
+
+    sensitiveFields.forEach((field) => {
       if (masked[field]) {
         if (typeof masked[field] === 'string') {
           masked[field] = this.maskString(masked[field]);
@@ -385,18 +401,21 @@ export class AuthAuditInterceptor implements NestInterceptor {
     if (value.length <= 4) {
       return '*'.repeat(value.length);
     }
-    
+
     const start = value.substring(0, 2);
     const end = value.substring(value.length - 2);
     const middle = '*'.repeat(value.length - 4);
-    
+
     return `${start}${middle}${end}`;
   }
 
   /**
    * Calcula o nível de risco baseado no tipo de erro
    */
-  private calculateErrorRiskLevel(error: any, defaultRisk: RiskLevel): RiskLevel {
+  private calculateErrorRiskLevel(
+    error: any,
+    defaultRisk: RiskLevel,
+  ): RiskLevel {
     // Erros de autenticação são sempre de alto risco
     if (error.status === 401 || error.message?.includes('Unauthorized')) {
       return RiskLevel.HIGH;

@@ -58,6 +58,8 @@ import {
   WorkflowBeneficio,
   Concessao,
   HistoricoConcessao,
+  ResultadoBeneficioCessado,
+  DocumentoComprobatorio,
 
   // Entidades de Dados Específicos de Benefícios
   DadosAluguelSocial,
@@ -198,6 +200,8 @@ export const AppDataSource = new DataSource({
     WorkflowBeneficio,
     Concessao,
     HistoricoConcessao,
+    ResultadoBeneficioCessado,
+    DocumentoComprobatorio,
 
     // Entidades de solicitação
     Solicitacao,

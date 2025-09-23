@@ -55,29 +55,6 @@ export class ValidacaoResultadoBeneficioService {
     return concessao;
   }
 
-  /**
-   * Valida se o técnico tem competência para registrar resultado
-   * Conforme Art. 12 da Lei de Benefícios Eventuais
-   */
-  async validarCompetenciaTecnico(tecnicoId: string, concessao: Concessao): Promise<Usuario> {
-    const tecnico = await this.usuarioRepository.findOne({
-      where: { id: tecnicoId },
-      relations: ['roles', 'unidade'],
-    });
-
-    if (!tecnico) {
-      throw new BadRequestException('Técnico não encontrado');
-    }
-
-    // Validar se o técnico pertence à mesma unidade da concessão
-    if (tecnico.unidade?.id !== concessao.solicitacao?.unidade?.id) {
-      throw new ForbiddenException(
-        'Técnico deve pertencer à mesma unidade territorial do beneficiário'
-      );
-    }
-
-    return tecnico;
-  }
 
   /**
    * Valida a consistência dos dados do resultado conforme SUAS
@@ -141,22 +118,26 @@ export class ValidacaoResultadoBeneficioService {
   }
 
   /**
-   * Valida documentos comprobatórios das provas sociais
+   * Valida documentos comprobatórios das provas sociais.
+   * 
+   * Documentos são opcionais no registro inicial, mas se enviados
+   * devem atender aos critérios de qualidade e conformidade SUAS.
    */
   private validarDocumentosComprobatorios(documentos: any[]): void {
+    // Documentos são opcionais - validar apenas se enviados
     if (!documentos || documentos.length === 0) {
-      throw new BadRequestException(
-        'Pelo menos um documento comprobatório é obrigatório conforme SUAS'
-      );
+      return; // Permitir registro sem documentos
     }
 
-    // Validar cada documento
+    // Validar cada documento enviado
     documentos.forEach((doc, index) => {
       this.validarDocumentoIndividual(doc, index);
     });
 
-    // Validar tipos de documentos obrigatórios
-    this.validarTiposDocumentosObrigatorios(documentos);
+    // Validar diversidade de tipos de documentos se múltiplos enviados
+    if (documentos.length > 1) {
+      this.validarDiversidadeTiposDocumentos(documentos);
+    }
   }
 
   /**
@@ -206,40 +187,57 @@ export class ValidacaoResultadoBeneficioService {
   }
 
   /**
-   * Valida se os tipos de documentos obrigatórios estão presentes
+   * Valida diversidade de tipos de documentos para garantir qualidade da documentação.
+   * 
+   * Quando múltiplos documentos são enviados, verifica se há diversidade
+   * adequada entre prova social e documentação técnica.
    */
-  private validarTiposDocumentosObrigatorios(documentos: any[]): void {
-    const tiposPresentes = documentos.map(doc => doc.tipo);
+  private validarDiversidadeTiposDocumentos(documentos: any[]): void {
+    const tiposPresentes = new Set(documentos.map(doc => doc.tipo));
     
-    // Pelo menos uma fotografia é obrigatória
-    if (!tiposPresentes.includes(TipoDocumentoComprobatorio.FOTOGRAFIA)) {
+    // Verificar se há pelo menos dois tipos diferentes quando múltiplos documentos
+    if (documentos.length >= 3 && tiposPresentes.size < 2) {
       throw new BadRequestException(
-        'Pelo menos uma fotografia comprobatória é obrigatória'
+        'Para múltiplos documentos, recomenda-se incluir tanto prova social quanto documentação técnica'
       );
     }
 
-    // Validar documentos específicos por contexto
-    const temComprovanteRenda = tiposPresentes.includes(TipoDocumentoComprobatorio.COMPROVANTE_RENDA);
-    const temDeclaracaoRenda = tiposPresentes.includes(TipoDocumentoComprobatorio.COMPROVANTE_RENDA);
+    // Validar distribuição equilibrada usando os valores corretos do enum
+    const provaSocial = documentos.filter(doc => doc.tipo === 'prova_social').length;
+    const docTecnica = documentos.filter(doc => doc.tipo === 'documentacao_tecnica').length;
 
-    if (!temComprovanteRenda && !temDeclaracaoRenda) {
-      throw new BadRequestException(
-        'Comprovante ou declaração de renda é obrigatório'
-      );
+    // Alertar sobre desequilíbrio extremo (mais de 80% de um tipo)
+    const total = documentos.length;
+    if (total > 2) {
+      const proporcaoProvaSocial = provaSocial / total;
+      if (proporcaoProvaSocial > 0.8 || proporcaoProvaSocial < 0.2) {
+        // Log de aviso, mas não bloquear o processo
+        console.warn('Distribuição desequilibrada de tipos de documentos detectada');
+      }
     }
   }
 
   /**
    * Valida prazo para registro conforme regulamentação
    */
-  validarPrazoRegistro(dataFimConcessao: Date): void {
+  validarPrazoRegistro(dataFimConcessao: Date | string | null): void {
     if (!dataFimConcessao) {
       return; // Concessão ainda ativa
     }
 
+    // Converter para Date se necessário (TypeORM pode retornar como string)
+    const dataEncerramento = dataFimConcessao instanceof Date 
+      ? dataFimConcessao 
+      : new Date(dataFimConcessao);
+
+    // Validar se a conversão foi bem-sucedida
+    if (isNaN(dataEncerramento.getTime())) {
+      throw new BadRequestException('Data de encerramento inválida');
+    }
+
     const hoje = new Date();
     const diasAposCessacao = Math.floor(
-      (hoje.getTime() - dataFimConcessao.getTime()) / (1000 * 60 * 60 * 24)
+      (hoje.getTime() - dataEncerramento.getTime()) / (1000 * 60 * 60 * 24)
     );
 
     // Prazo máximo de 30 dias conforme regulamentação CNAS

@@ -9,7 +9,6 @@ import { Repository } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { UseInterceptors } from '@nestjs/common';
-import { WorkflowInterceptor } from '../../../interceptors/workflow.interceptor';
 import { CacheInterceptor } from '../../../shared/interceptors/cache.interceptor';
 import { WorkflowSolicitacaoService } from '../../solicitacao/services/workflow-solicitacao.service';
 import { DadosAluguelSocial } from '../../../entities/dados-aluguel-social.entity';
@@ -32,7 +31,7 @@ import { AppError } from '@/shared/exceptions';
  * Estende a classe base para reutilizar operações CRUD comuns
  */
 @Injectable()
-@UseInterceptors(WorkflowInterceptor, CacheInterceptor)
+@UseInterceptors(CacheInterceptor)
 export class DadosAluguelSocialService extends AbstractDadosBeneficioService<
   DadosAluguelSocial,
   CreateDadosAluguelSocialDto,

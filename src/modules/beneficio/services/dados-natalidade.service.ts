@@ -8,7 +8,6 @@ import {
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { UseInterceptors } from '@nestjs/common';
-import { WorkflowInterceptor } from '../../../interceptors/workflow.interceptor';
 import { CacheInterceptor } from '../../../shared/interceptors/cache.interceptor';
 import { WorkflowSolicitacaoService } from '../../solicitacao/services/workflow-solicitacao.service';
 import {
@@ -30,7 +29,7 @@ import { BENEFICIO_CONSTANTS } from '../../../shared/constants/beneficio.constan
  * Serviço para gerenciar dados específicos de Auxílio Natalidade
  */
 @Injectable()
-@UseInterceptors(WorkflowInterceptor, CacheInterceptor)
+@UseInterceptors(CacheInterceptor)
 export class DadosNatalidadeService extends AbstractDadosBeneficioService<
   DadosNatalidade,
   CreateDadosNatalidadeDto,

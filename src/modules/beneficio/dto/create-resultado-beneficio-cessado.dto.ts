@@ -127,20 +127,18 @@ export class CreateResultadoBeneficioCessadoDto {
   })
   recomendacoes?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Lista de documentos comprobatórios (provas sociais)',
     type: [CreateDocumentoComprobatorioDto],
     minItems: 1,
     maxItems: 20,
   })
+  @IsOptional()
   @IsArray({ message: 'Documentos comprobatórios devem ser uma lista' })
-  @ArrayMinSize(1, {
-    message: 'Pelo menos um documento comprobatório é obrigatório',
-  })
-  @ArrayMaxSize(20, {
-    message: 'Máximo de 20 documentos comprobatórios permitidos',
+  @ArrayMaxSize(15, {
+    message: 'Máximo de 15 documentos comprobatórios permitidos',
   })
   @ValidateNested({ each: true })
   @Type(() => CreateDocumentoComprobatorioDto)
-  documentosComprobatorios: CreateDocumentoComprobatorioDto[];
+  documentosComprobatorios?: CreateDocumentoComprobatorioDto[];
 }

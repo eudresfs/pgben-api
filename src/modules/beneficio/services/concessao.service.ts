@@ -745,9 +745,8 @@ export class ConcessaoService {
         concessaoId,
         statusAnterior: concessaoExistente.status,
         statusNovo: StatusConcessao.SUSPENSO,
-        usuarioId,
+        alteradoPor: usuarioId,
         motivo,
-        dataAlteracao: agora,
       });
 
       // Retornar concessão atualizada com select otimizado
@@ -826,9 +825,8 @@ export class ConcessaoService {
       concessaoId: concessao.id,
       statusAnterior,
       statusNovo: StatusConcessao.BLOQUEADO,
-      usuarioId,
+      alteradoPor: usuarioId,
       motivo,
-      dataAlteracao: new Date(),
     });
 
     this.logger.warn(
@@ -914,9 +912,8 @@ export class ConcessaoService {
           concessaoId: concessao.id,
           statusAnterior,
           statusNovo: StatusConcessao.ATIVO,
-          usuarioId,
+          alteradoPor: usuarioId,
           motivo,
-          dataAlteracao: new Date(),
         });
       } catch (historicoError) {
         this.logger.error(
@@ -1029,9 +1026,8 @@ export class ConcessaoService {
           concessaoId: concessao.id,
           statusAnterior,
           statusNovo: StatusConcessao.ATIVO,
-          usuarioId,
+          alteradoPor: usuarioId,
           motivo,
-          dataAlteracao: new Date(),
         });
       } catch (historicoError) {
         this.logger.error(
@@ -1274,7 +1270,6 @@ export class ConcessaoService {
             statusNovo: StatusConcessao.CESSADO,
             motivo: 'Encerramento automático - todos os pagamentos liberados',
             alteradoPor: SYSTEM_USER_UUID,
-            dataAlteracao: new Date(),
           });
         } catch (historicoError) {
           this.logger.error(

@@ -19,6 +19,7 @@ import { PagamentoValidationService } from './pagamento-validation.service';
 import { PagamentoUnifiedMapper } from '../mappers';
 import { DocumentoService } from '../../documento/services/documento.service';
 import { PagamentoEventosService } from './pagamento-eventos.service';
+import { ConcessaoAutoUpdateService } from './concessao-auto-update.service';
 
 /**
  * Interface para resultado de verificação de elegibilidade
@@ -85,6 +86,7 @@ export class PagamentoWorkflowService {
     private readonly validationService: PagamentoValidationService,
     private readonly documentoService: DocumentoService,
     private readonly pagamentoEventosService: PagamentoEventosService,
+    private readonly concessaoAutoUpdateService: ConcessaoAutoUpdateService,
   ) {}
 
   // ==========================================
@@ -265,15 +267,15 @@ export class PagamentoWorkflowService {
     }
 
     // Validar se a parcela anterior está confirmada (apenas para liberação a partir da 2ª parcela)
+    // Removida restrição rígida - permite liberação de parcelas subsequentes quando concessão está ativa
     if (updateDto.status === StatusPagamentoEnum.LIBERADO && pagamento.numero_parcela > 1) {
       try {
         await this.validateParcelaAnteriorConfirmada(pagamento);
       } catch (error) {
-        return {
-          success: false,
-          message: 'Não é possível liberar: parcela anterior não confirmada',
-          errors: [error.message],
-        };
+        // Log do aviso mas não bloqueia a liberação se a concessão estiver ativa
+        this.logger.warn(
+          `Parcela anterior não confirmada para pagamento ${pagamento.id}, mas prosseguindo com liberação: ${error.message}`,
+        );
       }
     }
 
@@ -410,17 +412,34 @@ export class PagamentoWorkflowService {
   async verificarElegibilidadeLiberacao(
     pagamentoId: string,
   ): Promise<ElegibilidadeResult> {
+    this.logger.log(`[DEBUG] Verificando elegibilidade para pagamento: ${pagamentoId}`);
+    
     const pagamento = await this.pagamentoRepository.findByIdWithRelations(
       pagamentoId,
       ['solicitacao', 'solicitacao.tipo_beneficio', 'concessao'],
     );
 
     if (!pagamento) {
+      this.logger.error(`[DEBUG] Pagamento não encontrado: ${pagamentoId}`);
       throw new NotFoundException('Pagamento não encontrado');
     }
 
+    // Log dos dados carregados
+    this.logger.log(`[DEBUG] Pagamento carregado:`, {
+      id: pagamento.id,
+      status: pagamento.status,
+      data_prevista_liberacao: pagamento.data_prevista_liberacao,
+      concessao_carregada: !!pagamento.concessao,
+      concessao_id: pagamento.concessao?.id,
+      concessao_status: pagamento.concessao?.status,
+      solicitacao_carregada: !!pagamento.solicitacao,
+      tipo_beneficio_carregado: !!pagamento.solicitacao?.tipo_beneficio,
+      tipo_beneficio_codigo: pagamento.solicitacao?.tipo_beneficio?.codigo
+    });
+
     // Verificar status do pagamento
     if (pagamento.status !== StatusPagamentoEnum.PENDENTE) {
+      this.logger.warn(`[DEBUG] Pagamento não está pendente. Status: ${pagamento.status}`);
       return {
         pode_liberar: false,
         motivo: `Pagamento não está pendente. Status atual: ${pagamento.status}`,
@@ -428,13 +447,26 @@ export class PagamentoWorkflowService {
     }
 
     // Verificar se a concessão está ativa
-    if (
-      !pagamento.concessao ||
-      pagamento.concessao.status !== StatusConcessao.ATIVO
-    ) {
+    if (!pagamento.concessao) {
+      this.logger.error(`[DEBUG] Concessão não carregada para pagamento: ${pagamentoId}`);
       return {
         pode_liberar: false,
-        motivo: 'Concessão não está ativa',
+        motivo: 'Concessão não encontrada',
+      };
+    }
+
+    // Para a primeira parcela, aceitar status APTO ou ATIVO
+    // Para demais parcelas, exigir status ATIVO
+    const statusConcessaoValido = pagamento.numero_parcela === 1 
+      ? ['ativo', 'apto'].includes(pagamento.concessao.status?.toLowerCase())
+      : pagamento.concessao.status === StatusConcessao.ATIVO;
+
+    if (!statusConcessaoValido) {
+      const statusRequerido = pagamento.numero_parcela === 1 ? 'ATIVO ou APTO' : 'ATIVO';
+      this.logger.warn(`[DEBUG] Concessão com status inválido. Status: ${pagamento.concessao.status}, Parcela: ${pagamento.numero_parcela}, Requerido: ${statusRequerido}`);
+      return {
+        pode_liberar: false,
+        motivo: `Concessão com status '${pagamento.concessao.status}' (requer ${statusRequerido} para parcela ${pagamento.numero_parcela})`,
       };
     }
 
@@ -447,6 +479,19 @@ export class PagamentoWorkflowService {
         pode_liberar: false,
         motivo: `Data prevista ainda não chegou: ${pagamento.data_prevista_liberacao.toLocaleDateString()}`,
       };
+    }
+
+    // Verificar se a parcela anterior está confirmada (apenas para parcelas > 1)
+    // CORREÇÃO: Validação mais flexível - permite liberação mesmo sem parcela anterior confirmada
+    if (pagamento.numero_parcela > 1) {
+      this.logger.log(`[DEBUG] Verificando parcela anterior para parcela ${pagamento.numero_parcela}`);
+      try {
+        await this.validateParcelaAnteriorConfirmada(pagamento);
+        this.logger.log(`[DEBUG] Parcela anterior validada com sucesso`);
+      } catch (error) {
+        this.logger.warn(`[DEBUG] Validação de parcela anterior falhou, mas permitindo liberação: ${error.message}`);
+        // Não bloqueia mais a liberação - apenas registra o aviso
+      }
     }
 
     // Verificar regras específicas por tipo de benefício
@@ -497,6 +542,22 @@ export class PagamentoWorkflowService {
       pagamentoId,
       dadosAtualizacao,
     );
+
+    // Verificar se é a primeira parcela e ativar a concessão se necessário
+    const pagamentoCompleto = await this.pagamentoRepository.findByIdWithRelations(pagamentoId);
+    if (pagamentoCompleto?.numero_parcela === 1 && pagamentoCompleto?.concessao_id) {
+      try {
+        await this.concessaoAutoUpdateService.processarAtualizacaoConcessao(
+          pagamentoCompleto,
+          StatusPagamentoEnum.LIBERADO,
+          usuarioId,
+          pagamentoId,
+        );
+        this.logger.log(`Concessão ${pagamentoCompleto.concessao_id} ativada após liberação da primeira parcela`);
+      } catch (error) {
+        this.logger.warn(`Erro ao ativar concessão ${pagamentoCompleto.concessao_id}: ${error.message}`);
+      }
+    }
 
     this.logger.log(`Pagamento ${pagamentoId} liberado com sucesso`);
     return pagamentoLiberado;

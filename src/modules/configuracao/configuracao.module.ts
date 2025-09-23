@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../../auth/auth.module';
+import { forwardRef } from '@nestjs/common';
 import { BeneficioModule } from '../beneficio/beneficio.module';
 import { UnidadeModule } from '../unidade/unidade.module';
 import { UsuarioModule } from '../usuario/usuario.module';
@@ -57,7 +58,7 @@ import {
     // Importa o módulo compartilhado de autenticação
     AuthModule,
     // Importa módulos necessários para o controller de referência
-    BeneficioModule,
+    forwardRef(() => BeneficioModule),
     UnidadeModule,
     UsuarioModule,
     CidadaoModule,

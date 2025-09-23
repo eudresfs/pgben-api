@@ -7,7 +7,7 @@ import { Concessao } from '../../../entities/concessao.entity';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { StatusConcessao } from '../../../enums/status-concessao.enum';
 import { NotificacaoService } from '../../notificacao/services/notificacao.service';
-import { ConcessaoService } from '../../concessao/services/concessao.service';
+import { ConcessaoService } from '../../beneficio/services/concessao.service';
 
 describe('ConcessaoAutoUpdateService', () => {
   let service: ConcessaoAutoUpdateService;
@@ -84,7 +84,17 @@ describe('ConcessaoAutoUpdateService', () => {
       } as Pagamento;
 
       const pagamentosConcessao = [
-        { id: 'pag-1', numero_parcela: 1, status: StatusPagamentoEnum.CONFIRMADO, concessao_id: 'conc-1' },
+        { 
+          id: 'pag-1', 
+          numero_parcela: 1, 
+          status: StatusPagamentoEnum.CONFIRMADO, 
+          concessao_id: 'conc-1',
+          concessao: {
+            solicitacao: {
+              tecnico_id: 'tecnico-1',
+            },
+          },
+        },
         { id: 'pag-2', numero_parcela: 2, status: StatusPagamentoEnum.CONFIRMADO, concessao_id: 'conc-1' },
         { id: 'pag-3', numero_parcela: 3, status: StatusPagamentoEnum.CONFIRMADO, concessao_id: 'conc-1' },
       ] as Pagamento[];
@@ -101,8 +111,8 @@ describe('ConcessaoAutoUpdateService', () => {
         { id: 'conc-1' },
         expect.objectContaining({
           status: StatusConcessao.CESSADO,
-          data_encerramento: expect.any(Date),
-          motivo_encerramento: 'Concessão cessada devido à confirmação do recebimento de todas as parcelas',
+          dataEncerramento: expect.any(Date),
+          motivoEncerramento: 'Concessão cessada devido à confirmação do recebimento de todas as parcelas',
         }),
       );
 
@@ -183,7 +193,7 @@ describe('ConcessaoAutoUpdateService', () => {
         'conc-1',
         StatusConcessao.ATIVO,
         'user-1',
-        'Ativação automática - Primeira parcela do pagamento pag-1 atualizada para CONFIRMADO',
+        'Ativação automática - Primeira parcela do pagamento pag-1 atualizada para confirmado',
       );
     });
 
@@ -206,6 +216,34 @@ describe('ConcessaoAutoUpdateService', () => {
 
       // Assert
       expect(mockConcessaoService.atualizarStatus).not.toHaveBeenCalled();
+    });
+
+    it('deve ativar concessão quando primeira parcela é liberada', async () => {
+      // Arrange
+      const pagamento = {
+        id: 'pag-1',
+        concessao_id: 'conc-1',
+        numero_parcela: 1,
+        status: StatusPagamentoEnum.LIBERADO,
+      } as Pagamento;
+
+      mockConcessaoService.atualizarStatus.mockResolvedValue({});
+
+      // Act
+      await service.processarAtualizacaoConcessao(
+        pagamento,
+        StatusPagamentoEnum.LIBERADO,
+        'user-1',
+        'pag-1',
+      );
+
+      // Assert
+      expect(mockConcessaoService.atualizarStatus).toHaveBeenCalledWith(
+        'conc-1',
+        StatusConcessao.ATIVO,
+        'user-1',
+        'Ativação automática - Primeira parcela do pagamento pag-1 atualizada para liberado',
+      );
     });
   });
 

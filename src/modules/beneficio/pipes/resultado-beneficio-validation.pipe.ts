@@ -7,6 +7,7 @@ import {
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
 import { CreateResultadoBeneficioCessadoDto } from '../dto/create-resultado-beneficio-cessado.dto';
+import { CreateResultadoBeneficioCessadoWithFilesDto } from '../dto/create-resultado-beneficio-cessado-with-files.dto';
 import { MotivoEncerramentoBeneficio } from '../../../enums/motivo-encerramento-beneficio.enum';
 import { StatusVulnerabilidade } from '../../../enums/status-vulnerabilidade.enum';
 import { TipoDocumentoComprobatorio } from '../../../enums/tipo-documento-comprobatorio.enum';
@@ -24,7 +25,30 @@ export class ResultadoBeneficioValidationPipe implements PipeTransform<any> {
 
     const object = plainToClass(metatype, value);
     
-    // Validações padrão do class-validator
+    // Para CreateResultadoBeneficioCessadoWithFilesDto, não validar documentosComprobatorios
+    // pois eles serão criados pelo interceptor a partir dos arquivos
+    if (metatype.name === 'CreateResultadoBeneficioCessadoWithFilesDto') {
+      // Validações padrão do class-validator, exceto documentosComprobatorios
+      const errors = await validate(object, {
+        skipMissingProperties: true,
+      });
+      
+      // Filtrar erros relacionados a documentosComprobatorios
+      const filteredErrors = errors.filter(error => 
+        error.property !== 'documentosComprobatorios'
+      );
+      
+      if (filteredErrors.length > 0) {
+        const errorMessages = filteredErrors.map(error => 
+          Object.values(error.constraints || {}).join(', ')
+        ).join('; ');
+        throw new BadRequestException(`Dados inválidos: ${errorMessages}`);
+      }
+      
+      return object;
+    }
+    
+    // Validações padrão do class-validator para outros DTOs
     const errors = await validate(object);
     if (errors.length > 0) {
       const errorMessages = errors.map(error => 

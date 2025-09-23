@@ -8,7 +8,7 @@ import {
   OneToMany,
   Index,
 } from 'typeorm';
-import { IsNotEmpty, IsNumber, Min } from 'class-validator';
+import { IsNotEmpty, IsNumber, Min, IsOptional } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
 import { RequisitoDocumento } from './requisito-documento.entity';
 import { CampoDinamicoBeneficio } from './campo-dinamico-beneficio.entity';
@@ -62,6 +62,27 @@ export class TipoBeneficio {
     comment: 'Categoria do benefício que define sua finalidade e contexto de aplicação',
   })
   categoria: CategoriaBeneficio;
+
+  /** Indica se o benefício permite renovação */
+  @Column({
+    name: 'permite_renovacao',
+    type: 'boolean',
+    default: false,
+    comment: 'Define se este tipo de benefício permite renovação'
+  })
+  permiteRenovacao: boolean;
+
+  /** Período mínimo em meses entre renovações */
+  @Column({
+    name: 'periodo_minimo_renovacao',
+    type: 'integer',
+    nullable: true,
+    comment: 'Período mínimo em meses que deve transcorrer entre renovações'
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'Período mínimo de renovação deve ser um número' })
+  @Min(1, { message: 'Período mínimo de renovação deve ser pelo menos 1 mês' })
+  periodoMinimoRenovacao: number | null;
 
   @Column('jsonb', { nullable: true })
   criterios_elegibilidade: {

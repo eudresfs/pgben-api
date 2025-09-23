@@ -6,8 +6,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 
 import { AppModule } from '../../src/app.module';
-import { StatusPagamentoEnum } from '../../src/modules/pagamento/enums/status-pagamento.enum';
-import { MetodoPagamentoEnum } from '../../src/modules/pagamento/enums/metodo-pagamento.enum';
+import { StatusPagamentoEnum } from '../../src/enums/status-pagamento.enum';
+import { MetodoPagamentoEnum } from '../../src/enums/metodo-pagamento.enum';
 
 /**
  * Testes E2E para o fluxo completo de pagamento
@@ -335,12 +335,12 @@ describe('PagamentoController (e2e)', () => {
         .patch(`/pagamentos/${pagamentoId}/status`)
         .set('Authorization', `Bearer ${token}`)
         .send({
-          status: StatusPagamentoEnum.FINALIZADO,
+          status: StatusPagamentoEnum.CONFIRMADO,
           observacoes: 'Pagamento finalizado após confirmação de recebimento',
         });
 
       expect(response.status).toBe(200);
-      expect(response.body.status).toBe(StatusPagamentoEnum.FINALIZADO);
+      expect(response.body.status).toBe(StatusPagamentoEnum.CONFIRMADO);
     });
   });
 
@@ -420,7 +420,7 @@ describe('PagamentoController (e2e)', () => {
         .patch(`/pagamentos/${pagamentoId}/status`)
         .set('Authorization', `Bearer ${token}`)
         .send({
-          status: StatusPagamentoEnum.FINALIZADO,
+          status: StatusPagamentoEnum.CONFIRMADO,
         });
 
       expect(response.status).toBe(400);

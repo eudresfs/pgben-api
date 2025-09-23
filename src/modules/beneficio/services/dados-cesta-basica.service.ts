@@ -9,7 +9,6 @@ import { Repository } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { UseInterceptors } from '@nestjs/common';
-import { WorkflowInterceptor } from '../../../interceptors/workflow.interceptor';
 import { CacheInterceptor } from '../../../shared/interceptors/cache.interceptor';
 import { WorkflowSolicitacaoService } from '../../solicitacao/services/workflow-solicitacao.service';
 import { DadosCestaBasica } from '../../../entities/dados-cesta-basica.entity';
@@ -30,7 +29,7 @@ import { AppError } from '@/shared/exceptions';
  * Serviço para gerenciar dados específicos de Cesta Básica
  */
 @Injectable()
-@UseInterceptors(WorkflowInterceptor, CacheInterceptor)
+@UseInterceptors(CacheInterceptor)
 export class DadosCestaBasicaService extends AbstractDadosBeneficioService<
   DadosCestaBasica,
   CreateDadosCestaBasicaDto,
