@@ -195,7 +195,7 @@ export abstract class TemplatePadronizadoBase<T = any> {
       margin: [50, 10, 50, 10],
       stack: [
         {
-          text: 'Gestão de Benefícios Eventuais/ SEMTAS - Av. Nevaldo Rocha, nº 2180 – Dix-Sept Rosado CEP: 59054-000 – Natal/RN',
+          text: 'Gestão de Benefícios Eventuais/ SEMTAS - Av. Rodrigues Alves, 881 – Tirol, CEP: 59020-200 – Natal/RN',
           style: 'rodapeTexto',
           alignment: 'center',
           margin: [0, 5, 0, 0],
