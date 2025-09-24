@@ -55,7 +55,7 @@ export class ConfirmacaoService {
     }
 
     PagamentoValidationUtil.validarParaConfirmacao(pagamento);
-    await this.verificarConfirmacaoExistente(pagamentoId);
+    // await this.verificarConfirmacaoExistente(pagamentoId);
 
     // Validar se o pagamento possui comprovante_id
     if (!pagamento.comprovante_id) {
