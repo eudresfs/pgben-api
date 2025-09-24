@@ -399,7 +399,7 @@ export class PagamentoService {
         .addSelect([
           'usuario.id',
           'usuario.email',
-          'unidade.nome',
+          'usuario.nome'
         ])
         .leftJoinAndSelect('solicitacao.unidade', 'unidade')
         .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
