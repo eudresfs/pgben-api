@@ -56,8 +56,14 @@ export class ConfirmacaoService {
       );
     }
 
+     // Atualizar status do pagamento para confirmado (reutilizando pagamento já buscado)
+    await this.pagamentoRepository.update(pagamento.id, {
+      status: StatusPagamentoEnum.CONFIRMADO,
+      data_conclusao: new Date(),
+    });
+
     PagamentoValidationUtil.validarParaConfirmacao(pagamento);
-    await this.verificarConfirmacaoExistente(pagamentoId);
+    // await this.verificarConfirmacaoExistente(pagamentoId);
 
     // Validar se o pagamento possui comprovante_id
     if (!pagamento.comprovante_id) {

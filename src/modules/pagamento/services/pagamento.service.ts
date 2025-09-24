@@ -52,6 +52,7 @@ export class PagamentoService {
     private readonly cacheService: PagamentoCacheService,
     private readonly cacheInvalidationService: PagamentoCacheInvalidationService,
     private readonly auditoriaService: AuditoriaService,
+    @Inject(forwardRef(() => SolicitacaoService))
     private readonly solicitacaoService: SolicitacaoService,
     @Inject(forwardRef(() => ConcessaoService))
     private readonly concessaoService: ConcessaoService,
