@@ -21,7 +21,7 @@ import { TipoBeneficioRepository } from '../repositories/tipo-beneficio.reposito
 import { Status } from '@/enums';
 import { TipoBeneficioSchema } from '@/entities';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, EntityManager } from 'typeorm';
 
 /**
  * Factory service para gerenciar diferentes tipos de dados de benefício.
@@ -119,6 +119,27 @@ export class DadosBeneficioFactoryService {
   ): Promise<IDadosBeneficio> {
     // O método create agora já funciona como upsert
     return this.create(codigoOrId, createDto);
+  }
+
+  /**
+   * Criar ou atualizar dados específicos de benefício usando EntityManager específico
+   * Útil para operações dentro de transações
+   */
+  async createWithManager(
+    codigoOrId: string,
+    createDto: ICreateDadosBeneficioDto,
+    entityManager: EntityManager,
+  ): Promise<IDadosBeneficio> {
+    const tipoBeneficio = await this.resolveTipoFromCodigoOrId(codigoOrId);
+    const service = this.getService(tipoBeneficio);
+    
+    // Verificar se o serviço suporta EntityManager
+    if (typeof service.createWithManager === 'function') {
+      return service.createWithManager(createDto, entityManager);
+    }
+    
+    // Fallback para o método create padrão
+    return service.create(createDto);
   }
 
   /**

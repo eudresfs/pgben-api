@@ -30,6 +30,7 @@ describe('RenovacaoService', () => {
     create: jest.fn(),
     save: jest.fn(),
     find: jest.fn(),
+    update: jest.fn(),
   };
 
   const mockConcessaoRepository = {
@@ -69,6 +70,11 @@ describe('RenovacaoService', () => {
     release: jest.fn(),
     manager: {
       save: jest.fn(),
+      findOne: jest.fn(),
+      query: jest.fn(),
+      getRepository: jest.fn().mockReturnValue({
+        update: jest.fn(),
+      }),
     },
   };
 
@@ -170,6 +176,10 @@ describe('RenovacaoService', () => {
       });
       mockSolicitacaoRepository.create.mockReturnValue(mockNovaSolicitacao);
       mockQueryRunner.manager.save.mockResolvedValue(mockNovaSolicitacao);
+      mockQueryRunner.manager.findOne.mockResolvedValue({
+        id: 'tipo-123',
+        codigo: 'AUXILIO_ALIMENTACAO'
+      });
       mockDocumentoReutilizacaoService.reutilizarDocumentos.mockResolvedValue(undefined);
 
       // Act
@@ -300,6 +310,17 @@ describe('RenovacaoService', () => {
 
       mockSolicitacaoRepository.create.mockReturnValue(mockNovaSolicitacao);
       mockSolicitacaoRepository.save.mockResolvedValue(mockNovaSolicitacao);
+      
+      // Mock do entityManager para buscar TipoBeneficio
+      const mockEntityManager = {
+        findOne: jest.fn().mockResolvedValue({
+          id: 'tipo-123',
+          codigo: 'AUXILIO_ALIMENTACAO'
+        })
+      };
+      
+      // Mock do dataSource para retornar o entityManager
+      mockDataSource.manager = mockEntityManager;
 
       // Act
       const resultado = await service.criarSolicitacaoRenovacao(

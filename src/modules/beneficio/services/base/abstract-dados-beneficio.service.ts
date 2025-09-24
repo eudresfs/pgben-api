@@ -7,7 +7,7 @@ import {
   Inject,
   forwardRef,
 } from '@nestjs/common';
-import { Repository, FindManyOptions, DeepPartial } from 'typeorm';
+import { Repository, FindManyOptions, DeepPartial, EntityManager } from 'typeorm';
 import { WorkflowSolicitacaoService } from '../../../solicitacao/services/workflow-solicitacao.service';
 import { StatusSolicitacao } from '@/enums/status-solicitacao.enum';
 import { SubStatusSolicitacao } from '@/enums/sub-status-solicitacao.enum';
@@ -119,12 +119,46 @@ export abstract class AbstractDadosBeneficioService<
       );
     } else {
       // Criar nova entidade
-      const entity = this.repository.create(createDto as any);
-      savedEntity = (await this.repository.save(entity)) as unknown as TEntity;
+      try {
+        const entity = this.repository.create(createDto as any);
+        savedEntity = (await this.repository.save(entity)) as unknown as TEntity;
 
-      this.logger.log(
-        `Dados de ${this.entityName} criados com sucesso para solicitação ${createDto.solicitacao_id}`,
-      );
+        this.logger.log(
+          `Dados de ${this.entityName} criados com sucesso para solicitação ${createDto.solicitacao_id}`,
+        );
+      } catch (error) {
+        // Se houve violação de constraint única, pode ser uma condição de corrida
+        // Tentar buscar os dados existentes e atualizar
+        if (error.code === '23505' && error.constraint?.includes('solicitacao')) {
+          this.logger.warn(
+            `Violação de constraint detectada para ${this.entityName} - solicitação ${createDto.solicitacao_id}. Tentando atualizar dados existentes.`,
+          );
+          
+          const existingDataRetry = await this.repository.findOne({
+            where: { solicitacao_id: createDto.solicitacao_id } as any,
+          });
+
+          if (existingDataRetry) {
+            // Atualizar dados existentes
+            Object.assign(existingDataRetry, createDto, {
+              updated_at: new Date(),
+            });
+
+            savedEntity = await this.repository.save(existingDataRetry);
+            isUpdate = true;
+
+            this.logger.log(
+              `Dados de ${this.entityName} atualizados após violação de constraint para solicitação ${createDto.solicitacao_id}`,
+            );
+          } else {
+            // Se ainda não conseguir encontrar, relançar o erro original
+            throw error;
+          }
+        } else {
+          // Para outros tipos de erro, relançar
+          throw error;
+        }
+      }
     }
 
     // Atualizar campos específicos na entidade Solicitacao
@@ -135,6 +169,70 @@ export abstract class AbstractDadosBeneficioService<
       await this.atualizarStatusSolicitacao(
         createDto.solicitacao_id,
         usuarioId,
+      );
+    }
+
+    return savedEntity as unknown as TEntity;
+  }
+
+  /**
+   * Criar ou atualizar dados de benefício usando EntityManager específico (para transações)
+   * Se já existirem dados para a solicitação, eles serão atualizados
+   * Caso contrário, novos dados serão criados
+   */
+  async createWithManager(createDto: TCreateDto, entityManager: EntityManager): Promise<TEntity> {
+    // Validação específica do benefício
+    await this.validateCreateData(createDto);
+
+    // Usar o repository do EntityManager fornecido
+    const repository = entityManager.getRepository(this.repository.target);
+
+    // Verificar se já existem dados para esta solicitação
+    const existingData = await repository.findOne({
+      where: { solicitacao_id: createDto.solicitacao_id } as any,
+    });
+
+    // Extrair usuarioId do createDto, se disponível
+    const usuarioId = createDto.usuario_id || null;
+    let savedEntity: TEntity;
+    let isUpdate = false;
+
+    if (existingData) {
+      // Atualizar dados existentes (upsert)
+      isUpdate = true;
+
+      // Validar dados para atualização
+      await this.validateUpdateData(createDto as any, existingData);
+
+      // Atualizar entidade existente
+      Object.assign(existingData, createDto, {
+        updated_at: new Date(),
+      });
+
+      savedEntity = await repository.save(existingData);
+
+      this.logger.log(
+        `Dados de ${this.entityName} atualizados com sucesso para solicitação ${createDto.solicitacao_id} (transação)`,
+      );
+    } else {
+      // Criar nova entidade
+      const entity = repository.create(createDto as any);
+      savedEntity = (await repository.save(entity)) as unknown as TEntity;
+
+      this.logger.log(
+        `Dados de ${this.entityName} criados com sucesso para solicitação ${createDto.solicitacao_id} (transação)`,
+      );
+    }
+
+    // Atualizar campos específicos na entidade Solicitacao usando o EntityManager
+    await this.atualizarCamposSolicitacaoWithManager(createDto.solicitacao_id, createDto, entityManager);
+
+    // Atualizar status e substatus da solicitação apenas se for criação (não atualização)
+    if (!isUpdate) {
+      await this.atualizarStatusSolicitacaoWithManager(
+        createDto.solicitacao_id,
+        usuarioId,
+        entityManager,
       );
     }
 
@@ -302,6 +400,98 @@ export abstract class AbstractDadosBeneficioService<
     }
   }
 
+  /**
+   * Atualizar campos específicos na entidade Solicitacao usando EntityManager específico
+   */
+  protected async atualizarCamposSolicitacaoWithManager(
+    solicitacaoId: string,
+    createDto: TCreateDto,
+    entityManager: EntityManager,
+  ): Promise<void> {
+    try {
+      const updateData: Partial<Solicitacao> = {};
+
+      // Atualizar determinacao_judicial_flag se determinacao_judicial estiver presente
+      if ('determinacao_judicial' in createDto && createDto.determinacao_judicial) {
+        updateData.determinacao_judicial_flag = true;
+        this.logger.log(
+          `Campo determinacao_judicial_flag atualizado para true na solicitação ${solicitacaoId} (transação)`,
+        );
+      }
+
+      // Atualizar quantidade_parcelas se presente nos dados do benefício
+      if ('quantidade_parcelas' in createDto && createDto.quantidade_parcelas) {
+        updateData.quantidade_parcelas = createDto.quantidade_parcelas as number;
+        this.logger.log(
+          `Campo quantidade_parcelas atualizado para ${createDto.quantidade_parcelas} na solicitação ${solicitacaoId} (transação)`,
+        );
+      }
+
+      // Atualizar prioridade se presente nos dados do benefício
+      if ('prioridade' in createDto && createDto.prioridade !== undefined) {
+        updateData.prioridade = createDto.prioridade as number;
+        this.logger.log(
+          `Campo prioridade atualizado para ${createDto.prioridade} na solicitação ${solicitacaoId} (transação)`,
+        );
+      }
+
+      // Aplicar atualizações se houver campos para atualizar
+      if (Object.keys(updateData).length > 0) {
+        updateData.updated_at = new Date();
+        
+        await entityManager.update(
+          Solicitacao,
+          { id: solicitacaoId },
+          updateData,
+        );
+
+        this.logger.log(
+          `Campos da solicitação ${solicitacaoId} atualizados com sucesso (transação): ${Object.keys(updateData).join(', ')}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Erro ao atualizar campos da solicitação ${solicitacaoId} (transação): ${error.message}`,
+        error.stack,
+      );
+      // Não propagar o erro para não afetar a criação dos dados de benefício
+    }
+  }
+
+  protected async atualizarStatusSolicitacaoWithManager(
+    solicitacaoId: string,
+    usuarioId?: string,
+    entityManager?: EntityManager,
+  ): Promise<void> {
+    if (!this.workflowService) {
+      this.logger.warn(
+        'WorkflowService não disponível para atualização de status',
+      );
+      return;
+    }
+
+    try {
+      // Buscar a solicitação atual usando o EntityManager
+      const solicitacao = await entityManager
+        .createQueryBuilder(Solicitacao, 'solicitacao')
+        .where('solicitacao.id = :id', { id: solicitacaoId })
+        .getOne();
+
+      if (!solicitacao) {
+        this.logger.warn(`Solicitação ${solicitacaoId} não encontrada para atualização de status`);
+        return;
+      }
+
+
+    } catch (error) {
+      this.logger.error(
+        `Erro ao atualizar status da solicitação ${solicitacaoId} (transação): ${error.message}`,
+        error.stack,
+      );
+      // Não propagar o erro para não afetar a criação dos dados de benefício
+    }
+  }
+
   protected async atualizarStatusSolicitacao(
     solicitacaoId: string,
     usuarioId?: string,
@@ -347,9 +537,6 @@ export abstract class AbstractDadosBeneficioService<
             solicitacaoId,
             StatusSolicitacao.ABERTA,
             usuarioId,
-            {
-              observacao: `Status atualizado automaticamente após cadastro dos dados específicos de ${this.entityName}`,
-            },
           );
         } else if (needsStatusUpdate) {
           this.logger.warn(
