@@ -225,6 +225,7 @@ export class ComprovanteService {
       // Remover referência dos pagamentos
       for (const pagamento of pagamentos) {
         pagamento.comprovante_id = null;
+        pagamento.status = StatusPagamentoEnum.RECEBIDO
         await this.pagamentoRepository.save(pagamento);
       }
     }
