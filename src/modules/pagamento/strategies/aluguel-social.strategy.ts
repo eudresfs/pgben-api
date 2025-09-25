@@ -23,8 +23,8 @@ export class AluguelSocialStrategy implements IBeneficioCalculatorStrategy {
 
   private readonly configuracao: ConfiguracaoBeneficio = {
     parcelasPadrao: 12,
-    intervaloParcelas: 30,
-    diasParaLiberacao: 5,
+    intervaloParcelas: 31,
+    diasParaLiberacao: 0,
     diasParaVencimento: 10,
     diaLimite: 25,
     valorPadrao: 600,

@@ -24,8 +24,8 @@ export class CestaBasicaStrategy implements IBeneficioCalculatorStrategy {
 
   private readonly configuracao: ConfiguracaoBeneficio = {
     parcelasPadrao: 3,
-    intervaloParcelas: 30,
-    diasParaLiberacao: 3,
+    intervaloParcelas: 31,
+    diasParaLiberacao: 0,
     diasParaVencimento: 30,
     diaLimite: 25,
     valorPadrao: 107,
