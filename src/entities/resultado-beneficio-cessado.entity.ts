@@ -49,7 +49,7 @@ export class ResultadoBeneficioCessado {
   id: string;
 
   /** Referência à concessão que foi cessada */
-  @Column({ name: 'concessao_id', unique: true })
+  @Column({ name: 'concessao_id', type: 'uuid', unique: true })
   @IsNotEmpty({ message: 'ID da concessão é obrigatório' })
   @IsUUID('4', { message: 'ID da concessão inválido' })
   concessaoId: string;
@@ -59,7 +59,7 @@ export class ResultadoBeneficioCessado {
   concessao: Concessao;
 
   /** Técnico responsável pelo registro do resultado */
-  @Column({ name: 'tecnico_responsavel_id' })
+  @Column({ name: 'tecnico_responsavel_id', type: 'uuid' })
   @IsNotEmpty({ message: 'ID do técnico responsável é obrigatório' })
   @IsUUID('4', { message: 'ID do técnico responsável inválido' })
   tecnicoResponsavelId: string;

@@ -47,7 +47,7 @@ export class DocumentoComprobatorio {
   id: string;
 
   /** Referência ao resultado de benefício cessado */
-  @Column({ name: 'resultado_beneficio_cessado_id' })
+  @Column({ name: 'resultado_beneficio_cessado_id', type: 'uuid' })
   @IsNotEmpty({ message: 'ID do resultado de benefício cessado é obrigatório' })
   @IsUUID('4', { message: 'ID do resultado de benefício cessado inválido' })
   resultadoBeneficioCessadoId: string;
@@ -123,7 +123,7 @@ export class DocumentoComprobatorio {
   dataUpload: Date;
 
   /** Usuário que fez o upload do documento */
-  @Column({ name: 'usuario_upload_id' })
+  @Column({ name: 'usuario_upload_id', type: 'uuid' })
   @IsNotEmpty({ message: 'ID do usuário de upload é obrigatório' })
   @IsUUID('4', { message: 'ID do usuário de upload inválido' })
   usuarioUploadId: string;
@@ -155,8 +155,8 @@ export class DocumentoComprobatorio {
   @IsDate({ message: 'Data de validação inválida' })
   dataValidacao: Date | null;
 
-  /** Usuário que validou o documento */
-  @Column({ name: 'usuario_validacao_id', nullable: true })
+  /** Usuário que validou o documento (opcional) */
+  @Column({ name: 'usuario_validacao_id', type: 'uuid', nullable: true })
   @IsOptional()
   @IsUUID('4', { message: 'ID do usuário de validação inválido' })
   usuarioValidacaoId: string | null;

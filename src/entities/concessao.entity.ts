@@ -41,7 +41,7 @@ export class Concessao {
   id: string;
 
   /** Referência à solicitação aprovada que originou a concessão */
-  @Column({ name: 'solicitacao_id', unique: false })
+  @Column({ name: 'solicitacao_id', type: 'uuid', unique: false })
   @IsNotEmpty({ message: 'ID da solicitação é obrigatório' })
   @IsUUID('4', { message: 'ID da solicitação inválido' })
   solicitacaoId: string;

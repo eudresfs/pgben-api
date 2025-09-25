@@ -22,7 +22,7 @@ export class HistoricoConcessao {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'concessao_id' })
+  @Column({ name: 'concessao_id', type: 'uuid' })
   @IsUUID('4')
   concessaoId: string;
 

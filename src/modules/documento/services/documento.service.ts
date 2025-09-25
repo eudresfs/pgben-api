@@ -697,7 +697,7 @@ export class DocumentoService {
               `documento.tipo = :tipoComprovante AND EXISTS (
                 SELECT 1 FROM pagamento p 
                 WHERE p.comprovante_id = documento.id 
-                AND p.id = :pagamentoId
+                AND p.id = :pagamentoId::uuid
               )`,
               {
                 tipoComprovante: TipoDocumentoEnum.COMPROVANTE_PAGAMENTO,
@@ -802,20 +802,20 @@ export class DocumentoService {
       }
 
       if (filtros.cidadaos?.length > 0) {
-        queryBuilder.andWhere('documento.cidadao_id IN (:...cidadaoId)', {
+        queryBuilder.andWhere('documento.cidadao_id = ANY(:cidadaoId::uuid[])', {
           cidadaoId: filtros.cidadaos,
         });
       }
 
       if (filtros.solicitacoes?.length > 0) {
-        queryBuilder.andWhere('documento.solicitacao_id IN (:...solicitacaoId)', {
+        queryBuilder.andWhere('documento.solicitacao_id = ANY(:solicitacaoId::uuid[])', {
           solicitacaoId: filtros.solicitacoes,
         });
       }
 
       if (filtros.usuarios_upload?.length > 0) {
         queryBuilder.andWhere(
-          'documento.usuario_upload_id IN (:...usuarioUploadId)',
+          'documento.usuario_upload_id = ANY(:usuarioUploadId::uuid[])',
           {
             usuarioUploadId: filtros.usuarios_upload,
           },
@@ -824,7 +824,7 @@ export class DocumentoService {
 
       if (filtros.usuarios_verificacao?.length > 0) {
         queryBuilder.andWhere(
-          'documento.usuario_verificacao_id IN (:...usuarioVerificacaoId)',
+          'documento.usuario_verificacao_id = ANY(:usuarioVerificacaoId::uuid[])',
           {
             usuarioVerificacaoId: filtros.usuarios_verificacao,
           },

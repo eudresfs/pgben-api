@@ -15,14 +15,14 @@ export class SetorUnidade {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'setor_id' })
+  @Column({ name: 'setor_id', type: 'uuid' })
   setorId: string;
 
   @ManyToOne(() => Setor, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'setor_id' })
   setor: Setor;
 
-  @Column({ name: 'unidade_id' })
+  @Column({ name: 'unidade_id', type: 'uuid' })
   unidade_id: string;
 
   @ManyToOne(() => Unidade, { onDelete: 'CASCADE' })

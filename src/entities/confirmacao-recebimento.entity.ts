@@ -39,7 +39,7 @@ export class ConfirmacaoRecebimento {
   /**
    * Referência ao pagamento confirmado
    */
-  @Column({ name: 'pagamento_id' })
+  @Column({ name: 'pagamento_id', type: 'uuid' })
   @IsNotEmpty({ message: 'ID do pagamento é obrigatório' })
   @IsUUID('4', { message: 'ID do pagamento deve ser um UUID válido' })
   pagamento_id: string;
@@ -66,7 +66,7 @@ export class ConfirmacaoRecebimento {
   /**
    * Referência ao usuário (técnico ou beneficiário) que registrou a confirmação
    */
-  @Column({ name: 'confirmado_por' })
+  @Column({ name: 'confirmado_por', type: 'uuid' })
   @IsNotEmpty({ message: 'ID do usuário que confirmou é obrigatório' })
   @IsUUID('4', { message: 'ID do usuário deve ser um UUID válido' })
   confirmado_por: string;
@@ -74,7 +74,7 @@ export class ConfirmacaoRecebimento {
   /**
    * Referência ao cidadão que recebeu o benefício, se diferente do beneficiário original
    */
-  @Column({ name: 'destinatario_id', nullable: true })
+  @Column({ name: 'destinatario_id', type: 'uuid', nullable: true })
   @IsOptional()
   @IsUUID('4', { message: 'ID do destinatário deve ser um UUID válido' })
   destinatario_id: string;

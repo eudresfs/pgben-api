@@ -63,7 +63,7 @@ export class Pagamento {
   /**
    * Referência à solicitação aprovada que originou este pagamento
    */
-  @Column({ name: 'solicitacao_id', nullable: true })
+  @Column({ name: 'solicitacao_id', type: 'uuid', nullable: true })
   @IsOptional()
   @IsUUID('4', { message: 'ID da solicitação inválido' })
   solicitacao_id: string | null;
@@ -71,7 +71,7 @@ export class Pagamento {
   /**
    * Referência à concessão que originou este pagamento
    */
-  @Column({ name: 'concessao_id', nullable: true })
+  @Column({ name: 'concessao_id', type: 'uuid', nullable: true })
   @IsOptional()
   @IsUUID('4', { message: 'ID da concessão inválido' })
   concessao_id: string | null;
@@ -79,7 +79,7 @@ export class Pagamento {
   /**
    * Referência às informações bancárias/PIX utilizadas para o pagamento
    */
-  @Column({ name: 'info_bancaria_id', nullable: true })
+  @Column({ name: 'info_bancaria_id', type: 'uuid', nullable: true })
   @IsOptional()
   info_bancaria_id: string;
 
@@ -167,25 +167,25 @@ export class Pagamento {
   metodo_pagamento: MetodoPagamentoEnum;
 
   /**
-   * Referência ao usuário que liberou o pagamento
+   * Usuário responsável pela liberação do pagamento
    */
-  @Column({ name: 'liberado_por', nullable: true })
+  @Column({ name: 'liberado_por', type: 'uuid', nullable: true })
   @IsOptional()
   @IsUUID('4', { message: 'ID do responsável pela liberação inválido' })
   liberado_por: string;
 
   /**
-   * Referência ao usuário que criou o pagamento
+   * Usuário que criou o pagamento
    */
-  @Column({ name: 'criado_por', nullable: true })
+  @Column({ name: 'criado_por', type: 'uuid', nullable: true })
   @IsOptional()
   @IsUUID('4', { message: 'ID do criador inválido' })
   criado_por: string;
 
   /**
-   * ID do comprovante de pagamento
+   * Referência ao comprovante de pagamento
    */
-  @Column({ name: 'comprovante_id', nullable: true })
+  @Column({ name: 'comprovante_id', type: 'uuid', nullable: true })
   @IsOptional()
   @IsUUID('4', { message: 'ID do comprovante inválido' })
   comprovante_id: string;

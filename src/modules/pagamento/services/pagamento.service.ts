@@ -431,13 +431,13 @@ export class PagamentoService {
       }
 
       if (filtros.solicitacoes?.length > 0) {
-        queryBuilder.andWhere('pagamento.solicitacao_id IN (:...solicitacoes)', {
+        queryBuilder.andWhere('pagamento.solicitacao_id = ANY(:solicitacoes::uuid[])', {
           solicitacoes: filtros.solicitacoes,
         });
       }
 
       if (filtros.concessoes?.length > 0) {
-        queryBuilder.andWhere('pagamento.concessao_id IN (:...concessoes)', {
+        queryBuilder.andWhere('pagamento.concessao_id = ANY(:concessoes::uuid[])', {
           concessoes: filtros.concessoes,
         });
       }

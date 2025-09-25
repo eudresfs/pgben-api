@@ -79,7 +79,7 @@ export class NotificacaoSistema {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'destinatario_id' })
+  @Column({ name: 'destinatario_id', type: 'uuid' })
   @IsNotEmpty({ message: 'ID do destinatário é obrigatório' })
   @IsUUID('4', { message: 'ID do destinatário inválido' })
   destinatario_id: string;
@@ -92,7 +92,7 @@ export class NotificacaoSistema {
   @JoinColumn({ name: 'template_id' })
   template: NotificationTemplate;
 
-  @Column({ name: 'template_id', nullable: true })
+  @Column({ name: 'template_id', type: 'uuid', nullable: true })
   @IsOptional()
   @IsUUID('4', { message: 'ID do template inválido' })
   template_id: string | null;

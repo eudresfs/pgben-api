@@ -23,7 +23,7 @@ export class IntegradorToken {
   @JoinColumn({ name: 'integrador_id' })
   integrador: Integrador;
 
-  @Column({ name: 'integrador_id' })
+  @Column({ name: 'integrador_id', type: 'uuid' })
   integradorId: string;
 
   @Column({ length: 100 })

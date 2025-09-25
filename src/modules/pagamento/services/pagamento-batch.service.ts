@@ -419,7 +419,7 @@ export class PagamentoBatchService {
     const pagamentosData = await this.pagamentoRepository
       .createQueryBuilder('pagamento')
       .select(['pagamento.id', 'pagamento.numero_parcela', 'pagamento.concessao_id'])
-      .where('pagamento.id IN (:...ids)', { ids: pagamentoIds })
+      .where('pagamento.id = ANY(:ids::uuid[])', { ids: pagamentoIds })
       .getMany();
 
     // Criar mapa para facilitar busca

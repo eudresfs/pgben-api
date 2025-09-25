@@ -92,7 +92,7 @@ export class Usuario {
   @MaxLength(20, { message: 'Matrícula deve ter no máximo 20 caracteres' })
   matricula: string;
 
-  @Column({ name: 'role_id', nullable: true })
+  @Column({ name: 'role_id', type: 'uuid', nullable: true })
   role_id: string;
 
   @ManyToOne(() => Role, (role) => role.usuarios, {
@@ -102,7 +102,7 @@ export class Usuario {
   @JoinColumn({ name: 'role_id' })
   role: Role;
 
-  @Column({ name: 'unidade_id', nullable: true })
+  @Column({ name: 'unidade_id', type: 'uuid', nullable: true })
   unidade_id: string;
 
   @ManyToOne(() => Unidade, (unidade) => unidade.usuarios, {
@@ -112,7 +112,7 @@ export class Usuario {
   @JoinColumn({ name: 'unidade_id' })
   unidade: Unidade;
 
-  @Column({ name: 'setor_id', nullable: true })
+  @Column({ name: 'setor_id', type: 'uuid', nullable: true })
   setor_id: string;
 
   @ManyToOne(() => Setor, (setor) => setor.usuarios, {

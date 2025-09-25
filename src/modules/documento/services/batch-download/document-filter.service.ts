@@ -275,7 +275,7 @@ export class DocumentFilterService {
           'pagamento',
           'pagamento.comprovante_id = documento.id',
         )
-        .andWhere('pagamento.id IN (:...pagamentoIds)', {
+        .andWhere('pagamento.id = ANY(:pagamentoIds::uuid[])', {
           pagamentoIds: pagamentoIds,
         });
     }

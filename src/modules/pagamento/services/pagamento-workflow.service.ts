@@ -89,6 +89,30 @@ export class PagamentoWorkflowService {
     private readonly concessaoAutoUpdateService: ConcessaoAutoUpdateService,
   ) {}
 
+  /**
+   * Converte uma data preservando o valor exato sem ajuste de timezone
+   */
+  private parseDataSemTimezone(data: Date | string): Date {
+    if (data instanceof Date) {
+      return data;
+    }
+
+    // Se é uma string no formato YYYY-MM-DD, criar Date com timezone local
+    if (typeof data === 'string') {
+      const match = data.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (match) {
+        const [, ano, mes, dia] = match;
+        // Criar Date com timezone local para preservar a data exata
+        return new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
+      }
+      
+      // Para outros formatos, usar conversão padrão
+      return new Date(data);
+    }
+
+    return new Date();
+  }
+
   // ==========================================
   // MÉTODO PRINCIPAL DE WORKFLOW
   // ==========================================
@@ -437,12 +461,11 @@ export class PagamentoWorkflowService {
       tipo_beneficio_codigo: pagamento.solicitacao?.tipo_beneficio?.codigo
     });
 
-    // Verificar status do pagamento
-    if (pagamento.status !== StatusPagamentoEnum.PENDENTE) {
-      this.logger.warn(`[DEBUG] Pagamento não está pendente. Status: ${pagamento.status}`);
+    // Verificar status do pagamento - deve estar PENDENTE ou AGENDADO para poder ser liberado
+    if (![StatusPagamentoEnum.PENDENTE, StatusPagamentoEnum.AGENDADO].includes(pagamento.status)) {
       return {
         pode_liberar: false,
-        motivo: `Pagamento não está pendente. Status atual: ${pagamento.status}`,
+        motivo: `Pagamento não está pendente ou agendado. Status atual: ${pagamento.status}`,
       };
     }
 
@@ -484,9 +507,9 @@ export class PagamentoWorkflowService {
     // Verificar regras específicas por tipo de benefício
     const tipoBeneficio = pagamento.solicitacao?.tipo_beneficio?.codigo;
 
-    if (tipoBeneficio === 'aluguel-social') {
-      return await this.verificarElegibilidadeAluguelSocial(pagamento);
-    }
+    // if (tipoBeneficio === 'aluguel-social') {
+    //   return await this.verificarElegibilidadeAluguelSocial(pagamento);
+    // }
 
     return { pode_liberar: true };
   }
@@ -511,8 +534,10 @@ export class PagamentoWorkflowService {
       );
     }
 
-    // Determinar data de liberação
-    const dataLiberacao = dadosLiberacao?.data_liberacao || new Date();
+    // Determinar data de liberação - preservar data exata sem ajuste de timezone
+    const dataLiberacao = dadosLiberacao?.data_liberacao 
+      ? this.parseDataSemTimezone(dadosLiberacao.data_liberacao)
+      : new Date();
     const dataAtual = new Date();
     
     // Normalizar datas para comparação (apenas data, sem horário)
@@ -891,7 +916,7 @@ export class PagamentoWorkflowService {
     }
 
     // Para demais parcelas, verificar recibo do mês anterior
-    const documentos_obrigatorios = [TipoDocumentoEnum.RECIBO_ALUGUEL];
+    const documentos_obrigatorios = [TipoDocumentoEnum.COMPROVANTE_PAGAMENTO];
 
     // Buscar recibos de aluguel através do DocumentoRepository
     // Busca documentos associados ao pagamento para verificação de elegibilidade
@@ -900,29 +925,13 @@ export class PagamentoWorkflowService {
     );
     const recibos = documentos || [];
     const recibosAluguel = recibos.filter(
-      (r) => r.tipo === TipoDocumentoEnum.RECIBO_ALUGUEL,
+      (r) => r.tipo === TipoDocumentoEnum.COMPROVANTE_PAGAMENTO,
     );
 
     if (recibosAluguel.length === 0) {
       return {
         pode_liberar: false,
         motivo: 'Recibo de aluguel do mês anterior é obrigatório',
-        documentos_obrigatorios,
-        documentos_faltantes: documentos_obrigatorios,
-      };
-    }
-
-    // Verificar se o recibo é do mês anterior
-    const reciboMaisRecente = recibosAluguel[0];
-    const dataRecibo = reciboMaisRecente.data_upload;
-    const agora = new Date();
-    const mesAnterior = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
-    const mesAtual = new Date(agora.getFullYear(), agora.getMonth(), 1);
-
-    if (dataRecibo < mesAnterior || dataRecibo >= mesAtual) {
-      return {
-        pode_liberar: false,
-        motivo: 'Recibo de aluguel deve ser do mês anterior',
         documentos_obrigatorios,
         documentos_faltantes: documentos_obrigatorios,
       };

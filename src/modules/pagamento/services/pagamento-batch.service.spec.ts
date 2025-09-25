@@ -9,6 +9,7 @@ import { PagamentoQueueService } from './pagamento-queue.service';
 import { RequestContextHolder } from '../../../common/services/request-context-holder.service';
 import { Pagamento, Documento } from '@/entities';
 import { StatusPagamentoEnum } from '@/enums';
+import { ScopeType } from '@/enums/scope-type.enum';
 import { LiberarPagamentoDto } from '../dtos/liberar-pagamento.dto';
 
 describe('PagamentoBatchService - Ordenação por Parcela', () => {
@@ -18,7 +19,7 @@ describe('PagamentoBatchService - Ordenação por Parcela', () => {
   let dataSource: jest.Mocked<DataSource>;
 
   const mockContext = {
-    tipo: 'UNIDADE',
+    tipo: ScopeType.UNIDADE,
     unidade_id: 'test-unidade-id',
     user_id: 'test-user-id',
   };

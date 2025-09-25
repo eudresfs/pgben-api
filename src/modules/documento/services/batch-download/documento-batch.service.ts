@@ -575,14 +575,14 @@ export class DocumentoBatchService {
 
       // Aplicar filtros
       if (filtros.cidadaoIds && filtros.cidadaoIds.length > 0) {
-        queryBuilder.andWhere('documento.cidadao_id IN (:...cidadaoIds)', {
+        queryBuilder.andWhere('documento.cidadao_id = ANY(:cidadaoIds::uuid[])', {
           cidadaoIds: filtros.cidadaoIds,
         });
       }
 
       if (filtros.solicitacaoIds && filtros.solicitacaoIds.length > 0) {
         queryBuilder.andWhere(
-          'documento.solicitacao_id IN (:...solicitacaoIds)',
+          'documento.solicitacao_id = ANY(:solicitacaoIds::uuid[])',
           { solicitacaoIds: filtros.solicitacaoIds },
         );
       }
