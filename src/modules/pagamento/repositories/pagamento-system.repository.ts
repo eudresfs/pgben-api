@@ -202,6 +202,43 @@ export class PagamentoSystemRepository {
   }
 
   /**
+   * Busca pagamentos agendados que devem ser liberados na data especificada
+   * 
+   * @description
+   * Operação de sistema que busca pagamentos com status AGENDADO
+   * cuja data_liberacao corresponde à data atual para processamento automático.
+   * 
+   * @param dataLiberacao Data para a qual buscar pagamentos agendados
+   * @returns Lista de pagamentos agendados para liberação
+   */
+  async findAgendadosParaLiberacao(dataLiberacao: Date): Promise<Pagamento[]> {
+    // Normalizar a data para comparação (apenas data, sem horário)
+    const dataInicio = new Date(dataLiberacao.getFullYear(), dataLiberacao.getMonth(), dataLiberacao.getDate());
+    const dataFim = new Date(dataInicio);
+    dataFim.setDate(dataFim.getDate() + 1);
+
+    const queryBuilder = this.systemRepository
+      .createQueryBuilder('pagamento')
+      .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
+      .leftJoinAndSelect('solicitacao.unidade', 'unidade')
+      .leftJoinAndSelect('pagamento.concessao', 'concessao')
+      .where('pagamento.status = :status', {
+        status: StatusPagamentoEnum.AGENDADO,
+      })
+      .andWhere('pagamento.data_liberacao >= :dataInicio', {
+        dataInicio,
+      })
+      .andWhere('pagamento.data_liberacao < :dataFim', {
+        dataFim,
+      })
+      .orderBy('pagamento.numero_parcela', 'ASC')
+      .addOrderBy('pagamento.created_at', 'ASC');
+
+    return queryBuilder.getMany();
+  }
+
+  /**
    * Busca estatísticas globais de pagamentos para monitoramento
    * 
    * @description

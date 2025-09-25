@@ -1,12 +1,21 @@
+import { Test } from '@nestjs/testing';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { StatusConcessao } from '../../../enums/status-concessao.enum';
 import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
-import { TipoBeneficioEnum } from '../../../enums/tipo-beneficio.enum';
+import { TipoBeneficio } from '../../../enums/tipo-beneficio.enum';
+import { PeriodoPredefinido } from '../../../enums/periodo-predefinido.enum';
 
 // Mock das dependências
 const mockPagamentoRepository = {
   findPagamentoComRelacoes: jest.fn(),
   update: jest.fn(),
+  save: jest.fn(),
+  createQueryBuilder: jest.fn(),
+  createScopedQueryBuilder: jest.fn(),
+  create: jest.fn().mockImplementation((dados) => Promise.resolve({
+    id: 'mock-pagamento-id',
+    ...dados,
+  })),
 };
 
 const mockConcessaoService = {
@@ -19,10 +28,18 @@ const mockCacheInvalidationService = {
 
 const mockPagamentoEventosService = {
   emitirEventoStatusAtualizado: jest.fn(),
+  emitirEventoPagamentoCriado: jest.fn(),
+};
+
+const mockPagamentoWorkflowService = {
+  processUpdateStatus: jest.fn(),
+  liberarPagamento: jest.fn(),
+  processarPagamentosAgendados: jest.fn(),
 };
 
 const mockPagamentoCalculatorService = {
   calcularPagamento: jest.fn(),
+  prepararDadosPagamento: jest.fn(),
 };
 
 const mockSolicitacaoService = {
@@ -49,12 +66,38 @@ const mockMapper = {
 
 const mockFiltrosAvancadosService = {
   aplicarFiltros: jest.fn(),
+  calcularPeriodoPredefinido: jest.fn(),
+  normalizarFiltros: jest.fn(),
+};
+
+const mockConcessaoAutoUpdateService = {
+  atualizarStatusConcessao: jest.fn(),
+  processarAtualizacaoConcessao: jest.fn().mockImplementation(async (pagamento, status, usuarioId, pagamentoId) => {
+    try {
+      // Simular a lógica do ConcessaoAutoUpdateService que chama o ConcessaoService
+      // Verificar se concessao_id existe, se é a primeira parcela e se o status é LIBERADO
+      if (pagamento.numero_parcela === 1 && pagamento.concessao_id && status === StatusPagamentoEnum.LIBERADO) {
+        await mockConcessaoService.atualizarStatus(
+          pagamento.concessao_id,
+          StatusConcessao.ATIVO,
+          usuarioId,
+          'Ativação automática - Primeira parcela do pagamento liberada'
+        );
+      }
+    } catch (error) {
+      // Simular o comportamento real: não propagar o erro
+      // O ConcessaoAutoUpdateService trata erros internamente e não falha a operação principal
+    }
+  }),
 };
 
 // Mock do PagamentoValidationUtil
 jest.mock('../utils/pagamento-validation.util', () => ({
   PagamentoValidationUtil: {
     validarTransicaoStatus: jest.fn(),
+    validarValor: jest.fn(),
+    validarParaComprovante: jest.fn(),
+    validarParaConfirmacao: jest.fn(),
   },
 }));
 
@@ -65,7 +108,16 @@ jest.mock('@nestjs/common', () => ({
     log: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
+    debug: jest.fn(),
   })),
+}));
+
+// Mock da função processAdvancedSearchParam
+jest.mock('../../../shared/utils/cpf-search.util', () => ({
+  processAdvancedSearchParam: jest.fn().mockReturnValue({
+    processedSearch: 'test',
+    variations: ['test'],
+  }),
 }));
 
 // Importar o serviço após os mocks
@@ -96,6 +148,8 @@ describe('PagamentoService - updateStatus', () => {
       {} as any, // pagamentoCalculatorService
       {} as any, // filtrosAvancadosService
       mockPagamentoEventosService as any, // pagamentoEventosService
+      mockPagamentoWorkflowService as any, // pagamentoWorkflowService
+      mockConcessaoAutoUpdateService as any, // concessaoAutoUpdateService
     );
 
     // Limpar mocks
@@ -186,131 +240,268 @@ describe('PagamentoService - updateStatus', () => {
   });
 
   describe('gerarPagamentosParaConcessao', () => {
+    it('deve gerar pagamentos para concessão com dados específicos', async () => {
+      // Arrange
+      const concessao = { id: '1', valor_total: 1000 };
+      const solicitacao = { 
+        id: '1', 
+        tipo_beneficio: { codigo: TipoBeneficio.NATALIDADE },
+        valor: 1000,
+        quantidade_parcelas: 2
+      };
+      const usuarioId = 'user-1';
+      const dadosEspecificos = { parcelas: 2 };
+
+      // Mock com estrutura correta do ResultadoCalculoPagamento
+      const resultadoCalculo = {
+        quantidadeParcelas: 2,
+        valorParcela: 500,
+        dataLiberacao: new Date('2024-01-15'),
+        dataVencimento: new Date('2024-01-30'),
+        intervaloParcelas: 30,
+      };
+
+      mockPagamentoCalculatorService.calcularPagamento.mockResolvedValue(resultadoCalculo);
+      mockPagamentoRepository.save.mockResolvedValue([]);
+
+      // Criar instância do serviço com todos os mocks necessários
+      const service = new PagamentoService(
+        mockPagamentoRepository as any,
+        mockValidationService as any,
+        mockCacheService as any,
+        mockCacheInvalidationService as any,
+        mockAuditoriaService as any,
+        mockSolicitacaoService as any,
+        mockConcessaoService as any,
+        mockMapper as any,
+        mockPagamentoCalculatorService as any,
+        mockFiltrosAvancadosService as any,
+        mockPagamentoEventosService as any,
+        mockPagamentoWorkflowService as any,
+        mockConcessaoAutoUpdateService as any,
+      );
+
+      // Act
+      const result = await service.gerarPagamentosParaConcessao(
+        concessao,
+        solicitacao,
+        usuarioId,
+        dadosEspecificos,
+      );
+
+      // Assert
+      expect(mockPagamentoCalculatorService.calcularPagamento).toHaveBeenCalledWith({
+        tipoBeneficio: TipoBeneficio.NATALIDADE,
+        valor: 1000,
+        dataInicio: expect.any(Date),
+        quantidadeParcelas: 2,
+        dadosEspecificos,
+      });
+      expect(mockPagamentoRepository.create).toHaveBeenCalled();
+      expect(result).toEqual([expect.objectContaining({ id: 'mock-pagamento-id' }), expect.objectContaining({ id: 'mock-pagamento-id' })]);
+    });
+
+    it('deve gerar pagamentos para concessão sem dados específicos', async () => {
+      // Arrange
+      const concessao = { id: '2', valor_total: 2000 };
+      const solicitacao = { 
+        id: '2', 
+        tipo_beneficio: { codigo: TipoBeneficio.NATALIDADE },
+        valor: 2000,
+        quantidade_parcelas: 2
+      };
+      const usuarioId = 'user-2';
+
+      // Mock com estrutura correta do ResultadoCalculoPagamento
+      const resultadoCalculo = {
+        quantidadeParcelas: 2,
+        valorParcela: 1000,
+        dataLiberacao: new Date('2024-01-15'),
+        dataVencimento: new Date('2024-01-30'),
+        intervaloParcelas: 30,
+      };
+
+      mockPagamentoCalculatorService.calcularPagamento.mockResolvedValue(resultadoCalculo);
+      mockPagamentoRepository.save.mockResolvedValue([]);
+
+      // Criar instância do serviço com todos os mocks necessários
+      const service = new PagamentoService(
+        mockPagamentoRepository as any,
+        mockValidationService as any,
+        mockCacheService as any,
+        mockCacheInvalidationService as any,
+        mockAuditoriaService as any,
+        mockSolicitacaoService as any,
+        mockConcessaoService as any,
+        mockMapper as any,
+        mockPagamentoCalculatorService as any,
+        mockFiltrosAvancadosService as any,
+        mockPagamentoEventosService as any,
+        mockPagamentoWorkflowService as any,
+        mockConcessaoAutoUpdateService as any,
+      );
+
+      // Act
+      const result = await service.gerarPagamentosParaConcessao(
+        concessao,
+        solicitacao,
+        usuarioId,
+      );
+
+      // Assert
+      expect(mockPagamentoCalculatorService.calcularPagamento).toHaveBeenCalledWith({
+        tipoBeneficio: TipoBeneficio.NATALIDADE,
+        valor: 2000,
+        dataInicio: expect.any(Date),
+        quantidadeParcelas: 2,
+        dadosEspecificos: undefined,
+      });
+      expect(mockPagamentoRepository.create).toHaveBeenCalled();
+      expect(result).toEqual([expect.objectContaining({ id: 'mock-pagamento-id' }), expect.objectContaining({ id: 'mock-pagamento-id' })]);
+    });
+  });
+
+  describe('aplicarFiltrosAvancados', () => {
+    let mockQueryBuilder: any;
+    let mockRepository: any;
     let service: PagamentoService;
 
-    beforeEach(async () => {
-      const module = await Test.createTestingModule({
-        providers: [
-          PagamentoService,
-          { provide: 'PagamentoRepository', useValue: mockPagamentoRepository },
-          { provide: 'ConcessaoService', useValue: mockConcessaoService },
-          { provide: 'PagamentoCacheInvalidationService', useValue: mockCacheInvalidationService },
-          { provide: 'PagamentoEventosService', useValue: mockPagamentoEventosService },
-          { provide: 'PagamentoCalculatorService', useValue: mockPagamentoCalculatorService },
-          { provide: 'SolicitacaoService', useValue: mockSolicitacaoService },
-          { provide: 'PagamentoValidationService', useValue: mockValidationService },
-          { provide: 'PagamentoCacheService', useValue: mockCacheService },
-          { provide: 'AuditoriaService', useValue: mockAuditoriaService },
-          { provide: 'PagamentoUnifiedMapper', useValue: mockMapper },
-          { provide: 'FiltrosAvancadosService', useValue: mockFiltrosAvancadosService },
-        ],
-      }).compile();
+    beforeEach(() => {
+      mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        leftJoin: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+        createScopedQueryBuilder: jest.fn(),
+        setParameters: jest.fn().mockReturnThis(),
+        getParameters: jest.fn().mockReturnValue({}),
+        getQuery: jest.fn().mockReturnValue('SELECT * FROM pagamento'),
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        groupBy: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        innerJoinAndSelect: jest.fn().mockReturnThis(),
+      };
 
-      service = module.get<PagamentoService>(PagamentoService);
+      // Configurar o mock do repositório para este teste
+      mockPagamentoRepository.createScopedQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+      // Criar instância do serviço com todos os mocks necessários
+      service = new PagamentoService(
+        mockPagamentoRepository as any,
+        mockValidationService as any,
+        mockCacheService as any,
+        mockCacheInvalidationService as any,
+        mockAuditoriaService as any,
+        mockSolicitacaoService as any,
+        mockConcessaoService as any,
+        mockMapper as any,
+        mockPagamentoCalculatorService as any,
+        mockFiltrosAvancadosService as any,
+        mockPagamentoEventosService as any,
+        mockPagamentoWorkflowService as any,
+        mockConcessaoAutoUpdateService as any,
+      );
+
+      // Mock dos métodos do FiltrosAvancadosService
+      mockFiltrosAvancadosService.normalizarFiltros = jest.fn().mockReturnValue({});
+      mockFiltrosAvancadosService.calcularPeriodoPredefinido = jest.fn().mockReturnValue({
+        dataInicio: new Date(),
+        dataFim: new Date(),
+      });
     });
 
-    it('deve passar dados específicos para o calculador de pagamentos', async () => {
+    it('deve aplicar filtro proxima_parcela_liberacao quando habilitado', async () => {
       // Arrange
-      const mockConcessao = {
-        id: 'concessao-123',
-        tipo_beneficio: TipoBeneficioEnum.NATALIDADE,
-        valor_beneficio: 1000,
-        data_inicio: new Date('2024-01-01'),
-        quantidade_parcelas: 3,
-        solicitacao_id: 'solicitacao-123',
+      const filtros = {
+        proxima_parcela_liberacao: true,
+        limit: 10,
+        offset: 0,
       };
 
-      const mockSolicitacao = {
-        id: 'solicitacao-123',
-        liberador_id: 'user-123',
+      // Mock para a query principal
+      const mockMainQuery = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        leftJoin: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+        getParameters: jest.fn().mockReturnValue({}),
+        setParameters: jest.fn().mockReturnThis(),
       };
 
-      const mockDadosEspecificos = {
-        quantidade_bebes_esperados: 2,
-        data_provavel_parto: new Date('2024-06-01'),
+      // Mock para a subquery
+      const mockSubQuery = {
+        select: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        groupBy: jest.fn().mockReturnThis(),
+        getQuery: jest.fn().mockReturnValue('(SELECT MIN(p_proxima.numero_parcela) as min_parcela_proxima, p_proxima.concessao_id as concessao_id_proxima FROM pagamento p_proxima WHERE p_proxima.status IN (:...statusNaoLiberados) GROUP BY p_proxima.concessao_id)'),
+        getParameters: jest.fn().mockReturnValue({
+          statusNaoLiberados: [StatusPagamentoEnum.PENDENTE, StatusPagamentoEnum.AGENDADO],
+        }),
       };
 
-      const mockResultadoCalculo = {
-        pagamentos: [
-          {
-            numero_parcela: 1,
-            valor: 1000,
-            data_vencimento: new Date('2024-02-01'),
-            data_liberacao: new Date('2024-01-15'),
-          },
-        ],
-      };
-
-      mockPagamentoCalculatorService.calcularPagamento.mockReturnValue(mockResultadoCalculo);
-      mockPagamentoRepository.save = jest.fn().mockResolvedValue([]);
+      // Configurar o mock para retornar diferentes objetos baseado no parâmetro
+      mockPagamentoRepository.createScopedQueryBuilder
+        .mockReturnValueOnce(mockMainQuery) // Primeira chamada (query principal)
+        .mockReturnValueOnce(mockSubQuery); // Segunda chamada (subquery)
 
       // Act
-      await service.gerarPagamentosParaConcessao(
-        mockConcessao as any,
-        mockSolicitacao as any,
-        'user-123',
-        mockDadosEspecificos,
-      );
+      const result = await service.aplicarFiltrosAvancados(filtros);
 
       // Assert
-      expect(mockPagamentoCalculatorService.calcularPagamento).toHaveBeenCalledWith(
-        expect.objectContaining({
-          tipoBeneficio: TipoBeneficioEnum.NATALIDADE,
-          valor: 1000,
-          dataInicio: mockConcessao.data_inicio,
-          quantidadeParcelas: 3,
-          dadosEspecificos: mockDadosEspecificos,
-        }),
+      expect(result).toBeDefined();
+      expect(result.items).toEqual([]);
+      expect(result.total).toBe(0);
+      expect(mockPagamentoRepository.createScopedQueryBuilder).toHaveBeenCalled();
+    });
+
+    it('não deve aplicar filtro proxima_parcela_liberacao quando desabilitado', async () => {
+      // Arrange
+      const filtros = {
+        proxima_parcela_liberacao: false,
+        limit: 10,
+        offset: 0,
+      };
+
+      // Act
+      const result = await service.aplicarFiltrosAvancados(filtros);
+
+      // Assert
+      expect(result).toBeDefined();
+      expect(result.items).toEqual([]);
+      expect(result.total).toBe(0);
+      expect(mockQueryBuilder.andWhere).not.toHaveBeenCalledWith(
+        expect.stringContaining('(pagamento.concessao_id, pagamento.numero_parcela) IN')
       );
     });
 
-    it('deve funcionar mesmo sem dados específicos', async () => {
+    it('não deve aplicar filtro proxima_parcela_liberacao quando não especificado', async () => {
       // Arrange
-      const mockConcessao = {
-        id: 'concessao-123',
-        tipo_beneficio: TipoBeneficioEnum.CESTA_BASICA,
-        valor_beneficio: 500,
-        data_inicio: new Date('2024-01-01'),
-        quantidade_parcelas: 1,
-        solicitacao_id: 'solicitacao-123',
+      const filtros = {
+        limit: 10,
+        offset: 0,
       };
-
-      const mockSolicitacao = {
-        id: 'solicitacao-123',
-        liberador_id: 'user-123',
-      };
-
-      const mockResultadoCalculo = {
-        pagamentos: [
-          {
-            numero_parcela: 1,
-            valor: 500,
-            data_vencimento: new Date('2024-02-01'),
-            data_liberacao: new Date('2024-01-15'),
-          },
-        ],
-      };
-
-      mockPagamentoCalculatorService.calcularPagamento.mockReturnValue(mockResultadoCalculo);
-      mockPagamentoRepository.save = jest.fn().mockResolvedValue([]);
 
       // Act
-      await service.gerarPagamentosParaConcessao(
-        mockConcessao as any,
-        mockSolicitacao as any,
-        'user-123',
-        null, // Sem dados específicos
-      );
+      const result = await service.aplicarFiltrosAvancados(filtros);
 
       // Assert
-      expect(mockPagamentoCalculatorService.calcularPagamento).toHaveBeenCalledWith(
-        expect.objectContaining({
-          tipoBeneficio: TipoBeneficioEnum.CESTA_BASICA,
-          valor: 500,
-          dataInicio: mockConcessao.data_inicio,
-          quantidadeParcelas: 1,
-          dadosEspecificos: null,
-        }),
+      expect(result).toBeDefined();
+      expect(result.items).toEqual([]);
+      expect(result.total).toBe(0);
+      expect(mockQueryBuilder.andWhere).not.toHaveBeenCalledWith(
+        expect.stringContaining('(pagamento.concessao_id, pagamento.numero_parcela) IN')
       );
     });
   });

@@ -71,4 +71,34 @@ export class PagamentoLiberacaoScheduler {
       );
     }
   }
+
+  /**
+   * Executa diariamente às 08:00 para processar pagamentos agendados.
+   * Altera o status de pagamentos 'agendado' para 'liberado' quando a data_liberacao é igual à data atual.
+   */
+  @Cron('0 0 8 * * *') // Todos os dias às 09:00
+  async processarPagamentosAgendados(): Promise<void> {
+    this.logger.info(
+      'Iniciando processamento de pagamentos agendados.',
+      PagamentoLiberacaoScheduler.name,
+    );
+
+    try {
+      const resultado =
+        await this.pagamentoWorkflowService.processarPagamentosAgendados();
+
+      this.logger.info(
+        `Processamento de pagamentos agendados concluído. Pagamentos liberados: ${resultado.length}`,
+        PagamentoLiberacaoScheduler.name,
+        { liberados: resultado.length },
+      );
+    } catch (error) {
+      this.logger.error(
+        'Erro ao processar pagamentos agendados',
+        error,
+        PagamentoLiberacaoScheduler.name,
+        { stack: error.stack },
+      );
+    }
+  }
 }

@@ -450,7 +450,7 @@ export class PagamentoBatchService {
       }).join(', ')}`,
     );
 
-    // Validação adicional: verificar se há parcelas fora de sequência por concessão
+    // Log informativo sobre as parcelas que serão processadas
     const parcelasPorConcessao = new Map<string, number[]>();
     
     for (const item of batchOrdenado) {
@@ -463,47 +463,12 @@ export class PagamentoBatchService {
       }
     }
 
-    // Verificar sequência por concessão
+    // Log informativo das parcelas por concessão (sem validação de sequência)
     for (const [concessaoId, parcelas] of parcelasPorConcessao) {
       const parcelasOrdenadas = [...parcelas].sort((a, b) => a - b);
       
-      // Verificar se há gaps na sequência (ex: tentativa de liberar parcela 3 sem ter parcela 1 ou 2)
-      for (let i = 0; i < parcelasOrdenadas.length; i++) {
-        const parcelaAtual = parcelasOrdenadas[i];
-        
-        // Se não é a primeira parcela, verificar se existe a anterior
-        if (parcelaAtual > 1) {
-          const parcelaAnterior = parcelaAtual - 1;
-          
-          // Verificar se a parcela anterior está no lote ou já foi confirmada
-          const temParcelaAnteriorNoLote = parcelas.includes(parcelaAnterior);
-          
-          if (!temParcelaAnteriorNoLote) {
-            // Verificar se a parcela anterior já foi confirmada no banco
-            const parcelaAnteriorConfirmada = await this.pagamentoRepository
-              .createQueryBuilder('pagamento')
-              .where('pagamento.concessao_id = :concessaoId', { concessaoId })
-              .andWhere('pagamento.numero_parcela = :numeroParcela', { numeroParcela: parcelaAnterior })
-              .andWhere('pagamento.status = :status', { status: StatusPagamentoEnum.CONFIRMADO })
-              .getOne();
-            
-            if (!parcelaAnteriorConfirmada) {
-              this.logger.warn(
-                `VALIDAÇÃO SEQUÊNCIA: Tentativa de liberar parcela ${parcelaAtual} sem parcela anterior ${parcelaAnterior} confirmada`,
-                {
-                  concessaoId,
-                  parcelaAtual,
-                  parcelaAnterior,
-                  parcelasNoLote: parcelas,
-                },
-              );
-            }
-          }
-        }
-      }
-      
       this.logger.debug(
-        `Validação de sequência para concessão ${concessaoId}: parcelas ${parcelas.join(', ')}`,
+        `Processando parcelas para concessão ${concessaoId}: ${parcelasOrdenadas.join(', ')}`,
         { concessaoId, parcelas: parcelasOrdenadas },
       );
     }

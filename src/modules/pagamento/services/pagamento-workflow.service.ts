@@ -481,19 +481,6 @@ export class PagamentoWorkflowService {
       };
     }
 
-    // Verificar se a parcela anterior está confirmada (apenas para parcelas > 1)
-    // CORREÇÃO: Validação mais flexível - permite liberação mesmo sem parcela anterior confirmada
-    if (pagamento.numero_parcela > 1) {
-      this.logger.log(`[DEBUG] Verificando parcela anterior para parcela ${pagamento.numero_parcela}`);
-      try {
-        await this.validateParcelaAnteriorConfirmada(pagamento);
-        this.logger.log(`[DEBUG] Parcela anterior validada com sucesso`);
-      } catch (error) {
-        this.logger.warn(`[DEBUG] Validação de parcela anterior falhou, mas permitindo liberação: ${error.message}`);
-        // Não bloqueia mais a liberação - apenas registra o aviso
-      }
-    }
-
     // Verificar regras específicas por tipo de benefício
     const tipoBeneficio = pagamento.solicitacao?.tipo_beneficio?.codigo;
 
@@ -524,12 +511,26 @@ export class PagamentoWorkflowService {
       );
     }
 
+    // Determinar data de liberação
+    const dataLiberacao = dadosLiberacao?.data_liberacao || new Date();
+    const dataAtual = new Date();
+    
+    // Normalizar datas para comparação (apenas data, sem horário)
+    const dataLiberacaoNormalizada = new Date(dataLiberacao.getFullYear(), dataLiberacao.getMonth(), dataLiberacao.getDate());
+    const dataAtualNormalizada = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), dataAtual.getDate());
+    
+    // Determinar status baseado na data de liberação
+    const isDataFutura = dataLiberacaoNormalizada > dataAtualNormalizada;
+    const novoStatus = isDataFutura ? StatusPagamentoEnum.AGENDADO : StatusPagamentoEnum.LIBERADO;
+    
+    this.logger.log(`Processando pagamento ${pagamentoId}: data_liberacao=${dataLiberacao.toISOString()}, data_atual=${dataAtual.toISOString()}, status=${novoStatus}`);
+
     // Preparar dados de atualização
     const dadosAtualizacao: any = {
-      status: StatusPagamentoEnum.LIBERADO,
-      data_liberacao: dadosLiberacao?.data_liberacao || new Date(),
+      status: novoStatus,
+      data_liberacao: dataLiberacao,
       liberado_por: usuarioId,
-      observacoes: dadosLiberacao?.observacoes || 'Liberado pelo sistema',
+      observacoes: dadosLiberacao?.observacoes || (isDataFutura ? 'Agendado pelo sistema' : 'Liberado pelo sistema'),
     };
 
     // Adicionar motivo se fornecido
@@ -537,29 +538,31 @@ export class PagamentoWorkflowService {
       dadosAtualizacao.motivo_liberacao = dadosLiberacao.motivo;
     }
 
-    // Liberar o pagamento
+    // Atualizar o pagamento
     const pagamentoLiberado = await this.pagamentoRepository.update(
       pagamentoId,
       dadosAtualizacao,
     );
 
-    // Verificar se é a primeira parcela e ativar a concessão se necessário
-    const pagamentoCompleto = await this.pagamentoRepository.findByIdWithRelations(pagamentoId);
-    if (pagamentoCompleto?.numero_parcela === 1 && pagamentoCompleto?.concessao_id) {
-      try {
-        await this.concessaoAutoUpdateService.processarAtualizacaoConcessao(
-          pagamentoCompleto,
-          StatusPagamentoEnum.LIBERADO,
-          usuarioId,
-          pagamentoId,
-        );
-        this.logger.log(`Concessão ${pagamentoCompleto.concessao_id} ativada após liberação da primeira parcela`);
-      } catch (error) {
-        this.logger.warn(`Erro ao ativar concessão ${pagamentoCompleto.concessao_id}: ${error.message}`);
+    // Verificar se é a primeira parcela e ativar a concessão se necessário (apenas para status LIBERADO)
+    if (novoStatus === StatusPagamentoEnum.LIBERADO) {
+      const pagamentoCompleto = await this.pagamentoRepository.findByIdWithRelations(pagamentoId);
+      if (pagamentoCompleto?.numero_parcela === 1 && pagamentoCompleto?.concessao_id) {
+        try {
+          await this.concessaoAutoUpdateService.processarAtualizacaoConcessao(
+            pagamentoCompleto,
+            StatusPagamentoEnum.LIBERADO,
+            usuarioId,
+            pagamentoId,
+          );
+          this.logger.log(`Concessão ${pagamentoCompleto.concessao_id} ativada após liberação da primeira parcela`);
+        } catch (error) {
+          this.logger.warn(`Erro ao ativar concessão ${pagamentoCompleto.concessao_id}: ${error.message}`);
+        }
       }
     }
 
-    this.logger.log(`Pagamento ${pagamentoId} liberado com sucesso`);
+    this.logger.log(`Pagamento ${pagamentoId} ${isDataFutura ? 'agendado' : 'liberado'} com sucesso`);
     return pagamentoLiberado;
   }
 
@@ -785,6 +788,67 @@ export class PagamentoWorkflowService {
       return processados;
     } catch (error) {
       this.logger.error('Erro no processamento de vencimentos automáticos:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Processa pagamentos agendados que devem ser liberados hoje
+   * Utiliza repository de sistema para operações sem contexto de usuário
+   */
+  async processarPagamentosAgendados(): Promise<Pagamento[]> {
+    this.logger.log('Iniciando processamento de pagamentos agendados');
+
+    try {
+      // Busca pagamentos agendados com data_liberacao igual à data atual
+      const dataAtual = new Date();
+      const dataAtualNormalizada = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), dataAtual.getDate());
+      
+      const pagamentosAgendados = await this.pagamentoSystemRepository.findAgendadosParaLiberacao(dataAtualNormalizada);
+      const processados: Pagamento[] = [];
+
+      this.logger.log(`Encontrados ${pagamentosAgendados.length} pagamentos agendados para liberação hoje`);
+
+      for (const pagamento of pagamentosAgendados) {
+        try {
+          // Atualiza status para LIBERADO usando repository de sistema
+          const pagamentoAtualizado = await this.pagamentoSystemRepository.update(
+            pagamento.id,
+            {
+              status: StatusPagamentoEnum.LIBERADO,
+              observacoes: 'Liberado automaticamente pelo sistema - agendamento processado',
+            },
+          );
+
+          processados.push(pagamentoAtualizado);
+          this.logger.log(`Pagamento agendado ${pagamento.id} liberado automaticamente`);
+
+          // Verificar se é a primeira parcela e ativar a concessão se necessário
+          if (pagamento.numero_parcela === 1 && pagamento.concessao_id) {
+            try {
+              await this.concessaoAutoUpdateService.processarAtualizacaoConcessao(
+                pagamento,
+                StatusPagamentoEnum.LIBERADO,
+                'sistema-agendamento',
+                pagamento.id,
+              );
+              this.logger.log(`Concessão ${pagamento.concessao_id} ativada após liberação automática da primeira parcela`);
+            } catch (error) {
+              this.logger.warn(`Erro ao ativar concessão ${pagamento.concessao_id} durante processamento automático: ${error.message}`);
+            }
+          }
+        } catch (error) {
+          this.logger.error(
+            `Erro ao processar pagamento agendado ${pagamento.id}:`,
+            error,
+          );
+        }
+      }
+
+      this.logger.log(`Processamento de agendamentos concluído: ${processados.length} pagamentos liberados`);
+      return processados;
+    } catch (error) {
+      this.logger.error('Erro no processamento de pagamentos agendados:', error);
       throw error;
     }
   }

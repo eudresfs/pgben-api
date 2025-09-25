@@ -695,7 +695,7 @@ export class DocumentoService {
             // Ou busca comprovantes de pagamento que estejam associados via comprovante_id
             .orWhere(
               `documento.tipo = :tipoComprovante AND EXISTS (
-                SELECT 1 FROM pagamentos p 
+                SELECT 1 FROM pagamento p 
                 WHERE p.comprovante_id = documento.id 
                 AND p.id = :pagamentoId
               )`,

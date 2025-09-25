@@ -518,22 +518,35 @@ export class PagamentoService {
         }
       }
 
-      // Filtro para retornar apenas uma parcela pendente por concessão
-      if (filtros.apenas_uma_parcela_pendente) {
-        // Subquery para encontrar a menor parcela pendente por concessão
-        const subQuery = this.pagamentoRepository
-          .createScopedQueryBuilder('p_sub')
-          .select('MIN(p_sub.numero_parcela)', 'min_parcela')
-          .addSelect('p_sub.concessao_id', 'concessao_id')
-          .where('p_sub.status = :statusPendente', { statusPendente: StatusPagamentoEnum.PENDENTE })
-          .groupBy('p_sub.concessao_id');
+      // Filtro para retornar apenas a próxima parcela a ser liberada por concessão
+      if (filtros.proxima_parcela_liberacao) {
+        // Subquery para encontrar a menor parcela não liberada por concessão
+        const subQueryProxima = this.pagamentoRepository
+          .createScopedQueryBuilder('p_proxima')
+          .select('MIN(p_proxima.numero_parcela)', 'min_parcela_proxima')
+          .addSelect('p_proxima.concessao_id', 'concessao_id_proxima')
+          .where('p_proxima.status IN (:...statusNaoLiberados)', { 
+            statusNaoLiberados: [
+              StatusPagamentoEnum.PENDENTE, 
+              StatusPagamentoEnum.AGENDADO
+            ] 
+          })
+          .groupBy('p_proxima.concessao_id');
 
         // Aplicar o filtro principal usando a subquery
-        queryBuilder.andWhere(`(pagamento.concessao_id, pagamento.numero_parcela) IN (${subQuery.getQuery()})`)
-             .andWhere('pagamento.status = :statusPendentePrincipal', { statusPendentePrincipal: StatusPagamentoEnum.PENDENTE });
+        queryBuilder.andWhere(`(pagamento.concessao_id, pagamento.numero_parcela) IN (${subQueryProxima.getQuery()})`)
+             .andWhere('pagamento.status IN (:...statusNaoLiberadosPrincipal)', { 
+               statusNaoLiberadosPrincipal: [
+                 StatusPagamentoEnum.PENDENTE, 
+                 StatusPagamentoEnum.AGENDADO
+               ] 
+             });
         
         // Adicionar os parâmetros da subquery
-        queryBuilder.setParameters(subQuery.getParameters());
+        queryBuilder.setParameters({
+          ...queryBuilder.getParameters(),
+          ...subQueryProxima.getParameters()
+        });
       }
 
       // Incluir relacionamentos opcionais

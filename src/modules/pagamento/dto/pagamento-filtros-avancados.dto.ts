@@ -226,7 +226,7 @@ export class PagamentoFiltrosAvancadosDto extends PaginationParamsDto {
   monitorado?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Retornar apenas uma parcela pendente por concessão (útil para evitar duplicatas)',
+    description: 'Retornar apenas a próxima parcela a ser liberada por concessão (baseado na sequência de parcelas)',
     example: false,
   })
   @IsOptional()
@@ -235,9 +235,9 @@ export class PagamentoFiltrosAvancadosDto extends PaginationParamsDto {
     if (typeof value === 'string') {
       return value.toLowerCase() === 'true';
     }
-    return value;
+    return Boolean(value);
   })
-  apenas_uma_parcela_pendente?: boolean;
+  proxima_parcela_liberacao?: boolean;
 
   @ApiPropertyOptional({
     description: 'Incluir relacionamentos na resposta',
