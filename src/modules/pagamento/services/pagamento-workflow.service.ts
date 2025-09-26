@@ -563,11 +563,26 @@ export class PagamentoWorkflowService {
       dadosAtualizacao.motivo_liberacao = dadosLiberacao.motivo;
     }
 
+    // Buscar pagamento antes da atualização para obter status anterior
+    const pagamentoAnterior = await this.pagamentoRepository.findById(pagamentoId);
+    const statusAnterior = pagamentoAnterior?.status;
+
     // Atualizar o pagamento
     const pagamentoLiberado = await this.pagamentoRepository.update(
       pagamentoId,
       dadosAtualizacao,
     );
+
+    // Emitir evento de status atualizado
+    if (statusAnterior && statusAnterior !== novoStatus) {
+      await this.pagamentoEventosService.emitirEventoStatusAtualizado(pagamentoId, {
+        statusAnterior: statusAnterior,
+        statusAtual: novoStatus,
+        motivoMudanca: dadosLiberacao?.observacoes || (isDataFutura ? 'Agendado pelo sistema' : 'Liberado pelo sistema'),
+        usuarioId: usuarioId,
+        observacao: dadosLiberacao?.observacoes || (isDataFutura ? 'Pagamento agendado para liberação futura' : 'Pagamento liberado'),
+      });
+    }
 
     // Verificar se é a primeira parcela e ativar a concessão se necessário (apenas para status LIBERADO)
     if (novoStatus === StatusPagamentoEnum.LIBERADO) {
@@ -728,11 +743,23 @@ export class PagamentoWorkflowService {
       );
     }
 
-    return await this.pagamentoRepository.update(pagamentoId, {
+    const statusAnterior = pagamento.status;
+    const pagamentoAtualizado = await this.pagamentoRepository.update(pagamentoId, {
       status: StatusPagamentoEnum.VENCIDO,
       data_vencimento: new Date(),
       observacoes: motivo,
     });
+
+    // Emitir evento de status atualizado
+    await this.pagamentoEventosService.emitirEventoStatusAtualizado(pagamentoId, {
+      statusAnterior: statusAnterior,
+      statusAtual: StatusPagamentoEnum.VENCIDO,
+      motivoMudanca: motivo,
+      usuarioId: 'sistema-vencimento', // Sistema automático
+      observacao: `Pagamento marcado como vencido por documentação: ${motivo}`,
+    });
+
+    return pagamentoAtualizado;
   }
 
   /**
@@ -766,11 +793,24 @@ export class PagamentoWorkflowService {
       }
     }
 
-    return await this.pagamentoRepository.update(id, {
+    const statusAnterior = pagamento.status;
+    const observacaoFinal = observacoes || 'Pagamento regularizado';
+    const pagamentoAtualizado = await this.pagamentoRepository.update(id, {
       status: StatusPagamentoEnum.PENDENTE,
       data_regularizacao: new Date(),
-      observacoes: observacoes || 'Pagamento regularizado',
+      observacoes: observacaoFinal,
     });
+
+    // Emitir evento de status atualizado
+    await this.pagamentoEventosService.emitirEventoStatusAtualizado(id, {
+      statusAnterior: statusAnterior,
+      statusAtual: StatusPagamentoEnum.PENDENTE,
+      motivoMudanca: observacaoFinal,
+      usuarioId: 'sistema-regularizacao', // Sistema automático
+      observacao: `Pagamento vencido regularizado: ${observacaoFinal}`,
+    });
+
+    return pagamentoAtualizado;
   }
 
   /**
@@ -836,6 +876,8 @@ export class PagamentoWorkflowService {
 
       for (const pagamento of pagamentosAgendados) {
         try {
+          const statusAnterior = pagamento.status;
+          
           // Atualiza status para LIBERADO usando repository de sistema
           const pagamentoAtualizado = await this.pagamentoSystemRepository.update(
             pagamento.id,
@@ -844,6 +886,15 @@ export class PagamentoWorkflowService {
               observacoes: 'Liberado automaticamente pelo sistema - agendamento processado',
             },
           );
+
+          // Emitir evento de status atualizado
+          await this.pagamentoEventosService.emitirEventoStatusAtualizado(pagamento.id, {
+            statusAnterior: statusAnterior,
+            statusAtual: StatusPagamentoEnum.LIBERADO,
+            motivoMudanca: 'Liberação automática de agendamento',
+            usuarioId: 'sistema-agendamento',
+            observacao: 'Pagamento liberado automaticamente pelo sistema - agendamento processado',
+          });
 
           processados.push(pagamentoAtualizado);
           this.logger.log(`Pagamento agendado ${pagamento.id} liberado automaticamente`);
