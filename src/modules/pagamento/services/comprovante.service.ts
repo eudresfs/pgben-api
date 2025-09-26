@@ -244,14 +244,14 @@ export class ComprovanteService {
       for (const pagamento of pagamentos) {
         const statusAnterior = pagamento.status;
         pagamento.comprovante_id = null;
-        pagamento.status = StatusPagamentoEnum.RECEBIDO;
+        pagamento.status = StatusPagamentoEnum.PAGO;
         await this.pagamentoRepository.save(pagamento);
 
         // Emitir evento de mudança de status se houve alteração
-        if (statusAnterior !== StatusPagamentoEnum.RECEBIDO) {
+        if (statusAnterior !== StatusPagamentoEnum.PAGO) {
           await this.pagamentoEventosService.emitirEventoStatusAtualizado(pagamento.id, {
             statusAnterior: statusAnterior,
-            statusAtual: StatusPagamentoEnum.RECEBIDO,
+            statusAtual: StatusPagamentoEnum.PAGO,
             motivoMudanca: 'Comprovante de pagamento removido',
             usuarioId: usuarioId,
             observacao: 'Status alterado automaticamente após remoção do comprovante',
