@@ -123,9 +123,9 @@ export class HistoricoPagamentoController {
     const resultado = await this.historicoPagamentoService.buscarHistoricoPorPagamentoFormatado(
       pagamento_id,
       {
-        tipoEvento: tipo_evento,
-        dataInicio: data_inicial ? new Date(data_inicial) : undefined,
-        dataFim: data_final ? new Date(data_final) : undefined,
+        tipo_evento: tipo_evento,
+        data_inicio: data_inicial ? new Date(data_inicial) : undefined,
+        data_fim: data_final ? new Date(data_final) : undefined,
       }
     );
     return {
@@ -354,8 +354,8 @@ export class HistoricoPagamentoController {
     const { data: historico } = await this.historicoPagamentoService.buscarHistoricoPorPagamentoFormatado(
       pagamento_id,
       {
-        dataInicio: data_inicial ? new Date(data_inicial) : undefined,
-        dataFim: data_final ? new Date(data_final) : undefined,
+        data_inicio: data_inicial ? new Date(data_inicial) : undefined,
+        data_fim: data_final ? new Date(data_final) : undefined,
       }
     );
 
@@ -363,7 +363,7 @@ export class HistoricoPagamentoController {
     const estatisticas = {
       total_eventos: historico.length,
       eventos_por_tipo: historico.reduce((acc, evento) => {
-        const tipo = evento.tipo_evento || 'nao_identificado';
+        const tipo = evento.tipo_evento || TipoEventoHistoricoEnum.NAO_IDENTIFICADO;
         acc[tipo] = (acc[tipo] || 0) + 1;
         return acc;
       }, {} as Record<string, number>),

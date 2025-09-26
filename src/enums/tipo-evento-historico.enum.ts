@@ -97,4 +97,9 @@ export enum TipoEventoHistoricoEnum {
    * Falha no lote
    */
   LOTE_FALHA = 'lote_falha',
+
+  /** 
+   * Evento não identificado
+   */
+  NAO_IDENTIFICADO = 'nao_identificado'
 }

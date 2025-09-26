@@ -17,24 +17,24 @@ import { ptBR } from 'date-fns/locale';
  * Interface para dados de registro de histórico
  */
 export interface RegistrarHistoricoDto {
-  pagamentoId: string;
-  usuarioId?: string;
-  tipoEvento: TipoEventoHistoricoEnum;
-  statusAnterior?: StatusPagamentoEnum;
-  statusAtual?: StatusPagamentoEnum;
+  pagamento_id: string;
+  usuario_id?: string;
+  tipo_evento: TipoEventoHistoricoEnum;
+  status_anterior?: StatusPagamentoEnum;
+  status_atual?: StatusPagamentoEnum;
   observacao?: string;
-  dadosContexto?: Record<string, any>;
+  dados_contexto?: Record<string, any>;
 }
 
 /**
  * Interface para filtros de consulta de histórico
  */
 export interface FiltrosHistoricoDto {
-  pagamentoId?: string;
-  usuarioId?: string;
-  tipoEvento?: TipoEventoHistoricoEnum;
-  dataInicio?: Date;
-  dataFim?: Date;
+  pagamento_id?: string;
+  usuario_id?: string;
+  tipo_evento?: TipoEventoHistoricoEnum;
+  data_inicio?: Date;
+  data_fim?: Date;
   page?: number;
   limit?: number;
 }
@@ -89,7 +89,7 @@ export class HistoricoPagamentoService {
     dados: RegistrarHistoricoDto,
   ): Promise<HistoricoPagamento> {
     this.logger.log(
-      `Registrando histórico para pagamento ${dados.pagamentoId} - Evento: ${dados.tipoEvento}`,
+      `Registrando histórico para pagamento ${dados.pagamento_id} - Evento: ${dados.tipo_evento}`,
     );
 
     try {
@@ -98,13 +98,13 @@ export class HistoricoPagamentoService {
 
       // Criar registro de histórico
       const historico = this.historicoRepository.create({
-        pagamento_id: dados.pagamentoId,
-        usuario_id: dados.usuarioId,
-        tipo_evento: dados.tipoEvento,
-        status_anterior: dados.statusAnterior,
-        status_atual: dados.statusAtual,
+        pagamento_id: dados.pagamento_id,
+        usuario_id: dados.usuario_id,
+        tipo_evento: dados.tipo_evento,
+        status_anterior: dados.status_anterior,
+        status_atual: dados.status_atual,
         observacao: dados.observacao,
-        dados_contexto: dados.dadosContexto,
+        dados_contexto: dados.dados_contexto,
         data_evento: new Date(),
         created_at: new Date(),
       });
@@ -122,7 +122,7 @@ export class HistoricoPagamentoService {
       return resultado;
     } catch (error) {
       this.logger.error(
-        `Erro ao registrar histórico para pagamento ${dados.pagamentoId}`,
+        `Erro ao registrar histórico para pagamento ${dados.pagamento_id}`,
         error.stack,
       );
       throw new BadRequestException(
@@ -136,8 +136,8 @@ export class HistoricoPagamentoService {
    * Retorna todos os eventos em ordem cronológica
    */
   async buscarHistoricoPorPagamento(
-    pagamentoId: string,
-    filtros?: Omit<FiltrosHistoricoDto, 'pagamentoId'>,
+    pagamento_id: string,
+    filtros?: Omit<FiltrosHistoricoDto, 'pagamento_id'>,
   ): Promise<{
     data: HistoricoResponseDto[];
     meta: {
@@ -147,7 +147,7 @@ export class HistoricoPagamentoService {
       pages: number;
     };
   }> {
-    this.logger.log(`Buscando histórico do pagamento ${pagamentoId}`);
+    this.logger.log(`Buscando histórico do pagamento ${pagamento_id}`);
 
     try {
       // Configurar opções de consulta
@@ -158,31 +158,31 @@ export class HistoricoPagamentoService {
       const queryBuilder = this.historicoRepository
         .createQueryBuilder('historico')
         .leftJoinAndSelect('historico.usuario', 'usuario')
-        .where('historico.pagamento_id = :pagamentoId', { pagamentoId })
+        .where('historico.pagamento_id = :pagamento_id', { pagamento_id })
         .orderBy('historico.data_evento', 'ASC');
 
       // Aplicar filtros adicionais
-      if (filtros?.usuarioId) {
-        queryBuilder.andWhere('historico.usuario_id = :usuarioId', {
-          usuarioId: filtros.usuarioId,
+      if (filtros?.usuario_id) {
+        queryBuilder.andWhere('historico.usuario_id = :usuario_id', {
+          usuario_id: filtros.usuario_id,
         });
       }
 
-      if (filtros?.tipoEvento) {
-        queryBuilder.andWhere('historico.tipo_evento = :tipoEvento', {
-          tipoEvento: filtros.tipoEvento,
+      if (filtros?.tipo_evento) {
+        queryBuilder.andWhere('historico.tipo_evento = :tipo_evento', {
+          tipo_evento: filtros.tipo_evento,
         });
       }
 
-      if (filtros?.dataInicio) {
-        queryBuilder.andWhere('historico.data_evento >= :dataInicio', {
-          dataInicio: filtros.dataInicio,
+      if (filtros?.data_inicio) {
+        queryBuilder.andWhere('historico.data_evento >= :data_inicio', {
+          data_inicio: filtros.data_inicio,
         });
       }
 
-      if (filtros?.dataFim) {
-        queryBuilder.andWhere('historico.data_evento <= :dataFim', {
-          dataFim: filtros.dataFim,
+      if (filtros?.data_fim) {
+        queryBuilder.andWhere('historico.data_evento <= :data_fim', {
+          data_fim: filtros.data_fim,
         });
       }
 
@@ -208,7 +208,7 @@ export class HistoricoPagamentoService {
        };
     } catch (error) {
       this.logger.error(
-        `Erro ao buscar histórico do pagamento ${pagamentoId}`,
+        `Erro ao buscar histórico do pagamento ${pagamento_id}`,
         error.stack,
       );
       throw new BadRequestException('Erro ao consultar histórico do pagamento');
@@ -220,8 +220,8 @@ export class HistoricoPagamentoService {
    * Retorna todos os eventos em ordem cronológica para compatibilidade com API
    */
   async buscarHistoricoPorPagamentoFormatado(
-    pagamentoId: string,
-    filtros?: Omit<FiltrosHistoricoDto, 'pagamentoId'>,
+    pagamento_id: string,
+    filtros?: Omit<FiltrosHistoricoDto, 'pagamento_id'>,
   ): Promise<{
     data: any[];
     meta: {
@@ -231,7 +231,7 @@ export class HistoricoPagamentoService {
       pages: number;
     };
   }> {
-    this.logger.log(`Buscando histórico do pagamento ${pagamentoId}`);
+    this.logger.log(`Buscando histórico do pagamento ${pagamento_id}`);
 
     try {
       // Configurar opções de consulta
@@ -242,31 +242,31 @@ export class HistoricoPagamentoService {
       const queryBuilder = this.historicoRepository
         .createQueryBuilder('historico')
         .leftJoinAndSelect('historico.usuario', 'usuario')
-        .where('historico.pagamento_id = :pagamentoId', { pagamentoId })
+        .where('historico.pagamento_id = :pagamento_id', { pagamento_id })
         .orderBy('historico.data_evento', 'ASC');
 
       // Aplicar filtros adicionais
-      if (filtros?.usuarioId) {
-        queryBuilder.andWhere('historico.usuario_id = :usuarioId', {
-          usuarioId: filtros.usuarioId,
+      if (filtros?.usuario_id) {
+        queryBuilder.andWhere('historico.usuario_id = :usuario_id', {
+          usuario_id: filtros.usuario_id,
         });
       }
 
-      if (filtros?.tipoEvento) {
-        queryBuilder.andWhere('historico.tipo_evento = :tipoEvento', {
-          tipoEvento: filtros.tipoEvento,
+      if (filtros?.tipo_evento) {
+        queryBuilder.andWhere('historico.tipo_evento = :tipo_evento', {
+          tipo_evento: filtros.tipo_evento,
         });
       }
 
-      if (filtros?.dataInicio) {
-        queryBuilder.andWhere('historico.data_evento >= :dataInicio', {
-          dataInicio: filtros.dataInicio,
+      if (filtros?.data_inicio) {
+        queryBuilder.andWhere('historico.data_evento >= :data_inicio', {
+          data_inicio: filtros.data_inicio,
         });
       }
 
-      if (filtros?.dataFim) {
-        queryBuilder.andWhere('historico.data_evento <= :dataFim', {
-          dataFim: filtros.dataFim,
+      if (filtros?.data_fim) {
+        queryBuilder.andWhere('historico.data_evento <= :data_fim', {
+          data_fim: filtros.data_fim,
         });
       }
 
@@ -297,7 +297,7 @@ export class HistoricoPagamentoService {
       };
     } catch (error) {
       this.logger.error(
-        `Erro ao buscar histórico do pagamento ${pagamentoId}`,
+        `Erro ao buscar histórico do pagamento ${pagamento_id}`,
         error.stack,
       );
       throw new BadRequestException('Erro ao consultar histórico do pagamento');
@@ -332,33 +332,33 @@ export class HistoricoPagamentoService {
         .orderBy('historico.data_evento', 'DESC');
 
       // Aplicar filtros
-      if (filtros.pagamentoId) {
-        queryBuilder.andWhere('historico.pagamento_id = :pagamentoId', {
-          pagamentoId: filtros.pagamentoId,
+      if (filtros.pagamento_id) {
+        queryBuilder.andWhere('historico.pagamento_id = :pagamento_id', {
+          pagamento_id: filtros.pagamento_id,
         });
       }
 
-      if (filtros.usuarioId) {
-        queryBuilder.andWhere('historico.usuario_id = :usuarioId', {
-          usuarioId: filtros.usuarioId,
+      if (filtros.usuario_id) {
+        queryBuilder.andWhere('historico.usuario_id = :usuario_id', {
+          usuario_id: filtros.usuario_id,
         });
       }
 
-      if (filtros.tipoEvento) {
-        queryBuilder.andWhere('historico.tipo_evento = :tipoEvento', {
-          tipoEvento: filtros.tipoEvento,
+      if (filtros.tipo_evento) {
+        queryBuilder.andWhere('historico.tipo_evento = :tipo_evento', {
+          tipo_evento: filtros.tipo_evento,
         });
       }
 
-      if (filtros.dataInicio) {
-        queryBuilder.andWhere('historico.data_evento >= :dataInicio', {
-          dataInicio: filtros.dataInicio,
+      if (filtros.data_inicio) {
+        queryBuilder.andWhere('historico.data_evento >= :data_inicio', {
+          data_inicio: filtros.data_inicio,
         });
       }
 
-      if (filtros.dataFim) {
-        queryBuilder.andWhere('historico.data_evento <= :dataFim', {
-          dataFim: filtros.dataFim,
+      if (filtros.data_fim) {
+        queryBuilder.andWhere('historico.data_evento <= :data_fim', {
+          data_fim: filtros.data_fim,
         });
       }
 
@@ -412,33 +412,33 @@ export class HistoricoPagamentoService {
         .orderBy('historico.data_evento', 'DESC');
 
       // Aplicar filtros
-      if (filtros.pagamentoId) {
-        queryBuilder.andWhere('historico.pagamento_id = :pagamentoId', {
-          pagamentoId: filtros.pagamentoId,
+      if (filtros.pagamento_id) {
+        queryBuilder.andWhere('historico.pagamento_id = :pagamento_id', {
+          pagamento_id: filtros.pagamento_id,
         });
       }
 
-      if (filtros.usuarioId) {
-        queryBuilder.andWhere('historico.usuario_id = :usuarioId', {
-          usuarioId: filtros.usuarioId,
+      if (filtros.usuario_id) {
+        queryBuilder.andWhere('historico.usuario_id = :usuario_id', {
+          usuario_id: filtros.usuario_id,
         });
       }
 
-      if (filtros.tipoEvento) {
-        queryBuilder.andWhere('historico.tipo_evento = :tipoEvento', {
-          tipoEvento: filtros.tipoEvento,
+      if (filtros.tipo_evento) {
+        queryBuilder.andWhere('historico.tipo_evento = :tipo_evento', {
+          tipo_evento: filtros.tipo_evento,
         });
       }
 
-      if (filtros.dataInicio) {
-        queryBuilder.andWhere('historico.data_evento >= :dataInicio', {
-          dataInicio: filtros.dataInicio,
+      if (filtros.data_inicio) {
+        queryBuilder.andWhere('historico.data_evento >= :data_inicio', {
+          data_inicio: filtros.data_inicio,
         });
       }
 
-      if (filtros.dataFim) {
-        queryBuilder.andWhere('historico.data_evento <= :dataFim', {
-          dataFim: filtros.dataFim,
+      if (filtros.data_fim) {
+        queryBuilder.andWhere('historico.data_evento <= :data_fim', {
+          data_fim: filtros.data_fim,
         });
       }
 
@@ -472,13 +472,13 @@ export class HistoricoPagamentoService {
    */
   async exportarHistorico(
     dados: any,
-    usuarioId: string,
+    usuario_id: string,
   ): Promise<{
     url_download: string;
     nome_arquivo: string;
     formato: TipoExportacaoEnum;
     tamanho_arquivo: number;
-    data_geracao: Date;
+    data_geracao: string;
     total_registros: number;
     periodo?: {
       data_inicial: Date;
@@ -492,11 +492,11 @@ export class HistoricoPagamentoService {
     try {
       // Buscar dados do histórico com filtros
       const filtros: FiltrosHistoricoDto = {
-        pagamentoId: dados.pagamento_id,
-        tipoEvento: dados.tipo_evento,
-        usuarioId: dados.usuario_id,
-        dataInicio: dados.data_inicial ? new Date(dados.data_inicial) : undefined,
-        dataFim: dados.data_final ? new Date(dados.data_final) : undefined,
+        pagamento_id: dados.pagamento_id,
+        tipo_evento: dados.tipo_evento,
+        usuario_id: dados.usuario_id,
+        data_inicio: dados.data_inicial ? new Date(dados.data_inicial) : undefined,
+        data_fim: dados.data_final ? new Date(dados.data_final) : undefined,
         limit: 1000, // Limite alto para exportação
       };
 
@@ -524,7 +524,7 @@ export class HistoricoPagamentoService {
         nome_arquivo: nomeArquivo,
         formato: dados.formato as TipoExportacaoEnum,
         tamanho_arquivo: arquivo.buffer.length,
-        data_geracao: dataGeracao,
+        data_geracao: dataGeracao?.toISOString(),
         total_registros: historico.length,
         periodo: dados.data_inicial && dados.data_final ? {
           data_inicial: new Date(dados.data_inicial),
@@ -533,7 +533,7 @@ export class HistoricoPagamentoService {
       };
     } catch (error) {
       this.logger.error(
-        `Erro ao exportar histórico do pagamento ${dados.pagamentoId}`,
+        `Erro ao exportar histórico do pagamento ${dados.pagamento_id}`,
         error.stack,
       );
       throw error;
@@ -544,18 +544,18 @@ export class HistoricoPagamentoService {
    * Valida os dados obrigatórios para registro de histórico
    */
   private validarDadosHistorico(dados: RegistrarHistoricoDto): void {
-    if (!dados.pagamentoId) {
+    if (!dados.pagamento_id) {
       throw new BadRequestException('ID do pagamento é obrigatório');
     }
 
-    if (!dados.tipoEvento) {
+    if (!dados.tipo_evento) {
       throw new BadRequestException('Tipo de evento é obrigatório');
     }
 
     // Validar se mudança de status tem os dados necessários
     if (
-      dados.tipoEvento === TipoEventoHistoricoEnum.ALTERACAO_STATUS &&
-      (!dados.statusAnterior || !dados.statusAtual)
+      dados.tipo_evento === TipoEventoHistoricoEnum.ALTERACAO_STATUS &&
+      (!dados.status_anterior || !dados.status_atual)
     ) {
       throw new BadRequestException(
         'Status anterior e atual são obrigatórios para alteração de status',
@@ -615,7 +615,7 @@ export class HistoricoPagamentoService {
    * TODO: Implementar geração de PDF usando biblioteca como puppeteer ou pdfkit
    */
   private async gerarRelatorioPDF(
-    pagamentoId: string,
+    pagamento_id: string,
     historico: HistoricoResponseDto[],
   ): Promise<{
     buffer: Buffer;
@@ -623,9 +623,9 @@ export class HistoricoPagamentoService {
     contentType: string;
   }> {
     // Implementação simplificada - deve ser substituída por geração real de PDF
-    const conteudo = this.gerarConteudoRelatorio(pagamentoId, historico);
+    const conteudo = this.gerarConteudoRelatorio(pagamento_id, historico);
     const buffer = Buffer.from(conteudo, 'utf-8');
-    const filename = `historico-pagamento-${pagamentoId}-${format(
+    const filename = `historico-pagamento-${pagamento_id}-${format(
       new Date(),
       'yyyy-MM-dd-HHmm',
     )}.txt`;
@@ -642,7 +642,7 @@ export class HistoricoPagamentoService {
    * TODO: Implementar geração de Excel usando biblioteca como exceljs
    */
   private async gerarRelatorioExcel(
-    pagamentoId: string,
+    pagamento_id: string,
     historico: HistoricoResponseDto[],
   ): Promise<{
     buffer: Buffer;
@@ -650,9 +650,9 @@ export class HistoricoPagamentoService {
     contentType: string;
   }> {
     // Implementação simplificada - deve ser substituída por geração real de Excel
-    const conteudo = this.gerarConteudoRelatorio(pagamentoId, historico);
+    const conteudo = this.gerarConteudoRelatorio(pagamento_id, historico);
     const buffer = Buffer.from(conteudo, 'utf-8');
-    const filename = `historico-pagamento-${pagamentoId}-${format(
+    const filename = `historico-pagamento-${pagamento_id}-${format(
       new Date(),
       'yyyy-MM-dd-HHmm',
     )}.csv`;
@@ -668,10 +668,10 @@ export class HistoricoPagamentoService {
    * Gera conteúdo textual do relatório
    */
   private gerarConteudoRelatorio(
-    pagamentoId: string,
+    pagamento_id: string,
     historico: HistoricoResponseDto[],
   ): string {
-    let conteudo = `HISTÓRICO DO PAGAMENTO ${pagamentoId}\n`;
+    let conteudo = `HISTÓRICO DO PAGAMENTO ${pagamento_id}\n`;
     conteudo += `Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', {
       locale: ptBR,
     })}\n\n`;

@@ -84,12 +84,12 @@ export class PagamentoEventListener {
 
       // Registrar no histórico
       await this.historicoPagamentoService.registrarHistorico({
-        pagamentoId: pagamento.id,
-        tipoEvento: TipoEventoHistoricoEnum.CRIACAO,
+        pagamento_id: pagamento.id,
+        tipo_evento: TipoEventoHistoricoEnum.CRIACAO,
         observacao: `Pagamento criado no valor de R$ ${evento.data.valor.toFixed(2)}`,
-        usuarioId: evento.data.usuarioCriadorId,
-        statusAtual: pagamento.status,
-        dadosContexto: {
+        usuario_id: evento.data.usuarioCriadorId,
+        status_atual: pagamento.status,
+        dados_contexto: {
           valor: evento.data.valor,
           metodo_pagamento: pagamento.metodo_pagamento
         }
@@ -152,12 +152,12 @@ export class PagamentoEventListener {
 
       // Registrar no histórico
       await this.historicoPagamentoService.registrarHistorico({
-        pagamentoId: pagamento.id,
-        tipoEvento: TipoEventoHistoricoEnum.PROCESSAMENTO,
+        pagamento_id: pagamento.id,
+        tipo_evento: TipoEventoHistoricoEnum.PROCESSAMENTO,
         observacao: `Pagamento processado no valor de R$ ${evento.data.valorProcessado.toFixed(2)}`,
-        usuarioId: evento.data.usuarioProcessadorId,
-        statusAtual: pagamento.status,
-        dadosContexto: {
+        usuario_id: evento.data.usuarioProcessadorId,
+        status_atual: pagamento.status,
+        dados_contexto: {
           valor_processado: evento.data.valorProcessado,
           lote_id: evento.data.loteId,
           referencia_bancaria: evento.data.referenciaBancaria
@@ -294,13 +294,13 @@ export class PagamentoEventListener {
 
       // Registrar no histórico
       await this.historicoPagamentoService.registrarHistorico({
-        pagamentoId: pagamento.id,
-        tipoEvento: TipoEventoHistoricoEnum.ALTERACAO_STATUS,
+        pagamento_id: pagamento.id,
+        tipo_evento: TipoEventoHistoricoEnum.ALTERACAO_STATUS,
         observacao: `Status alterado de ${evento.data.statusAnterior} para ${evento.data.statusAtual}`,
-        usuarioId: evento.data.usuarioId,
-        statusAnterior: evento.data.statusAnterior,
-        statusAtual: evento.data.statusAtual,
-        dadosContexto: {
+        usuario_id: evento.data.usuarioId,
+        status_anterior: evento.data.statusAnterior,
+        status_atual: evento.data.statusAtual,
+        dados_contexto: {
           motivo: evento.data.observacao
         }
       });
@@ -387,12 +387,12 @@ export class PagamentoEventListener {
 
       // Registrar no histórico
       await this.historicoPagamentoService.registrarHistorico({
-        pagamentoId: pagamento.id,
-        tipoEvento: TipoEventoHistoricoEnum.APROVACAO,
+        pagamento_id: pagamento.id,
+        tipo_evento: TipoEventoHistoricoEnum.APROVACAO,
         observacao: `Pagamento aprovado no valor de R$ ${evento.data.valorAprovado.toFixed(2)}`,
-        usuarioId: evento.data.aprovadorId,
-        statusAtual: pagamento.status,
-        dadosContexto: {
+        usuario_id: evento.data.aprovadorId,
+        status_atual: pagamento.status,
+        dados_contexto: {
           valor_aprovado: evento.data.valorAprovado,
           observacao_aprovacao: evento.data.observacaoAprovacao
         }
@@ -455,12 +455,12 @@ export class PagamentoEventListener {
 
       // Registrar no histórico
       await this.historicoPagamentoService.registrarHistorico({
-        pagamentoId: pagamento.id,
-        tipoEvento: TipoEventoHistoricoEnum.COMPROVANTE_UPLOAD,
+        pagamento_id: pagamento.id,
+        tipo_evento: TipoEventoHistoricoEnum.COMPROVANTE_UPLOAD,
         observacao: `Comprovante anexado: ${evento.data.nomeArquivo}`,
-        usuarioId: evento.data.usuarioUploadId,
-        statusAtual: pagamento.status,
-        dadosContexto: {
+        usuario_id: evento.data.usuarioUploadId,
+        status_atual: pagamento.status,
+        dados_contexto: {
           nome_arquivo: evento.data.nomeArquivo,
           tamanho_arquivo: evento.data.tamanhoArquivo,
           tipo_arquivo: evento.data.tipoArquivo
