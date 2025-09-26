@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.8.0](https://github.com/kemosoft-team/pgben-server/compare/v1.7.0...v1.8.0) (2025-09-26)
+
+
+### Features
+
+* **beneficio:** add benefit availability verification endpoint ([d9f0808](https://github.com/kemosoft-team/pgben-server/commit/d9f080854701ea83e94910fbd161a93e831aab53))
+* **beneficio:** add resultado beneficio cessado feature ([9785404](https://github.com/kemosoft-team/pgben-server/commit/978540474836074ac647f1f85e6ca3278e32e6ba))
+* **beneficio:** add transaction-safe createWithManager method and improve renovation process ([6d9ad77](https://github.com/kemosoft-team/pgben-server/commit/6d9ad777a79f38f45a180307cf32444c645c843f))
+* **concessao:** improve search functionality with Brackets for advanced filters ([a2f1c8d](https://github.com/kemosoft-team/pgben-server/commit/a2f1c8db0b8c08cea6c90a937244ce4b219b59c0))
+* **pagamento:** add payment history tracking and receipt invalidation ([d5c65d5](https://github.com/kemosoft-team/pgben-server/commit/d5c65d5d33fbd32b10b6b0ef5959f175b2001833))
+* **pagamento:** add status change events to payment workflow ([635170c](https://github.com/kemosoft-team/pgben-server/commit/635170c0b6d6e3d57f1524c4091965284be269fa))
+* **pagamento:** allow null payment value for strategy calculation ([8818aa4](https://github.com/kemosoft-team/pgben-server/commit/8818aa4cf62037cea27f5ad9ff25abc3b568ca26))
+* **pagamento:** implement automatic concession termination on payment confirmation ([48e29d1](https://github.com/kemosoft-team/pgben-server/commit/48e29d1dddbd6872be712fe4eeb0cb800bf227b9))
+* **pagamento:** implement benefit calculation strategies and data improvements ([dc9052c](https://github.com/kemosoft-team/pgben-server/commit/dc9052cf726555be0d6b5b3e10e51d29160bd575))
+* **pagamento:** implement scheduled payment processing and next parcel filter ([b4c1d65](https://github.com/kemosoft-team/pgben-server/commit/b4c1d659d21af74371b761a41e2a9e2e5beae699))
+* **payment:** add payment release DTO and implement release workflow ([d0fd22b](https://github.com/kemosoft-team/pgben-server/commit/d0fd22bed3ca7e6cb637c70ad50ddba488a0e15a))
+* **pdf:** add support for cesta-basica payment receipts ([c992a5c](https://github.com/kemosoft-team/pgben-server/commit/c992a5ca417d2b9f21a0277f6fda257f3545f9a5))
+* **rate-limiting:** implement intelligent user identification for rate limiting ([61cb018](https://github.com/kemosoft-team/pgben-server/commit/61cb0183c5155fb9112fff99617f71ef9833c345))
+* **renovacao:** implement beneficio renovation feature ([9c04288](https://github.com/kemosoft-team/pgben-server/commit/9c04288931369af06e351c6c3478cf45469a3d6c))
+* **renovation:** improve renovation process with status updates and validation ([0d65bc0](https://github.com/kemosoft-team/pgben-server/commit/0d65bc0d8165993ed46d65d67b1d5719f8fc2fae))
+* **whatsapp-flows:** add initial whatsapp flows module with core functionality ([f147d6f](https://github.com/kemosoft-team/pgben-server/commit/f147d6fea3361df49095e48d0ac3b43ee74622f1))
+
+
+### Bug Fixes
+
+* **concessao:** replace LOWER with ILIKE for case-insensitive search ([2c105ab](https://github.com/kemosoft-team/pgben-server/commit/2c105ab868ddba283d132a36bc817ceac04ebb43))
+* **pagamento:** change nome field selection from unidade to usuario ([59c280c](https://github.com/kemosoft-team/pgben-server/commit/59c280cef1f900e4feca753cb66df6ee6fd213a5))
+* **pagamento:** change payment status from RECEBIDO to PAGO ([a68dbf8](https://github.com/kemosoft-team/pgben-server/commit/a68dbf8d60e24f7393fdb25a87b0ba25f1fb1839))
+* **pagamento:** update payment status and fix circular dependency ([9bd6d23](https://github.com/kemosoft-team/pgben-server/commit/9bd6d23f5e5f1cd8242985a1a050f5d77762afb9))
+* **payment:** update benefit configuration intervals and release days ([ccaf40b](https://github.com/kemosoft-team/pgben-server/commit/ccaf40b43c2ebe2a5368c5b678fdca66dec4435d))
+* **rate-limiting:** temporarily disable rate limiting for investigation ([b24e40a](https://github.com/kemosoft-team/pgben-server/commit/b24e40ab430cb18ffba6cd43c5b31c5edfcf2444))
+* **relatorios:** change content-disposition to inline for pdf reports ([8c4c670](https://github.com/kemosoft-team/pgben-server/commit/8c4c670559d72c12705603529996f3c9348596b2))
+
 ## [1.7.0](https://github.com/kemosoft-team/pgben-server/compare/v1.6.0...v1.7.0) (2025-09-15)
 
 
