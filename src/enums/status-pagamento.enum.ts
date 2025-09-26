@@ -53,4 +53,10 @@ export enum StatusPagamentoEnum {
    * Pagamento vencido que foi regularizado.
    */
   REGULARIZADO = 'regularizado',
+
+  /**
+   * Pagamento com comprovante inválido.
+   * Requer regularização antes de novos pagamentos.
+   */
+  INVALIDO = 'invalido',
 }

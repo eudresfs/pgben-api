@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsUUID, ValidateIf } from 'class-validator';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 
 /**
@@ -24,12 +24,16 @@ export class PagamentoUpdateStatusDto {
 
   /**
    * Observações sobre a alteração de status
+   * Obrigatório quando o status for INVALIDO
    */
   @ApiProperty({
-    description: 'Observações sobre a alteração de status',
-    example: 'Pagamento agendado para o dia 15/01/2024',
+    description: 'Observações sobre a alteração de status (obrigatório para status INVALIDO)',
+    example: 'Comprovante apresenta inconsistências que impedem a validação',
     required: false,
   })
+  @ValidateIf((obj) => obj.status === StatusPagamentoEnum.INVALIDO)
+  @IsString({ message: 'Observações são obrigatórias quando o status for INVALIDO' })
+  @ValidateIf((obj) => obj.status !== StatusPagamentoEnum.INVALIDO)
   @IsOptional()
   @IsString()
   observacoes?: string;

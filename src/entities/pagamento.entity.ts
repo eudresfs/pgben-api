@@ -145,6 +145,13 @@ export class Pagamento {
   data_regularizacao: Date;
 
   /**
+   * Data de invalidação do comprovante de pagamento
+   */
+  @Column({ name: 'data_invalidacao', type: 'timestamp', nullable: true })
+  @IsOptional()
+  data_invalidacao: Date;
+
+  /**
    * Status atual do pagamento no sistema
    */
   @Column({
@@ -181,6 +188,14 @@ export class Pagamento {
   @IsOptional()
   @IsUUID('4', { message: 'ID do criador inválido' })
   criado_por: string;
+
+  /**
+   * Usuário responsável pela invalidação do comprovante
+   */
+  @Column({ name: 'invalidado_por', type: 'uuid', nullable: true })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID do responsável pela invalidação inválido' })
+  invalidado_por: string;
 
   /**
    * Referência ao comprovante de pagamento
@@ -262,13 +277,9 @@ export class Pagamento {
   @JoinColumn({ name: 'criado_por' })
   criador: Usuario;
 
-  /**
-   * Comprovantes anexados a este pagamento (via documento)
-   */
-  // @OneToMany(() => Documento, (documento) => documento.pagamento, {
-  //   cascade: true,
-  // })
-  // comprovantes: Documento[];
+  @ManyToOne(() => Usuario)
+  @JoinColumn({ name: 'invalidado_por' })
+  responsavel_invalidacao: Usuario;
 
   /**
    * Confirmação de recebimento deste pagamento

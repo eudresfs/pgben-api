@@ -115,6 +115,17 @@ export class PagamentoValidationUtil {
   }
 
   /**
+   * Valida se um comprovante pode ser usado (não está invalidado)
+   */
+  static validarComprovanteValido(pagamento: Pagamento): void {
+    if (pagamento.status === StatusPagamentoEnum.INVALIDO) {
+      throw new BadRequestException(
+        'Não é possível utilizar um comprovante invalidado. O pagamento deve ser regularizado antes de novos procedimentos.',
+      );
+    }
+  }
+
+  /**
    * Valida transição de status do pagamento
    */
   static validarTransicaoStatus(
@@ -139,14 +150,17 @@ export class PagamentoValidationUtil {
         StatusPagamentoEnum.PAGO,
         StatusPagamentoEnum.CONFIRMADO,
         StatusPagamentoEnum.CANCELADO,
+        StatusPagamentoEnum.INVALIDO,
       ],
       [StatusPagamentoEnum.PAGO]: [
         StatusPagamentoEnum.CONFIRMADO,
         StatusPagamentoEnum.RECEBIDO,
         StatusPagamentoEnum.VENCIDO,
+        StatusPagamentoEnum.INVALIDO,
       ],
       [StatusPagamentoEnum.RECEBIDO]: [
         StatusPagamentoEnum.CONFIRMADO,
+        StatusPagamentoEnum.INVALIDO,
       ],
       [StatusPagamentoEnum.CONFIRMADO]: [],
       [StatusPagamentoEnum.CANCELADO]: [],
@@ -161,6 +175,11 @@ export class PagamentoValidationUtil {
       ],
       [StatusPagamentoEnum.SUSPENSO]: [
         StatusPagamentoEnum.PENDENTE,
+        StatusPagamentoEnum.CANCELADO,
+      ],
+      [StatusPagamentoEnum.INVALIDO]: [
+        StatusPagamentoEnum.PENDENTE,
+        StatusPagamentoEnum.LIBERADO,
         StatusPagamentoEnum.CANCELADO,
       ],
     };

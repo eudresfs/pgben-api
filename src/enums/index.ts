@@ -51,6 +51,7 @@ export { TipoDocumentoComprobatorio } from './tipo-documento-comprobatorio.enum'
 export { MetodoPagamentoEnum } from './metodo-pagamento.enum';
 export { StatusPagamentoEnum } from './status-pagamento.enum';
 export { MetodoConfirmacaoEnum } from './metodo-confirmacao.enum';
+export { TipoEventoHistoricoEnum } from './tipo-evento-historico.enum';
 
 // Enums bancários
 export {

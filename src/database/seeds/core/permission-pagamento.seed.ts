@@ -159,6 +159,12 @@ export class PermissionPagamentoSeed {
         escopo: 'UNIDADE',
       },
       {
+        nome: 'pagamento.invalidar',
+        descricao: 'Invalidar comprovante de pagamento',
+        acao: 'invalidar',
+        escopo: 'UNIDADE',
+      },
+      {
         nome: 'pagamento.confirmar',
         descricao: 'Confirmar pagamento realizado',
         acao: 'confirmar',

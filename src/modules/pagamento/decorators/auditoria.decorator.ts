@@ -235,4 +235,26 @@ export const AuditoriaPagamento = {
    */
   Exclusao: (descricao?: string) =>
     AuditoriaExclusao('Pagamento', descricao || 'Exclusão de pagamento'),
+
+  /**
+   * Auditoria para download de arquivos de pagamento
+   */
+  Download: (descricao?: string) =>
+    Auditoria({
+      entidade: 'Pagamento',
+      operacao: TipoOperacao.READ,
+      descricao: descricao || 'Download de arquivo de pagamento',
+      mascarDados: false, // Downloads não expõem dados sensíveis
+    }),
+
+  /**
+   * Auditoria para exportação de dados de pagamento
+   */
+  Exportacao: (descricao?: string) =>
+    Auditoria({
+      entidade: 'Pagamento',
+      operacao: TipoOperacao.READ,
+      descricao: descricao || 'Exportação de dados de pagamento',
+      mascarDados: true,
+    }),
 };

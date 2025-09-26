@@ -29,8 +29,9 @@ import { Concessao } from '../../../entities/concessao.entity';
 import { NotificacaoService } from '../../notificacao/services/notificacao.service';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { StatusConcessao } from '../../../enums/status-concessao.enum';
+import { TipoEventoHistoricoEnum } from '../../../enums/tipo-evento-historico.enum';
 import { ConcessaoAutoUpdateService } from '../services/concessao-auto-update.service';
-// import { HistoricoPagamentoService } from '../services/historico-pagamento.service'; // Removido temporariamente
+import { HistoricoPagamentoService } from '../services/historico-pagamento.service';
 
 /**
  * Listener responsável por processar eventos do módulo de Pagamento
@@ -48,7 +49,7 @@ export class PagamentoEventListener {
     private readonly notificacaoService: NotificacaoService,
     @Inject(forwardRef(() => ConcessaoAutoUpdateService))
     private readonly concessaoAutoUpdateService: ConcessaoAutoUpdateService,
-    // private readonly historicoPagamentoService: HistoricoPagamentoService, // Removido temporariamente
+    private readonly historicoPagamentoService: HistoricoPagamentoService,
   ) {}
 
   /**
@@ -82,12 +83,17 @@ export class PagamentoEventListener {
       }
 
       // Registrar no histórico
-      // await this.historicoPagamentoService.registrarHistorico(
-      //   pagamento.id,
-      //   'CRIACAO',
-      //   `Pagamento criado no valor de R$ ${evento.data.valor.toFixed(2)}`,
-      //   evento.data.usuarioCriadorId,
-      // ); // Removido temporariamente
+      await this.historicoPagamentoService.registrarHistorico({
+        pagamentoId: pagamento.id,
+        tipoEvento: TipoEventoHistoricoEnum.CRIACAO,
+        observacao: `Pagamento criado no valor de R$ ${evento.data.valor.toFixed(2)}`,
+        usuarioId: evento.data.usuarioCriadorId,
+        statusAtual: pagamento.status,
+        dadosContexto: {
+          valor: evento.data.valor,
+          metodo_pagamento: pagamento.metodo_pagamento
+        }
+      });
 
       // Enviar notificação de criação
       await this.notificacaoService.criarNotificacaoSistema({
@@ -100,7 +106,7 @@ export class PagamentoEventListener {
           titulo: 'Pagamento Criado',
           conteudo: `Um novo pagamento foi criado para sua concessão no valor de R$ ${pagamento.valor.toFixed(2)}.`,
           link: `/pagamentos/detalhes/${pagamento.id}`,
-          pagamento_id: pagamento.id,
+          pagamentoId: pagamento.id,
         },
       });
 
@@ -145,13 +151,18 @@ export class PagamentoEventListener {
       }
 
       // Registrar no histórico
-      // await this.historicoPagamentoService.registrarHistorico(
-      //   pagamento.id,
-      //   'PROCESSAMENTO',
-      //   `Pagamento processado no valor de R$ ${evento.data.valorProcessado.toFixed(2)}`,
-      //   evento.data.usuarioProcessadorId,
-      //   `Lote: ${evento.data.loteId || 'N/A'} - Ref: ${evento.data.referenciaBancaria || 'N/A'}`,
-      // ); // Removido temporariamente
+      await this.historicoPagamentoService.registrarHistorico({
+        pagamentoId: pagamento.id,
+        tipoEvento: TipoEventoHistoricoEnum.PROCESSAMENTO,
+        observacao: `Pagamento processado no valor de R$ ${evento.data.valorProcessado.toFixed(2)}`,
+        usuarioId: evento.data.usuarioProcessadorId,
+        statusAtual: pagamento.status,
+        dadosContexto: {
+          valor_processado: evento.data.valorProcessado,
+          lote_id: evento.data.loteId,
+          referencia_bancaria: evento.data.referenciaBancaria
+        }
+      });
 
       // Enviar notificação de processamento
       await this.notificacaoService.criarNotificacaoSistema({
@@ -164,7 +175,7 @@ export class PagamentoEventListener {
            titulo: 'Pagamento Processado',
            conteudo: `Seu pagamento no valor de R$ ${pagamento.valor.toFixed(2)} foi processado com sucesso.`,
            link: `/pagamentos/detalhes/${pagamento.id}`,
-           pagamento_id: pagamento.id,
+           pagamentoId: pagamento.id,
          },
        });
 
@@ -232,7 +243,7 @@ export class PagamentoEventListener {
            entidade_relacionada_id: pagamento.id,
            entidade_tipo: 'pagamento',
            link: `/pagamentos/detalhes/${pagamento.id}`,
-           pagamento_id: pagamento.id,
+           pagamentoId: pagamento.id,
          },
        });
 
@@ -282,28 +293,57 @@ export class PagamentoEventListener {
         }
 
       // Registrar no histórico
-      // await this.historicoPagamentoService.registrarHistorico(
-      //   pagamento.id,
-      //   'ALTERACAO_STATUS',
-      //   `Status alterado de ${evento.data.statusAnterior} para ${evento.data.statusAtual}`,
-      //   evento.data.usuarioId,
-      //   evento.data.observacao,
-      // ); // Removido temporariamente
+      await this.historicoPagamentoService.registrarHistorico({
+        pagamentoId: pagamento.id,
+        tipoEvento: TipoEventoHistoricoEnum.ALTERACAO_STATUS,
+        observacao: `Status alterado de ${evento.data.statusAnterior} para ${evento.data.statusAtual}`,
+        usuarioId: evento.data.usuarioId,
+        statusAnterior: evento.data.statusAnterior,
+        statusAtual: evento.data.statusAtual,
+        dadosContexto: {
+          motivo: evento.data.observacao
+        }
+      });
 
-      // Enviar notificação de mudança de status
-      await this.notificacaoService.criarNotificacaoSistema({
-        destinatario_id: pagamento.concessao.solicitacao.tecnico_id,
-        titulo: 'Status do Pagamento Alterado',
-        conteudo: `O status do seu pagamento foi alterado de ${evento.data.statusAnterior} para ${evento.data.statusAtual}. ${evento.data.observacao || ''}`,
-        link: `/pagamentos/detalhes/${pagamento.id}`,
-        dados_contexto: {
+      // Enviar notificação específica baseada no status
+      if (evento.data.statusAtual === StatusPagamentoEnum.INVALIDO) {
+        // Notificação específica para invalidação de comprovante
+        await this.notificacaoService.criarNotificacaoAlerta({
+          destinatario_id: pagamento.concessao.solicitacao.tecnico_id,
+          titulo: 'Comprovante de Pagamento Invalidado',
+          conteudo: `O comprovante do seu pagamento foi invalidado e precisa ser reenviado. Motivo: ${evento.data.observacao || 'Não especificado'}`,
+          entidade_relacionada_id: pagamento.id,
+          entidade_tipo: 'pagamento',
+          link: `/pagamentos/pagos`,
+          dados_contexto: {
+            destinatario_id: pagamento.concessao.solicitacao.tecnico_id,
+            titulo: 'Comprovante de Pagamento Invalidado',
+            conteudo: `Um comprovante de pagamento foi invalidado e precisa ser reenviado. Motivo: ${evento.data.observacao || 'Não especificado'}`,
+            entidade_relacionada_id: pagamento.id,
+            entidade_tipo: 'pagamento',
+            link: `/pagamentos/pagos`,
+            pagamento_id: pagamento.id,
+            status_anterior: evento.data.statusAnterior,
+            status_atual: evento.data.statusAtual,
+            motivo_invalidacao: evento.data.observacao,
+          },
+        });
+      } else {
+        // Notificação padrão para outros status
+        await this.notificacaoService.criarNotificacaoSistema({
           destinatario_id: pagamento.concessao.solicitacao.tecnico_id,
           titulo: 'Status do Pagamento Alterado',
           conteudo: `O status do seu pagamento foi alterado de ${evento.data.statusAnterior} para ${evento.data.statusAtual}. ${evento.data.observacao || ''}`,
-          link: `/pagamentos/detalhes/${pagamento.id}`,
-          pagamento_id: pagamento.id,
-        },
-      });
+          link: `/pagamentos/pagos`,
+          dados_contexto: {
+            destinatario_id: pagamento.concessao.solicitacao.tecnico_id,
+            titulo: 'Status do Pagamento Alterado',
+            conteudo: `O status do seu pagamento foi alterado de ${evento.data.statusAnterior} para ${evento.data.statusAtual}. ${evento.data.observacao || ''}`,
+            link: `/pagamentos/pagos`,
+            pagamentoId: pagamento.id,
+          },
+        });
+      }
 
       this.logger.log(
         `Evento de mudança de status processado: ${evento.pagamentoId}`,
@@ -346,13 +386,17 @@ export class PagamentoEventListener {
       }
 
       // Registrar no histórico
-      // await this.historicoPagamentoService.registrarHistorico(
-      //   pagamento.id,
-      //   'APROVACAO',
-      //   `Pagamento aprovado no valor de R$ ${evento.data.valorAprovado.toFixed(2)}`,
-      //   evento.data.aprovadorId,
-      //   evento.data.observacaoAprovacao,
-      // ); // Removido temporariamente
+      await this.historicoPagamentoService.registrarHistorico({
+        pagamentoId: pagamento.id,
+        tipoEvento: TipoEventoHistoricoEnum.APROVACAO,
+        observacao: `Pagamento aprovado no valor de R$ ${evento.data.valorAprovado.toFixed(2)}`,
+        usuarioId: evento.data.aprovadorId,
+        statusAtual: pagamento.status,
+        dadosContexto: {
+          valor_aprovado: evento.data.valorAprovado,
+          observacao_aprovacao: evento.data.observacaoAprovacao
+        }
+      });
 
       // Enviar notificação de aprovação
       await this.notificacaoService.criarNotificacaoSistema({
@@ -365,7 +409,7 @@ export class PagamentoEventListener {
           titulo: 'Pagamento Aprovado',
           conteudo: `Seu pagamento no valor de R$ ${evento.data.valorAprovado.toFixed(2)} foi aprovado.`,
           link: `/pagamentos/detalhes/${pagamento.id}`,
-          pagamento_id: pagamento.id,
+          pagamentoId: pagamento.id,
         },
       });
 
@@ -410,13 +454,18 @@ export class PagamentoEventListener {
       }
 
       // Registrar no histórico
-      // await this.historicoPagamentoService.registrarHistorico(
-      //   pagamento.id,
-      //   'COMPROVANTE_UPLOAD',
-      //   `Comprovante anexado: ${evento.data.nomeArquivo}`,
-      //   evento.data.usuarioUploadId,
-      //   `Tamanho: ${(evento.data.tamanhoArquivo / 1024).toFixed(2)} KB - Tipo: ${evento.data.tipoArquivo}`,
-      // ); // Removido temporariamente
+      await this.historicoPagamentoService.registrarHistorico({
+        pagamentoId: pagamento.id,
+        tipoEvento: TipoEventoHistoricoEnum.COMPROVANTE_UPLOAD,
+        observacao: `Comprovante anexado: ${evento.data.nomeArquivo}`,
+        usuarioId: evento.data.usuarioUploadId,
+        statusAtual: pagamento.status,
+        dadosContexto: {
+          nome_arquivo: evento.data.nomeArquivo,
+          tamanho_arquivo: evento.data.tamanhoArquivo,
+          tipo_arquivo: evento.data.tipoArquivo
+        }
+      });
 
       // Enviar notificação de upload
       await this.notificacaoService.criarNotificacaoSistema({
@@ -429,7 +478,7 @@ export class PagamentoEventListener {
           titulo: 'Comprovante Enviado',
           conteudo: `Comprovante de pagamento ${evento.data.nomeArquivo} foi enviado com sucesso.`,
           link: `/pagamentos/detalhes/${pagamento.id}/comprovantes`,
-          pagamento_id: pagamento.id,
+          pagamentoId: pagamento.id,
         },
       });
 
@@ -493,7 +542,7 @@ export class PagamentoEventListener {
           titulo: 'Comprovante Validado',
           conteudo: `Seu comprovante de pagamento foi validado com resultado: ${evento.data.resultadoValidacao}. ${evento.data.observacaoValidacao || ''}`,
           link: `/pagamentos/detalhes/${pagamento.id}/comprovantes`,
-          pagamento_id: pagamento.id,
+          pagamentoId: pagamento.id,
         },
       });
 
@@ -552,7 +601,7 @@ export class PagamentoEventListener {
           entidade_relacionada_id: pagamento.id,
           entidade_tipo: 'pagamento',
           link: `/pagamentos/detalhes/${pagamento.id}`,
-          pagamento_id: pagamento.id,
+          pagamentoId: pagamento.id,
         },
       });
 
@@ -619,7 +668,7 @@ export class PagamentoEventListener {
           entidade_relacionada_id: pagamento.id,
           entidade_tipo: 'pagamento',
           link: `/pagamentos/detalhes/${pagamento.id}`,
-          pagamento_id: pagamento.id,
+          pagamentoId: pagamento.id,
         },
       });
 
@@ -683,7 +732,7 @@ export class PagamentoEventListener {
           titulo: 'Estorno Solicitado',
           conteudo: `Foi solicitado um estorno no valor de R$ ${evento.data.valorEstorno.toFixed(2)} para seu pagamento. Motivo: ${evento.data.motivoEstorno}`,
           link: `/pagamentos/detalhes/${pagamento.id}`,
-          pagamento_id: pagamento.id,
+          pagamentoId: pagamento.id,
         },
       });
 

@@ -314,7 +314,7 @@ export class PagamentoWorkflowService {
     );
 
     // Emitir evento de status atualizado
-    await this.pagamentoEventosService.emitirEventoStatusAtualizado({
+    await this.pagamentoEventosService.emitirEventoStatusAtualizado(pagamento.id, {
       statusAnterior: pagamento.status,
       statusAtual: updateDto.status,
       motivoMudanca: updateDto.observacoes,

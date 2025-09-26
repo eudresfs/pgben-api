@@ -15,6 +15,7 @@ import {
   TipoBeneficio,
   Solicitacao,
   Concessao,
+  HistoricoPagamento,
 } from '../../entities';
 
 // Controllers
@@ -78,6 +79,8 @@ import { PagamentoUnifiedMapper } from './mappers/pagamento-unified.mapper';
 // Eventos
 import { PagamentoEventosService } from './services/pagamento-eventos.service';
 import { PagamentoEventListener } from './listeners/pagamento-event.listener';
+import { HistoricoPagamentoService } from './services/historico-pagamento.service';
+import { HistoricoPagamentoController } from './controllers/historico-pagamento.controller';
 
 // Módulos
 import { AuthModule } from '../../auth/auth.module';
@@ -117,6 +120,7 @@ import { PdfGeneratorUtil } from './utils/pdf-generator.util';
       TipoBeneficio,
       Solicitacao,
       Concessao,
+      HistoricoPagamento,
     ]),
     // Configuração da fila BullMQ para pagamentos
     BullModule.registerQueue({
@@ -143,6 +147,7 @@ import { PdfGeneratorUtil } from './utils/pdf-generator.util';
     ComprovanteController,
     ConfirmacaoController,
     PagamentoBatchController,
+    HistoricoPagamentoController,
   ],
   providers: [
     // Repositórios com escopo
@@ -236,6 +241,9 @@ import { PdfGeneratorUtil } from './utils/pdf-generator.util';
     // PagamentoDeletedEvent,
     // PagamentoStatusChangedEvent,
     
+    // Histórico
+    HistoricoPagamentoService,
+    
     // PDF
     ComprovantePdfAdapter,
     PdfGeneratorUtil,
@@ -273,6 +281,9 @@ import { PdfGeneratorUtil } from './utils/pdf-generator.util';
 
     // Eventos
     PagamentoEventosService,
+    
+    // Histórico
+    HistoricoPagamentoService,
   ],
 })
 export class PagamentoModule {}

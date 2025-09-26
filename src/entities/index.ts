@@ -61,6 +61,7 @@ export { CategoriaLog } from './categoria-log.entity';
 export { HistoricoSolicitacao } from './historico-solicitacao.entity';
 export { LogAuditoria } from './log-auditoria.entity';
 export { RecursoHistorico } from './recurso-historico.entity';
+export { HistoricoPagamento } from './historico-pagamento.entity';
 
 // Entidades de Integração
 export { Integrador } from './integrador.entity';

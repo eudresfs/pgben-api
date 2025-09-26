@@ -139,18 +139,19 @@ export class PagamentoEventosService {
    * Emite evento de mudança de status
    */
   async emitirEventoStatusAtualizado(
+    pagamentoId: string,
     data: PagamentoStatusChangedEventData,
   ): Promise<void> {
     const eventData: PagamentoEvent = {
-      pagamentoId: data.usuarioId, // Usando usuarioId como identificador temporário
+      pagamentoId: pagamentoId,
       type: PagamentoEventType.PAGAMENTO_STATUS_CHANGED,
       timestamp: new Date(),
       data,
     };
 
-    this.eventEmitter.emit('pagamento.status.atualizado', eventData);
+    this.eventEmitter.emit(PagamentoEventType.PAGAMENTO_STATUS_CHANGED, eventData);
     this.logger.log(
-      `Evento de status atualizado emitido: ${data.statusAnterior} -> ${data.statusAtual}`,
+      `Evento de status atualizado emitido para pagamento ${pagamentoId}: ${data.statusAnterior} -> ${data.statusAtual}`,
     );
   }
 

@@ -49,6 +49,9 @@ export class ConfirmacaoService {
 
     const pagamento = await this.pagamentoRepository.findById(pagamentoId);
     PagamentoValidationUtil.validarExistencia(pagamento, pagamentoId);
+    
+    // Validar se o pagamento não está invalidado
+    PagamentoValidationUtil.validarComprovanteValido(pagamento);
 
     if (!pagamento) {
       throw new NotFoundException(

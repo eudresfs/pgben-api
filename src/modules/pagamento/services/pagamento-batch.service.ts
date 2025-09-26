@@ -10,6 +10,7 @@ import { PagamentoWorkflowService } from './pagamento-workflow.service';
 import { RequestContextHolder } from '../../../common/services/request-context-holder.service';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { StatusPagamentoEnum } from '@/enums';
+import { PagamentoEventosService } from './pagamento-eventos.service';
 
 interface BatchResult<T> {
   success: T[];
@@ -44,6 +45,7 @@ export class PagamentoBatchService {
     private readonly dataSource: DataSource,
     private readonly queueService: PagamentoQueueService,
     private readonly pagamentoWorkflowService: PagamentoWorkflowService,
+    private readonly pagamentoEventosService: PagamentoEventosService,
   ) {}
 
   /**
@@ -580,6 +582,21 @@ export class PagamentoBatchService {
       try {
         for (const { pagamentoId, novoStatus, observacoes } of batch) {
           try {
+            // Buscar pagamento antes da atualização para capturar status anterior
+            const pagamentoAnterior = await queryRunner.manager.findOne(Pagamento, {
+              where: { id: pagamentoId },
+            });
+
+            if (!pagamentoAnterior) {
+              result.errors.push({
+                item: { pagamentoId, novoStatus, observacoes },
+                error: 'Pagamento não encontrado',
+              });
+              continue;
+            }
+
+            const statusAnterior = pagamentoAnterior.status;
+
             await queryRunner.manager.update(Pagamento, pagamentoId, {
               status: novoStatus,
               observacoes,
@@ -593,6 +610,17 @@ export class PagamentoBatchService {
 
             if (pagamento) {
               result.success.push(pagamento);
+
+              // Emitir evento de mudança de status se houve alteração
+              if (statusAnterior !== novoStatus) {
+                await this.pagamentoEventosService.emitirEventoStatusAtualizado(pagamentoId, {
+                  statusAnterior: statusAnterior,
+                  statusAtual: novoStatus,
+                  motivoMudanca: observacoes || 'Atualização em lote',
+                  usuarioId: userId,
+                  observacao: observacoes || 'Status alterado via processamento em lote',
+                });
+              }
             }
           } catch (error) {
             result.errors.push({

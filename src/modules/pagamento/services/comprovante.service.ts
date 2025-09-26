@@ -23,6 +23,8 @@ import { ComprovanteDadosMapper } from '../mappers/comprovante-dados.mapper';
 import { PDFDocument } from 'pdf-lib';
 import { TipoComprovante } from '../dtos/gerar-comprovante.dto';
 import { sanitizeFilename, generateUniqueFilename } from '../../../shared/utils/filename-sanitizer.util';
+import { PagamentoValidationUtil } from '../utils/pagamento-validation.util';
+import { PagamentoEventosService } from './pagamento-eventos.service';
 
 /**
  * Service simplificado para gerenciamento de comprovantes
@@ -50,6 +52,7 @@ export class ComprovanteService {
     private readonly storageProviderFactory: StorageProviderFactory,
     private readonly documentoUrlService: DocumentoUrlService,
     private readonly comprovantePdfAdapter: ComprovantePdfAdapter,
+    private readonly pagamentoEventosService: PagamentoEventosService,
   ) {}
 
   /**
@@ -69,6 +72,9 @@ export class ComprovanteService {
     if (!pagamento) {
       throw new NotFoundException('Pagamento não encontrado');
     }
+
+    // Validar se o comprovante pode ser usado (não está invalidado)
+    PagamentoValidationUtil.validarComprovanteValido(pagamento);
 
     // Buscar cidadao_id e solicitacao_id do pagamento
     const cidadaoId = pagamento.solicitacao?.beneficiario_id;
@@ -140,8 +146,18 @@ export class ComprovanteService {
 
     // Atualizar status do pagamento se necessário
     if (pagamento.status === StatusPagamentoEnum.PAGO) {
+      const statusAnterior = pagamento.status;
       pagamento.status = StatusPagamentoEnum.RECEBIDO;
       await this.pagamentoRepository.save(pagamento);
+
+      // Emitir evento de mudança de status
+      await this.pagamentoEventosService.emitirEventoStatusAtualizado(pagamentoId, {
+        statusAnterior: statusAnterior,
+        statusAtual: StatusPagamentoEnum.RECEBIDO,
+        motivoMudanca: 'Comprovante de pagamento enviado',
+        usuarioId: usuarioId,
+        observacao: 'Status alterado automaticamente após upload do comprovante',
+      });
     }
 
     return this.mapToResponseDto(documentoSalvo, pagamento);
@@ -226,9 +242,21 @@ export class ComprovanteService {
     if (pagamentos && pagamentos.length > 0) {
       // Remover referência dos pagamentos
       for (const pagamento of pagamentos) {
+        const statusAnterior = pagamento.status;
         pagamento.comprovante_id = null;
-        pagamento.status = StatusPagamentoEnum.RECEBIDO
+        pagamento.status = StatusPagamentoEnum.RECEBIDO;
         await this.pagamentoRepository.save(pagamento);
+
+        // Emitir evento de mudança de status se houve alteração
+        if (statusAnterior !== StatusPagamentoEnum.RECEBIDO) {
+          await this.pagamentoEventosService.emitirEventoStatusAtualizado(pagamento.id, {
+            statusAnterior: statusAnterior,
+            statusAtual: StatusPagamentoEnum.RECEBIDO,
+            motivoMudanca: 'Comprovante de pagamento removido',
+            usuarioId: usuarioId,
+            observacao: 'Status alterado automaticamente após remoção do comprovante',
+          });
+        }
       }
     }
 

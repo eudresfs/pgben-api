@@ -13,6 +13,7 @@ export { PagamentoService } from './pagamento.service';
 export { PagamentoValidationService } from './pagamento-validation.service';
 export { ComprovanteService } from './comprovante.service';
 export { ConfirmacaoService } from './confirmacao.service';
+export { HistoricoPagamentoService } from './historico-pagamento.service';
 
 // Re-exportações para compatibilidade (aliases)
 export { PagamentoWorkflowService as PagamentoLiberacaoService } from './pagamento-workflow.service';

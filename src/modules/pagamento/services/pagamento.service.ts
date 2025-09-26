@@ -231,6 +231,16 @@ export class PagamentoService {
           );
         }
         break;
+      case StatusPagamentoEnum.INVALIDO:
+        // Validar se observações foram fornecidas (já validado pelo DTO)
+        if (!updateDto.observacoes?.trim()) {
+          throw new BadRequestException(
+            'Observações são obrigatórias para invalidar um comprovante',
+          );
+        }
+        dadosAtualizacao.data_invalidacao = new Date();
+        dadosAtualizacao.invalidado_por = usuarioId;
+        break;
     }
 
     // Atualizar pagamento
@@ -273,7 +283,7 @@ export class PagamentoService {
     }
 
     // Emitir evento de status atualizado
-    await this.pagamentoEventosService.emitirEventoStatusAtualizado({
+    await this.pagamentoEventosService.emitirEventoStatusAtualizado(id, {
       statusAnterior: pagamento.status,
       statusAtual: updateDto.status,
       motivoMudanca: updateDto.observacoes,
