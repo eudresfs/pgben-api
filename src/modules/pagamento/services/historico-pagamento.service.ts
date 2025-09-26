@@ -44,26 +44,28 @@ export interface FiltrosHistoricoDto {
  */
 export interface HistoricoResponseDto {
   id: string;
-  pagamentoId: string;
-  dataEvento: Date;
-  usuarioId?: string;
-  nomeUsuario?: string;
-  tipoEvento: TipoEventoHistoricoEnum;
-  statusAnterior?: StatusPagamentoEnum;
-  statusAtual?: StatusPagamentoEnum;
+  pagamento_id: string;
+  data_evento: Date;
+  responsavel?: {
+    id: string;
+    nome: string;
+  };
+  tipo_evento: TipoEventoHistoricoEnum;
+  status_anterior?: StatusPagamentoEnum;
+  status_atual?: StatusPagamentoEnum;
   observacao?: string;
-  dadosContexto?: Record<string, any>;
-  createdAt: Date;
+  dados_contexto?: Record<string, any>;
+  created_at: Date;
 }
 
 /**
  * Interface para dados de exportação
  */
 export interface DadosExportacaoDto {
-  pagamentoId: string;
-  formato: 'PDF' | 'EXCEL';
-  dataInicio?: Date;
-  dataFim?: Date;
+  pagamento_id: string;
+  formato: 'pdf' | 'excel';
+  data_inicio?: Date;
+  data_fim?: Date;
 }
 
 /**
@@ -274,8 +276,15 @@ export class HistoricoPagamentoService {
         .take(limit)
         .getManyAndCount();
 
-      // Mapear para DTO de resposta
-      const data = historicos.map(this.mapearParaResponseDto);
+      // Mapear para DTO de resposta com serialização correta das datas
+      const data = historicos.map((historico) => {
+        const mapped = this.mapearParaResponseDto(historico);
+        return {
+          ...mapped,
+          data_evento: mapped.data_evento ? mapped.data_evento.toISOString() : null,
+          created_at: mapped.created_at ? mapped.created_at.toISOString() : null,
+        };
+      });
 
       return {
         data,
@@ -508,12 +517,14 @@ export class HistoricoPagamentoService {
       const nomeArquivo = arquivo.filename;
       const urlDownload = `/api/pagamentos/historico/download/${Date.now()}-${nomeArquivo}`;
 
+      const dataGeracao = new Date();
+      
       return {
         url_download: urlDownload,
         nome_arquivo: nomeArquivo,
         formato: dados.formato as TipoExportacaoEnum,
         tamanho_arquivo: arquivo.buffer.length,
-        data_geracao: new Date(),
+        data_geracao: dataGeracao,
         total_registros: historico.length,
         periodo: dados.data_inicial && dados.data_final ? {
           data_inicial: new Date(dados.data_inicial),
@@ -560,16 +571,18 @@ export class HistoricoPagamentoService {
   ): HistoricoResponseDto {
     return {
       id: historico.id,
-      pagamentoId: historico.pagamento_id,
-      dataEvento: historico.data_evento,
-      usuarioId: historico.usuario_id,
-      nomeUsuario: historico.usuario?.nome || 'Sistema',
-      tipoEvento: historico.tipo_evento,
-      statusAnterior: historico.status_anterior,
-      statusAtual: historico.status_atual,
+      pagamento_id: historico.pagamento_id,
+      data_evento: historico.data_evento,
+      responsavel: {
+        id: historico.usuario_id,
+        nome: historico.usuario?.nome || 'Sistema',
+      },
+      tipo_evento: historico.tipo_evento,
+      status_anterior: historico.status_anterior,
+      status_atual: historico.status_atual,
       observacao: historico.observacao,
-      dadosContexto: historico.dados_contexto,
-      createdAt: historico.created_at,
+      dados_contexto: historico.dados_contexto,
+      created_at: historico.created_at,
     };
   }
 
@@ -582,15 +595,18 @@ export class HistoricoPagamentoService {
   ): any {
     return {
       id: historico.id,
-      pagamento_id: historico.pagamentoId,
-      data_evento: historico.dataEvento,
-      usuario_id: historico.usuarioId,
-      tipo_evento: historico.tipoEvento,
-      status_anterior: historico.statusAnterior,
-      status_atual: historico.statusAtual,
+      pagamento_id: historico.pagamento_id,
+      data_evento: historico.data_evento?.toISOString() || null,
+      responsavel: {
+        id: historico.responsavel?.id,
+        nome: historico.responsavel?.nome,
+      },
+      tipo_evento: historico.tipo_evento,
+      status_anterior: historico.status_anterior,
+      status_atual: historico.status_atual,
       observacao: historico.observacao,
-      dados_contexto: historico.dadosContexto,
-      created_at: historico.createdAt,
+      dados_contexto: historico.dados_contexto,
+      created_at: historico.created_at?.toISOString() || null,
     };
   }
 
@@ -662,15 +678,15 @@ export class HistoricoPagamentoService {
 
     historico.forEach((evento, index) => {
       conteudo += `${index + 1}. ${format(
-        evento.dataEvento,
+        evento.data_evento,
         'dd/MM/yyyy HH:mm',
         { locale: ptBR },
       )}\n`;
-      conteudo += `   Evento: ${evento.tipoEvento}\n`;
-      conteudo += `   Responsável: ${evento.nomeUsuario}\n`;
+      conteudo += `   Evento: ${evento.tipo_evento}\n`;
+      conteudo += `   Responsável: ${evento.responsavel?.nome || 'Sistema'}\n`;
 
-      if (evento.statusAnterior && evento.statusAtual) {
-        conteudo += `   Status: ${evento.statusAnterior} → ${evento.statusAtual}\n`;
+      if (evento.status_anterior && evento.status_atual) {
+        conteudo += `   Status: ${evento.status_anterior} → ${evento.status_atual}\n`;
       }
 
       if (evento.observacao) {

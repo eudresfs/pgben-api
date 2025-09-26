@@ -183,6 +183,12 @@ export class HistoricoPagamentoPaginadoResponseDto {
     total: number;
     page: number;
     limit: number;
-    totalPages: number;
+    pages: number;
   };
+
+  @ApiProperty({
+    description: 'Mensagem de sucesso ou erro',
+    example: 'Histórico de pagamentos recuperado com sucesso',
+  })
+  message: string;
 }

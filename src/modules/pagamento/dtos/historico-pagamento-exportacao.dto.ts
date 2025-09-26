@@ -13,8 +13,8 @@ import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
  * Enum para tipos de formato de exportação
  */
 export enum TipoExportacaoEnum {
-  PDF = 'PDF',
-  EXCEL = 'EXCEL',
+  PDF = 'pdf',
+  EXCEL = 'excel',
 }
 
 /**

@@ -28,30 +28,28 @@ import { TipoEscopo } from '../../../entities/user-permission.entity';
 import { Usuario } from '../../../entities';
 import { HistoricoPagamentoService } from '../services/historico-pagamento.service';
 import {
-  HistoricoPagamentoFiltrosDto,
   HistoricoPagamentoResponseDto,
-  HistoricoPagamentoPaginadoResponseDto,
   HistoricoPagamentoExportacaoDto,
   HistoricoPagamentoExportacaoResponseDto,
   TipoExportacaoEnum,
+  HistoricoPagamentoPaginadoResponseDto,
 } from '../dtos';
 import { TipoEventoHistoricoEnum } from '../../../enums/tipo-evento-historico.enum';
-import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { DataMaskingResponseInterceptor } from '../interceptors/data-masking-response.interceptor';
 import { AuditoriaInterceptor } from '../interceptors/auditoria.interceptor';
 import { AuditoriaPagamento } from '../decorators/auditoria.decorator';
 
 /**
- * Controller para gerenciamento do histórico de pagamentos
+ * Controller para gerenciamento do histórico individual de pagamentos
  *
- * Responsável por fornecer endpoints para consulta e exportação
- * do histórico completo de eventos relacionados aos pagamentos,
- * garantindo transparência e rastreabilidade no sistema.
+ * Responsável por fornecer endpoints para consulta do histórico
+ * de eventos de pagamentos específicos, operando exclusivamente
+ * no escopo individual para garantir transparência e rastreabilidade.
  *
  * @author Equipe PGBen
  */
-@ApiTags('Histórico de Pagamentos')
-@Controller('pagamentos/historico')
+@ApiTags('Pagamentos')
+@Controller('pagamentos')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @UseInterceptors(DataMaskingResponseInterceptor, AuditoriaInterceptor)
 export class HistoricoPagamentoController {
@@ -65,7 +63,7 @@ export class HistoricoPagamentoController {
    * Retorna todos os eventos registrados para um pagamento,
    * ordenados cronologicamente do mais antigo ao mais recente.
    */
-  @Get('pagamento/:pagamento_id')
+  @Get(':pagamento_id/historico')
   @AuditoriaPagamento.Consulta('Consulta de histórico por pagamento')
   @RequiresPermission({
     permissionName: 'pagamento.historico.consultar',
@@ -121,78 +119,37 @@ export class HistoricoPagamentoController {
     @Query('tipo_evento') tipo_evento?: TipoEventoHistoricoEnum,
     @Query('data_inicial') data_inicial?: string,
     @Query('data_final') data_final?: string,
-  ): Promise<HistoricoPagamentoResponseDto[]> {
-    const { data } = await this.historicoPagamentoService.buscarHistoricoPorPagamentoFormatado(
+  ): Promise<HistoricoPagamentoPaginadoResponseDto> {
+    const resultado = await this.historicoPagamentoService.buscarHistoricoPorPagamentoFormatado(
       pagamento_id,
       {
         tipoEvento: tipo_evento,
         dataInicio: data_inicial ? new Date(data_inicial) : undefined,
         dataFim: data_final ? new Date(data_final) : undefined,
-      },
+      }
     );
-
-    return data;
+    return {
+      data: resultado.data,
+      meta: resultado.meta,
+      message: `Histórico do pagamento obtido com sucesso. ${resultado.data.length} evento(s) encontrado(s)`,
+    };
   }
 
   /**
-   * Busca histórico com filtros avançados
+   * Exporta histórico de um pagamento específico
    *
-   * Permite consultas complexas no histórico de pagamentos
-   * com múltiplos critérios de filtro e paginação.
+   * Gera relatórios em PDF ou Excel do histórico de um pagamento
+   * específico com base nos filtros especificados.
    */
-  @Post('buscar')
-  @AuditoriaPagamento.Consulta('Consulta de histórico com filtros avançados')
-  @RequiresPermission({
-    permissionName: 'pagamento.historico.consultar',
-    scopeType: TipoEscopo.UNIDADE,
-  })
-  @ApiOperation({
-    summary: 'Busca histórico com filtros avançados',
-    description: `Endpoint para consultas complexas no histórico de pagamentos.
-    
-    **Funcionalidades:**
-    - Filtros por múltiplos critérios (usuário, tipo de evento, status, período)
-    - Paginação otimizada para grandes volumes de dados
-    - Ordenação personalizável
-    - Busca textual em observações
-    - Filtros por transições de status específicas`,
-  })
-  @ApiBody({
-    type: HistoricoPagamentoFiltrosDto,
-    description: 'Critérios de filtro para busca no histórico',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Histórico filtrado retornado com sucesso',
-    type: HistoricoPagamentoPaginadoResponseDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Parâmetros de filtro inválidos',
-  })
-  async buscarHistoricoComFiltros(
-    @Body() filtros: HistoricoPagamentoFiltrosDto,
-  ): Promise<HistoricoPagamentoPaginadoResponseDto> {
-    return await this.historicoPagamentoService.buscarHistoricoComFiltrosFormatado(
-      filtros,
-    );
-  }
-
-  /**
-   * Exporta histórico de pagamentos
-   *
-   * Gera relatórios em PDF ou Excel do histórico de pagamentos
-   * com base nos filtros especificados.
-   */
-  @Post('exportar')
-  @AuditoriaPagamento.Exportacao('Exportação de histórico de pagamentos')
+  @Post(':pagamento_id/exportar')
+  @AuditoriaPagamento.Exportacao('Exportação de histórico de pagamento')
   @RequiresPermission({
     permissionName: 'pagamento.historico.exportar',
     scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({
-    summary: 'Exporta histórico de pagamentos',
-    description: `Gera relatórios do histórico de pagamentos para auditoria e análise.
+    summary: 'Exporta histórico de um pagamento específico',
+    description: `Gera relatórios do histórico de um pagamento específico para auditoria e análise.
     
     **Formatos disponíveis:**
     - PDF: Relatório formatado para impressão e apresentação
@@ -203,6 +160,12 @@ export class HistoricoPagamentoController {
     - Títulos e observações customizáveis
     - Metadados de geração incluídos
     - Download direto ou URL temporária`,
+  })
+  @ApiParam({
+    name: 'pagamento_id',
+    type: 'string',
+    description: 'ID único do pagamento',
+    example: 'uuid-pagamento-123',
   })
   @ApiBody({
     type: HistoricoPagamentoExportacaoDto,
@@ -222,9 +185,10 @@ export class HistoricoPagamentoController {
     description: 'Volume de dados muito grande para exportação',
   })
   async exportarHistorico(
+    @Param('pagamento_id', ParseUUIDPipe) pagamento_id: string,
     @Body() parametros: HistoricoPagamentoExportacaoDto,
     @GetUser() usuario: Usuario,
-  ): Promise<HistoricoPagamentoExportacaoResponseDto> {
+  ): Promise<HistoricoPagamentoExportacaoResponseDto | any> {
     // Validar parâmetros de exportação
     if (
       parametros.data_inicial &&
@@ -236,10 +200,22 @@ export class HistoricoPagamentoController {
       );
     }
 
-    return await this.historicoPagamentoService.exportarHistorico(
-      parametros,
-      usuario.id,
-    );
+    // Adicionar pagamento_id aos parâmetros
+     const dadosExportacao = {
+       ...parametros,
+       pagamento_id: pagamento_id,
+     };
+     
+     const resultado = await this.historicoPagamentoService.exportarHistorico(
+       dadosExportacao,
+       usuario.id,
+     );
+     
+     return {
+       data: resultado,
+       meta: null,
+       message: `Exportação do histórico gerada com sucesso. ${resultado.total_registros} registro(s) exportado(s)`,
+     };
   }
 
   /**
@@ -248,7 +224,7 @@ export class HistoricoPagamentoController {
    * Endpoint para download direto de arquivos de histórico
    * previamente gerados.
    */
-  @Get('download/:arquivo_id')
+  @Get(':pagamento_id/download/:arquivo_id')
   @AuditoriaPagamento.Download('Download de arquivo de histórico')
   @RequiresPermission({
     permissionName: 'pagamento.historico.exportar',
@@ -263,6 +239,12 @@ export class HistoricoPagamentoController {
     - Controle de expiração de links
     - Auditoria de downloads
     - Suporte a diferentes formatos de arquivo`,
+  })
+  @ApiParam({
+    name: 'pagamento_id',
+    type: 'string',
+    description: 'ID único do pagamento',
+    example: 'uuid-pagamento-123',
   })
   @ApiParam({
     name: 'arquivo_id',
@@ -291,32 +273,30 @@ export class HistoricoPagamentoController {
     description: 'Acesso negado ao arquivo',
   })
   async downloadArquivo(
+    @Param('pagamento_id', ParseUUIDPipe) pagamento_id: string,
     @Param('arquivo_id', ParseUUIDPipe) arquivo_id: string,
     @Res() response: Response,
     @GetUser() usuario: Usuario,
   ): Promise<void> {
-    // TODO: Implementar lógica de download seguro
-    // Por enquanto, retorna erro não implementado
-    throw new BadRequestException(
-      'Funcionalidade de download direto será implementada em versão futura',
-    );
+    // TODO: Implementar download de arquivo específico do pagamento
+    throw new BadRequestException('Funcionalidade de download será implementada em versão futura');
   }
 
   /**
-   * Estatísticas do histórico de pagamentos
+   * Estatísticas do histórico de um pagamento específico
    *
-   * Retorna métricas e estatísticas sobre o histórico de pagamentos
-   * para dashboards e relatórios gerenciais.
+   * Retorna métricas e estatísticas sobre o histórico de um pagamento
+   * específico para dashboards e relatórios gerenciais.
    */
-  @Get('estatisticas')
+  @Get(':pagamento_id/estatisticas')
   @AuditoriaPagamento.Consulta('Consulta de estatísticas do histórico')
   @RequiresPermission({
     permissionName: 'pagamento.historico.estatisticas',
     scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({
-    summary: 'Estatísticas do histórico de pagamentos',
-    description: `Retorna métricas agregadas sobre o histórico de pagamentos.
+    summary: 'Estatísticas do histórico de um pagamento específico',
+    description: `Retorna métricas agregadas sobre o histórico de um pagamento específico.
     
     **Métricas incluídas:**
     - Total de eventos por tipo
@@ -325,6 +305,12 @@ export class HistoricoPagamentoController {
     - Tendências temporais
     - Tempo médio entre eventos`,
   })
+  @ApiParam({
+    name: 'pagamento_id',
+    type: 'string',
+    description: 'ID único do pagamento',
+    example: 'uuid-pagamento-123',
+  })
   @ApiQuery({
     name: 'periodo',
     required: false,
@@ -332,30 +318,24 @@ export class HistoricoPagamentoController {
     description: 'Período para análise (ultimo_mes, ultimo_trimestre, ultimo_ano)',
     example: 'ultimo_mes',
   })
-  @ApiQuery({
-    name: 'unidade_id',
-    required: false,
-    type: String,
-    description: 'Filtrar por unidade específica',
-  })
   @ApiResponse({
     status: 200,
     description: 'Estatísticas retornadas com sucesso',
     schema: {
       example: {
-        total_eventos: 1250,
+        total_eventos: 15,
         eventos_por_tipo: {
-          ALTERACAO_STATUS: 800,
-          APROVACAO: 200,
-          UPLOAD_COMPROVANTE: 150,
-          CANCELAMENTO: 100,
+          ALTERACAO_STATUS: 8,
+          APROVACAO: 3,
+          UPLOAD_COMPROVANTE: 2,
+          CANCELAMENTO: 2,
         },
-        transicoes_mais_comuns: [
-          { de: 'PENDENTE', para: 'LIBERADO', quantidade: 450 },
-          { de: 'LIBERADO', para: 'PAGO', quantidade: 380 },
+        transicoes_status: [
+          { de: 'PENDENTE', para: 'LIBERADO', data: '2024-01-15T10:30:00.000Z' },
+          { de: 'LIBERADO', para: 'PAGO', data: '2024-01-20T14:45:00.000Z' },
         ],
-        usuarios_mais_ativos: [
-          { usuario_id: 'uuid-1', nome: 'João Silva', total_eventos: 120 },
+        usuarios_envolvidos: [
+          { usuario_id: 'uuid-1', nome: 'João Silva', total_eventos: 8 },
         ],
         periodo_analise: {
           data_inicial: '2024-01-01T00:00:00.000Z',
@@ -365,15 +345,60 @@ export class HistoricoPagamentoController {
     },
   })
   async obterEstatisticas(
+    @Param('pagamento_id', ParseUUIDPipe) pagamento_id: string,
     @Query('periodo') periodo?: string,
-    @Query('unidade_id') unidade_id?: string,
     @Query('data_inicial') data_inicial?: string,
     @Query('data_final') data_final?: string,
   ): Promise<any> {
-    // TODO: Implementar lógica de estatísticas
-    // Por enquanto, retorna erro não implementado
-    throw new BadRequestException(
-      'Funcionalidade de estatísticas será implementada em versão futura',
+    // Buscar histórico do pagamento para gerar estatísticas
+    const { data: historico } = await this.historicoPagamentoService.buscarHistoricoPorPagamentoFormatado(
+      pagamento_id,
+      {
+        dataInicio: data_inicial ? new Date(data_inicial) : undefined,
+        dataFim: data_final ? new Date(data_final) : undefined,
+      }
     );
+
+    // Gerar estatísticas básicas
+    const estatisticas = {
+      total_eventos: historico.length,
+      eventos_por_tipo: historico.reduce((acc, evento) => {
+        const tipo = evento.tipo_evento || 'nao_identificado';
+        acc[tipo] = (acc[tipo] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>),
+      transicoes_status: historico
+        .filter(evento => evento.status_anterior && evento.status_atual)
+        .map(evento => ({
+          de: evento.status_anterior,
+          para: evento.status_atual,
+          data: evento.data_evento,
+        })),
+      usuarios_envolvidos: historico
+        .filter(evento => evento.usuario_id)
+        .reduce((acc, evento) => {
+          const existente = acc.find(u => u.usuario_id === evento.usuario_id);
+          if (existente) {
+            existente.total_eventos++;
+          } else {
+            acc.push({
+              usuario_id: evento.usuario_id,
+              nome: evento.nome_usuario || 'Usuário não identificado',
+              total_eventos: 1,
+            });
+          }
+          return acc;
+        }, [] as any[]),
+      periodo_analise: {
+        data_inicial: data_inicial || historico[0]?.data_evento,
+        data_final: data_final || historico[historico.length - 1]?.data_evento,
+      },
+    };
+
+    return {
+      data: estatisticas,
+      meta: null,
+      message: 'Estatísticas do histórico de pagamento obtidas com sucesso',
+    };
   }
 }
