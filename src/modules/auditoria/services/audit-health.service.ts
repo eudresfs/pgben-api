@@ -122,15 +122,27 @@ export class AuditHealthService implements OnModuleInit {
    * Inicialização do módulo
    */
   async onModuleInit() {
-    this.logger.log('🏥 Iniciando serviço de Health Checks de Auditoria');
+    this.logger.log('⏩ AuditHealthService inicializado (health checks em background)');
     
-    // Executar primeira verificação
-    await this.performHealthCheck();
-    
-    // Configurar verificações periódicas
-    this.startPeriodicHealthChecks();
-    
-    this.logger.log('✅ Serviço de Health Checks iniciado com sucesso');
+    // CRÍTICO: Retornar IMEDIATAMENTE
+    Promise.resolve().then(async () => {
+      try {
+        this.logger.log('🏥 Iniciando health checks em background...');
+        
+        // Aguardar 30 segundos após o boot
+        await new Promise(resolve => setTimeout(resolve, 30000));
+        
+        // Executar primeira verificação
+        await this.performHealthCheck();
+        
+        // Configurar verificações periódicas
+        this.startPeriodicHealthChecks();
+        
+        this.logger.log('✅ Health checks iniciados com sucesso');
+      } catch (error) {
+        this.logger.error('Erro ao iniciar health checks (não crítico):', error);
+      }
+    });
   }
 
   /**
@@ -294,17 +306,9 @@ export class AuditHealthService implements OnModuleInit {
     const startTime = Date.now();
     
     try {
-      // Executar query simples para verificar conectividade
+      // APENAS query simples - estatísticas são coletadas separadamente
       const result = await this.dataSource.query('SELECT 1 as health_check, NOW() as timestamp');
       const responseTime = Date.now() - startTime;
-      
-      // Verificar estatísticas da tabela de auditoria
-      const auditStats = await this.dataSource.query(`
-        SELECT 
-          COUNT(*) as total_records,
-          COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '1 hour') as recent_records
-        FROM logs_auditoria
-      `);
       
       return {
         status: responseTime > this.thresholds.responseTime.critical ? 'critical' :
@@ -314,7 +318,6 @@ export class AuditHealthService implements OnModuleInit {
         responseTime,
         details: {
           queryResult: result[0],
-          auditStats: auditStats[0],
           connectionStatus: 'connected',
         },
       };
