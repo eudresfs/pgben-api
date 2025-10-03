@@ -165,7 +165,8 @@ export const env: EnvironmentVariables = {
 
   // Aplicação
   NODE_ENV: process.env.NODE_ENV || 'development',
-  APP_PORT: parseNumber(process.env.APP_PORT, 3000),
+  // CORREÇÃO RAILWAY: Priorizar PORT sobre APP_PORT
+  APP_PORT: parseNumber(process.env.PORT || process.env.APP_PORT, 3000),
   API_PREFIX: process.env.API_PREFIX || '/api/v1',
 
   // JWT
@@ -228,8 +229,6 @@ export const env: EnvironmentVariables = {
   LOG_FILE_PATH: process.env.LOG_FILE_PATH,
   LOG_MAX_FILES: parseNumber(process.env.LOG_MAX_FILES, 30),
   LOG_MAX_SIZE: process.env.LOG_MAX_SIZE,
-
-  // Notificações SSE removidas
 
   // Usuário administrador padrão
   DEFAULT_ADMIN_USER_EMAIL: process.env.DEFAULT_ADMIN_USER_EMAIL,
@@ -306,5 +305,6 @@ if (env.DEBUG || env.NODE_ENV === 'development') {
   console.log(`   - DB_HOST: ${env.DB_HOST}`);
   console.log(`   - DB_NAME: ${env.DB_NAME}`);
   console.log(`   - NODE_ENV: ${env.NODE_ENV}`);
-  console.log(`   - APP_PORT: ${env.APP_PORT}`);
+  console.log(`   - PORT: ${process.env.PORT || 'não definida'}`);
+  console.log(`   - APP_PORT: ${env.APP_PORT} (porta final usada)`);
 }
