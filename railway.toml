@@ -1,0 +1,15 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "./docker-entrypoint.sh"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# CRÍTICO: Railway precisa de tempo para a aplicação inicializar
+# A aplicação precisa conectar no DB, Redis, MinIO e rodar migrations
+healthcheckPath = "/health"
+healthcheckTimeout = 180  # 3 minutos de timeout
+healthcheckInterval = 10   # Checa a cada 10 segundos
+startupProbeRetries = 18   # 18 × 10s = 3 minutos de tolerância total
