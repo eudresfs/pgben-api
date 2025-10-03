@@ -45,23 +45,25 @@ async function bootstrap(): Promise<INestApplication> {
     logger.log('🚀 Iniciando aplicação PGBEN...');
 
     // Criar a aplicação NestJS com configurações otimizadas
+    logger.log('📦 Criando instância NestJS...');
     const app = await NestFactory.create(AppModule, {
       logger:
         process.env.NODE_ENV === 'production'
           ? ['error', 'warn', 'log']
           : ['error', 'warn', 'log', 'debug', 'verbose'],
       abortOnError: false,
-      bufferLogs: true, // Melhora performance dos logs
+      bufferLogs: true,
       autoFlushLogs: true,
     });
+    logger.log('✅ Instância NestJS criada');
 
     // Obter configurações
+    logger.log('⚙️ Obtendo configurações...');
     const configService = app.get(ConfigService);
     const port = configService.get<number>('PORT', 3000);
     const environment = configService.get<string>('NODE_ENV', 'development');
     const isDevelopment = environment === 'development';
-
-    logger.log(`📦 Ambiente: ${environment}`);
+    logger.log(`✅ Configurações obtidas - Port: ${port}, Env: ${environment}`);
 
     // === CONFIGURAÇÕES DE SEGURANÇA ===
     logger.log('🔐 Configurando middlewares de segurança...');
@@ -76,19 +78,21 @@ async function bootstrap(): Promise<INestApplication> {
           }
           return compression.filter(req, res);
         },
-        level: 6, // Balanceamento entre velocidade e compressão
-        threshold: 1024, // Comprimir apenas arquivos > 1KB
+        level: 6,
+        threshold: 1024,
       }),
     );
 
     logger.log('✅ Middlewares de segurança configurados');
 
     // === VERSIONAMENTO DA API ===
+    logger.log('🔢 Habilitando versionamento...');
     app.enableVersioning({
       type: VersioningType.URI,
       prefix: 'v',
       defaultVersion: '1',
     });
+    logger.log('✅ Versionamento habilitado');
 
     // === PIPES GLOBAIS ===
     logger.log('⚙️ Configurando ValidationPipe global...');
@@ -100,53 +104,48 @@ async function bootstrap(): Promise<INestApplication> {
         transformOptions: {
           enableImplicitConversion: true,
         },
-  
         errorHttpStatusCode: 400,
-        disableErrorMessages: environment === 'production', // Ocultar detalhes em produção
+        disableErrorMessages: environment === 'production',
         exceptionFactory: (errors) => {
           return createValidationException(errors, isDevelopment);
         },
       }),
     );
-    logger.log('✅ ValidationPipe configurado com suporte a interceptors');
+    logger.log('✅ ValidationPipe configurado');
 
     // === INTERCEPTORS E FILTROS GLOBAIS ===
-    logger.log('🛡️ Configurando interceptors e filtros...');
+    logger.log('🛡️ Configurando interceptors...');
 
-    // Interceptor para remover parâmetros vazios das requisições
     app.useGlobalInterceptors(new RemoveEmptyParamsInterceptor());
+    logger.log('✅ RemoveEmptyParamsInterceptor registrado');
 
-    // Interceptor de normalização de texto para campos nome e sobrenome
     app.useGlobalInterceptors(new TextNormalizationInterceptor());
+    logger.log('✅ TextNormalizationInterceptor registrado');
 
-    // Sistema de logging unificado
     const loggingService = app.get(LoggingService);
-
-    // Interceptor de logging HTTP (substitui o RedactLogsInterceptor)
     app.useGlobalInterceptors(new LoggingInterceptor(loggingService));
+    logger.log('✅ LoggingInterceptor registrado');
 
-    // Interceptor de tratamento de erros avançado
     app.useGlobalInterceptors(new ErrorHandlingInterceptor());
+    logger.log('✅ ErrorHandlingInterceptor registrado');
 
-    // Interceptor para aplicar filtro de unidade automaticamente em GET
     const reflector = app.get(Reflector);
     app.useGlobalInterceptors(new ScopedQueryInterceptor(reflector));
+    logger.log('✅ ScopedQueryInterceptor registrado');
 
-    // Interceptor de resposta padronizada
     app.useGlobalInterceptors(new ResponseInterceptor(reflector));
+    logger.log('✅ ResponseInterceptor registrado');
 
-    // Filtro de erros com logging estruturado
+    logger.log('🛡️ Configurando filtros...');
     app.useGlobalFilters(new ErrorLoggerFilter(loggingService));
+    logger.log('✅ ErrorLoggerFilter registrado');
 
-    // Filtro de exceções unificado com catálogo de erros
     const catalogAwareExceptionFilter = app.get(CatalogAwareExceptionFilter);
     app.useGlobalFilters(catalogAwareExceptionFilter);
-
-    logger.log('✅ Interceptors e filtros configurados');
+    logger.log('✅ CatalogAwareExceptionFilter registrado');
 
     // === CONFIGURAÇÃO DE ROTAS ===
-    logger.log('🛣️ Configurando prefixo global e rotas...');
-
+    logger.log('🛣️ Configurando prefixo global...');
     app.setGlobalPrefix('api', {
       exclude: [
         { path: '', method: RequestMethod.ALL },
@@ -164,26 +163,33 @@ async function bootstrap(): Promise<INestApplication> {
         { path: 'api-docs/*path', method: RequestMethod.ALL },
       ],
     });
-
-    logger.log('✅ Rotas configuradas');
+    logger.log('✅ Prefixo global configurado');
 
     // === SWAGGER DOCUMENTATION ===
     if (isDevelopment || configService.get<boolean>('SWAGGER_ENABLED', false)) {
-      logger.log('📚 Configurando Swagger...');
-      setupSwagger(app);
-      
-      logger.log('✅ Swagger configurado');
+      logger.log('📚 Iniciando configuração do Swagger...');
+      try {
+        setupSwagger(app);
+        logger.log('✅ Swagger configurado com sucesso');
+      } catch (swaggerError) {
+        logger.error('❌ Erro ao configurar Swagger (não crítico):', swaggerError.message);
+        logger.log('⚠️ Continuando sem Swagger...');
+      }
     } else {
-      logger.log('📚 Swagger desabilitado em produção');
+      logger.log('📚 Swagger desabilitado');
     }
 
-    // === STARTUP DO SERVIDOR ===
+    // === CRÍTICO: STARTUP DO SERVIDOR ===
+    logger.log('🚀 INICIANDO SERVIDOR HTTP...');
+    logger.log(`🔌 Tentando escutar na porta ${port} em 0.0.0.0...`);
+    
     await app.listen(port, '0.0.0.0');
+    
+    logger.log('✅✅✅ SERVIDOR HTTP INICIADO COM SUCESSO! ✅✅✅');
 
     // === LOGS DE INICIALIZAÇÃO ===
     logStartupInfo(port, environment, isDevelopment, configService);
 
-    // Configurar logger contextualizado para logs de sistema
     loggingService.setContext('Application');
     loggingService.info('🎉 Aplicação PGBEN iniciada com sucesso', undefined, {
       port,
@@ -199,6 +205,7 @@ async function bootstrap(): Promise<INestApplication> {
       message: error.message,
       stack: error.stack,
     });
+    logger.error('❌ DETALHES DO ERRO:', error);
     process.exit(1);
   }
 }
@@ -210,7 +217,6 @@ function createValidationException(
   errors: any[],
   isDevelopment: boolean,
 ): BadRequestException {
-  // Lista de campos sensíveis que não devem ser incluídos nas respostas de erro
   const sensitiveFields = [
     'senha',
     'password',
@@ -234,26 +240,21 @@ function createValidationException(
     'biometria',
   ];
 
-  // Função para verificar se um campo é sensível
   const isSensitiveField = (field: string): boolean => {
     return sensitiveFields.some((sensitive) =>
       field.toLowerCase().includes(sensitive.toLowerCase()),
     );
   };
 
-  // Sanitizar valor sensível - transformação recursiva
   const sanitizeValidationError = (error: any): any => {
     if (!error) return error;
 
-    // Cria uma cópia do objeto para não modificar o original
     const sanitizedError = { ...error };
 
-    // Sanitiza o valor se o campo for sensível
     if (sanitizedError.property && isSensitiveField(sanitizedError.property)) {
       sanitizedError.value = '[REDACTED]';
     }
 
-    // Sanitiza filhos recursivamente
     if (sanitizedError.children && Array.isArray(sanitizedError.children)) {
       sanitizedError.children = sanitizedError.children.map((child) =>
         sanitizeValidationError(child),
@@ -263,26 +264,21 @@ function createValidationException(
     return sanitizedError;
   };
 
-  // Sanitiza todos os erros antes de procesá-los
   const sanitizedErrors = errors.map((error) => sanitizeValidationError(error));
 
-  // Formatador de erros para exibição
   const formatError = (error: any, path = ''): any[] => {
     const currentPath = path ? `${path}.${error.property}` : error.property;
 
     if (error.children && error.children.length > 0) {
-      // Process nested errors
       const childErrors: any[] = [];
       error.children.forEach((child: any) => {
         childErrors.push(...formatError(child, currentPath));
       });
       return childErrors;
     } else {
-      // Direct error
       return [
         {
           field: currentPath,
-          // Somente inclui o valor se o campo não for sensível
           ...(isSensitiveField(currentPath) ? {} : { value: error.value }),
           constraints: error.constraints || {},
           messages: error.constraints
@@ -318,41 +314,50 @@ function logStartupInfo(
   configService: ConfigService,
 ): void {
   const logger = new Logger('Bootstrap');
-  const baseUrl = `http://localhost:${port}`;
+  const baseUrl = `http://0.0.0.0:${port}`;
 
+  logger.log('');
+  logger.log('🎉 ========================================');
   logger.log('🎉 === SERVIDOR INICIADO COM SUCESSO ===');
+  logger.log('🎉 ========================================');
+  logger.log('');
   logger.log(`🌐 Servidor rodando em: ${baseUrl}`);
   logger.log(`🏷️ Ambiente: ${environment}`);
   logger.log(`📦 Versão da API: v1`);
+  logger.log(`🔌 Porta: ${port}`);
+  logger.log(`📍 Host: 0.0.0.0 (aceita conexões externas)`);
+  logger.log('');
 
   logger.log('📍 Rotas principais disponíveis:');
-  logger.log(`   ├─ GET  ${baseUrl}/v1/health (liveness)`);
-  logger.log(`   ├─ GET  ${baseUrl}/v1/health/ready (readiness)`);
-  logger.log(`   ├─ GET  ${baseUrl}/v1/metrics (métricas do sistema)`);
-  logger.log(`   └─ POST ${baseUrl}/api/v1/auth/login (autenticação)`);
+  logger.log(`   ├─ GET  ${baseUrl}/health`);
+  logger.log(`   ├─ GET  ${baseUrl}/health/ready`);
+  logger.log(`   ├─ GET  ${baseUrl}/metrics`);
+  logger.log(`   └─ POST ${baseUrl}/api/v1/auth/login`);
+  logger.log('');
 
   if (isDevelopment || configService.get<boolean>('SWAGGER_ENABLED', false)) {
     logger.log('📚 Documentação disponível:');
-    logger.log(`   ├─ GET  ${baseUrl}/api-docs (Swagger UI)`);
-    logger.log(`   └─ GET  ${baseUrl}/openapi.json (OpenAPI Spec)`);
+    logger.log(`   ├─ GET  ${baseUrl}/api-docs`);
+    logger.log(`   └─ GET  ${baseUrl}/openapi.json`);
+    logger.log('');
   }
 
-  // Informações de configuração (apenas desenvolvimento)
   if (isDevelopment) {
     logger.log('⚙️ Configurações ativas:');
-    logger.log(`   ├─ Database: ${configService.get('DB_TYPE', 'N/A')}`);
+    logger.log(`   ├─ Database: ${configService.get('DB_HOST', 'N/A')}`);
     logger.log(
       `   ├─ Redis: ${configService.get('REDIS_HOST', 'N/A')}:${configService.get('REDIS_PORT', 'N/A')}`,
     );
     logger.log(
-      `   ├─ Email: ${configService.get('EMAIL_ENABLED', false) ? 'Habilitado' : 'Desabilitado'}`,
+      `   └─ MinIO: ${configService.get('MINIO_ENDPOINT', 'N/A')}`,
     );
-    logger.log(
-      `   └─ SMTP: ${configService.get('SMTP_HOST', 'N/A')}:${configService.get('SMTP_PORT', 'N/A')}`,
-    );
+    logger.log('');
   }
 
+  logger.log('🔧 ========================================');
   logger.log('🔧 === APLICAÇÃO PRONTA PARA USO ===');
+  logger.log('🔧 ========================================');
+  logger.log('');
 }
 
 /**
@@ -371,7 +376,6 @@ function setupGracefulShutdown(app: INestApplication): void {
     logger.log(`📴 Recebido sinal ${signal}. Iniciando graceful shutdown...`);
 
     try {
-      // Timeout aumentado para 25 segundos para permitir finalização de todos os serviços
       const shutdownTimeout = setTimeout(() => {
         logger.warn(
           '⏰ Timeout do graceful shutdown (25s). Forçando encerramento...',
@@ -379,11 +383,9 @@ function setupGracefulShutdown(app: INestApplication): void {
         process.exit(1);
       }, 25000);
 
-      // Aguardar um pouco para requests em andamento
       logger.log('⏳ Aguardando finalização de requests em andamento...');
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      // Fechar aplicação
       logger.log('🔄 Finalizando aplicação NestJS...');
       await app.close();
       clearTimeout(shutdownTimeout);
@@ -399,18 +401,15 @@ function setupGracefulShutdown(app: INestApplication): void {
     }
   };
 
-  // Capturar sinais de shutdown
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
 
-  // Capturar exceções não tratadas
   process.on('uncaughtException', (error) => {
     logger.error('💥 Uncaught Exception:', {
       message: error.message,
       stack: error.stack,
     });
 
-    // Verificar se é um erro relacionado ao Redis que pode ser ignorado
     const redisErrors = [
       'ECONNREFUSED',
       'ENOTFOUND',
@@ -427,9 +426,9 @@ function setupGracefulShutdown(app: INestApplication): void {
 
     if (isRedisError) {
       logger.warn(
-        'Erro do Redis detectado, mas aplicação continuará funcionando sem filas.',
+        'Erro do Redis detectado, mas aplicação continuará funcionando.',
       );
-      return; // Não fazer exit para erros de Redis
+      return;
     }
 
     shutdown('uncaughtException');
@@ -441,7 +440,6 @@ function setupGracefulShutdown(app: INestApplication): void {
       reason,
     });
 
-    // Verificar se é um erro relacionado ao Redis
     const reasonStr = String(reason);
     const redisErrors = [
       'ECONNREFUSED',
@@ -458,15 +456,14 @@ function setupGracefulShutdown(app: INestApplication): void {
 
     if (isRedisError) {
       logger.warn(
-        'Promise rejeitada relacionada ao Redis, mas aplicação continuará funcionando.',
+        'Promise rejeitada relacionada ao Redis, aplicação continuará funcionando.',
       );
-      return; // Não fazer exit para erros de Redis
+      return;
     }
 
     shutdown('unhandledRejection');
   });
 
-  // Capturar warnings (apenas em desenvolvimento)
   if (process.env.NODE_ENV === 'development') {
     process.on('warning', (warning) => {
       logger.warn('⚠️ Node.js Warning:', {
@@ -478,22 +475,31 @@ function setupGracefulShutdown(app: INestApplication): void {
   }
 }
 
-/**
- * Health check básico para verificar se o processo está rodando
- */
 process.on('message', (message) => {
   if (message === 'health-check') {
     process.send?.('healthy');
   }
 });
 
+// === TIMEOUT DE INICIALIZAÇÃO ===
+const STARTUP_TIMEOUT = 60000; // 60 segundos
+const startupTimer = setTimeout(() => {
+  const logger = new Logger('Bootstrap');
+  logger.error('❌ TIMEOUT: Aplicação não inicializou em 60 segundos!');
+  logger.error('❌ A aplicação travou durante a inicialização.');
+  logger.error('❌ Verifique serviços assíncronos (Ably, Swagger, etc.)');
+  process.exit(1);
+}, STARTUP_TIMEOUT);
+
 // === INICIALIZAÇÃO PRINCIPAL ===
 if (require.main === module) {
   bootstrap()
     .then((app) => {
+      clearTimeout(startupTimer);
       setupGracefulShutdown(app);
     })
     .catch((err) => {
+      clearTimeout(startupTimer);
       const logger = new Logger('Bootstrap');
       logger.error('💀 Falha crítica na inicialização:', {
         message: err.message,
